@@ -161,16 +161,14 @@ function ForgeSummon() {
   const [rolling, setRolling] = useState(false);
   const cost = D.ECON.MINT_COST;
   const balOk = (g.liquid + g.locked) >= cost;
-  function doSummon() {
-    if (!balOk) { toast(I18N.t("INSUFFICIENT", g.liquid + g.locked, cost), "bad"); return; }
+  async function doSummon() {
+    if (!balOk || rolling) return;
     setRolling(true); setLast(null);
-    setTimeout(() => {
-      const r = actions.summon();
-      setRolling(false);
-      if (!r.ok) { toast(r.reason, "bad"); return; }
-      setLast(r.beast);
-      toast(I18N.t("FG_SUMMON_OK", D.displayName(r.beast), rarityLabel(r.beast.rarity)), "good");
-    }, 700);
+    const r = await actions.summon();
+    setRolling(false);
+    if (!r.ok) { toast(r.reason, "bad"); return; }
+    setLast(r.beast);
+    toast(I18N.t("FG_SUMMON_OK", D.displayName(r.beast), rarityLabel(r.beast.rarity)), "good");
   }
   const odds = [["Common", 70], ["Rare", 20], ["Epic", 8], ["Legendary", 2]];
   return (

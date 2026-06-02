@@ -389,18 +389,23 @@ function App() {
       } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
     },
 
-    summon() {
+    async summon() {
       const s = gRef.current;
+      if (!s.wallet) return { ok: false, reason: "Wallet requis" };
       const cost = D.ECON.MINT_COST;
-      const spent = spendAny(s, cost);
-      if (!spent) return { ok: false, reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, cost) };
-      const beast = D.mintBeast(D.pick(D.TEMPLATE_KEYS));
-      setG((st) => {
-        const sp = spendAny(st, cost);
-        if (!sp) return st;
-        return { ...st, liquid: sp.liquid, locked: sp.locked, roster: [...st.roster, beast] };
-      });
-      return { ok: true, beast };
+      if (s.liquid + s.locked < cost) return { ok: false, reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, cost) };
+      try {
+        const resp = await fetch(`${API_URL}/forge/summon`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ wallet: s.wallet }),
+        });
+        const data = await resp.json();
+        if (data.status === "insufficient_balance") return { ok: false, reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, cost) };
+        if (data.status !== "ok") return { ok: false, reason: data.error || "Erreur serveur" };
+        const sv = await fetch(`${API_URL}/save/${s.wallet}`);
+        if (sv.ok) { const { save } = await sv.json(); setG((st) => serverToState(save, s.wallet, st)); }
+        return { ok: true, beast: data.beast };
+      } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
     },
 
     async rename(id, name) {
