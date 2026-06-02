@@ -204,7 +204,11 @@ function App() {
       }
     },
     disconnect() { setG((s) => ({ ...s, wallet: null })); },
-    resetProgress() {
+    async resetProgress() {
+      const w = gRef.current.wallet;
+      if (w) {
+        try { await fetch(`${API_URL}/save/${w}/reset`, { method: "POST" }); } catch (e) { }
+      }
       try { localStorage.removeItem(SAVE_KEY); } catch (e) { }
       setG(freshState());
     },
