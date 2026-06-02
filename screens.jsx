@@ -376,16 +376,21 @@ function Perso() {
   const [sel, setSel] = useState(null);
   const [name, setName] = useState("");
   const [title, setTitle] = useState(g.playerTitle || "");
+  const [busy, setBusy] = useState(false);
 
-  function doRename() {
-    if (!sel || !name.trim()) return;
-    const r = actions.rename(sel, name.trim().slice(0, 24));
+  async function doRename() {
+    if (!sel || !name.trim() || busy) return;
+    setBusy(true);
+    const r = await actions.rename(sel, name.trim().slice(0, 24));
+    setBusy(false);
     if (!r.ok) { toast(r.reason, "bad"); return; }
     toast(I18N.t("PE_RENAMED"), "good"); setName("");
   }
-  function doTitle() {
-    if (!title.trim()) return;
-    const r = actions.setTitle(title.trim().slice(0, 32));
+  async function doTitle() {
+    if (!title.trim() || busy) return;
+    setBusy(true);
+    const r = await actions.setTitle(title.trim().slice(0, 32));
+    setBusy(false);
     if (!r.ok) { toast(r.reason, "bad"); return; }
     toast(I18N.t("PE_TITLE_SET"), "good");
   }
@@ -400,7 +405,7 @@ function Perso() {
         <div>
           <div className="flex gap12 center wrap" style={{ marginBottom: 16 }}>
             <input className="field" style={{ flex: 1, minWidth: 200 }} maxLength={24} value={name} onChange={(e) => setName(e.target.value)} placeholder={I18N.t("PE_NEW_NAME")} />
-            <button className="btn btn-elec" disabled={!sel || !name.trim()} onClick={doRename}>{I18N.t("PE_RENAME_BTN", D.ECON.VANITY_RENAME)}</button>
+            <button className="btn btn-elec" disabled={!sel || !name.trim() || busy} onClick={doRename}>{busy ? "…" : I18N.t("PE_RENAME_BTN", D.ECON.VANITY_RENAME)}</button>
           </div>
           {!sel && <div className="mono muted" style={{ fontSize: 12, marginBottom: 12 }}>{I18N.t("PE_PICK")}</div>}
           <div className="grid-cards">
@@ -414,7 +419,7 @@ function Perso() {
           <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 22 }}>
             <div className="mono muted" style={{ fontSize: 12, marginBottom: 10 }}>{I18N.t("PE_NEW_TITLE")}</div>
             <input className="field" maxLength={32} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Whale · Diamond Hands · …" />
-            <button className="btn btn-fire block" style={{ marginTop: 16 }} disabled={!title.trim()} onClick={doTitle}>{I18N.t("PE_TITLE_BTN", D.ECON.VANITY_TITLE)}</button>
+            <button className="btn btn-fire block" style={{ marginTop: 16 }} disabled={!title.trim() || busy} onClick={doTitle}>{busy ? "…" : I18N.t("PE_TITLE_BTN", D.ECON.VANITY_TITLE)}</button>
           </div>
           <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 20, marginTop: 16 }}>
             <div className="flex between center">
@@ -442,10 +447,10 @@ function Options() {
     setScanState("scanning");
     setFound([]);
     setQuery("");
-    setTimeout(() => {
-      setFound(D.walletNameInscriptions(g.wallet));
-      setScanState("done");
-    }, 1300);
+    fetch(`${API_URL}/vanity/ordinal-names/${g.wallet}`)
+      .then((r) => r.json())
+      .then((data) => { setFound(data.names || []); setScanState("done"); })
+      .catch(() => { setFound([]); setScanState("done"); });
   }
   function selectName(name) {
     actions.setOrdinalName(name);

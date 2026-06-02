@@ -379,31 +379,39 @@ function App() {
       return { ok: true, beast };
     },
 
-    rename(id, name) {
+    async rename(id, name) {
       const s = gRef.current;
+      if (!s.wallet) return { ok: false, reason: "Wallet requis" };
       const cost = D.ECON.VANITY_RENAME;
-      const spent = spendAny(s, cost);
-      if (!spent) return { ok: false, reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, cost) };
-      setG((st) => {
-        const sp = spendAny(st, cost);
-        if (!sp) return st;
-        const beast = st.roster.find((b) => b.id === id);
-        if (beast) beast.custom_name = name;
-        return { ...st, liquid: sp.liquid, locked: sp.locked, roster: [...st.roster] };
-      });
-      return { ok: true };
+      if (s.liquid + s.locked < cost) return { ok: false, reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, cost) };
+      try {
+        const resp = await fetch(`${API_URL}/vanity/rename-creature`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ wallet: s.wallet, beast_id: id, new_name: name }),
+        });
+        const data = await resp.json();
+        if (data.status !== "ok") return { ok: false, reason: data.error || "Erreur serveur" };
+        const sv = await fetch(`${API_URL}/save/${s.wallet}`);
+        if (sv.ok) { const { save } = await sv.json(); setG((st) => serverToState(save, s.wallet, st)); }
+        return { ok: true };
+      } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
     },
-    setTitle(title) {
+    async setTitle(title) {
       const s = gRef.current;
+      if (!s.wallet) return { ok: false, reason: "Wallet requis" };
       const cost = D.ECON.VANITY_TITLE;
-      const spent = spendAny(s, cost);
-      if (!spent) return { ok: false, reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, cost) };
-      setG((st) => {
-        const sp = spendAny(st, cost);
-        if (!sp) return st;
-        return { ...st, liquid: sp.liquid, locked: sp.locked, playerTitle: title };
-      });
-      return { ok: true };
+      if (s.liquid + s.locked < cost) return { ok: false, reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, cost) };
+      try {
+        const resp = await fetch(`${API_URL}/vanity/set-title`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ wallet: s.wallet, title }),
+        });
+        const data = await resp.json();
+        if (data.status !== "ok") return { ok: false, reason: data.error || "Erreur serveur" };
+        const sv = await fetch(`${API_URL}/save/${s.wallet}`);
+        if (sv.ok) { const { save } = await sv.json(); setG((st) => serverToState(save, s.wallet, st)); }
+        return { ok: true };
+      } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
     },
 
     deposit(n) { setG((s) => ({ ...s, liquid: s.liquid + n })); return { ok: true }; },
