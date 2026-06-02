@@ -191,7 +191,7 @@ function App() {
             body: JSON.stringify({ wallet: addr }),
           }).catch(() => {});
         } else {
-          throw new Error("server " + resp.status);
+          throw new Error("server " + saveResp.status);
         }
       } catch (e) {
         // fallback local si réseau KO
