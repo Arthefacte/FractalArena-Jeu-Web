@@ -100,9 +100,9 @@
   };
 
   const BOOSTS = {
-    xp_boost: { cost: 4000, fights: 50, color: "#FFE600" },
-    insurance: { cost: 6000, charges: 5, color: "#27E08A" },
-    lucky_strike: { cost: 5000, fights: 15, color: "#F7931A" },
+    xp_boost: { cost: 500, fights: 50, color: "#FFE600" },
+    insurance: { cost: 200, charges: 5, color: "#27E08A" },
+    lucky_strike: { cost: 750, fights: 15, color: "#F7931A" },
   };
 
   // ---- helpers ----

@@ -164,11 +164,19 @@ function App() {
 
     async connectWallet(addr) {
       try {
-        const resp = await fetch(`${API_URL}/save/${addr}`);
-        if (resp.ok) {
-          const { save } = await resp.json();
-          setG((s) => serverToState(save, addr, s));
-        } else if (resp.status === 404) {
+        const [saveResp, boostsResp] = await Promise.all([
+          fetch(`${API_URL}/save/${addr}`),
+          fetch(`${API_URL}/boosts/status/${addr}`),
+        ]);
+        if (saveResp.ok) {
+          const { save } = await saveResp.json();
+          const boostsData = boostsResp.ok ? await boostsResp.json() : null;
+          setG((s) => {
+            const next = serverToState(save, addr, s);
+            if (boostsData) next.boosts = { xp_boost: boostsData.xp_boost?.charges ?? 0, insurance: boostsData.insurance?.charges ?? 0, lucky_strike: boostsData.lucky_strike?.charges ?? 0 };
+            return next;
+          });
+        } else if (saveResp.status === 404) {
           setG((s) => ({
             ...s, wallet: addr, view: "team",
             playerName: addr.slice(0, 6) + "…" + addr.slice(-4),
@@ -290,6 +298,15 @@ function App() {
 
         return { ...s, liquid, locked, totalFights, ticketsSilver, ticketsGold, session, boosts, roster: [...s.roster] };
       });
+      // consommation des boosts côté serveur
+      const prevBoosts = gRef.current.boosts;
+      const w2 = gRef.current.wallet;
+      if (w2) {
+        const hb = { "Content-Type": "application/json" };
+        if (prevBoosts.xp_boost > 0) fetch(`${API_URL}/boosts/use`, { method: "POST", headers: hb, body: JSON.stringify({ wallet: w2, boost_type: "xp_boost" }) }).catch(() => {});
+        if (prevBoosts.lucky_strike > 0) fetch(`${API_URL}/boosts/use`, { method: "POST", headers: hb, body: JSON.stringify({ wallet: w2, boost_type: "lucky_strike" }) }).catch(() => {});
+        if (summary.insuranceUsed) fetch(`${API_URL}/boosts/use`, { method: "POST", headers: hb, body: JSON.stringify({ wallet: w2, boost_type: "insurance" }) }).catch(() => {});
+      }
       // enregistrement pool/burn côté serveur sur défaite payante
       if (!win && !free && summary.burn > 0) {
         const w = gRef.current.wallet;
@@ -304,19 +321,25 @@ function App() {
       return summary;
     },
 
-    buyBoost(key) {
+    async buyBoost(key) {
       const s = gRef.current;
+      if (!s.wallet) return { ok: false, reason: "Wallet requis" };
       const def = D.BOOSTS[key];
-      const spent = spendAny(s, def.cost);
-      if (!spent) return { ok: false, reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, def.cost) };
-      setG((st) => {
-        const sp = spendAny(st, def.cost);
-        if (!sp) return st;
-        const boosts = { ...st.boosts };
-        boosts[key] += (def.fights || def.charges);
-        return { ...st, liquid: sp.liquid, locked: sp.locked, boosts };
-      });
-      return { ok: true };
+      if (s.liquid + s.locked < def.cost) return { ok: false, reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, def.cost) };
+      try {
+        const resp = await fetch(`${API_URL}/boosts/activate`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ wallet: s.wallet, boost_type: key }),
+        });
+        const data = await resp.json();
+        if (data.status !== "ok") return { ok: false, reason: data.error || "Erreur serveur" };
+        const [svResp, bResp] = await Promise.all([fetch(`${API_URL}/save/${s.wallet}`), fetch(`${API_URL}/boosts/status/${s.wallet}`)]);
+        if (svResp.ok && bResp.ok) {
+          const [{ save }, bd] = await Promise.all([svResp.json(), bResp.json()]);
+          setG((st) => { const n = serverToState(save, s.wallet, st); n.boosts = { xp_boost: bd.xp_boost?.charges ?? 0, insurance: bd.insurance?.charges ?? 0, lucky_strike: bd.lucky_strike?.charges ?? 0 }; return n; });
+        }
+        return { ok: true };
+      } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
     },
 
     fuse(id1, id2) {

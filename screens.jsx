@@ -206,8 +206,12 @@ function Boosts() {
     { key: "insurance", name: I18N.t("BO_INS_NAME"), desc: I18N.t("BO_INS_DESC"), color: "var(--success)", remaining: g.boosts.insurance, unit: "charges" },
     { key: "lucky_strike", name: I18N.t("BO_LUCKY_NAME"), desc: I18N.t("BO_LUCKY_DESC"), color: "var(--fire)", remaining: g.boosts.lucky_strike, unit: "fights" },
   ];
-  function buy(key) {
-    const r = actions.buyBoost(key);
+  const [buyingKey, setBuyingKey] = useState(null);
+  async function buy(key) {
+    if (buyingKey) return;
+    setBuyingKey(key);
+    const r = await actions.buyBoost(key);
+    setBuyingKey(null);
     if (!r.ok) { toast(r.reason, "bad"); return; }
     toast(I18N.t("BO_BOUGHT"), "good");
   }
@@ -226,7 +230,7 @@ function Boosts() {
               </div>
               <div className="muted" style={{ fontSize: 13, lineHeight: 1.5, minHeight: 56 }}>{it.desc}</div>
               <div className="mono" style={{ fontSize: 11, color: "var(--text-dim)" }}>{it.unit === "fights" ? `${def.fights || def.charges} combats` : `${def.charges} charges`}</div>
-              <button className="btn block" style={{ "--c": it.color, marginTop: "auto" }} onClick={() => buy(it.key)}>{I18N.t("BO_BUY", def.cost)}</button>
+              <button className="btn block" style={{ "--c": it.color, marginTop: "auto" }} disabled={!!buyingKey} onClick={() => buy(it.key)}>{buyingKey === it.key ? "…" : I18N.t("BO_BUY", def.cost)}</button>
             </div>
           );
         })}
