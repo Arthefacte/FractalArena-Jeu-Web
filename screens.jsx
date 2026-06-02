@@ -67,6 +67,7 @@ function Forge() {
 function ForgeFusion() {
   const { g, actions, toast } = useFA();
   const [sel, setSel] = useState([]);
+  const [fuseBusy, setFuseBusy] = useState(false);
   const elig = g.roster.filter((b) => b.rarity !== "Legendary");
   const sorted = elig.slice().sort((a, b) => D.RARITY_ORDER[b.rarity] - D.RARITY_ORDER[a.rarity]);
   const first = sel[0] ? g.roster.find((b) => b.id === sel[0]) : null;
@@ -80,8 +81,11 @@ function ForgeFusion() {
     if (sel.includes(b.id)) setSel(sel.filter((x) => x !== b.id));
     else if (sel.length < 2 && clickable(b)) setSel([...sel, b.id]);
   }
-  function doFuse() {
-    const r = actions.fuse(sel[0], sel[1]);
+  async function doFuse() {
+    if (fuseBusy) return;
+    setFuseBusy(true);
+    const r = await actions.fuse(sel[0], sel[1]);
+    setFuseBusy(false);
     if (!r.ok) { toast(r.reason, "bad"); return; }
     if (r.success) toast(I18N.t("FG_FUSE_OK", rarityLabel(r.result.rarity)), "good");
     else toast(I18N.t("FG_FUSE_FAIL"), "bad");
@@ -99,7 +103,7 @@ function ForgeFusion() {
         {canFuse && (
           <div className="flex gap12 center">
             <span className="pill" style={{ color: "var(--elec)" }}>{I18N.t("FG_SUCCESS_RATE")} {Math.round(rate * 100)}%</span>
-            <button className="btn btn-forge" disabled={!balOk} onClick={doFuse}>{I18N.t("FG_FUSE_BTN", cost)}</button>
+            <button className="btn btn-forge" disabled={!balOk || fuseBusy} onClick={doFuse}>{fuseBusy ? "…" : I18N.t("FG_FUSE_BTN", cost)}</button>
           </div>
         )}
       </div>
@@ -118,11 +122,15 @@ function ForgeFusion() {
 function ForgeReroll() {
   const { g, actions, toast } = useFA();
   const [sel, setSel] = useState(null);
+  const [rerollBusy, setRerollBusy] = useState(false);
   const beast = sel ? g.roster.find((b) => b.id === sel) : null;
   const cost = beast ? Math.round(D.FORGE.REROLL_BASE[beast.rarity] * (1 + 0.5 * beast.reroll_count)) : 0;
   const balOk = (g.liquid + g.locked) >= cost;
-  function doReroll() {
-    const r = actions.reroll(sel);
+  async function doReroll() {
+    if (rerollBusy) return;
+    setRerollBusy(true);
+    const r = await actions.reroll(sel);
+    setRerollBusy(false);
     if (!r.ok) { toast(r.reason, "bad"); return; }
     toast(I18N.t("FG_REROLL_OK"), "good");
   }
@@ -133,7 +141,7 @@ function ForgeReroll() {
         {beast && (
           <div className="flex gap12 center">
             <span className="pill">reroll #{beast.reroll_count + 1}</span>
-            <button className="btn btn-elec" disabled={!balOk} onClick={doReroll}>{I18N.t("FG_REROLL_BTN", cost)}</button>
+            <button className="btn btn-elec" disabled={!balOk || rerollBusy} onClick={doReroll}>{rerollBusy ? "…" : I18N.t("FG_REROLL_BTN", cost)}</button>
           </div>
         )}
       </div>

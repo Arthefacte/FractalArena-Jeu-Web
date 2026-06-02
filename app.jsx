@@ -342,50 +342,51 @@ function App() {
       } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
     },
 
-    fuse(id1, id2) {
+    async fuse(id1, id2) {
       const s = gRef.current;
       const a = s.roster.find((b) => b.id === id1), b = s.roster.find((b) => b.id === id2);
       if (!a || !b) return { ok: false, reason: I18N.t("FG_PICK2") };
       if (a.rarity === "Legendary") return { ok: false, reason: I18N.t("FG_NOT_FUSABLE") };
       if (a.rarity !== b.rarity) return { ok: false, reason: I18N.t("FG_PICK2") };
       const cost = D.FORGE.FUSION_COST[a.rarity];
-      const spent = spendAny(s, cost);
-      if (!spent) return { ok: false, reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, cost) };
-      const success = Math.random() < D.FORGE.FUSION_RATE[a.rarity];
-      setG((st) => {
-        const sp = spendAny(st, cost);
-        if (!sp) return st;
-        let roster = st.roster.filter((x) => x.id !== id2); // sacrifice consumed
-        const prim = roster.find((x) => x.id === id1);
-        if (success && prim) D.upgradeRarity(prim);
-        roster = [...roster];
-        const selected = st.selected.filter((x) => roster.some((r) => r.id === x));
-        return { ...st, liquid: sp.liquid, locked: sp.locked, roster, selected };
-      });
-      return { ok: true, success, result: a };
+      if (s.liquid + s.locked < cost) return { ok: false, reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, cost) };
+      if (!s.wallet) return { ok: false, reason: "Wallet requis" };
+      try {
+        const resp = await fetch(`${API_URL}/forge/fusion`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ wallet: s.wallet, primary_id: id1, secondary_id: id2 }),
+        });
+        const data = await resp.json();
+        if (data.status === "insufficient_balance") return { ok: false, reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, cost) };
+        if (data.status !== "success" && data.status !== "fail") return { ok: false, reason: data.error || "Erreur serveur" };
+        const sv = await fetch(`${API_URL}/save/${s.wallet}`);
+        if (sv.ok) {
+          const { save } = await sv.json();
+          setG((st) => { const n = serverToState(save, s.wallet, st); n.selected = st.selected.filter((x) => n.roster.some((r) => r.id === x)); return n; });
+        }
+        return { ok: true, success: data.status === "success", result: { rarity: data.new_rarity || a.rarity } };
+      } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
     },
 
-    reroll(id) {
+    async reroll(id) {
       const s = gRef.current;
       const beast = s.roster.find((b) => b.id === id);
       if (!beast) return { ok: false, reason: I18N.t("FG_PICK1") };
       const cost = Math.round(D.FORGE.REROLL_BASE[beast.rarity] * (1 + 0.5 * beast.reroll_count));
-      const spent = spendAny(s, cost);
-      if (!spent) return { ok: false, reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, cost) };
-      setG((st) => {
-        const sp = spendAny(st, cost);
-        if (!sp) return st;
-        const beast = st.roster.find((b) => b.id === id);
-        const keys = ["base_hp", "base_atk", "base_def", "base_spd", "base_mag"];
-        const total = keys.reduce((acc, k) => acc + beast[k], 0);
-        // jitter then renormalize to preserve total & rough proportions
-        const jit = keys.map((k) => beast[k] * (0.7 + Math.random() * 0.6));
-        const jitSum = jit.reduce((a, x) => a + x, 0);
-        keys.forEach((k, i) => { beast[k] = Math.max(1, Math.round(jit[i] / jitSum * total)); });
-        beast.reroll_count += 1;
-        return { ...st, liquid: sp.liquid, locked: sp.locked, roster: [...st.roster] };
-      });
-      return { ok: true };
+      if (s.liquid + s.locked < cost) return { ok: false, reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, cost) };
+      if (!s.wallet) return { ok: false, reason: "Wallet requis" };
+      try {
+        const resp = await fetch(`${API_URL}/forge/reroll`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ wallet: s.wallet, beast_id: id }),
+        });
+        const data = await resp.json();
+        if (data.status === "insufficient_balance") return { ok: false, reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, cost) };
+        if (data.status !== "ok") return { ok: false, reason: data.error || "Erreur serveur" };
+        const sv = await fetch(`${API_URL}/save/${s.wallet}`);
+        if (sv.ok) { const { save } = await sv.json(); setG((st) => serverToState(save, s.wallet, st)); }
+        return { ok: true };
+      } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
     },
 
     summon() {
