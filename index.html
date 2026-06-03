@@ -38,15 +38,16 @@
   <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
 
   <!-- plain JS data/logic -->
-  <script src="data.js"></script>
-  <script src="i18n.js"></script>
-  <script src="engine.js"></script>
+  <!-- Cache-busting : incrémenter ?v=X à chaque déploiement pour forcer le rechargement -->
+  <script src="data.js?v=2"></script>
+  <script src="i18n.js?v=2"></script>
+  <script src="engine.js?v=2"></script>
 
   <!-- React (Babel) — order matters: components → screens → app -->
-  <script type="text/babel" src="components.jsx"></script>
-  <script type="text/babel" src="arena.jsx"></script>
-  <script type="text/babel" src="screens.jsx"></script>
-  <script type="text/babel" src="app.jsx"></script>
+  <script type="text/babel" src="components.jsx?v=2"></script>
+  <script type="text/babel" src="arena.jsx?v=2"></script>
+  <script type="text/babel" src="screens.jsx?v=2"></script>
+  <script type="text/babel" src="app.jsx?v=2"></script>
 
   <script>
     // hide boot splash once React has mounted
