@@ -9,6 +9,8 @@ const SAVE_KEY = "fractal_arena_v1";
 const API_URL = "https://fractal-arena-server-production.up.railway.app";
 
 function serverToState(save, addr, s) {
+  const roster = Array.isArray(save.creatures) && save.creatures.length > 0 ? save.creatures : D.starterRoster();
+  const rosterIds = new Set(roster.map((b) => b.id));
   return {
     ...s,
     wallet: addr,
@@ -22,7 +24,8 @@ function serverToState(save, addr, s) {
     ticketsSilver: save.tickets_silver ?? 0,
     ticketsGold: save.tickets_gold ?? 0,
     session: { wins: save.session_wins ?? 0, losses: save.session_losses ?? 0, net: save.session_arte_net ?? 0 },
-    roster: Array.isArray(save.creatures) && save.creatures.length > 0 ? save.creatures : D.starterRoster(),
+    roster,
+    selected: s.selected.filter((id) => rosterIds.has(id)), // retire les ids absents du nouveau roster
     playerName: save.player_name || (addr.slice(0, 6) + "…" + addr.slice(-4)),
     playerTitle: save.player_title || "",
     holderDays: save.holder_badge_days ?? 0,
@@ -88,8 +91,10 @@ function loadState() {
     if (!raw) return null;
     const s = JSON.parse(raw);
     return Object.assign(freshState(), s, {
-      wallet: null, // wallet obligatoire : toujours repasser par la connexion au démarrage
+      wallet: null,     // wallet obligatoire : toujours repasser par la connexion au démarrage
       view: "team",
+      selected: [],     // ids orphelins d'une session précédente → vidés, réconciliés à la connexion
+      ordinalName: "",  // sera écrasé par le nom serveur à la connexion (branche 200)
       options: Object.assign(freshState().options, s.options || {}, { speed: 1 }),
       session: Object.assign({ wins: 0, losses: 0, net: 0 }, s.session || {}),
       boosts: Object.assign({ xp_boost: 0, insurance: 0, lucky_strike: 0 }, s.boosts || {}),
@@ -174,6 +179,7 @@ function App() {
           setG((s) => {
             const next = serverToState(save, addr, s);
             if (boostsData) next.boosts = { xp_boost: boostsData.xp_boost?.charges ?? 0, insurance: boostsData.insurance?.charges ?? 0, lucky_strike: boostsData.lucky_strike?.charges ?? 0 };
+            next.ordinalName = save.ordinal_name || ""; // nom ordinal du serveur, vide si absent
             return next;
           });
         } else if (saveResp.status === 404) {
@@ -185,6 +191,8 @@ function App() {
             liquid: D.ECON.WELCOME_LIQUID,
             freeFights: D.ECON.FREE_FIGHTS_PER_DAY,
             freeResetTs: Date.now(),
+            selected: [],     // nouveau compte : aucune équipe préselectionnée
+            ordinalName: "",  // aucun nom ordinal pour un nouveau joueur
           }));
           fetch(`${API_URL}/claim-airdrop`, {
             method: "POST", headers: { "Content-Type": "application/json" },
@@ -197,7 +205,10 @@ function App() {
         // fallback local si réseau KO
         setG((s) => {
           const isNew = !s.roster.length;
-          const next = { ...s, wallet: addr, playerName: addr.slice(0, 6) + "…" + addr.slice(-4), view: "team" };
+          const next = { ...s, wallet: addr, playerName: addr.slice(0, 6) + "…" + addr.slice(-4), view: "team",
+            selected: [],     // réinitialise la sélection même en mode hors-ligne
+            ordinalName: "",  // impossible de vérifier le nom serveur sans réseau
+          };
           if (isNew) { next.roster = D.starterRoster(); next.locked = D.ECON.WELCOME_LOCKED; next.liquid = D.ECON.WELCOME_LIQUID; next.freeFights = D.ECON.FREE_FIGHTS_PER_DAY; next.freeResetTs = Date.now(); }
           return next;
         });
