@@ -123,19 +123,19 @@ function App() {
 
   // server save debounced 1.5s
   useEffect(() => {
-    if (!g.wallet) return;
+    if (!g.wallet || !g.authToken) return;
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => {
       const s = gRef.current;
-      if (!s.wallet) return;
+      if (!s.wallet || !s.authToken) return;
       fetch(`${API_URL}/save/${s.wallet}`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
         body: JSON.stringify(stateToServer(s)),
       }).catch(() => {});
     }, 1500);
   }, [g.liquid, g.locked, g.roster, g.freeFights, g.totalFights,
       g.ticketsSilver, g.ticketsGold, g.session.wins, g.session.losses,
-      g.playerName, g.playerTitle, g.lang]);
+      g.playerName, g.playerTitle, g.lang, g.authToken]);
 
   // daily reset
   useEffect(() => {
@@ -241,6 +241,7 @@ function App() {
         });
         if (!vr.ok) return "";
         const { token } = await vr.json();
+        if (token) setG((s) => ({ ...s, authToken: token }));
         return token || "";
       } catch (e) {
         return "";
@@ -640,8 +641,7 @@ function Onboarding() {
     if (a.length < 20 || !/^bc1/i.test(a)) { toast(I18N.t("OB_INVALID"), "bad"); return; }
     setChecking(true);
     await actions.connectWallet(a);
-    const token = await actions.authenticate(a);
-    if (token) setG((s) => ({ ...s, authToken: token }));
+    await actions.authenticate(a);
   }
   return (
     <div className="app-shell" style={{ minHeight: "100vh", display: "grid", placeItems: "center", position: "relative", zIndex: 1 }}>
