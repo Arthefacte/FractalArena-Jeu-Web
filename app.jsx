@@ -7,6 +7,7 @@ const { FA_Ctx, useFA, cx, fmt, Coin, Bar } = window;
 const { Team, Arena, Forge, Wallet, Boosts, Perso, Options } = window;
 const SAVE_KEY = "fractal_arena_v1";
 const API_URL = "https://fractal-arena-server-production.up.railway.app";
+const CLIENT_SECRET = "pastouche";
 
 function serverToState(save, addr, s) {
   const roster = Array.isArray(save.creatures) && save.creatures.length > 0 ? save.creatures : D.starterRoster();
@@ -218,7 +219,7 @@ function App() {
     async resetProgress() {
       const w = gRef.current.wallet;
       if (w) {
-        try { await fetch(`${API_URL}/save/${w}/reset`, { method: "POST" }); } catch (e) { }
+        try { await fetch(`${API_URL}/save/${w}/reset`, { method: "POST", headers: { "x-client-secret": CLIENT_SECRET } }); } catch (e) { }
       }
       try { localStorage.removeItem(SAVE_KEY); } catch (e) { }
       setG(freshState());
@@ -327,7 +328,7 @@ function App() {
         const w = gRef.current.wallet;
         if (w) {
           const halfPool = Math.floor(summary.pool / 2);
-          const hdr = { "Content-Type": "application/json" };
+          const hdr = { "Content-Type": "application/json", "x-client-secret": CLIENT_SECRET };
           fetch(`${API_URL}/record-pool`, { method: "POST", headers: hdr, body: JSON.stringify({ wallet: w, amount: halfPool }) }).catch(() => {});
           fetch(`${API_URL}/record-airdrop`, { method: "POST", headers: hdr, body: JSON.stringify({ wallet: w, amount: summary.pool - halfPool }) }).catch(() => {});
           fetch(`${API_URL}/record-burn`, { method: "POST", headers: hdr, body: JSON.stringify({ wallet: w, amount: summary.burn }) }).catch(() => {});
