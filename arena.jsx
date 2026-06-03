@@ -142,14 +142,14 @@ function Arena() {
   function stopBattle() { if (stepRef.current) { clearTimeout(stepRef.current); stepRef.current = null; } }
 
   // Begin one fight. Uses a setTimeout-driven stepper (robust under Babel transform).
-  function playFight(isLoopRun) {
+  async function playFight(isLoopRun) {
     if (!ready) { toast(I18N.t("AR_NEED3"), "bad"); return; }
     if (!g.wallet) { toast(I18N.t("OB_WALLET_REQUIRED"), "bad"); return; }
 
     const free = betTier === "" && g.freeFights > 0;
     if (betTier === "" && g.freeFights <= 0) { toast(I18N.t("AR_PICK_BET"), "bad"); return; }
 
-    const bet = actions.startBet({ free, betTier, isLoop: isLoopRun });
+    const bet = await actions.callFight({ free, betTier, isLoop: isLoopRun });
     if (!bet.ok) { toast(bet.reason || I18N.t("AR_INSUFF"), "bad"); if (isLoopRun) { loopRef.current = false; setLoop(false); } return; }
     if (bet.note) toast(bet.note, "info");
     const effTier = bet.betTier;
