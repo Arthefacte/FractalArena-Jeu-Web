@@ -84,6 +84,7 @@ function freshState() {
     options: { sound: true, anim: true, speed: 1 },
     view: "team",
     authToken: "",
+    serverFight: null,
   };
 }
 
@@ -289,7 +290,49 @@ function App() {
       return { ok: true, free: false, betTier: tier, betAmount: amount, fromLocked, note };
     },
 
+    async callFight({ free, betTier, isLoop }) {
+      const s = gRef.current;
+      // Combats gratuits : validation locale uniquement (pas de mise financière)
+      if (free) {
+        if (s.freeFights <= 0) return { ok: false, reason: "Plus de combats gratuits" };
+        setG((st) => ({ ...st, freeFights: st.freeFights - 1, serverFight: null }));
+        return { ok: true, free: true, betTier: "", betAmount: 0, fromLocked: false };
+      }
+      // Combat payant : déléguer au serveur
+      if (!s.authToken) return { ok: false, reason: "Connexion UniSat requise pour jouer" };
+      let tier = betTier;
+      if (isLoop && tier === "silver" && s.loopSilverToday >= D.ECON.LOOP_SILVER_MAX) tier = "bronze";
+      if (isLoop && tier === "gold" && s.loopGoldToday >= D.ECON.LOOP_GOLD_MAX) tier = "bronze";
+      try {
+        const resp = await fetch(`${API_URL}/fight`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
+          body: JSON.stringify({ bet_tier: tier, is_free: false }),
+        });
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({}));
+          return { ok: false, reason: err.error || `Erreur serveur ${resp.status}` };
+        }
+        const data = await resp.json();
+        // Mise à jour immédiate du solde affiché + stockage du résultat serveur
+        setG((st) => {
+          const patch = { ...st, liquid: data.new_liquid, locked: data.new_locked, serverFight: data };
+          if (isLoop && tier === "silver") patch.loopSilverToday = st.loopSilverToday + 1;
+          if (isLoop && tier === "gold") patch.loopGoldToday = st.loopGoldToday + 1;
+          return patch;
+        });
+        return { ok: true, free: false, betTier: tier, betAmount: data.payout > 0 ? Math.round(data.payout / 1.7) : D.ECON.BET[tier], fromLocked: false };
+      } catch (e) {
+        return { ok: false, reason: "Erreur réseau" };
+      }
+    },
+
     resolveFight({ win, free, betTier, betAmount, fromLocked, isLoop }) {
+      // Pour les combats payants, le résultat vient du serveur (déjà appliqué côté DB)
+      const srv = gRef.current.serverFight;
+      if (!free && srv !== null) {
+        win = srv.won;  // override le résultat local par le résultat serveur
+      }
       const summary = { payout: 0, net: 0, xp: 0, pool: 0, burn: 0, milestone: false, luckyBonus: 0, insuranceUsed: false, betAmount, levelUps: [], rarityUps: [] };
       setG((s) => {
         let { liquid, locked, totalFights, ticketsSilver, ticketsGold } = s;
@@ -311,7 +354,8 @@ function App() {
           const base = free ? D.ECON.BET.bronze : betAmount;
           const payout = Math.floor(base * D.ECON.PAYOUT_MULT);
           const net = payout - betAmount;
-          if (free) locked += payout; else liquid += payout;
+          if (free) locked += payout;
+          // liquid déjà mis à jour par callFight() depuis réponse serveur
           summary.payout = payout; summary.net = net;
           if (!free) session.net += net;
           // lucky strike
@@ -328,7 +372,7 @@ function App() {
         } else {
           session.losses += 1;
           if (!free && !isLoop && boosts.insurance > 0) {
-            if (fromLocked) locked += betAmount; else liquid += betAmount;
+            // pas de remboursement local — déjà géré par le serveur si non implémenté côté /fight
             boosts.insurance -= 1;
             summary.insuranceUsed = true;
           } else if (!free) {
@@ -353,17 +397,8 @@ function App() {
         if (prevBoosts.lucky_strike > 0) fetch(`${API_URL}/boosts/use`, { method: "POST", headers: hb, body: JSON.stringify({ wallet: w2, boost_type: "lucky_strike" }) }).catch(() => {});
         if (summary.insuranceUsed) fetch(`${API_URL}/boosts/use`, { method: "POST", headers: hb, body: JSON.stringify({ wallet: w2, boost_type: "insurance" }) }).catch(() => {});
       }
-      // enregistrement pool/burn côté serveur sur défaite payante
-      if (!win && !free && summary.burn > 0) {
-        const w = gRef.current.wallet;
-        if (w) {
-          const halfPool = Math.floor(summary.pool / 2);
-          const hdr = { "Content-Type": "application/json", "x-client-secret": CLIENT_SECRET };
-          fetch(`${API_URL}/record-pool`, { method: "POST", headers: hdr, body: JSON.stringify({ wallet: w, amount: halfPool }) }).catch(() => {});
-          fetch(`${API_URL}/record-airdrop`, { method: "POST", headers: hdr, body: JSON.stringify({ wallet: w, amount: summary.pool - halfPool }) }).catch(() => {});
-          fetch(`${API_URL}/record-burn`, { method: "POST", headers: hdr, body: JSON.stringify({ wallet: w, amount: summary.burn }) }).catch(() => {});
-        }
-      }
+      // record-pool / record-airdrop / record-burn supprimés : le serveur route les pools dans POST /fight
+      setG((st) => ({ ...st, serverFight: null }));
       return summary;
     },
 
