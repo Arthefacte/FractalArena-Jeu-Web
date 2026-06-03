@@ -4,7 +4,6 @@
 const { useState, useEffect, useRef, useMemo } = React;
 const D = window.FA_DATA, I18N = window.FA_I18N;
 const { useFA, cx, fmt, presetLabel, rarityLabel, Bar, Modal } = window;
-const ENG = window.FA_ENGINE;
 
 function CombatCard({ meta, live, side, cref }) {
   if (!meta) {
@@ -64,8 +63,6 @@ function Arena() {
   const runIdRef = useRef(0);
   const stepRef = useRef(null);
   const battleRef = useRef(null);
-  const seqRef = useRef([]);
-  const seqIdxRef = useRef(0);
   const logRef = useRef(null);
   const p1Refs = useRef([]);
   const p2Refs = useRef([]);
@@ -82,32 +79,11 @@ function Arena() {
     }
   }, [g.selected.join(","), g.roster, playing]);
 
-  // build difficulty sequence lazily when team changes
-  useEffect(() => {
-    seqRef.current = []; seqIdxRef.current = 0;
-    if (ready) {
-      const beasts = selectedBeasts.slice();
-      const id = ++runIdRef.current;
-      setTimeout(() => {
-        const seq = ENG.buildSequence(beasts);
-        if (runIdRef.current === id || true) { seqRef.current = seq; seqIdxRef.current = 0; }
-      }, 30);
-    }
-  }, [g.selected.join(","), selectedBeasts.map((b) => b.level + b.rarity).join(",")]);
-
   // cleanup on unmount
   useEffect(() => () => { loopRef.current = false; runIdRef.current++; if (stepRef.current) clearTimeout(stepRef.current); }, []);
 
   function log(text, cls) { setLogLines((L) => [...L.slice(-120), { text, cls }]); }
   useEffect(() => { if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight; }, [logLines]);
-
-  function nextMult() {
-    const seq = seqRef.current;
-    if (!seq.length) return 1.0;
-    const m = seq[seqIdxRef.current % seq.length];
-    seqIdxRef.current++;
-    return m;
-  }
 
   function floatText(cardEl, text, color) {
     if (!cardEl || !g.options.anim) return;
@@ -158,13 +134,14 @@ function Arena() {
     setResult(null);
     if (!isLoopRun) setLogLines([]);
 
-    const enemies = D.generateEnemyTeam(selectedBeasts, nextMult());
+    // Le serveur a joué le combat : on rejoue sa séquence d'events et son équipe adverse
+    const enemies = bet.enemy || [];
+    const events = bet.events || [];
     setP1Meta(selectedBeasts.map(beastMeta));
     setP2Meta(enemies.map(beastMeta));
 
-    const battle = ENG.runBattle(selectedBeasts, enemies);
-    setP1Live(battle.events[0].state.p1);
-    setP2Live(battle.events[0].state.p2);
+    const battle = { events, winner: bet.won ? "p1" : "p2" };
+    if (events.length) { setP1Live(events[0].state.p1); setP2Live(events[0].state.p2); }
 
     if (free) log(I18N.t("L_FREE"), "lc-green");
     else log(I18N.t("L_BET", I18N.t("AR_" + effTier.toUpperCase()), bet.betAmount), "lc-gold");

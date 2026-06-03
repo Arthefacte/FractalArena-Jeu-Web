@@ -293,45 +293,48 @@ function App() {
 
     async callFight({ free, betTier, isLoop }) {
       const s = gRef.current;
-      // Combats gratuits : validation locale uniquement (pas de mise financière)
-      if (free) {
-        if (s.freeFights <= 0) return { ok: false, reason: "Plus de combats gratuits" };
-        setG((st) => ({ ...st, freeFights: st.freeFights - 1, serverFight: null }));
-        return { ok: true, free: true, betTier: "", betAmount: 0, fromLocked: false };
-      }
-      // Combat payant : déléguer au serveur
+      // Tous les combats (gratuits ET payants) sont joués par le serveur
       if (!s.authToken) return { ok: false, reason: "Connexion UniSat requise pour jouer" };
+      if (s.selected.length !== 3) return { ok: false, reason: "Sélectionne 3 bêtes" };
+      if (free && s.freeFights <= 0) return { ok: false, reason: "Plus de combats gratuits" };
       let tier = betTier;
-      if (isLoop && tier === "silver" && s.loopSilverToday >= D.ECON.LOOP_SILVER_MAX) tier = "bronze";
-      if (isLoop && tier === "gold" && s.loopGoldToday >= D.ECON.LOOP_GOLD_MAX) tier = "bronze";
+      if (!free) {
+        if (isLoop && tier === "silver" && s.loopSilverToday >= D.ECON.LOOP_SILVER_MAX) tier = "bronze";
+        if (isLoop && tier === "gold" && s.loopGoldToday >= D.ECON.LOOP_GOLD_MAX) tier = "bronze";
+      }
       try {
         const resp = await fetch(`${API_URL}/fight`, {
           method: "POST",
           headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
-          body: JSON.stringify({ bet_tier: tier, is_free: false }),
+          body: JSON.stringify({ bet_tier: free ? "" : tier, is_free: free, selected: s.selected }),
         });
         if (!resp.ok) {
           const err = await resp.json().catch(() => ({}));
           return { ok: false, reason: err.error || `Erreur serveur ${resp.status}` };
         }
         const data = await resp.json();
-        // Mise à jour immédiate du solde affiché + stockage du résultat serveur
+        // Solde + résultat serveur (events + enemy pour le replay côté client)
         setG((st) => {
           const patch = { ...st, liquid: data.new_liquid, locked: data.new_locked, serverFight: data };
-          if (isLoop && tier === "silver") patch.loopSilverToday = st.loopSilverToday + 1;
-          if (isLoop && tier === "gold") patch.loopGoldToday = st.loopGoldToday + 1;
+          if (free) patch.freeFights = Math.max(0, st.freeFights - 1);
+          if (!free && isLoop && tier === "silver") patch.loopSilverToday = st.loopSilverToday + 1;
+          if (!free && isLoop && tier === "gold") patch.loopGoldToday = st.loopGoldToday + 1;
           return patch;
         });
-        return { ok: true, free: false, betTier: tier, betAmount: data.payout > 0 ? Math.round(data.payout / 1.7) : D.ECON.BET[tier], fromLocked: false };
+        return {
+          ok: true, free, betTier: free ? "" : tier,
+          betAmount: free ? 0 : D.ECON.BET[tier], fromLocked: false,
+          events: data.events, enemy: data.enemy, won: data.won,
+        };
       } catch (e) {
         return { ok: false, reason: "Erreur réseau" };
       }
     },
 
     resolveFight({ win, free, betTier, betAmount, fromLocked, isLoop }) {
-      // Pour les combats payants, le résultat vient du serveur (déjà appliqué côté DB)
+      // Le résultat (gratuit ET payant) vient du serveur (déjà appliqué côté DB)
       const srv = gRef.current.serverFight;
-      if (!free && srv !== null) {
+      if (srv !== null) {
         win = srv.won;  // override le résultat local par le résultat serveur
       }
       const summary = { payout: 0, net: 0, xp: 0, pool: 0, burn: 0, milestone: false, luckyBonus: 0, insuranceUsed: false, betAmount, levelUps: [], rarityUps: [] };
@@ -355,8 +358,7 @@ function App() {
           const base = free ? D.ECON.BET.bronze : betAmount;
           const payout = Math.floor(base * D.ECON.PAYOUT_MULT);
           const net = payout - betAmount;
-          if (free) locked += payout;
-          // liquid déjà mis à jour par callFight() depuis réponse serveur
+          // liquid ET locked déjà mis à jour par callFight() depuis la réponse serveur
           summary.payout = payout; summary.net = net;
           if (!free) session.net += net;
           // lucky strike
