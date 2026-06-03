@@ -185,15 +185,17 @@ function App() {
           });
         } else if (saveResp.status === 404) {
           setG((s) => ({
-            ...s, wallet: addr, view: "team",
+            ...freshState(),
+            lang: s.lang,
+            options: s.options,
+            wallet: addr,
+            view: "team",
             playerName: addr.slice(0, 6) + "…" + addr.slice(-4),
             roster: D.starterRoster(),
             locked: D.ECON.WELCOME_LOCKED,
             liquid: D.ECON.WELCOME_LIQUID,
             freeFights: D.ECON.FREE_FIGHTS_PER_DAY,
             freeResetTs: Date.now(),
-            selected: [],     // nouveau compte : aucune équipe préselectionnée
-            ordinalName: "",  // aucun nom ordinal pour un nouveau joueur
           }));
           fetch(`${API_URL}/claim-airdrop`, {
             method: "POST", headers: { "Content-Type": "application/json" },
@@ -206,12 +208,20 @@ function App() {
         // fallback local si réseau KO
         setG((s) => {
           const isNew = !s.roster.length;
-          const next = { ...s, wallet: addr, playerName: addr.slice(0, 6) + "…" + addr.slice(-4), view: "team",
-            selected: [],     // réinitialise la sélection même en mode hors-ligne
-            ordinalName: "",  // impossible de vérifier le nom serveur sans réseau
-          };
-          if (isNew) { next.roster = D.starterRoster(); next.locked = D.ECON.WELCOME_LOCKED; next.liquid = D.ECON.WELCOME_LIQUID; next.freeFights = D.ECON.FREE_FIGHTS_PER_DAY; next.freeResetTs = Date.now(); }
-          return next;
+          if (isNew) {
+            return {
+              ...freshState(),
+              lang: s.lang, options: s.options,
+              wallet: addr, view: "team",
+              playerName: addr.slice(0, 6) + "…" + addr.slice(-4),
+              roster: D.starterRoster(),
+              locked: D.ECON.WELCOME_LOCKED,
+              liquid: D.ECON.WELCOME_LIQUID,
+              freeFights: D.ECON.FREE_FIGHTS_PER_DAY,
+              freeResetTs: Date.now(),
+            };
+          }
+          return { ...s, wallet: addr, playerName: addr.slice(0, 6) + "…" + addr.slice(-4), ordinalName: "", selected: [], view: "team" };
         });
       }
     },
