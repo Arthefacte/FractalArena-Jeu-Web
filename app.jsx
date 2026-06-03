@@ -83,6 +83,7 @@ function freshState() {
     holderDays: 0,
     options: { sound: true, anim: true, speed: 1 },
     view: "team",
+    authToken: "",
   };
 }
 
@@ -223,6 +224,25 @@ function App() {
           }
           return { ...s, wallet: addr, playerName: addr.slice(0, 6) + "…" + addr.slice(-4), ordinalName: "", selected: [], view: "team" };
         });
+      }
+    },
+    async authenticate(addr) {
+      if (typeof window.unisat === "undefined") return "";
+      try {
+        const cr = await fetch(`${API_URL}/auth/challenge?wallet=${encodeURIComponent(addr)}`);
+        if (!cr.ok) return "";
+        const { nonce } = await cr.json();
+        const signature = await window.unisat.signMessage(nonce);
+        const vr = await fetch(`${API_URL}/auth/verify`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ wallet: addr, signature }),
+        });
+        if (!vr.ok) return "";
+        const { token } = await vr.json();
+        return token || "";
+      } catch (e) {
+        return "";
       }
     },
     disconnect() { setG((s) => ({ ...s, wallet: null })); },
@@ -585,6 +605,8 @@ function Onboarding() {
     if (a.length < 20 || !/^bc1/i.test(a)) { toast(I18N.t("OB_INVALID"), "bad"); return; }
     setChecking(true);
     await actions.connectWallet(a);
+    const token = await actions.authenticate(a);
+    if (token) setG((s) => ({ ...s, authToken: token }));
   }
   return (
     <div className="app-shell" style={{ minHeight: "100vh", display: "grid", placeItems: "center", position: "relative", zIndex: 1 }}>
