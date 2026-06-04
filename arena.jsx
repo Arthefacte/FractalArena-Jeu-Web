@@ -38,6 +38,12 @@ function CombatCard({ meta, live, side, cref }) {
           </div>
           <Bar frac={frac} kind="hp" />
         </div>
+        <div className="fighter-stats">
+          <span>ATK {meta.atk}</span>
+          <span>DEF {meta.def}</span>
+          <span>SPD {meta.spd}</span>
+          <span>MAG {meta.mag}</span>
+        </div>
       </div>
     </div>
   );
@@ -68,7 +74,7 @@ function Arena() {
   const p2Refs = useRef([]);
 
   function beastMeta(b) {
-    return b ? { name: D.displayName(b), rarity: b.rarity, image_key: b.image_key, preset: b.preset, level: b.level, maxHp: D.eff(b, "hp") } : null;
+    return b ? { name: D.displayName(b), rarity: b.rarity, image_key: b.image_key, preset: b.preset, level: b.level, maxHp: D.eff(b, "hp"), atk: D.eff(b, "atk"), def: D.eff(b, "def"), spd: D.eff(b, "spd"), mag: D.eff(b, "mag") } : null;
   }
 
   // keep idle preview synced with selection

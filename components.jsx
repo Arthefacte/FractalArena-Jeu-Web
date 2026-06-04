@@ -73,7 +73,7 @@ function CreatureCard({ beast, selected, onClick, selectable, showXp, badge }) {
           <div className="cname" title={D.displayName(beast)}>{D.displayName(beast)}</div>
         </div>
         <div className="cpreset" style={{ color: pc }}>{presetLabel(beast.preset)}</div>
-        <StatGrid beast={beast} compact />
+        <StatGrid beast={beast} />
         {showXp && (
           <div style={{ marginTop: 9 }}>
             <div className="bar-label"><span>XP</span><span>{beast.xp}/{xpMax}</span></div>
