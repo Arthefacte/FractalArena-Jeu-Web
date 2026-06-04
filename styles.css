@@ -558,3 +558,10 @@ input { font-family: var(--font-mono); }
   font-family: inherit; font-size: 14px; line-height: 1.4;
 }
 .room-input textarea:focus { outline: none; border-color: var(--elec); box-shadow: 0 0 0 2px rgba(0,240,255,.15); }
+
+/* Stats complètes sous la barre HP dans l'arène */
+.fighter-stats {
+  display: flex; justify-content: space-between; gap: 6px; margin-top: 8px;
+  font-family: var(--font-mono); font-size: 11px; color: var(--text-dim);
+}
+.fighter-stats span { white-space: nowrap; }
