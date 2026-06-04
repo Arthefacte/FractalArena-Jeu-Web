@@ -94,7 +94,6 @@ function loadState() {
     if (!raw) return null;
     const s = JSON.parse(raw);
     return Object.assign(freshState(), s, {
-      wallet: null,     // wallet obligatoire : toujours repasser par la connexion au démarrage
       view: "team",
       selected: [],     // ids orphelins d'une session précédente → vidés, réconciliés à la connexion
       ordinalName: "",  // sera écrasé par le nom serveur à la connexion (branche 200)
@@ -112,6 +111,15 @@ function App() {
   const gRef = useRef(g);
   gRef.current = g;
   const saveTimerRef = useRef(null);
+
+  // Reconnexion silencieuse : si un wallet est mémorisé, on recharge la sauvegarde serveur fraîche
+  const didAutoConnectRef = useRef(false);
+  useEffect(() => {
+    if (didAutoConnectRef.current) return;
+    didAutoConnectRef.current = true;
+    const w = gRef.current.wallet;
+    if (w) { actions.connectWallet(w); }
+  }, []);
 
   // persist
   useEffect(() => {
@@ -247,7 +255,30 @@ function App() {
         return "";
       }
     },
-    disconnect() { setG((s) => ({ ...s, wallet: null })); },
+    async authForWithdraw() {
+      const s = gRef.current;
+      if (!s.wallet) return { ok: false, reason: "wallet" };
+      if (typeof window.unisat === "undefined") return { ok: false, reason: "unisat" };
+      try {
+        const cr = await fetch(`${API_URL}/auth/challenge?wallet=${encodeURIComponent(s.wallet)}`);
+        if (!cr.ok) return { ok: false, reason: "challenge" };
+        const { nonce } = await cr.json();
+        const signature = await window.unisat.signMessage(nonce);
+        const vr = await fetch(`${API_URL}/auth/verify`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ wallet: s.wallet, signature, scope: "withdraw" }),
+        });
+        if (!vr.ok) return { ok: false, reason: "verify" };
+        const { token } = await vr.json();
+        return token ? { ok: true, token } : { ok: false, reason: "verify" };
+      } catch (e) {
+        return { ok: false, reason: "sign" };
+      }
+    },
+    disconnect() {
+      try { localStorage.removeItem(SAVE_KEY); } catch (e) { }
+      setG((s) => ({ ...freshState(), lang: s.lang, options: s.options }));
+    },
     async resetProgress() {
       const w = gRef.current.wallet;
       if (w) {
@@ -308,6 +339,12 @@ function App() {
           headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
           body: JSON.stringify({ bet_tier: free ? "" : tier, is_free: free, selected: s.selected }),
         });
+        if (resp.status === 401) {
+          // session expirée → tenter une re-signature silencieuse (1 clic UniSat)
+          const re = await actions.authenticate(gRef.current.wallet);
+          if (!re) { toast(I18N.t("AUTH_EXPIRED"), "bad"); return { ok: false, reason: "auth" }; }
+          return { ok: false, reason: "retry" };
+        }
         if (!resp.ok) {
           const err = await resp.json().catch(() => ({}));
           return { ok: false, reason: err.error || `Erreur serveur ${resp.status}` };

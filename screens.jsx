@@ -342,15 +342,22 @@ function WithdrawModal({ onClose }) {
   const [busy, setBusy] = useState(false);
   async function go() {
     const n = parseInt(amt, 10) || 0;
-    const r = actions.withdraw(n);
+    const r = actions.withdraw(n);            // validation min/max + débit optimiste client
     if (!r.ok) { toast(r.reason, "bad"); return; }
     setBusy(true);
     try {
+      // Step-up : signature UniSat fraîche → token retrait
+      toast(I18N.t("WL_WD_SIGN"), "info");
+      const a = await actions.authForWithdraw();
+      if (!a.ok) { actions.deposit(n); toast(I18N.t("WL_WD_SIGN_NEEDED"), "bad"); return; }
+
       const resp = await fetch(`${API_URL}/withdraw`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${a.token}` },
         body: JSON.stringify({ wallet: g.wallet, amount: n }),
       });
       const data = await resp.json();
+      if (resp.status === 401) { actions.deposit(n); toast(I18N.t("WL_WD_SIGN_NEEDED"), "bad"); return; }
       if (data.status === "ok") {
         toast(I18N.t("WL_WD_OK", n), "good");
         onClose();
