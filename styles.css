@@ -565,3 +565,26 @@ input { font-family: var(--font-mono); }
   font-family: var(--font-mono); font-size: 11px; color: var(--text-dim);
 }
 .fighter-stats span { white-space: nowrap; }
+
+/* ============ Leaderboard ============ */
+.lb-tabs { display: flex; gap: 8px; margin-bottom: 14px; }
+.lb-tab {
+  flex: 1; padding: 9px 12px; cursor: pointer;
+  background: var(--bg-panel); border: 1px solid var(--line); color: var(--text-dim);
+  border-radius: 8px; font-weight: 600; font-size: 13px;
+}
+.lb-tab.on { color: var(--text); border-color: var(--elec); box-shadow: 0 0 0 2px rgba(0,240,255,.12); }
+.lb-list { display: flex; flex-direction: column; gap: 6px; }
+.lb-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 9px 13px; border-radius: 8px;
+  background: var(--bg-panel); border: 1px solid var(--line-soft);
+}
+.lb-row .lb-rank { width: 44px; font-family: var(--font-mono); color: var(--text-dim); font-weight: 700; }
+.lb-row .lb-name { flex: 1; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lb-row .lb-val { font-family: var(--font-mono); font-weight: 700; color: var(--elec); }
+.lb-row.top1 { border-color: var(--gold); }
+.lb-row.top1 .lb-rank, .lb-row.top1 .lb-val { color: var(--gold); }
+.lb-row.top2 { border-color: #C0CCDA; }
+.lb-row.top3 { border-color: #CD7F32; }
+.lb-row.mine { border-color: var(--elec); background: rgba(0,240,255,.06); }

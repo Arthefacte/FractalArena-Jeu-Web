@@ -4,7 +4,7 @@
 const { useState, useEffect, useRef, useMemo } = React;
 const D = window.FA_DATA, I18N = window.FA_I18N;
 const { FA_Ctx, useFA, cx, fmt, Coin, Bar } = window;
-const { Team, Arena, Forge, Wallet, Boosts, Perso, Options, ChatFab, RoomFab } = window;
+const { Team, Arena, Forge, Wallet, Boosts, Perso, Options, ChatFab, RoomFab, Leaderboard } = window;
 const SAVE_KEY = "fractal_arena_v1";
 const API_URL = "https://fractal-arena-server-production.up.railway.app";
 const CLIENT_SECRET = "pastouche";
@@ -561,6 +561,18 @@ function App() {
         return { ok: false, messages: [] };
       }
     },
+    async fetchLeaderboard(board) {
+      const s = gRef.current;
+      try {
+        const q = `board=${encodeURIComponent(board)}` + (s.wallet ? `&wallet=${encodeURIComponent(s.wallet)}` : "");
+        const resp = await fetch(`${API_URL}/leaderboard?${q}`);
+        if (!resp.ok) return { ok: false };
+        const data = await resp.json();
+        return { ok: true, top: data.top || [], you: data.you || null };
+      } catch (e) {
+        return { ok: false };
+      }
+    },
     async sendRoomMessage(content) {
       const s = gRef.current;
       if (!s.wallet) return { ok: false, reason: "wallet" };
@@ -638,7 +650,7 @@ function App() {
     );
   }
 
-  const VIEWS = { team: Team, arena: Arena, forge: Forge, wallet: Wallet, boosts: Boosts, perso: Perso, options: Options };
+  const VIEWS = { team: Team, arena: Arena, forge: Forge, wallet: Wallet, boosts: Boosts, perso: Perso, leaderboard: Leaderboard, options: Options };
   const View = VIEWS[g.view] || Team;
 
   return (
@@ -710,7 +722,7 @@ function Nav() {
   const { g, actions } = useFA();
   const tabs = [
     ["team", "NAV_TEAM"], ["arena", "NAV_ARENA"], ["forge", "NAV_FORGE"],
-    ["wallet", "NAV_WALLET"], ["boosts", "NAV_BOOSTS"], ["perso", "NAV_PERSO"], ["options", "NAV_OPTIONS"],
+    ["wallet", "NAV_WALLET"], ["boosts", "NAV_BOOSTS"], ["perso", "NAV_PERSO"], ["leaderboard", "NAV_LEADERBOARD"], ["options", "NAV_OPTIONS"],
   ];
   return (
     <nav className="nav">
