@@ -255,6 +255,26 @@ function App() {
         return "";
       }
     },
+    async authForWithdraw() {
+      const s = gRef.current;
+      if (!s.wallet) return { ok: false, reason: "wallet" };
+      if (typeof window.unisat === "undefined") return { ok: false, reason: "unisat" };
+      try {
+        const cr = await fetch(`${API_URL}/auth/challenge?wallet=${encodeURIComponent(s.wallet)}`);
+        if (!cr.ok) return { ok: false, reason: "challenge" };
+        const { nonce } = await cr.json();
+        const signature = await window.unisat.signMessage(nonce);
+        const vr = await fetch(`${API_URL}/auth/verify`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ wallet: s.wallet, signature, scope: "withdraw" }),
+        });
+        if (!vr.ok) return { ok: false, reason: "verify" };
+        const { token } = await vr.json();
+        return token ? { ok: true, token } : { ok: false, reason: "verify" };
+      } catch (e) {
+        return { ok: false, reason: "sign" };
+      }
+    },
     disconnect() {
       try { localStorage.removeItem(SAVE_KEY); } catch (e) { }
       setG((s) => ({ ...freshState(), lang: s.lang, options: s.options }));
@@ -319,6 +339,12 @@ function App() {
           headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
           body: JSON.stringify({ bet_tier: free ? "" : tier, is_free: free, selected: s.selected }),
         });
+        if (resp.status === 401) {
+          // session expirée → tenter une re-signature silencieuse (1 clic UniSat)
+          const re = await actions.authenticate(gRef.current.wallet);
+          if (!re) { toast(I18N.t("AUTH_EXPIRED"), "bad"); return { ok: false, reason: "auth" }; }
+          return { ok: false, reason: "retry" };
+        }
         if (!resp.ok) {
           const err = await resp.json().catch(() => ({}));
           return { ok: false, reason: err.error || `Erreur serveur ${resp.status}` };
