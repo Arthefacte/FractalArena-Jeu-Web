@@ -4,7 +4,7 @@
 const { useState, useEffect, useRef, useMemo } = React;
 const D = window.FA_DATA, I18N = window.FA_I18N;
 const { FA_Ctx, useFA, cx, fmt, Coin, Bar } = window;
-const { Team, Arena, Forge, Wallet, Boosts, Perso, Options } = window;
+const { Team, Arena, Forge, Wallet, Boosts, Perso, Options, ChatFab, RoomFab } = window;
 const SAVE_KEY = "fractal_arena_v1";
 const API_URL = "https://fractal-arena-server-production.up.railway.app";
 const CLIENT_SECRET = "pastouche";
@@ -492,6 +492,56 @@ function App() {
       } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
     },
 
+    async callChat(messages) {
+      const s = gRef.current;
+      if (!s.wallet) return { ok: false, reason: "Wallet requis" };
+      const last20 = messages
+        .slice(-20)
+        .filter((m) => m && (m.role === "user" || m.role === "assistant") && typeof m.content === "string");
+      try {
+        const resp = await fetch(`${API_URL}/chat`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ wallet: s.wallet, messages: last20 }),
+        });
+        if (resp.status === 429) return { ok: false, rateLimited: true };
+        const data = await resp.json();
+        if (!resp.ok) return { ok: false, reason: data.error || "Erreur serveur" };
+        return { ok: true, reply: data.reply };
+      } catch (e) {
+        return { ok: false, reason: "Erreur réseau" };
+      }
+    },
+
+    async fetchRoomMessages(afterId) {
+      try {
+        const q = (afterId !== undefined && afterId !== null) ? `?after=${afterId}` : "";
+        const resp = await fetch(`${API_URL}/chat-room/messages${q}`);
+        if (!resp.ok) return { ok: false, messages: [] };
+        const data = await resp.json();
+        return { ok: true, messages: data.messages || [] };
+      } catch (e) {
+        return { ok: false, messages: [] };
+      }
+    },
+    async sendRoomMessage(content) {
+      const s = gRef.current;
+      if (!s.wallet) return { ok: false, reason: "wallet" };
+      try {
+        const resp = await fetch(`${API_URL}/chat-room/send`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-client-secret": CLIENT_SECRET },
+          body: JSON.stringify({ wallet: s.wallet, content }),
+        });
+        if (resp.status === 429) return { ok: false, reason: "rate" };
+        const data = await resp.json();
+        if (data.status === "ok") return { ok: true };
+        return { ok: false, reason: data.reason || "blocked" };
+      } catch (e) {
+        return { ok: false, reason: "network" };
+      }
+    },
+
     async rename(id, name) {
       const s = gRef.current;
       if (!s.wallet) return { ok: false, reason: "Wallet requis" };
@@ -562,6 +612,8 @@ function App() {
         <Nav />
         <View />
       </div>
+      <ChatFab />
+      <RoomFab />
       <Toasts toasts={toasts} />
     </FA_Ctx.Provider>
   );

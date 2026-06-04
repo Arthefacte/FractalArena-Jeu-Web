@@ -214,6 +214,55 @@
     Rare: { FR: "Rare", EN: "Rare", ZH: "稀有" },
     Epic: { FR: "Épique", EN: "Epic", ZH: "史诗" },
     Legendary: { FR: "Légendaire", EN: "Legendary", ZH: "传说" },
+
+    // ===== Chatbot support =====
+    CHAT_TITLE: { FR: "Support", EN: "Support", ZH: "客服支持" },
+    CHAT_SUB: {
+      FR: "Questions sur le jeu, l'économie ou les retraits",
+      EN: "Questions about the game, economy or withdrawals",
+      ZH: "关于游戏、经济或提现的问题",
+    },
+    CHAT_WELCOME: {
+      FR: "Salut ! Je suis l'assistant de Fractal Arena. Pose-moi tes questions sur les règles, la Forge, les dépôts/retraits…",
+      EN: "Hi! I'm the Fractal Arena assistant. Ask me about the rules, the Forge, deposits/withdrawals…",
+      ZH: "你好！我是 Fractal Arena 助手。欢迎询问规则、熔炉、充值/提现等问题…",
+    },
+    CHAT_PLACEHOLDER: { FR: "Écris ton message…", EN: "Type your message…", ZH: "输入你的消息…" },
+    CHAT_SEND: { FR: "Envoyer", EN: "Send", ZH: "发送" },
+    CHAT_FAB_LABEL: { FR: "Ouvrir le support", EN: "Open support", ZH: "打开客服" },
+    CHAT_ERROR: {
+      FR: "Support indisponible, réessaie dans un instant.",
+      EN: "Support unavailable, please try again shortly.",
+      ZH: "客服暂时不可用，请稍后再试。",
+    },
+    CHAT_RATELIMIT: {
+      FR: "Trop de messages, réessaie dans une minute.",
+      EN: "Too many messages, try again in a minute.",
+      ZH: "消息过多，请一分钟后再试。",
+    },
+    CHAT_TOOLONG: {
+      FR: "Message trop long (2000 caractères max).",
+      EN: "Message too long (2000 chars max).",
+      ZH: "消息过长（最多 2000 字符）。",
+    },
+
+    // ===== Chat joueurs =====
+    ROOM_TITLE: { FR: "Chat des joueurs", EN: "Players chat", ZH: "玩家聊天" },
+    ROOM_WARNING: {
+      FR: "⚠️ L'équipe ne te demandera jamais tes tokens. N'envoie jamais de fonds à un autre joueur.",
+      EN: "⚠️ The team will never ask for your tokens. Never send funds to another player.",
+      ZH: "⚠️ 团队绝不会向你索要代币。切勿向其他玩家转账。",
+    },
+    ROOM_PLACEHOLDER: { FR: "Message au salon…", EN: "Message the room…", ZH: "发送到聊天室…" },
+    ROOM_SEND: { FR: "Envoyer", EN: "Send", ZH: "发送" },
+    ROOM_FAB_LABEL: { FR: "Ouvrir le chat des joueurs", EN: "Open players chat", ZH: "打开玩家聊天" },
+    ROOM_EMPTY: { FR: "Aucun message. Lance la conversation !", EN: "No messages yet. Start the conversation!", ZH: "还没有消息，来开启对话吧！" },
+    ROOM_MUTE: { FR: "Masquer", EN: "Mute", ZH: "屏蔽" },
+    ROOM_MUTED: { FR: "Joueur masqué", EN: "Player muted", ZH: "已屏蔽该玩家" },
+    ROOM_BLOCKED: { FR: "Message bloqué (lien, adresse ou contenu interdit).", EN: "Message blocked (link, address or forbidden content).", ZH: "消息被拦截（链接、地址或违规内容）。" },
+    ROOM_BANNED: { FR: "Tu es banni du chat.", EN: "You are banned from chat.", ZH: "你已被禁止使用聊天。" },
+    ROOM_RATELIMIT: { FR: "Trop de messages, ralentis un peu.", EN: "Too many messages, slow down.", ZH: "消息发送过快，请稍候。" },
+    ROOM_TOOLONG: { FR: "Message trop long (280 caractères max).", EN: "Message too long (280 chars max).", ZH: "消息过长（最多 280 字符）。" },
   };
 
   let lang = "FR";
