@@ -14,6 +14,14 @@
     NAV_BOOSTS: { FR: "Boosts", EN: "Boosts", ZH: "强化" },
     NAV_PERSO: { FR: "Perso", EN: "Vanity", ZH: "外观" },
     NAV_OPTIONS: { FR: "Options", EN: "Options", ZH: "设置" },
+    NAV_LEADERBOARD: { FR: "Classement", EN: "Ranking", ZH: "排行榜" },
+    LB_TITLE: { FR: "Classement des joueurs", EN: "Players ranking", ZH: "玩家排行榜" },
+    LB_TAB_WINS: { FR: "Victoires", EN: "Wins", ZH: "胜场" },
+    LB_TAB_POWER: { FR: "Puissance", EN: "Power", ZH: "战力" },
+    LB_YOU: { FR: "Toi", EN: "You", ZH: "你" },
+    LB_EMPTY: { FR: "Pas encore de classés — sois le premier !", EN: "No ranked players yet — be the first!", ZH: "还没有排名 — 来当第一个！" },
+    LB_LOADING: { FR: "Chargement…", EN: "Loading…", ZH: "加载中…" },
+    LB_ERROR: { FR: "Classement indisponible, réessaie.", EN: "Ranking unavailable, try again.", ZH: "排行榜不可用，请重试。" },
 
     // header
     LOCKED_CHIP: { FR: "Verrouillé", EN: "Locked", ZH: "锁定" },
