@@ -94,7 +94,6 @@ function loadState() {
     if (!raw) return null;
     const s = JSON.parse(raw);
     return Object.assign(freshState(), s, {
-      wallet: null,     // wallet obligatoire : toujours repasser par la connexion au démarrage
       view: "team",
       selected: [],     // ids orphelins d'une session précédente → vidés, réconciliés à la connexion
       ordinalName: "",  // sera écrasé par le nom serveur à la connexion (branche 200)
@@ -112,6 +111,15 @@ function App() {
   const gRef = useRef(g);
   gRef.current = g;
   const saveTimerRef = useRef(null);
+
+  // Reconnexion silencieuse : si un wallet est mémorisé, on recharge la sauvegarde serveur fraîche
+  const didAutoConnectRef = useRef(false);
+  useEffect(() => {
+    if (didAutoConnectRef.current) return;
+    didAutoConnectRef.current = true;
+    const w = gRef.current.wallet;
+    if (w) { actions.connectWallet(w); }
+  }, []);
 
   // persist
   useEffect(() => {
@@ -247,7 +255,10 @@ function App() {
         return "";
       }
     },
-    disconnect() { setG((s) => ({ ...s, wallet: null })); },
+    disconnect() {
+      try { localStorage.removeItem(SAVE_KEY); } catch (e) { }
+      setG((s) => ({ ...freshState(), lang: s.lang, options: s.options }));
+    },
     async resetProgress() {
       const w = gRef.current.wallet;
       if (w) {
