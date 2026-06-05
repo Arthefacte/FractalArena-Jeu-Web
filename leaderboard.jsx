@@ -5,8 +5,14 @@ const { useState, useEffect } = React;
 const { useFA, cx, SectionHead } = window;
 const I18N = window.FA_I18N;
 
+const SECTIONS = {
+  compet: [["wins", "LB_TAB_WINS"], ["collection", "LB_TAB_POWER"]],
+  eco: [["earned", "LB_TAB_EARNED"], ["burned", "LB_TAB_BURNED"], ["liquidity", "LB_TAB_LIQUIDITY"], ["airdrop", "LB_TAB_AIRDROP"]],
+};
+
 function Leaderboard() {
   const { g, actions } = useFA();
+  const [section, setSection] = useState("compet");
   const [board, setBoard] = useState("wins");
   const [st, setSt] = useState({ loading: true, top: [], you: null, error: false });
 
@@ -21,14 +27,24 @@ function Leaderboard() {
     return () => { alive = false; };
   }, [board]);
 
+  const pickSection = (sec) => {
+    setSection(sec);
+    setBoard(SECTIONS[sec][0][0]);
+  };
+
   const myShort = g.wallet ? g.wallet.slice(0, 6) + "…" + g.wallet.slice(-4) : "";
 
   return (
     <div style={{ maxWidth: 640, margin: "0 auto", padding: "8px 4px" }}>
       <SectionHead eyebrow="🏆 LEADERBOARD" title={I18N.t("LB_TITLE")} />
       <div className="lb-tabs">
-        <button className={cx("lb-tab", board === "wins" && "on")} onClick={() => setBoard("wins")}>{I18N.t("LB_TAB_WINS")}</button>
-        <button className={cx("lb-tab", board === "collection" && "on")} onClick={() => setBoard("collection")}>{I18N.t("LB_TAB_POWER")}</button>
+        <button className={cx("lb-tab", section === "compet" && "on")} onClick={() => pickSection("compet")}>{I18N.t("LB_SEC_COMPET")}</button>
+        <button className={cx("lb-tab", section === "eco" && "on")} onClick={() => pickSection("eco")}>{I18N.t("LB_SEC_ECO")}</button>
+      </div>
+      <div className="lb-tabs">
+        {SECTIONS[section].map(([key, lbl]) => (
+          <button key={key} className={cx("lb-tab", board === key && "on")} onClick={() => setBoard(key)}>{I18N.t(lbl)}</button>
+        ))}
       </div>
       {st.loading && <div className="muted" style={{ textAlign: "center", padding: 24 }}>{I18N.t("LB_LOADING")}</div>}
       {st.error && <div className="muted" style={{ textAlign: "center", padding: 24, color: "var(--alert)" }}>{I18N.t("LB_ERROR")}</div>}
