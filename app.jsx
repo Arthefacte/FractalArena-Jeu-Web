@@ -53,6 +53,7 @@ function stateToServer(g) {
     session_combat_count: g.totalFights,
     next_creature_id: 0,
     player_name: g.playerName,
+    ordinal_name: g.ordinalName,
     lang: g.lang,
     airdrop_claimed: false,
     creatures: g.roster,
@@ -143,7 +144,7 @@ function App() {
     }, 1500);
   }, [g.liquid, g.locked, g.roster, g.freeFights, g.totalFights,
       g.ticketsSilver, g.ticketsGold, g.session.wins, g.session.losses,
-      g.playerName, g.playerTitle, g.lang, g.authToken]);
+      g.playerName, g.ordinalName, g.playerTitle, g.lang, g.authToken]);
 
   // daily reset
   useEffect(() => {

@@ -491,7 +491,9 @@ function Options() {
         <div className="flex between center" style={{ marginBottom: 6 }}>
           <span className="mono" style={{ fontSize: 12, color: "var(--text-dim)" }}>{I18N.t("OP_ORDINAL")}</span>
           <span className="mono" style={{ fontSize: 13, fontWeight: 700, color: g.ordinalName ? "var(--elec)" : "var(--text-faint)" }}>
-            {g.ordinalName || (g.wallet ? (g.wallet.slice(0, 6) + "…" + g.wallet.slice(-4)) : "—")}
+            {g.ordinalName
+              ? ((g.playerTitle ? g.playerTitle + " " : "") + g.ordinalName)
+              : (g.wallet ? (g.wallet.slice(0, 6) + "…" + g.wallet.slice(-4)) : "—")}
           </span>
         </div>
         <div className="mono" style={{ fontSize: 10.5, color: "var(--text-faint)", marginBottom: 14 }}>{I18N.t("OP_ORDINAL_HINT")}</div>
