@@ -588,3 +588,27 @@ input { font-family: var(--font-mono); }
 .lb-row.top2 { border-color: #C0CCDA; }
 .lb-row.top3 { border-color: #CD7F32; }
 .lb-row.mine { border-color: var(--elec); background: rgba(0,240,255,.06); }
+
+/* ============ Quêtes quotidiennes ============ */
+.q-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.q-streak { font-weight: 700; color: var(--gold); font-size: 14px; }
+.q-reset { font-family: var(--font-mono); color: var(--text-dim); font-size: 13px; }
+.q-list { display: flex; flex-direction: column; gap: 10px; }
+.q-row {
+  padding: 12px 14px; border-radius: 10px;
+  background: var(--bg-panel); border: 1px solid var(--line-soft);
+}
+.q-row.done { border-color: var(--elec); background: rgba(0,240,255,.06); }
+.q-info { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+.q-name { color: var(--text); font-weight: 600; font-size: 14px; }
+.q-reward { font-family: var(--font-mono); font-weight: 700; color: var(--gold); white-space: nowrap; }
+.q-bar { height: 8px; border-radius: 6px; background: var(--line); overflow: hidden; }
+.q-fill { height: 100%; background: linear-gradient(90deg, var(--elec), var(--gold)); border-radius: 6px; transition: width .4s ease; }
+.q-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 8px; }
+.q-prog { font-family: var(--font-mono); color: var(--text-dim); font-size: 13px; }
+.q-claimed { color: #27E08A; font-weight: 700; font-size: 13px; }
+.q-claim {
+  padding: 7px 16px; cursor: pointer; border-radius: 8px;
+  background: var(--elec); color: #04121a; border: none; font-weight: 700; font-size: 13px;
+}
+.q-claim:disabled { opacity: .4; cursor: not-allowed; background: var(--bg-panel); color: var(--text-dim); border: 1px solid var(--line); }
