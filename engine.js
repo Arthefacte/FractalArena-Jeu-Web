@@ -184,7 +184,7 @@
   //  Fast headless sim → binary search a multiplier giving target WR.
   // ====================================================================
   const SIM_N = 46, BIN_IT = 9;
-  const RMULT = { Common: 0.925, Rare: 1.04, Epic: 1.14, Legendary: 1.24 };
+  const RMULT = { Common: 0.925, Rare: 1.3, Epic: 1.775, Legendary: 2.425 };
   // unit array: [mhp,hp,atk,def,spd,mag,preset]
   const _MHP = 0, _HP = 1, _ATK = 2, _DEF = 3, _SPD = 4, _MAG = 5, _PRE = 6;
 

@@ -113,9 +113,9 @@
   function rarityVariance(rarity) {
     switch (rarity) {
       case "Common": return rand(0.85, 1.0);
-      case "Rare": return rand(1.0, 1.15);
-      case "Epic": return rand(1.15, 1.3);
-      case "Legendary": return rand(1.3, 1.4);
+      case "Rare": return rand(1.2, 1.4);
+      case "Epic": return rand(1.65, 1.9);
+      case "Legendary": return rand(2.25, 2.6);
       default: return 1.0;
     }
   }
