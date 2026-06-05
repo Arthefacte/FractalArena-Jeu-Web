@@ -353,7 +353,10 @@ function App() {
         const data = await resp.json();
         // Solde + résultat serveur (events + enemy pour le replay côté client)
         setG((st) => {
-          const patch = { ...st, liquid: data.new_liquid, locked: data.new_locked, serverFight: data };
+          // Solde NON appliqué ici : différé à resolveFight (fin du replay), sinon le gain
+          // s'affiche pendant que le combat est encore en cours. new_liquid/new_locked
+          // restent disponibles dans serverFight et sont appliqués au settle.
+          const patch = { ...st, serverFight: data };
           if (free) patch.freeFights = Math.max(0, st.freeFights - 1);
           if (!free && isLoop && tier === "silver") patch.loopSilverToday = st.loopSilverToday + 1;
           if (!free && isLoop && tier === "gold") patch.loopGoldToday = st.loopGoldToday + 1;
@@ -377,7 +380,11 @@ function App() {
       }
       const summary = { payout: 0, net: 0, xp: 0, pool: 0, burn: 0, milestone: false, luckyBonus: 0, insuranceUsed: false, betAmount, levelUps: [], rarityUps: [] };
       setG((s) => {
-        let { liquid, locked, totalFights, ticketsSilver, ticketsGold } = s;
+        // Solde final serveur appliqué ICI (fin du combat), pas au lancement → le gain
+        // n'apparaît qu'une fois le replay terminé.
+        let liquid = srv ? srv.new_liquid : s.liquid;
+        let locked = srv ? srv.new_locked : s.locked;
+        let { totalFights, ticketsSilver, ticketsGold } = s;
         const session = { ...s.session };
         const boosts = { ...s.boosts };
         totalFights += 1;
@@ -396,7 +403,7 @@ function App() {
           const base = free ? D.ECON.BET.bronze : betAmount;
           const payout = Math.floor(base * D.ECON.PAYOUT_MULT);
           const net = payout - betAmount;
-          // liquid ET locked déjà mis à jour par callFight() depuis la réponse serveur
+          // liquid/locked = solde serveur, initialisé en tête de ce setG (au settle)
           summary.payout = payout; summary.net = net;
           if (!free) session.net += net;
           // lucky strike
