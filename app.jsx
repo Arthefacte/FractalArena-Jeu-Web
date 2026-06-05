@@ -4,7 +4,7 @@
 const { useState, useEffect, useRef, useMemo } = React;
 const D = window.FA_DATA, I18N = window.FA_I18N;
 const { FA_Ctx, useFA, cx, fmt, Coin, Bar } = window;
-const { Team, Arena, Forge, Wallet, Boosts, Perso, Options, ChatFab, RoomFab, Leaderboard } = window;
+const { Team, Arena, Forge, Wallet, Boosts, Perso, Options, ChatFab, RoomFab, Leaderboard, Quests } = window;
 const SAVE_KEY = "fractal_arena_v1";
 const API_URL = "https://fractal-arena-server-production.up.railway.app";
 const CLIENT_SECRET = "pastouche";
@@ -573,6 +573,43 @@ function App() {
         return { ok: false };
       }
     },
+    async fetchQuests() {
+      const s = gRef.current;
+      if (!s.wallet) return { ok: false };
+      try {
+        const resp = await fetch(`${API_URL}/quests/${encodeURIComponent(s.wallet)}`);
+        if (!resp.ok) return { ok: false };
+        const data = await resp.json();
+        return { ok: true, data };
+      } catch (e) {
+        return { ok: false };
+      }
+    },
+    async claimQuest(questId) {
+      const s = gRef.current;
+      if (!s.authToken) return { ok: false, reason: "auth" };
+      try {
+        const resp = await fetch(`${API_URL}/quests/claim`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
+          body: JSON.stringify({ quest_id: questId }),
+        });
+        if (resp.status === 401) {
+          const re = await actions.authenticate(gRef.current.wallet);
+          if (!re) { toast(I18N.t("AUTH_EXPIRED"), "bad"); return { ok: false, reason: "auth" }; }
+          return { ok: false, reason: "retry" };
+        }
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({}));
+          return { ok: false, reason: err.error || `Erreur ${resp.status}` };
+        }
+        const data = await resp.json();
+        setG((st) => ({ ...st, locked: data.new_locked }));
+        return { ok: true, data };
+      } catch (e) {
+        return { ok: false, reason: "network" };
+      }
+    },
     async sendRoomMessage(content) {
       const s = gRef.current;
       if (!s.wallet) return { ok: false, reason: "wallet" };
@@ -650,7 +687,7 @@ function App() {
     );
   }
 
-  const VIEWS = { team: Team, arena: Arena, forge: Forge, wallet: Wallet, boosts: Boosts, perso: Perso, leaderboard: Leaderboard, options: Options };
+  const VIEWS = { team: Team, arena: Arena, quests: Quests, forge: Forge, wallet: Wallet, boosts: Boosts, perso: Perso, leaderboard: Leaderboard, options: Options };
   const View = VIEWS[g.view] || Team;
 
   return (
@@ -721,7 +758,7 @@ function Header({ chipPop }) {
 function Nav() {
   const { g, actions } = useFA();
   const tabs = [
-    ["team", "NAV_TEAM"], ["arena", "NAV_ARENA"], ["forge", "NAV_FORGE"],
+    ["team", "NAV_TEAM"], ["arena", "NAV_ARENA"], ["quests", "NAV_QUESTS"], ["forge", "NAV_FORGE"],
     ["wallet", "NAV_WALLET"], ["boosts", "NAV_BOOSTS"], ["perso", "NAV_PERSO"], ["leaderboard", "NAV_LEADERBOARD"], ["options", "NAV_OPTIONS"],
   ];
   return (
