@@ -353,11 +353,18 @@ function App() {
         const data = await resp.json();
         // Solde + résultat serveur (events + enemy pour le replay côté client)
         setG((st) => {
-          // Solde NON appliqué ici : différé à resolveFight (fin du replay), sinon le gain
-          // s'affiche pendant que le combat est encore en cours. new_liquid/new_locked
-          // restent disponibles dans serverFight et sont appliqués au settle.
+          // Au lancement : on prélève SEULEMENT la mise (déduction optimiste, liquid puis
+          // locked) pour que le joueur voie son stake partir. Le GAIN reste différé à
+          // resolveFight (fin du replay) — solde final dans serverFight.new_liquid/new_locked.
           const patch = { ...st, serverFight: data };
-          if (free) patch.freeFights = Math.max(0, st.freeFights - 1);
+          if (free) {
+            patch.freeFights = Math.max(0, st.freeFights - 1);
+          } else {
+            const bet = D.ECON.BET[tier] || 0;
+            const fromLiquid = Math.min(st.liquid, bet);
+            patch.liquid = st.liquid - fromLiquid;
+            patch.locked = st.locked - (bet - fromLiquid);
+          }
           if (!free && isLoop && tier === "silver") patch.loopSilverToday = st.loopSilverToday + 1;
           if (!free && isLoop && tier === "gold") patch.loopGoldToday = st.loopGoldToday + 1;
           return patch;
