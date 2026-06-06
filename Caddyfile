@@ -5,7 +5,9 @@
 
     # Le point d'entrée HTML doit toujours être revalidé (etag → 304 si inchangé)
     # pour que les joueurs reçoivent le dernier ?v= sans hard refresh.
+    # NB : `header` est évalué AVANT le rewrite de try_files, donc on matche le
+    # chemin d'origine `/` (et `/index.html` en accès direct), pas `*.html`.
     # Les assets versionnés (?v=N) gardent leur cache : l'URL change à chaque déploiement.
-    @html path *.html
-    header @html Cache-Control "no-cache"
+    @entry path / /index.html
+    header @entry Cache-Control "no-cache"
 }
