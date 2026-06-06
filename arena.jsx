@@ -5,6 +5,15 @@ const { useState, useEffect, useRef, useMemo } = React;
 const D = window.FA_DATA, I18N = window.FA_I18N;
 const { useFA, cx, fmt, presetLabel, rarityLabel, Bar, Modal } = window;
 
+// Formate une durée en ms vers HH:MM:SS (borné à 0).
+function fmtCountdown(ms) {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  const h = String(Math.floor(s / 3600)).padStart(2, "0");
+  const m = String(Math.floor((s % 3600) / 60)).padStart(2, "0");
+  const sec = String(s % 60).padStart(2, "0");
+  return `${h}:${m}:${sec}`;
+}
+
 function CombatCard({ meta, live, side, cref }) {
   if (!meta) {
     return (
@@ -334,7 +343,9 @@ function Arena() {
             <div className="flex between center" style={{ marginBottom: 8 }}>
               <span className="mono" style={{ fontSize: 12, color: "var(--text-dim)" }}>{I18N.t("AR_BET")}</span>
               <span className="mono" style={{ fontSize: 12, color: g.freeFights > 0 ? "var(--success)" : "var(--text-dim)" }}>
-                {g.freeFights > 0 ? I18N.t("AR_FREE_LEFT", g.freeFights) : I18N.t("AR_FREE_EMPTY")}
+                {g.freeFights > 0
+                  ? I18N.t("AR_FREE_LEFT", g.freeFights)
+                  : I18N.t("AR_FREE_NEXT", fmtCountdown(g.freeResetTs + 86400000 - Date.now()))}
               </span>
             </div>
             <div className="flex gap8">
