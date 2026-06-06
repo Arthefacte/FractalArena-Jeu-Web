@@ -81,6 +81,7 @@
     AR_USE_LOCKED: { FR: "Utiliser verrouillé", EN: "Use locked", ZH: "使用锁定" },
     AR_FREE_LEFT: { FR: "%d combat(s) gratuit(s) aujourd'hui", EN: "%d free fight(s) today", ZH: "今日剩余 %d 场免费战斗" },
     AR_FREE_EMPTY: { FR: "Plus de combats gratuits aujourd'hui", EN: "No more free fights today", ZH: "今日免费战斗已用完" },
+    AR_FREE_NEXT: { FR: "Prochains dans %s", EN: "Next in %s", ZH: "下次 %s 后" },
     AR_NEED3: { FR: "Sélectionne 3 entités d'abord", EN: "Select 3 entities first", ZH: "请先选择 3 个实体" },
     AR_INSUFF: { FR: "Solde insuffisant", EN: "Insufficient balance", ZH: "余额不足" },
     AR_PICK_BET: { FR: "Choisis une mise — plus de combats gratuits", EN: "Pick a bet — no free fights left", ZH: "请选择下注 — 免费战斗已用完" },
