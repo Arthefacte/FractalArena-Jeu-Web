@@ -338,7 +338,7 @@ function App() {
         const resp = await fetch(`${API_URL}/fight`, {
           method: "POST",
           headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
-          body: JSON.stringify({ bet_tier: free ? "" : tier, is_free: free, selected: s.selected }),
+          body: JSON.stringify({ bet_tier: free ? "" : tier, is_free: free, selected: s.selected, use_locked: s.useLocked }),
         });
         if (resp.status === 401) {
           // session expirée → tenter une re-signature silencieuse (1 clic UniSat)
@@ -361,9 +361,15 @@ function App() {
             patch.freeFights = Math.max(0, st.freeFights - 1);
           } else {
             const bet = D.ECON.BET[tier] || 0;
-            const fromLiquid = Math.min(st.liquid, bet);
-            patch.liquid = st.liquid - fromLiquid;
-            patch.locked = st.locked - (bet - fromLiquid);
+            // Doit refléter computeBetDeduction côté serveur (fight.js) : useLocked ON
+            // + verrouillé suffisant → tout depuis locked ; sinon liquide d'abord.
+            if (st.useLocked && st.locked >= bet) {
+              patch.locked = st.locked - bet;
+            } else {
+              const fromLiquid = Math.min(st.liquid, bet);
+              patch.liquid = st.liquid - fromLiquid;
+              patch.locked = st.locked - (bet - fromLiquid);
+            }
           }
           if (!free && isLoop && tier === "silver") patch.loopSilverToday = st.loopSilverToday + 1;
           if (!free && isLoop && tier === "gold") patch.loopGoldToday = st.loopGoldToday + 1;
