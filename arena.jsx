@@ -6,7 +6,9 @@ const D = window.FA_DATA, I18N = window.FA_I18N;
 const { useFA, cx, fmt, presetLabel, rarityLabel, Bar, Modal } = window;
 
 // Formate une durée en ms vers HH:MM:SS (borné à 0).
-function fmtCountdown(ms) {
+// NB : nom unique — le scope global est partagé entre les .jsx et quests.jsx
+// définit déjà un fmtCountdown(sec) qui sinon écraserait celui-ci.
+function fmtFreeCountdown(ms) {
   const s = Math.max(0, Math.floor(ms / 1000));
   const h = String(Math.floor(s / 3600)).padStart(2, "0");
   const m = String(Math.floor((s % 3600) / 60)).padStart(2, "0");
@@ -345,7 +347,7 @@ function Arena() {
               <span className="mono" style={{ fontSize: 12, color: g.freeFights > 0 ? "var(--success)" : "var(--text-dim)" }}>
                 {g.freeFights > 0
                   ? I18N.t("AR_FREE_LEFT", g.freeFights)
-                  : I18N.t("AR_FREE_NEXT", fmtCountdown(g.freeResetTs + 86400000 - Date.now()))}
+                  : I18N.t("AR_FREE_NEXT", fmtFreeCountdown(g.freeResetTs + 86400000 - Date.now()))}
               </span>
             </div>
             <div className="flex gap8">
