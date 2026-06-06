@@ -109,6 +109,7 @@ function App() {
   const [g, setG] = useState(() => { const s = loadState() || freshState(); I18N.setLang(s.lang); return s; });
   const [toasts, setToasts] = useState([]);
   const [chipPop, setChipPop] = useState(0);
+  const [, setNow] = useState(Date.now()); // tic 1s pour le compte à rebours combats gratuits
   const gRef = useRef(g);
   gRef.current = g;
   const saveTimerRef = useRef(null);
@@ -153,6 +154,20 @@ function App() {
       setG((s) => ({ ...s, freeFights: D.ECON.FREE_FIGHTS_PER_DAY, loopSilverToday: 0, loopGoldToday: 0, freeResetTs: Date.now() }));
     }
   }, [g.wallet]);
+
+  // Tic 1s UNIQUEMENT quand le compteur est à 0 : met à jour le compte à rebours
+  // et recrédite les combats en direct quand les 24 h sont écoulées (sans reload).
+  useEffect(() => {
+    if (!g.wallet || g.freeFights > 0) return;
+    const t = setInterval(() => {
+      if (Date.now() - gRef.current.freeResetTs >= 86400000) {
+        setG((s) => ({ ...s, freeFights: D.ECON.FREE_FIGHTS_PER_DAY, loopSilverToday: 0, loopGoldToday: 0, freeResetTs: Date.now() }));
+      } else {
+        setNow(Date.now());
+      }
+    }, 1000);
+    return () => clearInterval(t);
+  }, [g.wallet, g.freeFights]);
 
   // chip pop on liquid change
   const prevLiquid = useRef(g.liquid);
