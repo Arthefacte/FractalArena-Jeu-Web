@@ -1,5 +1,11 @@
 :8080 {
     root * /app
-    file_server
     try_files {path} /index.html
+    file_server
+
+    # Le point d'entrée HTML doit toujours être revalidé (etag → 304 si inchangé)
+    # pour que les joueurs reçoivent le dernier ?v= sans hard refresh.
+    # Les assets versionnés (?v=N) gardent leur cache : l'URL change à chaque déploiement.
+    @html path *.html
+    header @html Cache-Control "no-cache"
 }
