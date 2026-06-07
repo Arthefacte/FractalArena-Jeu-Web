@@ -8,6 +8,8 @@ const { Team, Arena, Forge, Wallet, Boosts, Perso, Options, ChatFab, RoomFab, Le
 const SAVE_KEY = "fractal_arena_v1";
 const API_URL = "https://fractal-arena-server-production.up.railway.app";
 const CLIENT_SECRET = "pastouche";
+const HAS_UNISAT = () => typeof window.unisat !== "undefined";
+const IS_MOBILE = () => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
 
 function serverToState(save, addr, s) {
   const roster = Array.isArray(save.creatures) && save.creatures.length > 0 ? save.creatures : D.starterRoster();
@@ -269,6 +271,19 @@ function App() {
         return token || "";
       } catch (e) {
         return "";
+      }
+    },
+    async connectUnisat() {
+      if (typeof window.unisat === "undefined") return { ok: false, reason: "no-unisat" };
+      try {
+        const accounts = await window.unisat.requestAccounts();
+        const addr = (accounts && accounts[0]) || "";
+        if (!/^bc1/i.test(addr)) return { ok: false, reason: "bad-address" };
+        await actions.connectWallet(addr);
+        const token = await actions.authenticate(addr);
+        return token ? { ok: true } : { ok: false, reason: "auth" };
+      } catch (e) {
+        return { ok: false, reason: "rejected" };
       }
     },
     async authForWithdraw() {
@@ -821,13 +836,25 @@ function Onboarding() {
   const { actions, toast } = useFA();
   const [addr, setAddr] = useState("");
   const [checking, setChecking] = useState(false);
-  async function connect() {
+  const [manual, setManual] = useState(false);
+  const hasWallet = HAS_UNISAT();
+  const mobile = IS_MOBILE();
+  const gameUrl = "https://jeu.arthefacte.com";
+
+  async function connectUnisat() {
+    setChecking(true);
+    const r = await actions.connectUnisat();
+    setChecking(false);
+    if (!r.ok) toast(I18N.t("OB_CONNECT_FAIL"), "bad");
+  }
+  async function connectManual() {
     const a = addr.trim();
     if (a.length < 20 || !/^bc1/i.test(a)) { toast(I18N.t("OB_INVALID"), "bad"); return; }
     setChecking(true);
     await actions.connectWallet(a);
     await actions.authenticate(a);
   }
+
   return (
     <div className="app-shell" style={{ minHeight: "100vh", display: "grid", placeItems: "center", position: "relative", zIndex: 1 }}>
       <div style={{ textAlign: "center", maxWidth: 540, padding: 28, position: "relative" }}>
@@ -836,11 +863,40 @@ function Onboarding() {
         </div>
         <div className="eyebrow">{I18N.t("OB_TAG")}</div>
         <div className="hdr-title" style={{ fontSize: 40, letterSpacing: 6, display: "block", margin: "8px 0 18px" }}>FRACTAL ARENA</div>
-        <div className="h2" style={{ fontSize: 18, marginBottom: 8 }}>{I18N.t("OB_CONNECT")}</div>
-        <div className="muted mono" style={{ fontSize: 13, lineHeight: 1.6, marginBottom: 22 }}>{I18N.t("OB_SUB")}</div>
-        <input className="field" style={{ textAlign: "center", marginBottom: 14 }} value={addr} onChange={(e) => setAddr(e.target.value)} placeholder={I18N.t("OB_PLACEHOLDER")} onKeyDown={(e) => e.key === "Enter" && connect()} />
-        <button className="btn btn-fire block lg" disabled={checking} onClick={connect}>{checking ? I18N.t("OB_CHECKING") : I18N.t("OB_BTN")}</button>
-        <div className="pill" style={{ marginTop: 18, color: "var(--gold)", borderColor: "rgba(255,230,0,0.3)" }}>🎁 {I18N.t("OB_GIFT")}</div>
+
+        {hasWallet ? (
+          <>
+            <div className="h2" style={{ fontSize: 18, marginBottom: 8 }}>{I18N.t("OB_CONNECT")}</div>
+            <div className="muted mono" style={{ fontSize: 13, lineHeight: 1.6, marginBottom: 22 }}>{I18N.t("OB_SUB")}</div>
+            <button className="btn btn-fire block lg" disabled={checking} onClick={connectUnisat}>{checking ? I18N.t("OB_CHECKING") : I18N.t("OB_BTN")}</button>
+            <div className="pill" style={{ marginTop: 18, color: "var(--gold)", borderColor: "rgba(255,230,0,0.3)" }}>🎁 {I18N.t("OB_GIFT")}</div>
+          </>
+        ) : mobile ? (
+          <>
+            <div className="h2" style={{ fontSize: 18, marginBottom: 8 }}>{I18N.t("OB_OPEN_UNISAT_TITLE")}</div>
+            <div className="muted mono" style={{ fontSize: 13, lineHeight: 1.7, marginBottom: 18 }}>{I18N.t("OB_OPEN_UNISAT_STEPS")}</div>
+            <img alt="QR" style={{ width: 180, height: 180, margin: "0 auto 14px", borderRadius: 10, background: "#fff", padding: 8 }}
+                 src={"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" + encodeURIComponent(gameUrl)} />
+            <div className="mono" style={{ fontSize: 12, color: "var(--gold)" }}>{gameUrl}</div>
+          </>
+        ) : (
+          <>
+            <div className="h2" style={{ fontSize: 18, marginBottom: 8 }}>{I18N.t("OB_INSTALL_EXT_TITLE")}</div>
+            <div className="muted mono" style={{ fontSize: 13, lineHeight: 1.7, marginBottom: 18 }}>{I18N.t("OB_INSTALL_EXT_SUB")}</div>
+            <a className="btn btn-fire block lg" href="https://unisat.io/download" target="_blank" rel="noopener">{I18N.t("OB_INSTALL_EXT_BTN")}</a>
+          </>
+        )}
+
+        <div style={{ marginTop: 16 }}>
+          <button className="btn-link" style={{ background: "none", border: "none", color: "var(--text-dim)", fontSize: 11, cursor: "pointer", textDecoration: "underline" }} onClick={() => setManual(!manual)}>{I18N.t("OB_MANUAL_TOGGLE")}</button>
+        </div>
+        {manual && (
+          <div style={{ marginTop: 10 }}>
+            <input className="field" style={{ textAlign: "center", marginBottom: 10 }} value={addr} onChange={(e) => setAddr(e.target.value)} placeholder={I18N.t("OB_PLACEHOLDER")} onKeyDown={(e) => e.key === "Enter" && connectManual()} />
+            <button className="btn block" disabled={checking} onClick={connectManual}>{checking ? I18N.t("OB_CHECKING") : I18N.t("OB_BTN")}</button>
+          </div>
+        )}
+
         <div className="lang-switch" style={{ margin: "16px auto 0", width: "fit-content" }}>
           {[["FR", "Français"], ["EN", "English"], ["ZH", "中文"]].map(([code, lbl]) => (
             <button key={code} className={I18N.getLang() === code ? "on" : ""} onClick={() => actions.setLang(code)}>{lbl}</button>
