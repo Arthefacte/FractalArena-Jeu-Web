@@ -291,7 +291,7 @@ function Arena() {
         <div style={{ position: "absolute", inset: 0, backgroundImage: "var(--filigrane)", backgroundSize: "cover", backgroundPosition: "center", opacity: 0.16, mixBlendMode: "luminosity" }} />
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(6,9,18,0.55), rgba(6,9,18,0.82))" }} />
         <div style={{ position: "relative" }}>
-          <div className="flex center" style={{ gap: 18, alignItems: "stretch" }}>
+          <div className="flex center arena-board-row" style={{ gap: 18, alignItems: "stretch" }}>
             {/* P1 */}
             <div style={{ flex: 1 }}>
               <div className="flex between center" style={{ marginBottom: 10 }}>
@@ -305,7 +305,7 @@ function Arena() {
               </div>
             </div>
             {/* VS hex */}
-            <div className="flex center" style={{ flexDirection: "column", justifyContent: "center", flex: "none", width: 70 }}>
+            <div className="flex center arena-vs" style={{ flexDirection: "column", justifyContent: "center", flex: "none", width: 70 }}>
               <div className="hex" style={{ width: 64, height: 70, background: "linear-gradient(160deg, var(--fire), #7a1f0a)", display: "grid", placeItems: "center", boxShadow: "0 0 30px rgba(247,147,26,0.4)" }}>
                 <div className="hex" style={{ width: 56, height: 62, background: "var(--bg-0)", display: "grid", placeItems: "center" }}>
                   <span style={{ fontWeight: 700, fontSize: 18, letterSpacing: 1, color: "var(--fire)" }}>VS</span>
@@ -352,7 +352,7 @@ function Arena() {
                   : I18N.t("AR_FREE_NEXT", fmtFreeCountdown(g.freeResetTs + 86400000 - Date.now()))}
               </span>
             </div>
-            <div className="flex gap8">
+            <div className="flex gap8 arena-bet-row">
               <button className={cx("btn sm", betTier === "" && "on")} style={{ flex: 1, "--c": "var(--success)" }} disabled={playing} onClick={() => setBetTier("")}>{I18N.t("AR_FREE")}</button>
               {betTiers.map((t) => (
                 <button key={t.k} className={cx("btn sm", betTier === t.k && "on")} style={{ flex: 1.3, "--c": t.c }} disabled={playing} onClick={() => setBetTier(t.k)}>
