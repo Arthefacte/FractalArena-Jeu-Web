@@ -84,6 +84,7 @@
     AR_FREE_NEXT: { FR: "Prochains dans %s", EN: "Next in %s", ZH: "下次 %s 后" },
     AR_NEED3: { FR: "Sélectionne 3 entités d'abord", EN: "Select 3 entities first", ZH: "请先选择 3 个实体" },
     AR_INSUFF: { FR: "Solde insuffisant", EN: "Insufficient balance", ZH: "余额不足" },
+    AR_LOCKED_EMPTY: { FR: "Solde verrouillé épuisé — boucle arrêtée (le disponible n'est pas misé)", EN: "Locked balance used up — loop stopped (available balance is not bet)", ZH: "锁定余额已用完 — 循环已停止（不会动用可用余额）" },
     AR_PICK_BET: { FR: "Choisis une mise — plus de combats gratuits", EN: "Pick a bet — no free fights left", ZH: "请选择下注 — 免费战斗已用完" },
     AR_WINRATE: { FR: "V %d · D %d · TV %d%%", EN: "W %d · L %d · WR %d%%", ZH: "胜 %d · 败 %d · 胜率 %d%%" },
     AR_NEXT_MS: { FR: "Milestone dans %d", EN: "Milestone in %d", ZH: "里程碑还差 %d" },

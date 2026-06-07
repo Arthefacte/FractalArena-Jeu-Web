@@ -325,9 +325,12 @@ function App() {
       if (isLoop && tier === "gold" && s.loopGoldToday >= D.ECON.LOOP_GOLD_MAX) { tier = "bronze"; note = I18N.t("AR_LOOP_CAP"); }
       const amount = D.ECON.BET[tier];
       // deduction with useLocked logic
+      // Verrouillage ON : la mise sort UNIQUEMENT du verrouillé, jamais du disponible.
       let fromLocked = false, liquid = s.liquid, locked = s.locked;
-      if (s.useLocked && s.locked >= amount) { locked -= amount; fromLocked = true; }
-      else if (s.liquid >= amount) { liquid -= amount; }
+      if (s.useLocked) {
+        if (s.locked < amount) return { ok: false, reason: I18N.t("AR_LOCKED_EMPTY") };
+        locked -= amount; fromLocked = true;
+      } else if (s.liquid >= amount) { liquid -= amount; }
       else return { ok: false, reason: I18N.t("AR_INSUFF") };
       setG((st) => {
         const patch = { ...st, liquid, locked };
@@ -348,6 +351,11 @@ function App() {
       if (!free) {
         if (isLoop && tier === "silver" && s.loopSilverToday >= D.ECON.LOOP_SILVER_MAX) tier = "bronze";
         if (isLoop && tier === "gold" && s.loopGoldToday >= D.ECON.LOOP_GOLD_MAX) tier = "bronze";
+        // Verrouillage ON : on refuse côté client si le verrouillé ne couvre plus la
+        // mise — message localisé, et le serveur applique le même garde-fou.
+        if (s.useLocked && s.locked < (D.ECON.BET[tier] || 0)) {
+          return { ok: false, reason: I18N.t("AR_LOCKED_EMPTY") };
+        }
       }
       try {
         const resp = await fetch(`${API_URL}/fight`, {
@@ -377,8 +385,9 @@ function App() {
           } else {
             const bet = D.ECON.BET[tier] || 0;
             // Doit refléter computeBetDeduction côté serveur (fight.js) : useLocked ON
-            // + verrouillé suffisant → tout depuis locked ; sinon liquide d'abord.
-            if (st.useLocked && st.locked >= bet) {
+            // → mise prélevée UNIQUEMENT sur le verrouillé (le serveur a déjà validé
+            // que locked >= bet, sinon il aurait renvoyé 400) ; OFF → liquide d'abord.
+            if (st.useLocked) {
               patch.locked = st.locked - bet;
             } else {
               const fromLiquid = Math.min(st.liquid, bet);
