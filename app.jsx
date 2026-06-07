@@ -839,7 +839,6 @@ function Onboarding() {
   const [manual, setManual] = useState(false);
   const hasWallet = HAS_UNISAT();
   const mobile = IS_MOBILE();
-  const gameUrl = "https://jeu.arthefacte.com";
 
   async function connectUnisat() {
     setChecking(true);
@@ -877,13 +876,8 @@ function Onboarding() {
           </>
         ) : mobile ? (
           <>
-            <div className="h2" style={{ fontSize: 18, marginBottom: 8 }}>{I18N.t("OB_OPEN_UNISAT_TITLE")}</div>
-            <div className="muted mono" style={{ fontSize: 13, lineHeight: 1.7, marginBottom: 18 }}>{I18N.t("OB_OPEN_UNISAT_STEPS")}</div>
-            <img alt="QR" style={{ width: 180, height: 180, margin: "0 auto 14px", borderRadius: 10, background: "#fff", padding: 8 }}
-                 src={"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" + encodeURIComponent(gameUrl)}
-                 loading="lazy"
-                 onError={(e) => { e.currentTarget.style.display = "none"; }} />
-            <div className="mono" style={{ fontSize: 12, color: "var(--gold)" }}>{gameUrl}</div>
+            <div className="h2" style={{ fontSize: 18, marginBottom: 8 }}>{I18N.t("OB_MOBILE_TITLE")}</div>
+            <div className="muted mono" style={{ fontSize: 13, lineHeight: 1.7, marginBottom: 18 }}>{I18N.t("OB_MOBILE_MSG")}</div>
           </>
         ) : (
           <>
