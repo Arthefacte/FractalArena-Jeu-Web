@@ -100,7 +100,7 @@
   .btn.sm { min-height: 38px; }
 
   /* ---- Toasts above the bottom bar ---- */
-  .toast-wrap { bottom: 78px; }
+  .toast-wrap { bottom: calc(78px + env(safe-area-inset-bottom, 0)); }
 }
 
 /* Extra squeeze for very narrow phones */

@@ -331,7 +331,7 @@ function Arena() {
       <div style={{ display: "grid", gridTemplateColumns: "1.1fr 0.9fr", gap: 16, marginTop: 16 }} className="arena-lower">
         {/* Log */}
         <div className="panel oct" style={{ border: "1px solid var(--line)", display: "flex", flexDirection: "column", minHeight: 260 }}>
-          <div className="flex between center" style={{ padding: "12px 16px", borderBottom: "1px solid var(--line)" }}>
+          <div className="flex between center arena-log-head" style={{ padding: "12px 16px", borderBottom: "1px solid var(--line)" }}>
             <span className="h2" style={{ fontSize: 14, color: "var(--fire)" }}>{I18N.t("AR_LOG")}</span>
             <span className="mono" style={{ fontSize: 11, color: "var(--text-dim)" }}>terminal://fractal.arena</span>
           </div>

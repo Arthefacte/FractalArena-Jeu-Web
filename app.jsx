@@ -851,8 +851,12 @@ function Onboarding() {
     const a = addr.trim();
     if (a.length < 20 || !/^bc1/i.test(a)) { toast(I18N.t("OB_INVALID"), "bad"); return; }
     setChecking(true);
-    await actions.connectWallet(a);
-    await actions.authenticate(a);
+    try {
+      await actions.connectWallet(a);
+      await actions.authenticate(a);
+    } finally {
+      setChecking(false);
+    }
   }
 
   return (
@@ -876,14 +880,16 @@ function Onboarding() {
             <div className="h2" style={{ fontSize: 18, marginBottom: 8 }}>{I18N.t("OB_OPEN_UNISAT_TITLE")}</div>
             <div className="muted mono" style={{ fontSize: 13, lineHeight: 1.7, marginBottom: 18 }}>{I18N.t("OB_OPEN_UNISAT_STEPS")}</div>
             <img alt="QR" style={{ width: 180, height: 180, margin: "0 auto 14px", borderRadius: 10, background: "#fff", padding: 8 }}
-                 src={"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" + encodeURIComponent(gameUrl)} />
+                 src={"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" + encodeURIComponent(gameUrl)}
+                 loading="lazy"
+                 onError={(e) => { e.currentTarget.style.display = "none"; }} />
             <div className="mono" style={{ fontSize: 12, color: "var(--gold)" }}>{gameUrl}</div>
           </>
         ) : (
           <>
             <div className="h2" style={{ fontSize: 18, marginBottom: 8 }}>{I18N.t("OB_INSTALL_EXT_TITLE")}</div>
             <div className="muted mono" style={{ fontSize: 13, lineHeight: 1.7, marginBottom: 18 }}>{I18N.t("OB_INSTALL_EXT_SUB")}</div>
-            <a className="btn btn-fire block lg" href="https://unisat.io/download" target="_blank" rel="noopener">{I18N.t("OB_INSTALL_EXT_BTN")}</a>
+            <a className="btn btn-fire block lg" href="https://unisat.io/download" target="_blank" rel="noopener noreferrer">{I18N.t("OB_INSTALL_EXT_BTN")}</a>
           </>
         )}
 
