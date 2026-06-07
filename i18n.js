@@ -57,6 +57,13 @@
     OB_CHECKING: { FR: "Vérification on-chain…", EN: "Checking on-chain…", ZH: "链上验证中…" },
     OB_GIFT: { FR: "1 000 verrouillés + 5 combats gratuits/jour", EN: "1,000 locked + 5 free fights/day", ZH: "1,000 锁定 + 每日 5 场免费战斗" },
     OB_WALLET_REQUIRED: { FR: "Wallet obligatoire pour jouer", EN: "Wallet required to play", ZH: "游玩需连接钱包" },
+    OB_CONNECT_FAIL: { FR: "Connexion UniSat refusée ou échouée", EN: "UniSat connection refused or failed", ZH: "UniSat 连接被拒绝或失败" },
+    OB_OPEN_UNISAT_TITLE: { FR: "Ouvre le jeu dans UniSat", EN: "Open the game in UniSat", ZH: "在 UniSat 中打开游戏" },
+    OB_OPEN_UNISAT_STEPS: { FR: "Ouvre l'app UniSat → onglet Navigateur → scanne ce QR (ou saisis l'adresse). Le wallet s'y connecte automatiquement.", EN: "Open the UniSat app → Browser tab → scan this QR (or type the URL). The wallet connects automatically there.", ZH: "打开 UniSat 应用 → 浏览器标签 → 扫描此二维码（或输入网址）。钱包将在那里自动连接。" },
+    OB_INSTALL_EXT_TITLE: { FR: "Installe l'extension UniSat", EN: "Install the UniSat extension", ZH: "安装 UniSat 扩展" },
+    OB_INSTALL_EXT_SUB: { FR: "Sur ordinateur, le jeu a besoin de l'extension de navigateur UniSat pour connecter ton wallet.", EN: "On desktop, the game needs the UniSat browser extension to connect your wallet.", ZH: "在电脑上，游戏需要 UniSat 浏览器扩展来连接你的钱包。" },
+    OB_INSTALL_EXT_BTN: { FR: "Télécharger UniSat", EN: "Download UniSat", ZH: "下载 UniSat" },
+    OB_MANUAL_TOGGLE: { FR: "Saisir une adresse manuellement", EN: "Enter an address manually", ZH: "手动输入地址" },
 
     // team
     TEAM_TITLE: { FR: "Ma collection", EN: "My collection", ZH: "我的收藏" },
