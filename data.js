@@ -332,6 +332,7 @@
       return floorIndex === BOSS_FLOOR ? "Legendary" : (Math.random() < 0.5 ? "Epic" : "Legendary");
     }
     const r = Math.random();
+    if (floorIndex === 0) return "Common"; // étage 1 = 100% Common (tutorial)
     if (floorIndex === BOSS_FLOOR) return r < 0.5 ? "Epic" : "Legendary";
     if (floorIndex <= 2) return r < 0.7 ? "Common" : "Rare";
     if (floorIndex <= 5) return r < 0.5 ? "Rare" : "Epic";
@@ -341,7 +342,7 @@
   // combat (binaire) : ~0.80 = tutorial (~victoire assurée), ~1.0 = 50/50,
   // ~1.10 = boss exigeant. Ramp doux par étage + scaling monde + bump boss.
   function pveDiffMult(worldIndex, floorIndex) {
-    let m = 0.80 + floorIndex * 0.020 + worldIndex * 0.011;
+    let m = 0.75 + floorIndex * 0.025 + worldIndex * 0.011;
     if (floorIndex === BOSS_FLOOR) m += 0.03;               // étage boss plus dur
     return m;
   }
