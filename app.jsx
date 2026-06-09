@@ -4,7 +4,7 @@
 const { useState, useEffect, useRef, useMemo } = React;
 const D = window.FA_DATA, I18N = window.FA_I18N;
 const { FA_Ctx, useFA, cx, fmt, Coin, Bar } = window;
-const { Team, Arena, Forge, Wallet, Boosts, Perso, Options, ChatFab, RoomFab, Leaderboard, Quests } = window;
+const { Team, Arena, Forge, Wallet, Boosts, Perso, Options, ChatFab, RoomFab, Leaderboard, Quests, Campaign } = window;
 const SAVE_KEY = "fractal_arena_v1";
 const API_URL = "https://fractal-arena-server-production.up.railway.app";
 const CLIENT_SECRET = "pastouche";
@@ -80,6 +80,11 @@ function freshState() {
     ticketsGold: 0,
     session: { wins: 0, losses: 0, net: 0 },
     boosts: { xp_boost: 0, insurance: 0, lucky_strike: 0 },
+    // Progression Campagne PvE (locale uniquement, persistée dans localStorage).
+    // campaignProgress : { [worldIndex]: { stars: number[10] } }
+    campaignProgress: {},
+    campaignTitles: [],     // clés i18n des titres débloqués (ex "CAMP_W1_TITLE")
+    campaignFreeTs: 0,      // dernier usage de l'entrée gratuite quotidienne
     playerName: "",
     playerTitle: "",
     ordinalName: "",
@@ -222,6 +227,8 @@ function App() {
             roster: D.starterRoster(),
             locked: D.ECON.WELCOME_LOCKED,
             liquid: D.ECON.WELCOME_LIQUID,
+            ticketsSilver: D.ECON.WELCOME_TICKETS_SILVER,
+            ticketsGold: 0,
             freeFights: D.ECON.FREE_FIGHTS_PER_DAY,
             freeResetTs: Date.now(),
           }));
@@ -245,6 +252,8 @@ function App() {
               roster: D.starterRoster(),
               locked: D.ECON.WELCOME_LOCKED,
               liquid: D.ECON.WELCOME_LIQUID,
+              ticketsSilver: D.ECON.WELCOME_TICKETS_SILVER,
+              ticketsGold: 0,
               freeFights: D.ECON.FREE_FIGHTS_PER_DAY,
               freeResetTs: Date.now(),
             };
@@ -523,7 +532,7 @@ function App() {
       } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
     },
 
-    async fuse(id1, id2) {
+    async fuse(id1, id2, useGold) {
       const s = gRef.current;
       const a = s.roster.find((b) => b.id === id1), b = s.roster.find((b) => b.id === id2);
       if (!a || !b) return { ok: false, reason: I18N.t("FG_PICK2") };
@@ -531,6 +540,19 @@ function App() {
       if (a.rarity !== b.rarity) return { ok: false, reason: I18N.t("FG_PICK2") };
       const cost = D.FORGE.FUSION_COST[a.rarity];
       if (s.liquid + s.locked < cost) return { ok: false, reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, cost) };
+      // Fusion premium : 1 ticket Or = 100% réussite, côté client
+      if (useGold && s.ticketsGold >= 1) {
+        const nextRarity = D.RARITY_UPGRADE[a.rarity];
+        const newBeast = D.mintBeast(a.template_name, nextRarity);
+        newBeast.level = a.level;
+        newBeast.xp = a.xp;
+        newBeast.id = a.id;
+        setG((st) => ({
+          ...st, ticketsGold: st.ticketsGold - 1,
+          roster: st.roster.map((r) => r.id === a.id ? newBeast : r).filter((r) => r.id !== b.id),
+        }));
+        return { ok: true, success: true, result: { rarity: nextRarity, premium: true } };
+      }
       if (!s.wallet) return { ok: false, reason: "Wallet requis" };
       try {
         const resp = await fetch(`${API_URL}/forge/fusion`, {
@@ -733,6 +755,72 @@ function App() {
       setG((st) => ({ ...st, liquid: st.liquid - n }));
       return { ok: true };
     },
+
+    // ---- Campagne PvE (local) ----
+    // Paye l'entrée d'un combat de campagne : 1 entrée gratuite / 24 h,
+    // sinon 1 ticket Argent. Renvoie { ok, free } ou { ok:false, reason }.
+    startCampaignFight() {
+      const s = gRef.current;
+      const freeReady = Date.now() - (s.campaignFreeTs || 0) >= 86400000;
+      if (freeReady) {
+        setG((st) => ({ ...st, campaignFreeTs: Date.now() }));
+        return { ok: true, free: true };
+      }
+      if (s.ticketsSilver >= 1) {
+        setG((st) => ({ ...st, ticketsSilver: st.ticketsSilver - 1 }));
+        return { ok: true, free: false };
+      }
+      return { ok: false, reason: I18N.t("CAMP_NO_TICKET") };
+    },
+    // Applique le résultat d'un étage. survivors = bêtes joueur vivantes (1-3).
+    // Récompenses calculées en delta (premier clear / premier 3 étoiles).
+    resolveCampaignFloor({ worldIndex, floorIndex, win, survivors }) {
+      const s = gRef.current;
+      const summary = { win, stars: 0, oldStars: 0, lockedGain: 0, silver: 0, gold: 0, titleUnlocked: null, legend: false };
+      if (!win) return summary;
+      const stars = Math.max(1, Math.min(3, survivors));
+      summary.stars = stars;
+
+      const prevWorld = s.campaignProgress[worldIndex];
+      const prevStars = prevWorld ? prevWorld.stars.slice() : new Array(D.FLOORS_PER_WORLD).fill(0);
+      const old = prevStars[floorIndex] || 0;
+      summary.oldStars = old;
+      const isBoss = floorIndex === D.BOSS_FLOOR;
+
+      let locked = s.locked, silver = s.ticketsSilver, gold = s.ticketsGold;
+      if (old === 0) {
+        const gain = D.campReward(floorIndex, isBoss);
+        locked += gain; summary.lockedGain = gain;
+        if (isBoss) { gold += 1; summary.gold = 1; }
+      }
+      if (old < 3 && stars === 3) { silver += 1; summary.silver = 1; }
+
+      const newStars = prevStars.slice();
+      if (stars > old) newStars[floorIndex] = stars;
+
+      const progress = { ...s.campaignProgress, [worldIndex]: { stars: newStars } };
+      const titles = s.campaignTitles.slice();
+
+      // Monde complété à 100 % → titre du monde
+      const worldTotal = newStars.reduce((a, b) => a + b, 0);
+      const worldTitleKey = "CAMP_W" + (worldIndex + 1) + "_TITLE";
+      if (worldTotal === D.STARS_PER_WORLD && !titles.includes(worldTitleKey)) {
+        titles.push(worldTitleKey);
+        summary.titleUnlocked = worldTitleKey;
+      }
+      // Tous les mondes à 100 % → titre légendaire
+      const allDone = D.WORLDS.every((_, i) => {
+        const wp = progress[i];
+        return wp && wp.stars.reduce((a, b) => a + b, 0) === D.STARS_PER_WORLD;
+      });
+      if (allDone && !titles.includes("CAMP_LEGEND_TITLE")) {
+        titles.push("CAMP_LEGEND_TITLE");
+        summary.legend = true;
+      }
+
+      setG((st) => ({ ...st, locked, ticketsSilver: silver, ticketsGold: gold, campaignProgress: progress, campaignTitles: titles }));
+      return summary;
+    },
   }), []);
 
   const ctx = { g, actions, toast };
@@ -747,7 +835,7 @@ function App() {
     );
   }
 
-  const VIEWS = { team: Team, arena: Arena, quests: Quests, forge: Forge, wallet: Wallet, boosts: Boosts, perso: Perso, leaderboard: Leaderboard, options: Options };
+  const VIEWS = { team: Team, arena: Arena, campaign: Campaign, quests: Quests, forge: Forge, wallet: Wallet, boosts: Boosts, perso: Perso, leaderboard: Leaderboard, options: Options };
   const View = VIEWS[g.view] || Team;
 
   return (
@@ -818,7 +906,7 @@ function Header({ chipPop }) {
 function Nav() {
   const { g, actions } = useFA();
   const tabs = [
-    ["team", "NAV_TEAM"], ["arena", "NAV_ARENA"], ["quests", "NAV_QUESTS"], ["forge", "NAV_FORGE"],
+    ["team", "NAV_TEAM"], ["arena", "NAV_ARENA"], ["campaign", "NAV_CAMPAIGN"], ["quests", "NAV_QUESTS"], ["forge", "NAV_FORGE"],
     ["wallet", "NAV_WALLET"], ["boosts", "NAV_BOOSTS"], ["perso", "NAV_PERSO"], ["leaderboard", "NAV_LEADERBOARD"], ["options", "NAV_OPTIONS"],
   ];
   return (

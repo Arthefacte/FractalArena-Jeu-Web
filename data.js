@@ -80,8 +80,8 @@
     DEFEAT_POOL_RATIO: 0.667,
     LOOP_SILVER_MAX: 100,
     LOOP_GOLD_MAX: 50,
-    TICKET_SILVER_PER_MS: 10,
-    TICKET_GOLD_PER_MS: 5,
+    TICKET_SILVER_PER_MS: 2,
+    TICKET_GOLD_PER_MS: 0,
     WITHDRAW_MIN: 500,
     WITHDRAW_MAX: 20000,
     DEPOSIT_MIN: 100,
@@ -89,6 +89,7 @@
     MAX_LEVEL_UPGRADE: 100,
     WELCOME_LOCKED: 1000,
     WELCOME_LIQUID: 0,
+    WELCOME_TICKETS_SILVER: 5,
     VANITY_RENAME: 1000,
     VANITY_TITLE: 5000,
   };
@@ -286,6 +287,121 @@
     return enemies;
   }
 
+  // ============================================================
+  //  PvE CAMPAIGN — 6 mondes × 10 étages, génération procédurale
+  //  (cf. specs/CAMPAIGN.spec.md). Tout est local : aucune dépendance
+  //  serveur. Le combat est joué côté client via FA_ENGINE.runBattle.
+  // ============================================================
+  const FLOORS_PER_WORLD = 10;
+  const BOSS_FLOOR = 9;               // 10e étage (index 0-based)
+  const STARS_PER_WORLD = FLOORS_PER_WORLD * 3; // 30 étoiles = 100 %
+  const CAMP_REWARD_FLOOR = 20;        // FRACTALARENA locked par étage (base)
+  const CAMP_REWARD_BOSS = 20;        // FRACTALARENA locked pour un boss
+  // Récompense progressive : +4 par étage, bonus ×2 pour le boss
+  function campReward(floorIndex, isBoss) {
+    const base = 12 + floorIndex * 4;
+    return base + (isBoss ? base + 20 : 0);
+  }
+  const ALL_ENEMY_TYPES = ["HASH", "MINING", "LEDGER", "NETWORK", "BLOCK", "GENESIS"];
+
+  // Config des 6 mondes. `type` = type dominant (ou "MIX" pour Le Cœur).
+  // `img` = clé d'art (D.ART) pour la vignette. `starsReq` = étoiles
+  // cumulées (tous mondes) requises pour déverrouiller ce monde.
+  const WORLDS = [
+    { id: 0, type: "BLOCK",   img: "BLOCK",   color: "#9CA3AF", starsReq: 0 },
+    { id: 1, type: "MINING",  img: "Miner",   color: "#F7931A", starsReq: 10 },
+    { id: 2, type: "LEDGER",  img: "LEDGER",  color: "#3B82F6", starsReq: 20 },
+    { id: 3, type: "NETWORK", img: "NETWORK", color: "#00F0FF", starsReq: 40 },
+    { id: 4, type: "GENESIS", img: "GENESIS", color: "#B026FF", starsReq: 65 },
+    { id: 5, type: "MIX",     img: "NETWORK", color: "#FF3B5C", starsReq: 90 },
+  ];
+
+  // Rareté/niveau AFFICHÉS par bande de difficulté (cf. spec §2.3). Purement
+  // cosmétiques : la PUISSANCE réelle est pilotée par pveDiffMult (relatif au
+  // joueur), pour que la campagne reste jouable à toute progression.
+  function pveLevel(worldIndex, floorIndex) {
+    let base;
+    if (floorIndex <= 2) base = 1 + floorIndex;             // 1..3
+    else if (floorIndex <= 5) base = 5 + (floorIndex - 3) * 2; // 5,7,9
+    else if (floorIndex <= 8) base = 10 + (floorIndex - 6) * 4; // 10,14,18
+    else base = 25;                                          // boss
+    return base + worldIndex * 3;
+  }
+  function pveRarity(worldIndex, floorIndex) {
+    if (WORLDS[worldIndex].type === "MIX") {
+      return floorIndex === BOSS_FLOOR ? "Legendary" : (Math.random() < 0.5 ? "Epic" : "Legendary");
+    }
+    const r = Math.random();
+    if (floorIndex === BOSS_FLOOR) return r < 0.5 ? "Epic" : "Legendary";
+    if (floorIndex <= 2) return r < 0.7 ? "Common" : "Rare";
+    if (floorIndex <= 5) return r < 0.5 ? "Rare" : "Epic";
+    return r < 0.6 ? "Epic" : "Legendary";
+  }
+  // Multiplicateur de puissance RELATIF à l'équipe du joueur. Calibré sur le
+  // combat (binaire) : ~0.80 = tutorial (~victoire assurée), ~1.0 = 50/50,
+  // ~1.10 = boss exigeant. Ramp doux par étage + scaling monde + bump boss.
+  function pveDiffMult(worldIndex, floorIndex) {
+    let m = 0.80 + floorIndex * 0.020 + worldIndex * 0.011;
+    if (floorIndex === BOSS_FLOOR) m += 0.03;               // étage boss plus dur
+    return m;
+  }
+  // Budget de puissance pondéré. La DEF est sur-pondérée (×13) car dans
+  // l'engine dmg = atk − def·0.5 : un point de DEF vaut bien plus en combat.
+  // Sans ça, les types tanky (Block, Block-like) écrasent à budget "égal".
+  function powerBudget(hp, atk, def, spd, mag) {
+    return hp + atk * 5 + def * 13 + spd * 5 + mag * 5;
+  }
+  function templateBudget(tname) {
+    const t = TEMPLATES[tname];
+    return powerBudget(t.hp, t.atk, t.def, t.spd, t.mag);
+  }
+  function generatePvEBeast(worldIndex, floorIndex, slot, playerBeast) {
+    const world = WORLDS[worldIndex];
+    const type = world.type === "MIX" ? pick(ALL_ENEMY_TYPES) : world.type;
+    const isBoss = floorIndex === BOSS_FLOOR && slot === 1;
+    const level = pveLevel(worldIndex, floorIndex);
+    const rarity = pveRarity(worldIndex, floorIndex);
+    const variant = (floorIndex % 3) + 1;                    // 1, 2 ou 3
+    const templateName = TYPE_LABEL[type] + "-" + variant;   // ex "Block-1"
+    const tpl = TEMPLATES[templateName];
+
+    // Budget cible = budget effectif du joueur sur ce slot × m (relatif). Sans
+    // joueur de référence (sécurité), on retombe sur le template Common brut.
+    let m = pveDiffMult(worldIndex, floorIndex);
+    if (isBoss) m *= 1.04;                                   // unité boss un cran au-dessus
+    let scale;
+    if (playerBeast) {
+      const pBudget = powerBudget(maxHp(playerBeast), eff(playerBeast, "atk"), eff(playerBeast, "def"), eff(playerBeast, "spd"), eff(playerBeast, "mag"));
+      scale = (pBudget * m) / templateBudget(templateName);
+    } else {
+      scale = m; // fallback : pas d'équipe fournie
+    }
+    scale *= 0.90 + Math.random() * 0.20;                   // variance ±10 % (casse les timeouts déterministes)
+    // Stats de base = profil du template × scale ; eff() ajoute levelMult(level)
+    // pour l'affichage, donc on neutralise ce facteur ici pour garder la
+    // puissance EFFECTIVE = template × scale.
+    const lm = levelMult(level);
+    const b = mintBeast(templateName, rarity);
+    b.level = level;
+    b.xp = 0;
+    for (const k of ["hp", "atk", "def", "spd", "mag"]) {
+      b["base_" + k] = Math.max(1, Math.floor(tpl[k] * scale / lm));
+    }
+    b.name = TYPE_LABEL[type];
+    b.is_boss = isBoss;
+    return b;
+  }
+  // Renvoie une ÉQUIPE de 3 ennemis pour un (monde, étage). `playerTeam` (3
+  // bêtes) sert de référence de puissance pour un scaling relatif équilibré.
+  function generatePvEEnemy(worldIndex, floorIndex, playerTeam) {
+    const team = [];
+    for (let i = 0; i < 3; i++) {
+      const ref = playerTeam && playerTeam[i] ? playerTeam[i] : null;
+      team.push(generatePvEBeast(worldIndex, floorIndex, i, ref));
+    }
+    return team;
+  }
+
   window.FA_DATA = {
     RARITY_ORDER, RARITY_LIST, RARITY_COLORS, RARITY_UPGRADE, MINT_ODDS,
     PRESET_COLORS, TYPE_TO_PRESET, TYPE_LABEL, ART,
@@ -295,5 +411,9 @@
     eff, maxHp, mintBeast, starterRoster, xpToNext, displayName,
     grantXp, upgradeRarity, avgRarity, avgLevel, generateEnemyTeam,
     walletNameInscriptions,
+    // PvE Campaign
+    WORLDS, FLOORS_PER_WORLD, BOSS_FLOOR, STARS_PER_WORLD,
+    campReward,
+    generatePvEEnemy,
   };
 })();

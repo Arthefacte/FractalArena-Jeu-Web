@@ -68,6 +68,7 @@ function ForgeFusion() {
   const { g, actions, toast } = useFA();
   const [sel, setSel] = useState([]);
   const [fuseBusy, setFuseBusy] = useState(false);
+  const [goldMode, setGoldMode] = useState(false);
   const elig = g.roster.filter((b) => b.rarity !== "Legendary");
   const sorted = elig.slice().sort((a, b) => D.RARITY_ORDER[b.rarity] - D.RARITY_ORDER[a.rarity]);
   const first = sel[0] ? g.roster.find((b) => b.id === sel[0]) : null;
@@ -81,13 +82,16 @@ function ForgeFusion() {
     if (sel.includes(b.id)) setSel(sel.filter((x) => x !== b.id));
     else if (sel.length < 2 && clickable(b)) setSel([...sel, b.id]);
   }
-  async function doFuse() {
+  async function doFuse(gold) {
     if (fuseBusy) return;
     setFuseBusy(true);
-    const r = await actions.fuse(sel[0], sel[1]);
+    const r = await actions.fuse(sel[0], sel[1], gold);
     setFuseBusy(false);
     if (!r.ok) { toast(r.reason, "bad"); return; }
-    if (r.success) toast(I18N.t("FG_FUSE_OK", rarityLabel(r.result.rarity)), "good");
+    if (r.success) {
+      if (r.result?.premium) toast(I18N.t("FG_FUSE_PREMIUM", rarityLabel(r.result.rarity)), "good");
+      else toast(I18N.t("FG_FUSE_OK", rarityLabel(r.result.rarity)), "good");
+    }
     else toast(I18N.t("FG_FUSE_FAIL"), "bad");
     setSel([]);
   }
@@ -103,7 +107,11 @@ function ForgeFusion() {
         {canFuse && (
           <div className="flex gap12 center">
             <span className="pill" style={{ color: "var(--elec)" }}>{I18N.t("FG_SUCCESS_RATE")} {Math.round(rate * 100)}%</span>
-            <button className="btn btn-forge" disabled={!balOk || fuseBusy} onClick={doFuse}>{fuseBusy ? "…" : I18N.t("FG_FUSE_BTN", cost)}</button>
+            <span className="pill" style={{ color: "var(--gold)", cursor: "pointer", opacity: g.ticketsGold >= 1 ? 1 : 0.4, border: goldMode ? "1px solid var(--gold)" : undefined }}
+              onClick={() => g.ticketsGold >= 1 && setGoldMode(!goldMode)}>
+              🎟 {I18N.t("FG_GOLD")} {goldMode ? "✓" : ""}
+            </span>
+            <button className={cx("btn", goldMode ? "btn-gold" : "btn-forge")} disabled={!balOk || fuseBusy} onClick={() => doFuse(goldMode)}>{fuseBusy ? "…" : I18N.t("FG_FUSE_BTN", cost)}</button>
           </div>
         )}
       </div>
