@@ -28,7 +28,7 @@ function CombatCard({ meta, live, side, cref }) {
     );
   }
   const rc = D.RARITY_COLORS[meta.rarity];
-  const frac = live ? live.hp / live.maxHp : 1;
+  const frac = live ? (live.maxHp > 0 ? live.hp / live.maxHp : 0) : 1;
   const dead = live && !live.alive;
   return (
     <div className={cx("card", dead && "dead")} ref={cref} style={{ "--rc": rc }}>
@@ -158,7 +158,7 @@ function Arena() {
     setP2Meta(enemies.map(beastMeta));
 
     const battle = { events, winner: bet.won ? "p1" : "p2" };
-    if (events.length) { setP1Live(events[0].state.p1); setP2Live(events[0].state.p2); }
+    if (events.length) { setP1Live(events[0]?.state?.p1); setP2Live(events[0]?.state?.p2); }
 
     if (free) log(I18N.t("L_FREE"), "lc-green");
     else log(I18N.t("L_BET", I18N.t("AR_" + effTier.toUpperCase()), bet.betAmount), "lc-gold");

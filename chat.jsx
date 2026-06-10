@@ -89,8 +89,12 @@ function ChatFab() {
     setMessages(next);
     saveChat(g.wallet, next);
     setBusy(true);
-    const res = await actions.callChat(next);
-    setBusy(false);
+    let res;
+    try {
+      res = await actions.callChat(next);
+    } finally {
+      setBusy(false);
+    }
     if (res.rateLimited) { toast(I18N.t("CHAT_RATELIMIT"), "bad"); return; }
     const reply = res.ok ? res.reply : I18N.t("CHAT_ERROR");
     const after = [...next, { role: "assistant", content: reply }];

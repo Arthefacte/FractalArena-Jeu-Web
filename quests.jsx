@@ -24,6 +24,8 @@ function Quests() {
     actions.fetchQuests().then((r) => {
       if (r.ok) { setSt({ loading: false, error: false, data: r.data }); setReset(r.data.reset_in_seconds); }
       else setSt({ loading: false, error: true, data: null });
+    }).catch(() => {
+      setSt({ loading: false, error: true, data: null });
     });
   };
   useEffect(() => { load(); }, []);
@@ -34,8 +36,12 @@ function Quests() {
 
   const onClaim = async (id) => {
     setClaiming(id);
-    const r = await actions.claimQuest(id);
-    setClaiming(null);
+    let r;
+    try {
+      r = await actions.claimQuest(id);
+    } finally {
+      setClaiming(null);
+    }
     if (r.ok) load();
   };
 
@@ -53,7 +59,7 @@ function Quests() {
           </div>
           <div className="q-list">
             {d.quests.map((q) => {
-              const pct = Math.min(100, Math.round((q.progress / q.target) * 100));
+              const pct = q.target > 0 ? Math.min(100, Math.round((q.progress / q.target) * 100)) : 0;
               return (
                 <div key={q.id} className={cx("q-row", q.claimed && "done")}>
                   <div className="q-info">

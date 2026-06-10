@@ -89,8 +89,8 @@ function ForgeFusion() {
     setFuseBusy(false);
     if (!r.ok) { toast(r.reason, "bad"); return; }
     if (r.success) {
-      if (r.result?.premium) toast(I18N.t("FG_FUSE_PREMIUM", rarityLabel(r.result.rarity)), "good");
-      else toast(I18N.t("FG_FUSE_OK", rarityLabel(r.result.rarity)), "good");
+      if (r.result?.premium) toast(I18N.t("FG_FUSE_PREMIUM", rarityLabel(r.result?.rarity)), "good");
+      else toast(I18N.t("FG_FUSE_OK", rarityLabel(r.result?.rarity)), "good");
     }
     else toast(I18N.t("FG_FUSE_FAIL"), "bad");
     setSel([]);

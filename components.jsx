@@ -9,7 +9,7 @@ const FA_Ctx = createContext(null);
 const useFA = () => useContext(FA_Ctx);
 
 function cx(...a) { return a.filter(Boolean).join(" "); }
-function fmt(n) { return (n | 0).toLocaleString("en-US").replace(/,/g, " "); }
+function fmt(n) { return Math.floor(n).toLocaleString("en-US").replace(/,/g, " "); }
 function presetLabel(p) { return I18N.t(p); }
 function rarityLabel(r) { return I18N.t(r); }
 

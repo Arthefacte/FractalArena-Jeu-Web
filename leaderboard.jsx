@@ -23,6 +23,9 @@ function Leaderboard() {
       if (!alive) return;
       if (r.ok) setSt({ loading: false, top: r.top, you: r.you, error: false });
       else setSt({ loading: false, top: [], you: null, error: true });
+    }).catch(() => {
+      if (!alive) return;
+      setSt({ loading: false, top: [], you: null, error: true });
     });
     return () => { alive = false; };
   }, [board]);

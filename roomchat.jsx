@@ -101,6 +101,9 @@ function RoomFab() {
   const lastIdRef = useRef(0);
   const timerRef = useRef(null);
 
+  // Recharge la liste des mutés quand le wallet change (les mutés sont par-wallet)
+  useEffect(() => { setMuted(loadMuted(g.wallet)); }, [g.wallet]);
+
   const ingest = useCallback((incoming) => {
     if (!incoming || incoming.length === 0) return;
     setMessages((prev) => {
@@ -114,8 +117,10 @@ function RoomFab() {
   }, []);
 
   const poll = useCallback(async () => {
-    const res = await actions.fetchRoomMessages(lastIdRef.current || undefined);
-    if (res.ok) ingest(res.messages);
+    try {
+      const res = await actions.fetchRoomMessages(lastIdRef.current || undefined);
+      if (res.ok) ingest(res.messages);
+    } catch (e) { /* réseau : on réessaiera au prochain poll */ }
   }, [actions, ingest]);
 
   useEffect(() => {
@@ -129,7 +134,13 @@ function RoomFab() {
   }, [open, poll]);
 
   async function send(text) {
-    const res = await actions.sendRoomMessage(text);
+    let res;
+    try {
+      res = await actions.sendRoomMessage(text);
+    } catch (e) {
+      toast(I18N.t("ROOM_BLOCKED"), "bad");
+      return;
+    }
     if (res.ok) { poll(); return; }
     const key = res.reason === "rate" ? "ROOM_RATELIMIT"
       : res.reason === "banned" ? "ROOM_BANNED"

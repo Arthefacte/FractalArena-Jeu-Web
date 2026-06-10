@@ -437,14 +437,14 @@ function App() {
       // Le résultat (gratuit ET payant) vient du serveur (déjà appliqué côté DB)
       const srv = gRef.current.serverFight;
       if (srv !== null) {
-        win = srv.won;  // override le résultat local par le résultat serveur
+        win = srv.won ?? false;  // override le résultat local par le résultat serveur
       }
       const summary = { payout: 0, net: 0, xp: 0, pool: 0, burn: 0, milestone: false, luckyBonus: 0, insuranceUsed: false, betAmount, levelUps: [], rarityUps: [] };
       setG((s) => {
         // Solde final serveur appliqué ICI (fin du combat), pas au lancement → le gain
         // n'apparaît qu'une fois le replay terminé.
-        let liquid = srv ? srv.new_liquid : s.liquid;
-        let locked = srv ? srv.new_locked : s.locked;
+        let liquid = srv ? (srv.new_liquid ?? s.liquid) : s.liquid;
+        let locked = srv ? (srv.new_locked ?? s.locked) : s.locked;
         let { totalFights, ticketsSilver, ticketsGold } = s;
         const session = { ...s.session };
         const boosts = { ...s.boosts };
