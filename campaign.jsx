@@ -163,8 +163,8 @@ function CampaignCombat({ worldIndex, floorIndex, onBack, onCleared }) {
     const pay = actions.startCampaignFight();
     if (!pay.ok) { toast(pay.reason, "bad"); return; }
 
-    // Génère l'équipe ennemie (scalée relativement au joueur) + nom du boss
-    const enemies = D.generatePvEEnemy(worldIndex, floorIndex, selectedBeasts);
+    // Génère l'équipe ennemie (puissance absolue fixée par l'étage) + nom du boss
+    const enemies = D.generatePvEEnemy(worldIndex, floorIndex);
     enemies.forEach((e) => { if (e.is_boss) e.custom_name = bossName; });
 
     // Combat 100 % client

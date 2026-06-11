@@ -336,8 +336,8 @@
   ];
 
   // Rareté/niveau AFFICHÉS par bande de difficulté (cf. spec §2.3). Purement
-  // cosmétiques : la PUISSANCE réelle est pilotée par pveDiffMult (relatif au
-  // joueur), pour que la campagne reste jouable à toute progression.
+  // cosmétiques : la PUISSANCE réelle est pilotée par pveAbsPower (absolue, fixée
+  // par l'étage) — la campagne se joue aux stats des entités, pas en relatif au joueur.
   function pveLevel(worldIndex, floorIndex) {
     let base;
     if (floorIndex <= 2) base = 1 + floorIndex;             // 1..3
@@ -357,49 +357,30 @@
     if (floorIndex <= 5) return r < 0.5 ? "Rare" : "Epic";
     return r < 0.6 ? "Epic" : "Legendary";
   }
-  // Multiplicateur de puissance RELATIF à l'équipe du joueur. Calibré sur le
-  // combat (binaire) : ~0.80 = tutorial (~victoire assurée), ~1.0 = 50/50,
-  // ~1.10 = boss exigeant. Ramp doux par étage + scaling monde + bump boss.
-  function pveDiffMult(worldIndex, floorIndex) {
-    let m = 0.75 + floorIndex * 0.025 + worldIndex * 0.011;
-    if (floorIndex === BOSS_FLOOR) m += 0.03;               // étage boss plus dur
-    return m;
+  // Puissance ABSOLUE de l'étage (multiplicateur vs le template brut), pilotée par
+  // (monde, étage) UNIQUEMENT — plus aucune référence à l'équipe du joueur. La campagne
+  // « se joue aux stats » : monter ses bêtes / fusionner / reroll change réellement l'issue,
+  // et un étage peut murer une équipe trop faible. Courbe quadratique : douce à l'ouverture
+  // (un starter Common passe les 2-3 premiers étages), raide en fin de monde, +scaling/monde.
+  const PVE_BOSS_MULT = 1.12;
+  function pveAbsPower(worldIndex, floorIndex) {
+    return 0.72 + 0.08 * floorIndex + 0.018 * floorIndex * floorIndex + 0.40 * worldIndex;
   }
-  // Budget de puissance pondéré. La DEF est sur-pondérée (×13) car dans
-  // l'engine dmg = atk − def·0.5 : un point de DEF vaut bien plus en combat.
-  // Sans ça, les types tanky (Block, Block-like) écrasent à budget "égal".
-  function powerBudget(hp, atk, def, spd, mag) {
-    return hp + atk * 5 + def * 13 + spd * 5 + mag * 5;
-  }
-  function templateBudget(tname) {
-    const t = TEMPLATES[tname];
-    return powerBudget(t.hp, t.atk, t.def, t.spd, t.mag);
-  }
-  function generatePvEBeast(worldIndex, floorIndex, slot, playerBeast) {
+  function generatePvEBeast(worldIndex, floorIndex, slot) {
     const world = WORLDS[worldIndex];
     const type = world.type === "MIX" ? pick(ALL_ENEMY_TYPES) : world.type;
     const isBoss = floorIndex === BOSS_FLOOR && slot === 1;
     const level = pveLevel(worldIndex, floorIndex);
-    const rarity = pveRarity(worldIndex, floorIndex);
+    const rarity = pveRarity(worldIndex, floorIndex);        // rareté/niveau = affichage cosmétique
     const variant = (floorIndex % 3) + 1;                    // 1, 2 ou 3
     const templateName = TYPE_LABEL[type] + "-" + variant;   // ex "Block-1"
     const tpl = TEMPLATES[templateName];
 
-    // Budget cible = budget effectif du joueur sur ce slot × m (relatif). Sans
-    // joueur de référence (sécurité), on retombe sur le template Common brut.
-    let m = pveDiffMult(worldIndex, floorIndex);
-    if (isBoss) m *= 1.04;                                   // unité boss un cran au-dessus
-    let scale;
-    if (playerBeast) {
-      const pBudget = powerBudget(maxHp(playerBeast), eff(playerBeast, "atk"), eff(playerBeast, "def"), eff(playerBeast, "spd"), eff(playerBeast, "mag"));
-      scale = (pBudget * m) / templateBudget(templateName);
-    } else {
-      scale = m; // fallback : pas d'équipe fournie
-    }
-    scale *= 0.90 + Math.random() * 0.20;                   // variance ±10 % (casse les timeouts déterministes)
-    // Stats de base = profil du template × scale ; eff() ajoute levelMult(level)
-    // pour l'affichage, donc on neutralise ce facteur ici pour garder la
-    // puissance EFFECTIVE = template × scale.
+    let scale = pveAbsPower(worldIndex, floorIndex);
+    if (isBoss) scale *= PVE_BOSS_MULT;                      // l'unité boss frappe un cran au-dessus
+    scale *= 0.92 + Math.random() * 0.16;                   // variance ±8 % (casse les timeouts déterministes)
+    // Puissance EFFECTIVE = template × scale ; eff() ré-applique levelMult(level) pour
+    // l'affichage du niveau, on neutralise donc ce facteur ici.
     const lm = levelMult(level);
     const b = mintBeast(templateName, rarity);
     b.level = level;
@@ -411,14 +392,11 @@
     b.is_boss = isBoss;
     return b;
   }
-  // Renvoie une ÉQUIPE de 3 ennemis pour un (monde, étage). `playerTeam` (3
-  // bêtes) sert de référence de puissance pour un scaling relatif équilibré.
-  function generatePvEEnemy(worldIndex, floorIndex, playerTeam) {
+  // Renvoie une ÉQUIPE de 3 ennemis pour un (monde, étage). Puissance absolue,
+  // aucune référence à l'équipe du joueur.
+  function generatePvEEnemy(worldIndex, floorIndex) {
     const team = [];
-    for (let i = 0; i < 3; i++) {
-      const ref = playerTeam && playerTeam[i] ? playerTeam[i] : null;
-      team.push(generatePvEBeast(worldIndex, floorIndex, i, ref));
-    }
+    for (let i = 0; i < 3; i++) team.push(generatePvEBeast(worldIndex, floorIndex, i));
     return team;
   }
 
