@@ -11,6 +11,17 @@ const CLIENT_SECRET = "pastouche";
 const HAS_UNISAT = () => typeof window.unisat !== "undefined";
 const IS_MOBILE = () => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
 
+// Progression campagne serveur (plat "w-f" → stars) vers le format client imbriqué.
+function nestProgress(flat) {
+  const out = {};
+  for (const k in (flat || {})) {
+    const parts = k.split("-"); const w = +parts[0], f = +parts[1];
+    if (!out[w]) out[w] = { stars: new Array(D.FLOORS_PER_WORLD).fill(0) };
+    out[w].stars[f] = flat[k];
+  }
+  return out;
+}
+
 function serverToState(save, addr, s) {
   const roster = Array.isArray(save.creatures) && save.creatures.length > 0 ? save.creatures : D.starterRoster();
   const rosterIds = new Set(roster.map((b) => b.id));
@@ -26,6 +37,7 @@ function serverToState(save, addr, s) {
     loopGoldToday: save.loop_gold_today ?? 0,
     ticketsSilver: save.tickets_silver ?? 0,
     ticketsGold: save.tickets_gold ?? 0,
+    campaignProgress: nestProgress(save.campaign_progress),
     session: { wins: save.session_wins ?? 0, losses: save.session_losses ?? 0, net: save.session_arte_net ?? 0 },
     roster,
     selected: s.selected.filter((id) => rosterIds.has(id)), // retire les ids absents du nouveau roster
@@ -445,17 +457,14 @@ function App() {
         // n'apparaît qu'une fois le replay terminé.
         let liquid = srv ? (srv.new_liquid ?? s.liquid) : s.liquid;
         let locked = srv ? (srv.new_locked ?? s.locked) : s.locked;
-        let { totalFights, ticketsSilver, ticketsGold } = s;
+        // Compteur, tickets et milestone : SERVER-OWNED — repris de la réponse /fight
+        // (récompense de milestone déjà incluse dans srv.new_locked / srv.tickets_silver).
+        let totalFights = srv ? (srv.total_combat_count ?? s.totalFights + 1) : s.totalFights + 1;
+        let ticketsSilver = srv ? (srv.tickets_silver ?? s.ticketsSilver) : s.ticketsSilver;
+        let ticketsGold = srv ? (srv.tickets_gold ?? s.ticketsGold) : s.ticketsGold;
         const session = { ...s.session };
         const boosts = { ...s.boosts };
-        totalFights += 1;
-        // milestone
-        if (totalFights % D.ECON.MILESTONE_EVERY === 0) {
-          locked += D.ECON.MILESTONE_REWARD;
-          ticketsSilver += D.ECON.TICKET_SILVER_PER_MS;
-          ticketsGold += D.ECON.TICKET_GOLD_PER_MS;
-          summary.milestone = true;
-        }
+        if (srv && srv.milestone) summary.milestone = true;
         // roster (xp mutates in place; clone array for React)
         const selBeasts = s.selected.map((id) => s.roster.find((b) => b.id === id)).filter(Boolean);
 
@@ -538,35 +547,30 @@ function App() {
       if (a.rarity === "Legendary") return { ok: false, reason: I18N.t("FG_NOT_FUSABLE") };
       if (a.rarity !== b.rarity) return { ok: false, reason: I18N.t("FG_PICK2") };
       const cost = D.FORGE.FUSION_COST[a.rarity];
-      if (s.liquid + s.locked < cost) return { ok: false, reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, cost) };
-      // Fusion premium : 1 ticket Or = 100% réussite, côté client
-      if (useGold && s.ticketsGold >= 1) {
-        const nextRarity = D.RARITY_UPGRADE[a.rarity];
-        const newBeast = D.mintBeast(a.template_name, nextRarity);
-        newBeast.level = a.level;
-        newBeast.xp = a.xp;
-        newBeast.id = a.id;
-        setG((st) => ({
-          ...st, ticketsGold: st.ticketsGold - 1,
-          roster: st.roster.map((r) => r.id === a.id ? newBeast : r).filter((r) => r.id !== b.id),
-        }));
-        return { ok: true, success: true, result: { rarity: nextRarity, premium: true } };
+      const premium = !!useGold;
+      // Fusion premium : 1 ticket Or = 100% réussite, sans coût FA — gérée SERVEUR
+      // (consommation du ticket + upgrade préservant les stats). Plus de mint local.
+      if (premium) {
+        if (s.ticketsGold < 1) return { ok: false, reason: "Pas de ticket Or" };
+      } else {
+        if (s.liquid + s.locked < cost) return { ok: false, reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, cost) };
       }
       if (!s.wallet) return { ok: false, reason: "Wallet requis" };
       try {
         const resp = await fetch(`${API_URL}/forge/fusion`, {
           method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
-          body: JSON.stringify({ wallet: s.wallet, primary_id: id1, secondary_id: id2 }),
+          body: JSON.stringify({ wallet: s.wallet, primary_id: id1, secondary_id: id2, use_gold: premium }),
         });
         const data = await resp.json();
         if (data.status === "insufficient_balance") return { ok: false, reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, cost) };
+        if (data.status === "error" && data.reason === "no_gold_ticket") return { ok: false, reason: "Pas de ticket Or" };
         if (data.status !== "success" && data.status !== "fail") return { ok: false, reason: data.error || "Erreur serveur" };
         const sv = await fetch(`${API_URL}/save/${s.wallet}`);
         if (sv.ok) {
           const { save } = await sv.json();
           setG((st) => { const n = serverToState(save, s.wallet, st); n.selected = st.selected.filter((x) => n.roster.some((r) => r.id === x)); return n; });
         }
-        return { ok: true, success: data.status === "success", result: { rarity: data.new_rarity || a.rarity } };
+        return { ok: true, success: data.status === "success", result: { rarity: data.new_rarity || a.rarity, premium } };
       } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
     },
 
@@ -756,69 +760,57 @@ function App() {
     },
 
     // ---- Campagne PvE (local) ----
-    // Paye l'entrée d'un combat de campagne : 1 entrée gratuite / 24 h,
-    // sinon 1 ticket Argent. Renvoie { ok, free } ou { ok:false, reason }.
-    startCampaignFight() {
+    // Combat de campagne SERVEUR-AUTORITATIF : le serveur paie l'entrée (free/24h ou
+    // ticket Argent), exécute le combat, crédite les récompenses en delta et persiste
+    // la progression. Renvoie { ok, events, enemy, won, survivors, stars, reward, free,
+    // titleUnlocked, legend } ou { ok:false, reason }.
+    async campaignFight(worldIndex, floorIndex, selectedIds) {
       const s = gRef.current;
-      const freeReady = Date.now() - (s.campaignFreeTs || 0) >= 86400000;
-      if (freeReady) {
-        setG((st) => ({ ...st, campaignFreeTs: Date.now() }));
-        return { ok: true, free: true };
-      }
-      if (s.ticketsSilver >= 1) {
-        setG((st) => ({ ...st, ticketsSilver: st.ticketsSilver - 1 }));
-        return { ok: true, free: false };
-      }
-      return { ok: false, reason: I18N.t("CAMP_NO_TICKET") };
-    },
-    // Applique le résultat d'un étage. survivors = bêtes joueur vivantes (1-3).
-    // Récompenses calculées en delta (premier clear / premier 3 étoiles).
-    resolveCampaignFloor({ worldIndex, floorIndex, win, survivors }) {
-      const s = gRef.current;
-      const summary = { win, stars: 0, oldStars: 0, lockedGain: 0, silver: 0, gold: 0, titleUnlocked: null, legend: false };
-      if (!win) return summary;
-      const stars = Math.max(1, Math.min(3, survivors));
-      summary.stars = stars;
+      if (!s.authToken) return { ok: false, reason: I18N.t("CAMP_NO_TICKET") };
+      try {
+        const resp = await fetch(`${API_URL}/campaign/fight`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
+          body: JSON.stringify({ world_index: worldIndex, floor_index: floorIndex, selected: selectedIds }),
+        });
+        const data = await resp.json();
+        if (!resp.ok) {
+          const reason = data.error === "no_entry" ? I18N.t("CAMP_NO_TICKET")
+            : data.error === "étage verrouillé" ? I18N.t("CAMP_LOCKED") || "Étage verrouillé"
+            : data.error || "Erreur serveur";
+          return { ok: false, reason };
+        }
+        const nested = nestProgress(data.progress);
+        // Titres : dérivés de la progression serveur (cosmétique)
+        const titles = s.campaignTitles.slice();
+        let titleUnlocked = null, legend = false;
+        D.WORLDS.forEach((_, i) => {
+          const wp = nested[i];
+          const total = wp ? wp.stars.reduce((a, b) => a + b, 0) : 0;
+          const key = "CAMP_W" + (i + 1) + "_TITLE";
+          if (total === D.STARS_PER_WORLD && !titles.includes(key)) { titles.push(key); titleUnlocked = key; }
+        });
+        const allDone = D.WORLDS.every((_, i) => {
+          const wp = nested[i];
+          return wp && wp.stars.reduce((a, b) => a + b, 0) === D.STARS_PER_WORLD;
+        });
+        if (allDone && !titles.includes("CAMP_LEGEND_TITLE")) { titles.push("CAMP_LEGEND_TITLE"); legend = true; }
 
-      const prevWorld = s.campaignProgress[worldIndex];
-      const prevStars = prevWorld ? prevWorld.stars.slice() : new Array(D.FLOORS_PER_WORLD).fill(0);
-      const old = prevStars[floorIndex] || 0;
-      summary.oldStars = old;
-      const isBoss = floorIndex === D.BOSS_FLOOR;
-
-      let locked = s.locked, silver = s.ticketsSilver, gold = s.ticketsGold;
-      if (old === 0) {
-        const gain = D.campReward(floorIndex, isBoss);
-        locked += gain; summary.lockedGain = gain;
-        if (isBoss) { gold += 1; summary.gold = 1; }
-      }
-      if (old < 3 && stars === 3) { silver += 1; summary.silver = 1; }
-
-      const newStars = prevStars.slice();
-      if (stars > old) newStars[floorIndex] = stars;
-
-      const progress = { ...s.campaignProgress, [worldIndex]: { stars: newStars } };
-      const titles = s.campaignTitles.slice();
-
-      // Monde complété à 100 % → titre du monde
-      const worldTotal = newStars.reduce((a, b) => a + b, 0);
-      const worldTitleKey = "CAMP_W" + (worldIndex + 1) + "_TITLE";
-      if (worldTotal === D.STARS_PER_WORLD && !titles.includes(worldTitleKey)) {
-        titles.push(worldTitleKey);
-        summary.titleUnlocked = worldTitleKey;
-      }
-      // Tous les mondes à 100 % → titre légendaire
-      const allDone = D.WORLDS.every((_, i) => {
-        const wp = progress[i];
-        return wp && wp.stars.reduce((a, b) => a + b, 0) === D.STARS_PER_WORLD;
-      });
-      if (allDone && !titles.includes("CAMP_LEGEND_TITLE")) {
-        titles.push("CAMP_LEGEND_TITLE");
-        summary.legend = true;
-      }
-
-      setG((st) => ({ ...st, locked, ticketsSilver: silver, ticketsGold: gold, campaignProgress: progress, campaignTitles: titles }));
-      return summary;
+        setG((st) => ({
+          ...st,
+          locked: data.new_locked ?? st.locked,
+          ticketsSilver: data.tickets_silver ?? st.ticketsSilver,
+          ticketsGold: data.tickets_gold ?? st.ticketsGold,
+          campaignProgress: nested,
+          campaignTitles: titles,
+        }));
+        return {
+          ok: true, events: data.events || [], enemy: data.enemy || [],
+          won: !!data.won, survivors: data.survivors || 0, stars: data.stars || 0,
+          reward: data.reward || { lockedGain: 0, silver: 0, gold: 0 }, free: !!data.free,
+          titleUnlocked, legend,
+        };
+      } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
     },
   }), []);
 

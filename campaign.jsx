@@ -157,32 +157,31 @@ function CampaignCombat({ worldIndex, floorIndex, onBack, onCleared }) {
     setTimeout(() => el.classList.remove(cls), 380);
   }
 
-  function startFight() {
+  async function startFight() {
     if (playing) return;
     if (!ready) { toast(I18N.t("CAMP_NEED3"), "bad"); return; }
-    const pay = actions.startCampaignFight();
-    if (!pay.ok) { toast(pay.reason, "bad"); return; }
+    setPlaying(true); // verrou anti double-clic pendant l'appel serveur
 
-    // Génère l'équipe ennemie (puissance absolue fixée par l'étage) + nom du boss
-    const enemies = D.generatePvEEnemy(worldIndex, floorIndex);
+    // Combat SERVEUR-AUTORITATIF : entrée, combat et récompenses gérés côté serveur.
+    const resp = await actions.campaignFight(worldIndex, floorIndex, g.selected.slice(0, 3));
+    if (!resp.ok) { setPlaying(false); toast(resp.reason, "bad"); return; }
+
+    const enemies = resp.enemy;
     enemies.forEach((e) => { if (e.is_boss) e.custom_name = bossName; });
+    const events = resp.events || [];
 
-    // Combat 100 % client
-    const battle = window.FA_ENGINE.runBattle(selectedBeasts, enemies);
-
-    setPlaying(true);
     setResult(null);
     setLogLines([]);
     setRound(0);
     setP1Meta(selectedBeasts.map(campMeta));
     setP2Meta(enemies.map(campMeta));
-    if (battle.events.length) { setP1Live(battle.events[0].state.p1); setP2Live(battle.events[0].state.p2); }
-    log(pay.free ? I18N.t("CAMP_FREE_TODAY") : I18N.t("CAMP_TICKET_COST"), "lc-gold");
+    if (events.length) { setP1Live(events[0].state.p1); setP2Live(events[0].state.p2); }
+    log(resp.free ? I18N.t("CAMP_FREE_TODAY") : I18N.t("CAMP_TICKET_COST"), "lc-gold");
     log(I18N.t("L_START"), "lc-elec");
 
     const spd = g.options.speed || 1;
     const baseDelay = g.options.anim ? 165 : 42;
-    battleRef.current = { battle, i: 0, spd, baseDelay };
+    battleRef.current = { battle: { events, winner: resp.won ? "p1" : "p2" }, i: 0, spd, baseDelay, serverResult: resp };
     if (stepRef.current) clearTimeout(stepRef.current);
     stepRef.current = setTimeout(stepBattle, 220 / spd);
   }
@@ -238,16 +237,21 @@ function CampaignCombat({ worldIndex, floorIndex, onBack, onCleared }) {
   function settle() {
     const ctx = battleRef.current;
     if (!ctx) return;
-    const { battle } = ctx;
-    const win = battle.winner === "p1";
-    const finalState = battle.events.length ? battle.events[battle.events.length - 1].state : { p1: [] };
-    const survivors = finalState.p1.filter((u) => u.alive).length;
+    const r = ctx.serverResult || {};
+    const win = !!r.won;
+    const survivors = r.survivors || 0;
     log(win ? I18N.t("L_WIN") : I18N.t("L_LOSE"), win ? "lc-green" : "lc-red");
 
-    const summary = actions.resolveCampaignFloor({ worldIndex, floorIndex, win, survivors });
+    // État (locked/tickets/progression) déjà appliqué par actions.campaignFight.
     setPlaying(false);
     battleRef.current = null;
-    setResult({ win, survivors, ...summary });
+    setResult({
+      win, survivors, stars: r.stars || 0,
+      lockedGain: (r.reward && r.reward.lockedGain) || 0,
+      silver: (r.reward && r.reward.silver) || 0,
+      gold: (r.reward && r.reward.gold) || 0,
+      titleUnlocked: r.titleUnlocked || null, legend: !!r.legend,
+    });
   }
 
   const worldName = I18N.t("CAMP_W" + (worldIndex + 1) + "_NAME");
