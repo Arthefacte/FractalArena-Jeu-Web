@@ -61,24 +61,24 @@
 
   // ---- Templates (18) ----
   const TEMPLATES = {
-    "HashByte-1": { hp: 90, atk: 14, def: 4, spd: 11, mag: 16, type: "HASH", img: "HashByte" },
-    "HashByte-2": { hp: 85, atk: 16, def: 3, spd: 13, mag: 18, type: "HASH", img: "HashByte" },
-    "HashByte-3": { hp: 95, atk: 12, def: 5, spd: 9, mag: 14, type: "HASH", img: "HashByte" },
-    "Miner-1": { hp: 120, atk: 13, def: 6, spd: 9, mag: 8, type: "MINING", img: "Miner" },
-    "Miner-2": { hp: 130, atk: 11, def: 8, spd: 7, mag: 7, type: "MINING", img: "Miner" },
-    "Miner-3": { hp: 115, atk: 14, def: 5, spd: 10, mag: 9, type: "MINING", img: "Miner" },
-    "Ledger-1": { hp: 105, atk: 11, def: 6, spd: 10, mag: 17, type: "LEDGER", img: "LEDGER" },
-    "Ledger-2": { hp: 100, atk: 10, def: 7, spd: 9, mag: 19, type: "LEDGER", img: "LEDGER" },
-    "Ledger-3": { hp: 110, atk: 12, def: 5, spd: 11, mag: 16, type: "LEDGER", img: "LEDGER" },
-    "Network-1": { hp: 88, atk: 15, def: 4, spd: 12, mag: 17, type: "NETWORK", img: "NETWORK" },
-    "Network-2": { hp: 92, atk: 13, def: 5, spd: 14, mag: 15, type: "NETWORK", img: "NETWORK" },
-    "Network-3": { hp: 95, atk: 14, def: 3, spd: 13, mag: 18, type: "NETWORK", img: "NETWORK" },
-    "Block-1": { hp: 125, atk: 12, def: 7, spd: 8, mag: 9, type: "BLOCK", img: "BLOCK" },
-    "Block-2": { hp: 128, atk: 10, def: 9, spd: 6, mag: 8, type: "BLOCK", img: "BLOCK" },
-    "Block-3": { hp: 118, atk: 13, def: 6, spd: 9, mag: 10, type: "BLOCK", img: "BLOCK" },
-    "Genesis-1": { hp: 110, atk: 15, def: 7, spd: 11, mag: 20, type: "GENESIS", img: "GENESIS" },
-    "Genesis-2": { hp: 105, atk: 16, def: 6, spd: 12, mag: 19, type: "GENESIS", img: "GENESIS" },
-    "Genesis-3": { hp: 115, atk: 14, def: 8, spd: 10, mag: 21, type: "GENESIS", img: "GENESIS" },
+    "HashByte-1": { hp: 115, atk: 18, def: 5, spd: 14, mag: 20, type: "HASH", img: "HashByte" },
+    "HashByte-2": { hp: 108, atk: 20, def: 4, spd: 17, mag: 23, type: "HASH", img: "HashByte" },
+    "HashByte-3": { hp: 121, atk: 15, def: 6, spd: 11, mag: 18, type: "HASH", img: "HashByte" },
+    "Miner-1": { hp: 147, atk: 16, def: 7, spd: 11, mag: 10, type: "MINING", img: "Miner" },
+    "Miner-2": { hp: 160, atk: 14, def: 10, spd: 9, mag: 9, type: "MINING", img: "Miner" },
+    "Miner-3": { hp: 141, atk: 17, def: 6, spd: 12, mag: 11, type: "MINING", img: "Miner" },
+    "Ledger-1": { hp: 119, atk: 12, def: 7, spd: 11, mag: 19, type: "LEDGER", img: "LEDGER" },
+    "Ledger-2": { hp: 113, atk: 11, def: 8, spd: 10, mag: 21, type: "LEDGER", img: "LEDGER" },
+    "Ledger-3": { hp: 124, atk: 14, def: 6, spd: 12, mag: 18, type: "LEDGER", img: "LEDGER" },
+    "Network-1": { hp: 104, atk: 18, def: 5, spd: 14, mag: 20, type: "NETWORK", img: "NETWORK" },
+    "Network-2": { hp: 108, atk: 15, def: 6, spd: 16, mag: 18, type: "NETWORK", img: "NETWORK" },
+    "Network-3": { hp: 112, atk: 16, def: 4, spd: 15, mag: 21, type: "NETWORK", img: "NETWORK" },
+    "Block-1": { hp: 148, atk: 14, def: 8, spd: 9, mag: 11, type: "BLOCK", img: "BLOCK" },
+    "Block-2": { hp: 151, atk: 12, def: 11, spd: 7, mag: 9, type: "BLOCK", img: "BLOCK" },
+    "Block-3": { hp: 139, atk: 15, def: 7, spd: 11, mag: 12, type: "BLOCK", img: "BLOCK" },
+    "Genesis-1": { hp: 113, atk: 15, def: 7, spd: 11, mag: 21, type: "GENESIS", img: "GENESIS" },
+    "Genesis-2": { hp: 108, atk: 16, def: 6, spd: 12, mag: 19, type: "GENESIS", img: "GENESIS" },
+    "Genesis-3": { hp: 118, atk: 14, def: 8, spd: 10, mag: 22, type: "GENESIS", img: "GENESIS" },
   };
   const TEMPLATE_KEYS = Object.keys(TEMPLATES);
   const TEMPLATES_BY_TYPE = {};
@@ -175,6 +175,7 @@
       reroll_count: 0,
       name: TYPE_LABEL[tpl.type] + " #" + (idx == null ? ((Math.random() * 900 + 100) | 0) : idx),
       custom_name: null,
+      sv: 1, // version de stats (rééquilibrage des types) — évite un double-scaling à la migration
     };
     return b;
   }

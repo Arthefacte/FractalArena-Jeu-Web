@@ -128,6 +128,8 @@
         const special = useSpecial(unit, target);
         // Affinités : ×1.25 si avantage de type, ×0.80 si désavantage
         const typeMult = D.getTypeMultiplier(unit.type, target.type);
+        // Berserker : dégâts croissants à mesure que ses propres HP baissent (jusqu'à +40%)
+        const berserkMult = unit.preset === "berserker" ? (1 + 0.4 * (1 - unit.hp / unit.maxHp)) : 1;
         let dmg = 0, kind = "atk", crit = false, missed = false;
 
         if (special) {
@@ -137,13 +139,13 @@
           } else {
             const base = unit.mag * 1.5 * D.rand(1.0, 1.34);
             crit = Math.random() < CRIT_CHANCE;
-            dmg = Math.max(1, Math.round((base - target.def * 0.5) * rageMult * typeMult * (crit ? CRIT_MULT : 1)));
+            dmg = Math.max(1, Math.round((base - target.def * 0.5) * rageMult * typeMult * berserkMult * (crit ? CRIT_MULT : 1)));
             kind = "sp";
           }
         } else {
           const base = unit.atk * D.rand(1.0, 1.34);
           crit = Math.random() < CRIT_CHANCE;
-          dmg = Math.max(1, Math.round((base - target.def * 0.5) * rageMult * typeMult * (crit ? CRIT_MULT : 1)));
+          dmg = Math.max(1, Math.round((base - target.def * 0.5) * rageMult * typeMult * berserkMult * (crit ? CRIT_MULT : 1)));
           kind = "atk";
         }
 
