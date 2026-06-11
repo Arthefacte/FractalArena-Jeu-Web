@@ -501,7 +501,7 @@ function App() {
       const prevBoosts = gRef.current.boosts;
       const w2 = gRef.current.wallet;
       if (w2) {
-        const hb = { "Content-Type": "application/json" };
+        const hb = { "Content-Type": "application/json", "Authorization": `Bearer ${gRef.current.authToken}` };
         if (prevBoosts.xp_boost > 0) fetch(`${API_URL}/boosts/use`, { method: "POST", headers: hb, body: JSON.stringify({ wallet: w2, boost_type: "xp_boost" }) }).catch(() => {});
         if (prevBoosts.lucky_strike > 0) fetch(`${API_URL}/boosts/use`, { method: "POST", headers: hb, body: JSON.stringify({ wallet: w2, boost_type: "lucky_strike" }) }).catch(() => {});
         if (summary.insuranceUsed) fetch(`${API_URL}/boosts/use`, { method: "POST", headers: hb, body: JSON.stringify({ wallet: w2, boost_type: "insurance" }) }).catch(() => {});
@@ -518,7 +518,7 @@ function App() {
       if (s.liquid + s.locked < def.cost) return { ok: false, reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, def.cost) };
       try {
         const resp = await fetch(`${API_URL}/boosts/activate`, {
-          method: "POST", headers: { "Content-Type": "application/json" },
+          method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
           body: JSON.stringify({ wallet: s.wallet, boost_type: key }),
         });
         const data = await resp.json();
@@ -556,7 +556,7 @@ function App() {
       if (!s.wallet) return { ok: false, reason: "Wallet requis" };
       try {
         const resp = await fetch(`${API_URL}/forge/fusion`, {
-          method: "POST", headers: { "Content-Type": "application/json" },
+          method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
           body: JSON.stringify({ wallet: s.wallet, primary_id: id1, secondary_id: id2 }),
         });
         const data = await resp.json();
@@ -580,7 +580,7 @@ function App() {
       if (!s.wallet) return { ok: false, reason: "Wallet requis" };
       try {
         const resp = await fetch(`${API_URL}/forge/reroll`, {
-          method: "POST", headers: { "Content-Type": "application/json" },
+          method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
           body: JSON.stringify({ wallet: s.wallet, beast_id: id }),
         });
         const data = await resp.json();
@@ -599,7 +599,7 @@ function App() {
       if (s.liquid + s.locked < cost) return { ok: false, reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, cost) };
       try {
         const resp = await fetch(`${API_URL}/forge/summon`, {
-          method: "POST", headers: { "Content-Type": "application/json" },
+          method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
           body: JSON.stringify({ wallet: s.wallet }),
         });
         const data = await resp.json();
@@ -717,7 +717,7 @@ function App() {
       if (s.liquid + s.locked < cost) return { ok: false, reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, cost) };
       try {
         const resp = await fetch(`${API_URL}/vanity/rename-creature`, {
-          method: "POST", headers: { "Content-Type": "application/json" },
+          method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
           body: JSON.stringify({ wallet: s.wallet, beast_id: id, new_name: name }),
         });
         const data = await resp.json();
@@ -734,7 +734,7 @@ function App() {
       if (s.liquid + s.locked < cost) return { ok: false, reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, cost) };
       try {
         const resp = await fetch(`${API_URL}/vanity/set-title`, {
-          method: "POST", headers: { "Content-Type": "application/json" },
+          method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
           body: JSON.stringify({ wallet: s.wallet, title }),
         });
         const data = await resp.json();
