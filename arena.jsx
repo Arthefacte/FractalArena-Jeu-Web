@@ -16,7 +16,26 @@ function fmtFreeCountdown(ms) {
   return `${h}:${m}:${sec}`;
 }
 
-function CombatCard({ meta, live, side, cref }) {
+// Avantage de type d'une bête face à l'équipe adverse (cf. spec §1.3).
+// Renvoie une flèche verte ↑ si la bête bat un type adverse (×1.25), une
+// flèche rouge ↓ si un type adverse la bat (×0.80), ou null si neutre.
+// L'avantage prime sur le désavantage quand les deux coexistent.
+function typeAdvInfo(myType, oppMeta) {
+  if (!myType || !oppMeta) return null;
+  let strongVs = null, weakVs = null;
+  for (const m of oppMeta) {
+    if (!m || !m.type) continue;
+    const mult = D.getTypeMultiplier(myType, m.type);
+    if (mult > 1 && !strongVs) strongVs = m.type;
+    else if (mult < 1 && !weakVs) weakVs = m.type;
+  }
+  const L = D.TYPE_LABEL;
+  if (strongVs) return { arrow: "▲", color: "var(--success)", tip: I18N.t("AR_TYPE_ADV", L[myType] || myType, L[strongVs] || strongVs) };
+  if (weakVs) return { arrow: "▼", color: "var(--alert)", tip: I18N.t("AR_TYPE_DIS", L[myType] || myType, L[weakVs] || weakVs) };
+  return null;
+}
+
+function CombatCard({ meta, live, side, cref, oppMeta }) {
   if (!meta) {
     return (
       <div className="card" ref={cref} style={{ "--rc": "var(--line)", opacity: 0.5 }}>
@@ -39,7 +58,16 @@ function CombatCard({ meta, live, side, cref }) {
       </div>
       <div className="body">
         <div className="flex between center" style={{ gap: 6 }}>
-          <div className="cname">{meta.name}</div>
+          <div className="flex center" style={{ gap: 4, minWidth: 0 }}>
+            <div className="cname">{meta.name}</div>
+            {(() => {
+              const adv = typeAdvInfo(meta.type, oppMeta);
+              if (!adv) return null;
+              return (
+                <span title={adv.tip} style={{ color: adv.color, fontSize: 12, lineHeight: 1, fontWeight: 700, flex: "none" }}>{adv.arrow}</span>
+              );
+            })()}
+          </div>
           <div className="cpreset" style={{ color: D.PRESET_COLORS[meta.preset] }}>{presetLabel(meta.preset)}</div>
         </div>
         <div style={{ marginTop: 8 }}>
@@ -85,7 +113,7 @@ function Arena() {
   const p2Refs = useRef([]);
 
   function beastMeta(b) {
-    return b ? { name: D.displayName(b), rarity: b.rarity, image_key: b.image_key, preset: b.preset, level: b.level, maxHp: D.eff(b, "hp"), atk: D.eff(b, "atk"), def: D.eff(b, "def"), spd: D.eff(b, "spd"), mag: D.eff(b, "mag") } : null;
+    return b ? { name: D.displayName(b), type: b.type, rarity: b.rarity, image_key: b.image_key, preset: b.preset, level: b.level, maxHp: D.eff(b, "hp"), atk: D.eff(b, "atk"), def: D.eff(b, "def"), spd: D.eff(b, "spd"), mag: D.eff(b, "mag") } : null;
   }
 
   // keep idle preview synced with selection
@@ -300,7 +328,7 @@ function Arena() {
               </div>
               <div className="team-row" style={{ gridTemplateColumns: "repeat(3,1fr)" }}>
                 {[0, 1, 2].map((i) => (
-                  <CombatCard key={i} side="p1" meta={p1Meta[i]} live={p1Live && p1Live[i]} cref={(el) => (p1Refs.current[i] = el)} />
+                  <CombatCard key={i} side="p1" meta={p1Meta[i]} live={p1Live && p1Live[i]} oppMeta={p2Meta} cref={(el) => (p1Refs.current[i] = el)} />
                 ))}
               </div>
             </div>
@@ -319,7 +347,7 @@ function Arena() {
               </div>
               <div className="team-row" style={{ gridTemplateColumns: "repeat(3,1fr)" }}>
                 {[0, 1, 2].map((i) => (
-                  <CombatCard key={i} side="p2" meta={p2Meta[i]} live={p2Live && p2Live[i]} cref={(el) => (p2Refs.current[i] = el)} />
+                  <CombatCard key={i} side="p2" meta={p2Meta[i]} live={p2Live && p2Live[i]} oppMeta={p1Meta} cref={(el) => (p2Refs.current[i] = el)} />
                 ))}
               </div>
             </div>

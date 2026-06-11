@@ -18,6 +18,7 @@
     return {
       ref: beast, side, idx,
       name: D.displayName(beast),
+      type: beast.type,
       preset: beast.preset,
       rarity: beast.rarity,
       image_key: beast.image_key,
@@ -125,6 +126,8 @@
         if (!target) continue;
 
         const special = useSpecial(unit, target);
+        // Affinités : ×1.25 si avantage de type, ×0.80 si désavantage
+        const typeMult = D.getTypeMultiplier(unit.type, target.type);
         let dmg = 0, kind = "atk", crit = false, missed = false;
 
         if (special) {
@@ -134,13 +137,13 @@
           } else {
             const base = unit.mag * 1.5 * D.rand(1.0, 1.34);
             crit = Math.random() < CRIT_CHANCE;
-            dmg = Math.max(1, Math.round((base - target.def * 0.5) * rageMult * (crit ? CRIT_MULT : 1)));
+            dmg = Math.max(1, Math.round((base - target.def * 0.5) * rageMult * typeMult * (crit ? CRIT_MULT : 1)));
             kind = "sp";
           }
         } else {
           const base = unit.atk * D.rand(1.0, 1.34);
           crit = Math.random() < CRIT_CHANCE;
-          dmg = Math.max(1, Math.round((base - target.def * 0.5) * rageMult * (crit ? CRIT_MULT : 1)));
+          dmg = Math.max(1, Math.round((base - target.def * 0.5) * rageMult * typeMult * (crit ? CRIT_MULT : 1)));
           kind = "atk";
         }
 
@@ -185,18 +188,18 @@
   // ====================================================================
   const SIM_N = 46, BIN_IT = 9;
   const RMULT = { Common: 0.925, Rare: 1.3, Epic: 1.775, Legendary: 2.425 };
-  // unit array: [mhp,hp,atk,def,spd,mag,preset]
-  const _MHP = 0, _HP = 1, _ATK = 2, _DEF = 3, _SPD = 4, _MAG = 5, _PRE = 6;
+  // unit array: [mhp,hp,atk,def,spd,mag,preset,type]
+  const _MHP = 0, _HP = 1, _ATK = 2, _DEF = 3, _SPD = 4, _MAG = 5, _PRE = 6, _TYP = 7;
 
   function calibUnitFromBeast(b) {
-    return [eff(b, "hp"), eff(b, "hp"), eff(b, "atk"), eff(b, "def"), eff(b, "spd"), eff(b, "mag"), b.preset];
+    return [eff(b, "hp"), eff(b, "hp"), eff(b, "atk"), eff(b, "def"), eff(b, "spd"), eff(b, "mag"), b.preset, b.type];
   }
   function calibMakeUnit(tname, rarity, dm) {
     const tpl = D.TEMPLATES[tname];
     const v = (RMULT[rarity] || 1) * dm;
     const mhp = Math.max(1, Math.floor(tpl.hp * v));
     return [mhp, mhp, Math.max(1, Math.floor(tpl.atk * v)), Math.max(1, Math.floor(tpl.def * v)),
-    Math.max(1, Math.floor(tpl.spd * v)), Math.max(1, Math.floor(tpl.mag * v)), D.TYPE_TO_PRESET[tpl.type]];
+    Math.max(1, Math.floor(tpl.spd * v)), Math.max(1, Math.floor(tpl.mag * v)), D.TYPE_TO_PRESET[tpl.type], tpl.type];
   }
   function calibGenEnemy(rarity, dm) {
     const types = ["HASH", "MINING", "LEDGER", "NETWORK", "BLOCK", "GENESIS"];
@@ -246,9 +249,10 @@
       let ti = dec.ti;
       if (ti < 0 || c.opp[ti][_HP] <= 0) { ti = -1; for (let i = 0; i < 3; i++) if (c.opp[i][_HP] > 0) { ti = i; break; } }
       if (ti < 0) break;
+      const tm = D.getTypeMultiplier(c.b[_TYP], c.opp[ti][_TYP]);
       let dmg;
-      if (dec.up) { if (Math.random() < 0.4) continue; dmg = Math.max(1, Math.floor(c.b[_MAG] * 1.5 - c.opp[ti][_DEF] / 2)); }
-      else dmg = Math.max(1, Math.floor(c.b[_ATK] - c.opp[ti][_DEF] / 2));
+      if (dec.up) { if (Math.random() < 0.4) continue; dmg = Math.max(1, Math.floor((c.b[_MAG] * 1.5 - c.opp[ti][_DEF] / 2) * tm)); }
+      else dmg = Math.max(1, Math.floor((c.b[_ATK] - c.opp[ti][_DEF] / 2) * tm));
       c.opp[ti][_HP] = Math.max(0, c.opp[ti][_HP] - dmg);
       if (dec.hi >= 0 && dmg > 0) c.my[dec.hi][_HP] = Math.min(c.my[dec.hi][_MHP], c.my[dec.hi][_HP] + Math.max(1, Math.floor(dmg / 4)));
     }

@@ -99,6 +99,8 @@
     AR_TICKETS: { FR: "Tickets — Argent %d · Or %d", EN: "Tickets — Silver %d · Gold %d", ZH: "券 — 白银 %d · 黄金 %d" },
     AR_LOOP_CAP: { FR: "Limite loop atteinte — repli sur Bronze", EN: "Loop cap reached — falling back to Bronze", ZH: "循环已达上限 — 回退至青铜" },
     AR_ROUND: { FR: "Round %d", EN: "Round %d", ZH: "回合 %d" },
+    AR_TYPE_ADV: { FR: "%s › %s : +25% dégâts", EN: "%s › %s: +25% damage", ZH: "%s › %s：+25% 伤害" },
+    AR_TYPE_DIS: { FR: "%s › %s : -20% dégâts infligés", EN: "%s › %s: -20% damage dealt", ZH: "%s › %s：-20% 造成伤害" },
 
     // combat log
     L_START: { FR: "COMBAT LANCÉ", EN: "FIGHT STARTED", ZH: "战斗开始" },

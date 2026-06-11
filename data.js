@@ -40,6 +40,25 @@
     NETWORK: "Network", BLOCK: "Block", GENESIS: "Genesis",
   };
 
+  // ---- Affinités entre types (cf. specs/GAMEPLAY_DEPTH_PACK.md §1) ----
+  // Cycle fermé : HASH > MINING > LEDGER > NETWORK > BLOCK > GENESIS > HASH
+  const TYPE_ADVANTAGE = {
+    HASH: { strong: "MINING", weak: "GENESIS" },
+    MINING: { strong: "LEDGER", weak: "HASH" },
+    LEDGER: { strong: "NETWORK", weak: "MINING" },
+    NETWORK: { strong: "BLOCK", weak: "LEDGER" },
+    BLOCK: { strong: "GENESIS", weak: "NETWORK" },
+    GENESIS: { strong: "HASH", weak: "BLOCK" },
+  };
+  // ×1.25 si l'attaquant bat le type du défenseur, ×0.80 s'il est battu par lui.
+  function getTypeMultiplier(atkType, defType) {
+    const adv = TYPE_ADVANTAGE[atkType];
+    if (!adv) return 1.0;
+    if (adv.strong === defType) return 1.25;
+    if (adv.weak === defType) return 0.80;
+    return 1.0;
+  }
+
   // ---- Templates (18) ----
   const TEMPLATES = {
     "HashByte-1": { hp: 90, atk: 14, def: 4, spd: 11, mag: 16, type: "HASH", img: "HashByte" },
@@ -406,6 +425,7 @@
   window.FA_DATA = {
     RARITY_ORDER, RARITY_LIST, RARITY_COLORS, RARITY_UPGRADE, MINT_ODDS,
     PRESET_COLORS, TYPE_TO_PRESET, TYPE_LABEL, ART,
+    TYPE_ADVANTAGE, getTypeMultiplier,
     TEMPLATES, TEMPLATE_KEYS, TEMPLATES_BY_TYPE,
     ECON, FORGE, BOOSTS,
     rand, pick, levelMult, rarityVariance, rollRarity, newId,
