@@ -520,6 +520,19 @@ input { font-family: var(--font-mono); }
 .room-fab:hover { transform: translateY(-2px) scale(1.05); box-shadow: 0 8px 26px rgba(0,0,0,.5), 0 0 28px rgba(78,168,255,.7); }
 .room-fab:active { transform: scale(.97); }
 
+.room-fab-badge {
+  position: absolute; top: -4px; right: -4px;
+  min-width: 20px; height: 20px; border-radius: 10px;
+  padding: 0 5px; box-sizing: border-box;
+  display: grid; place-items: center;
+  font-size: 11px; font-weight: 700; color: #fff;
+  background: var(--alert);
+  border: 2px solid #05070f;
+  box-shadow: 0 0 10px rgba(255,59,92,.6);
+  animation: fa-badge-pop .25s ease;
+}
+@keyframes fa-badge-pop { from { transform: scale(.4); } to { transform: scale(1); } }
+
 .room-warning {
   font-size: 12px; line-height: 1.4; color: var(--alert);
   background: rgba(255,59,92,.08); border: 1px solid rgba(255,59,92,.3);

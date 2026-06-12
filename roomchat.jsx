@@ -7,6 +7,16 @@ const I18N = window.FA_I18N;
 
 const ROOM_MAXLEN = 280;
 const ROOM_POLL_MS = 4000;
+const ROOM_BG_POLL_MS = 30000;
+
+function seenKey(wallet) { return "fa_room_seen:" + (wallet || "anon"); }
+function loadSeenId(wallet) {
+  try { return parseInt(localStorage.getItem(seenKey(wallet)), 10) || 0; }
+  catch (e) { return 0; }
+}
+function saveSeenId(wallet, id) {
+  try { localStorage.setItem(seenKey(wallet), String(id)); } catch (e) {}
+}
 
 function mutedKey(wallet) { return "fa_muted:" + wallet; }
 function loadMuted(wallet) {
@@ -98,11 +108,14 @@ function RoomFab() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [muted, setMuted] = useState(() => loadMuted(g.wallet));
+  const [unread, setUnread] = useState(0);
   const lastIdRef = useRef(0);
   const timerRef = useRef(null);
+  const seenIdRef = useRef(loadSeenId(g.wallet));
 
   // Recharge la liste des mutés quand le wallet change (les mutés sont par-wallet)
   useEffect(() => { setMuted(loadMuted(g.wallet)); }, [g.wallet]);
+  useEffect(() => { seenIdRef.current = loadSeenId(g.wallet); }, [g.wallet]);
 
   const ingest = useCallback((incoming) => {
     if (!incoming || incoming.length === 0) return;
@@ -123,15 +136,27 @@ function RoomFab() {
     } catch (e) { /* réseau : on réessaiera au prochain poll */ }
   }, [actions, ingest]);
 
+  // Polling : rapide quand le panneau est ouvert, lent en arrière-plan
+  // (pastille de non-lus sur le bouton).
   useEffect(() => {
-    if (!open) {
-      if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
-      return;
-    }
-    poll(); // fetch initial à l'ouverture
-    timerRef.current = setInterval(poll, ROOM_POLL_MS);
+    poll(); // fetch initial (ouverture ou passage en arrière-plan)
+    timerRef.current = setInterval(poll, open ? ROOM_POLL_MS : ROOM_BG_POLL_MS);
     return () => { if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; } };
   }, [open, poll]);
+
+  // Compteur de non-lus : panneau ouvert = tout est vu ; fermé = messages
+  // plus récents que le dernier vu, hors les miens et les wallets mutés.
+  useEffect(() => {
+    const maxId = messages.reduce((mx, m) => Math.max(mx, m.id), 0);
+    if (open) {
+      if (maxId > seenIdRef.current) { seenIdRef.current = maxId; saveSeenId(g.wallet, maxId); }
+      setUnread(0);
+      return;
+    }
+    setUnread(messages.filter((m) =>
+      m.id > seenIdRef.current && m.wallet !== g.wallet && !muted.includes(m.wallet)
+    ).length);
+  }, [messages, muted, open, g.wallet]);
 
   async function send(text) {
     let res;
@@ -163,6 +188,7 @@ function RoomFab() {
     <>
       <button className="room-fab" aria-label={I18N.t("ROOM_FAB_LABEL")} onClick={() => setOpen(true)}>
         <span aria-hidden="true">👥</span>
+        {unread > 0 && <span className="room-fab-badge">{unread > 9 ? "9+" : unread}</span>}
       </button>
       {open && (
         <RoomPanel
