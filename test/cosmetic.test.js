@@ -21,7 +21,9 @@ test("ennemi déjà ≥ joueur → K=1 (jamais de réduction)", () => {
 
 test("profil préservé : ratio HP/ATK identique après scaling", () => {
   const [k] = cosmeticEnemyScale([beast({ base_hp: 200, base_atk: 40 })], [beast()], rngMid);
-  assert.strictEqual((200 * k) / (40 * k), 200 / 40);
+  const ratioBefore = 200 / 40;
+  const ratioAfter = (200 * k) / (40 * k);
+  assert.ok(Math.abs(ratioAfter - ratioBefore) < 1e-9, `avant=${ratioBefore} après=${ratioAfter}`);
 });
 
 test("plafond ×12 : ennemi minuscule vs joueur énorme", () => {

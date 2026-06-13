@@ -25,7 +25,6 @@
       if (!(enemyTotal > 0) || !(playerTotal > 0)) { out.push(1); continue; }
       const target = playerTotal * (0.85 + rng() * 0.15); // 85–100 %
       let k = target / enemyTotal;
-      k = Math.round(k * 1e10) / 1e10; // stabilité flottante
       if (k < 1) k = 1;     // jamais de réduction
       if (k > 12) k = 12;   // garde-fou anti-inflation
       out.push(k);
