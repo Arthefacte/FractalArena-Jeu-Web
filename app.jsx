@@ -228,6 +228,7 @@ function App() {
             next.ordinalName = save.ordinal_name || ""; // nom ordinal du serveur, vide si absent
             return next;
           });
+          return false; // joueur existant
         } else if (saveResp.status === 404) {
           setG((s) => ({
             ...freshState(),
@@ -244,10 +245,7 @@ function App() {
             freeFights: D.ECON.FREE_FIGHTS_PER_DAY,
             freeResetTs: Date.now(),
           }));
-          fetch(`${API_URL}/claim-airdrop`, {
-            method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ wallet: addr }),
-          }).catch(() => {});
+          return true; // nouveau joueur → l'airdrop est réclamé APRÈS authentification (token requis)
         } else {
           throw new Error("server " + saveResp.status);
         }
@@ -273,6 +271,19 @@ function App() {
           return { ...s, wallet: addr, playerName: addr.slice(0, 6) + "…" + addr.slice(-4), ordinalName: "", selected: [], view: "team" };
         });
       }
+    },
+    // Réclame l'airdrop de bienvenue APRÈS authentification (le serveur exige désormais
+    // un token wallet sur /claim-airdrop). Best-effort : un échec sera retenté à la
+    // prochaine connexion tant que airdrop_claimed reste FALSE côté serveur.
+    async claimAirdropIfNew(addr, token, isNew) {
+      if (!isNew || !addr || !token) return;
+      try {
+        await fetch(`${API_URL}/claim-airdrop`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+          body: JSON.stringify({ wallet: addr }),
+        });
+      } catch (e) { /* retentable à la prochaine connexion */ }
     },
     async authenticate(addr) {
       if (typeof window.unisat === "undefined") return "";
@@ -300,8 +311,9 @@ function App() {
         const accounts = await window.unisat.requestAccounts();
         const addr = (accounts && accounts[0]) || "";
         if (!/^bc1/i.test(addr)) return { ok: false, reason: "bad-address" };
-        await actions.connectWallet(addr);
+        const isNew = await actions.connectWallet(addr);
         const token = await actions.authenticate(addr);
+        await actions.claimAirdropIfNew(addr, token, isNew);
         return token ? { ok: true } : { ok: false, reason: "auth" };
       } catch (e) {
         return { ok: false, reason: "rejected" };
@@ -697,12 +709,12 @@ function App() {
     },
     async sendRoomMessage(content) {
       const s = gRef.current;
-      if (!s.wallet) return { ok: false, reason: "wallet" };
+      if (!s.wallet || !s.authToken) return { ok: false, reason: "auth" };
       try {
         const resp = await fetch(`${API_URL}/chat-room/send`, {
           method: "POST",
-          headers: { "Content-Type": "application/json", "x-client-secret": CLIENT_SECRET },
-          body: JSON.stringify({ wallet: s.wallet, content }),
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
+          body: JSON.stringify({ content }),
         });
         if (resp.status === 429) return { ok: false, reason: "rate" };
         const data = await resp.json();
@@ -930,8 +942,9 @@ function Onboarding() {
     if (a.length < 20 || !/^bc1/i.test(a)) { toast(I18N.t("OB_INVALID"), "bad"); return; }
     setChecking(true);
     try {
-      await actions.connectWallet(a);
-      await actions.authenticate(a);
+      const isNew = await actions.connectWallet(a);
+      const token = await actions.authenticate(a);
+      await actions.claimAirdropIfNew(a, token, isNew);
     } finally {
       setChecking(false);
     }

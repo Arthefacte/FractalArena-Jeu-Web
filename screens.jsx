@@ -306,7 +306,7 @@ function DepositModal({ onClose }) {
     setBusy(true);
     try {
       const resp = await fetch(`${API_URL}/verify-deposit`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${g.authToken}` },
         body: JSON.stringify({ wallet: g.wallet, txid: tx }),
       });
       const data = await resp.json();
