@@ -628,15 +628,15 @@ function App() {
 
     async callChat(messages) {
       const s = gRef.current;
-      if (!s.wallet) return { ok: false, reason: "Wallet requis" };
+      if (!s.wallet || !s.authToken) return { ok: false, reason: "Wallet requis" };
       const last20 = messages
         .slice(-20)
         .filter((m) => m && (m.role === "user" || m.role === "assistant") && typeof m.content === "string");
       try {
         const resp = await fetch(`${API_URL}/chat`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ wallet: s.wallet, messages: last20 }),
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
+          body: JSON.stringify({ messages: last20 }),
         });
         if (resp.status === 429) return { ok: false, rateLimited: true };
         const data = await resp.json();
