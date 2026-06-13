@@ -4,6 +4,7 @@
 const { useState, useEffect, useRef, useMemo } = React;
 const D = window.FA_DATA, I18N = window.FA_I18N;
 const { useFA, cx, fmt, presetLabel, rarityLabel, Bar, Modal } = window;
+const { cosmeticEnemyScale } = window.FA_COSMETIC;
 
 // Formate une durée en ms vers HH:MM:SS (borné à 0).
 // NB : nom unique — le scope global est partagé entre les .jsx et quests.jsx
@@ -35,7 +36,7 @@ function typeAdvInfo(myType, oppMeta) {
   return null;
 }
 
-function CombatCard({ meta, live, side, cref, oppMeta }) {
+function CombatCard({ meta, live, side, cref, oppMeta, scale = 1 }) {
   if (!meta) {
     return (
       <div className="card" ref={cref} style={{ "--rc": "var(--line)", opacity: 0.5 }}>
@@ -73,15 +74,15 @@ function CombatCard({ meta, live, side, cref, oppMeta }) {
         <div style={{ marginTop: 8 }}>
           <div className="bar-label">
             <span style={{ color: side === "p1" ? "var(--elec)" : "var(--alert)" }}>HP</span>
-            <span style={{ color: "var(--text)" }}>{live ? Math.max(0, Math.ceil(live.hp)) : meta.maxHp}/{live ? live.maxHp : meta.maxHp}</span>
+            <span style={{ color: "var(--text)" }}>{Math.round((live ? Math.max(0, live.hp) : meta.maxHp) * scale)}/{Math.round((live ? live.maxHp : meta.maxHp) * scale)}</span>
           </div>
           <Bar frac={frac} kind="hp" />
         </div>
         <div className="fighter-stats">
-          <span>ATK {meta.atk}</span>
-          <span>DEF {meta.def}</span>
-          <span>SPD {meta.spd}</span>
-          <span>MAG {meta.mag}</span>
+          <span>ATK {Math.round(meta.atk * scale)}</span>
+          <span>DEF {Math.round(meta.def * scale)}</span>
+          <span>SPD {Math.round(meta.spd * scale)}</span>
+          <span>MAG {Math.round(meta.mag * scale)}</span>
         </div>
       </div>
     </div>
@@ -100,6 +101,7 @@ function Arena() {
   const [p2Live, setP2Live] = useState(null);
   const [p1Meta, setP1Meta] = useState(selectedBeasts.map(beastMeta));
   const [p2Meta, setP2Meta] = useState([null, null, null]);
+  const [p2Scale, setP2Scale] = useState([1, 1, 1]);
   const [logLines, setLogLines] = useState([]);
   const [result, setResult] = useState(null);
   const [round, setRound] = useState(0);
@@ -184,6 +186,7 @@ function Arena() {
     const events = bet.events || [];
     setP1Meta(selectedBeasts.map(beastMeta));
     setP2Meta(enemies.map(beastMeta));
+    setP2Scale(cosmeticEnemyScale(enemies, selectedBeasts));
 
     const battle = { events, winner: bet.won ? "p1" : "p2" };
     if (events.length) { setP1Live(events[0]?.state?.p1); setP2Live(events[0]?.state?.p2); }
@@ -347,7 +350,7 @@ function Arena() {
               </div>
               <div className="team-row" style={{ gridTemplateColumns: "repeat(3,1fr)" }}>
                 {[0, 1, 2].map((i) => (
-                  <CombatCard key={i} side="p2" meta={p2Meta[i]} live={p2Live && p2Live[i]} oppMeta={p1Meta} cref={(el) => (p2Refs.current[i] = el)} />
+                  <CombatCard key={i} side="p2" meta={p2Meta[i]} live={p2Live && p2Live[i]} oppMeta={p1Meta} scale={p2Scale[i] || 1} cref={(el) => (p2Refs.current[i] = el)} />
                 ))}
               </div>
             </div>
