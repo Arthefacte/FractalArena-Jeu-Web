@@ -4,7 +4,7 @@
 const { useState, useEffect, useRef, useMemo } = React;
 const D = window.FA_DATA, I18N = window.FA_I18N;
 const { FA_Ctx, useFA, cx, fmt, Coin, Bar } = window;
-const { Team, Arena, Forge, Wallet, Boosts, Perso, Options, ChatFab, RoomFab, Leaderboard, Quests, Campaign, LoginGate } = window;
+const { Team, Arena, Forge, Wallet, Boosts, Perso, Options, ChatFab, RoomFab, Leaderboard, Quests, Campaign, LoginGate, TutorialGate } = window;
 const SAVE_KEY = "fractal_arena_v1";
 const API_URL = "https://fractal-arena-server-production.up.railway.app";
 const CLIENT_SECRET = "pastouche";
@@ -890,6 +890,7 @@ function App() {
       <ChatFab />
       <RoomFab />
       <Toasts toasts={toasts} />
+      {g.wallet && <TutorialGate />}
       {g.wallet && <LoginGate />}
     </FA_Ctx.Provider>
   );
@@ -940,6 +941,12 @@ function Header({ chipPop }) {
             <button key={code} className={g.lang === code ? "on" : ""} onClick={() => actions.setLang(code)}>{lbl}</button>
           ))}
         </div>
+        <button
+          className="btn ghost sm tut-help"
+          title={I18N.t("TUT_HELP")}
+          aria-label={I18N.t("TUT_HELP")}
+          onClick={() => window.dispatchEvent(new Event("fa-open-tutorial"))}
+        >?</button>
       </div>
     </header>
   );
