@@ -4,7 +4,7 @@
 const { useState, useEffect, useRef, useMemo } = React;
 const D = window.FA_DATA, I18N = window.FA_I18N;
 const { FA_Ctx, useFA, cx, fmt, Coin, Bar } = window;
-const { Team, Arena, Forge, Wallet, Boosts, Perso, Options, ChatFab, RoomFab, Leaderboard, Quests, Campaign } = window;
+const { Team, Arena, Forge, Wallet, Boosts, Perso, Options, ChatFab, RoomFab, Leaderboard, Quests, Campaign, LoginGate } = window;
 const SAVE_KEY = "fractal_arena_v1";
 const API_URL = "https://fractal-arena-server-production.up.railway.app";
 const CLIENT_SECRET = "pastouche";
@@ -889,6 +889,7 @@ function App() {
       <ChatFab />
       <RoomFab />
       <Toasts toasts={toasts} />
+      {g.wallet && <LoginGate />}
     </FA_Ctx.Provider>
   );
 }
