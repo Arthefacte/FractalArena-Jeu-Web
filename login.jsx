@@ -4,6 +4,7 @@
 const { useState, useEffect } = React;
 const { useFA, cx, Modal, SectionHead } = window;
 const I18N = window.FA_I18N;
+const TUT_KEY = "fractal_arena_tutorial_v1";
 
 function LoginGate() {
   const { g, actions } = useFA();
@@ -14,11 +15,27 @@ function LoginGate() {
   useEffect(() => {
     if (!g.wallet) return;
     let alive = true;
+    let onTutClosed = null;
     actions.fetchLoginReward().then((r) => {
       if (!alive) return;
-      if (r.ok && r.data.claimable_today) { setData(r.data); setOpen(true); }
+      if (r.ok && r.data.claimable_today) {
+        setData(r.data);
+        // Cohabitation 1er login : si le tutoriel ne s'est jamais affiché,
+        // on diffère le cadeau jusqu'à sa fermeture.
+        let seen = false;
+        try { seen = localStorage.getItem(TUT_KEY) === "1"; } catch (e) {}
+        if (seen) {
+          setOpen(true);
+        } else {
+          onTutClosed = () => setOpen(true);
+          window.addEventListener("fa-tutorial-closed", onTutClosed, { once: true });
+        }
+      }
     }).catch(() => {});
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+      if (onTutClosed) window.removeEventListener("fa-tutorial-closed", onTutClosed);
+    };
   }, [g.wallet]);
 
   if (!open || !data) return null;
