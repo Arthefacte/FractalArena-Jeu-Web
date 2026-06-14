@@ -625,3 +625,78 @@ input { font-family: var(--font-mono); }
   background: var(--elec); color: #04121a; border: none; font-weight: 700; font-size: 13px;
 }
 .q-claim:disabled { opacity: .4; cursor: not-allowed; background: var(--bg-panel); color: var(--text-dim); border: 1px solid var(--line); }
+
+/* ============ Login reward — calendrier 7 jours ============ */
+.login-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  margin: 16px 0;
+}
+
+.login-cell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 10px 4px;
+  background: var(--bg-panel);
+  border: 1px solid var(--line-soft);
+  border-radius: 10px;
+  text-align: center;
+  transition: border-color .15s, background .15s;
+}
+
+.login-cell.today {
+  border-color: var(--elec);
+  background: color-mix(in srgb, var(--elec) 10%, var(--bg-panel));
+  box-shadow: 0 0 14px color-mix(in srgb, var(--elec) 25%, transparent);
+}
+
+.login-cell.past {
+  opacity: 0.45;
+}
+
+.login-cell.jackpot {
+  border-color: var(--gold);
+  background: color-mix(in srgb, var(--gold) 8%, var(--bg-panel));
+  box-shadow: 0 0 14px color-mix(in srgb, var(--gold) 22%, transparent);
+}
+
+.login-day {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+
+.login-amt {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--gold);
+}
+
+.login-cell.jackpot .login-amt {
+  font-size: 16px;
+  color: var(--gold);
+  text-shadow: 0 0 8px color-mix(in srgb, var(--gold) 60%, transparent);
+}
+
+.login-check {
+  position: absolute;
+  top: 5px;
+  right: 6px;
+  font-size: 11px;
+  color: var(--success);
+  line-height: 1;
+}
+
+@media (max-width: 520px) {
+  .login-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}

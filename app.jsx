@@ -739,6 +739,7 @@ function App() {
         }
         const data = await resp.json();
         setG((st) => ({ ...st, locked: data.new_locked }));
+        toast(I18N.t("LOGIN_REWARD_GRANTED", data.reward_granted), "good");
         return { ok: true, data };
       } catch (e) {
         return { ok: false, reason: "network" };

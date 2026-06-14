@@ -30,6 +30,7 @@
     LOGIN_TITLE: { FR: "Cadeau de connexion", EN: "Login reward", ZH: "登录奖励" },
     LOGIN_DAY:   { FR: "Jour %d", EN: "Day %d", ZH: "第 %d 天" },
     LOGIN_CLAIM: { FR: "Récupérer", EN: "Claim", ZH: "领取" },
+    LOGIN_REWARD_GRANTED: { FR: "+%d 🔒 récupéré !", EN: "+%d 🔒 claimed!", ZH: "已领取 +%d 🔒！" },
     LB_TITLE: { FR: "Classement des joueurs", EN: "Players ranking", ZH: "玩家排行榜" },
     LB_TAB_WINS: { FR: "Victoires", EN: "Wins", ZH: "胜场" },
     LB_TAB_POWER: { FR: "Puissance", EN: "Power", ZH: "战力" },
