@@ -4,7 +4,7 @@
 const { useState, useEffect, useRef, useMemo } = React;
 const D = window.FA_DATA, I18N = window.FA_I18N;
 const { FA_Ctx, useFA, cx, fmt, Coin, Bar } = window;
-const { Team, Arena, Forge, Wallet, Boosts, Perso, Options, ChatFab, RoomFab, Leaderboard, Quests, Campaign } = window;
+const { Team, Arena, Forge, Wallet, Boosts, Perso, Options, ChatFab, RoomFab, Leaderboard, Quests, Campaign, LoginGate } = window;
 const SAVE_KEY = "fractal_arena_v1";
 const API_URL = "https://fractal-arena-server-production.up.railway.app";
 const CLIENT_SECRET = "pastouche";
@@ -707,6 +707,44 @@ function App() {
         return { ok: false, reason: "network" };
       }
     },
+    async fetchLoginReward() {
+      const s = gRef.current;
+      if (!s.wallet) return { ok: false };
+      try {
+        const resp = await fetch(`${API_URL}/login-reward/${encodeURIComponent(s.wallet)}`);
+        if (!resp.ok) return { ok: false };
+        const data = await resp.json();
+        return { ok: true, data };
+      } catch (e) {
+        return { ok: false };
+      }
+    },
+    async claimLoginReward() {
+      const s = gRef.current;
+      if (!s.authToken) return { ok: false, reason: "auth" };
+      try {
+        const resp = await fetch(`${API_URL}/login-reward/claim`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
+          body: JSON.stringify({}),
+        });
+        if (resp.status === 401) {
+          const re = await actions.authenticate(gRef.current.wallet);
+          if (!re) { toast(I18N.t("AUTH_EXPIRED"), "bad"); return { ok: false, reason: "auth" }; }
+          return { ok: false, reason: "retry" };
+        }
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({}));
+          return { ok: false, reason: err.error || `Erreur ${resp.status}` };
+        }
+        const data = await resp.json();
+        setG((st) => ({ ...st, locked: data.new_locked }));
+        toast(I18N.t("LOGIN_REWARD_GRANTED", data.reward_granted), "good");
+        return { ok: true, data };
+      } catch (e) {
+        return { ok: false, reason: "network" };
+      }
+    },
     async sendRoomMessage(content) {
       const s = gRef.current;
       if (!s.wallet || !s.authToken) return { ok: false, reason: "auth" };
@@ -852,6 +890,7 @@ function App() {
       <ChatFab />
       <RoomFab />
       <Toasts toasts={toasts} />
+      {g.wallet && <LoginGate />}
     </FA_Ctx.Provider>
   );
 }
