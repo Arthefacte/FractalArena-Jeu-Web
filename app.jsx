@@ -707,6 +707,43 @@ function App() {
         return { ok: false, reason: "network" };
       }
     },
+    async fetchLoginReward() {
+      const s = gRef.current;
+      if (!s.wallet) return { ok: false };
+      try {
+        const resp = await fetch(`${API_URL}/login-reward/${encodeURIComponent(s.wallet)}`);
+        if (!resp.ok) return { ok: false };
+        const data = await resp.json();
+        return { ok: true, data };
+      } catch (e) {
+        return { ok: false };
+      }
+    },
+    async claimLoginReward() {
+      const s = gRef.current;
+      if (!s.authToken) return { ok: false, reason: "auth" };
+      try {
+        const resp = await fetch(`${API_URL}/login-reward/claim`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
+          body: JSON.stringify({}),
+        });
+        if (resp.status === 401) {
+          const re = await actions.authenticate(gRef.current.wallet);
+          if (!re) { toast(I18N.t("AUTH_EXPIRED"), "bad"); return { ok: false, reason: "auth" }; }
+          return { ok: false, reason: "retry" };
+        }
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({}));
+          return { ok: false, reason: err.error || `Erreur ${resp.status}` };
+        }
+        const data = await resp.json();
+        setG((st) => ({ ...st, locked: data.new_locked }));
+        return { ok: true, data };
+      } catch (e) {
+        return { ok: false, reason: "network" };
+      }
+    },
     async sendRoomMessage(content) {
       const s = gRef.current;
       if (!s.wallet || !s.authToken) return { ok: false, reason: "auth" };
