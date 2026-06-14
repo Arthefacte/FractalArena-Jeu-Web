@@ -17,7 +17,7 @@ function LoginGate() {
     actions.fetchLoginReward().then((r) => {
       if (!alive) return;
       if (r.ok && r.data.claimable_today) { setData(r.data); setOpen(true); }
-    });
+    }).catch(() => {});
     return () => { alive = false; };
   }, [g.wallet]);
 
