@@ -884,6 +884,7 @@ function App() {
       <Ambient />
       <div className="app-shell">
         <Header chipPop={chipPop} />
+        <BuybackTicker />
         <Nav />
         <View />
       </div>
