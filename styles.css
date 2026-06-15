@@ -709,19 +709,21 @@ input { font-family: var(--font-mono); }
 .tut-dot.on { background: var(--fire); transform: scale(1.25); }
 .tut-help { padding: 5px 11px; font-weight: 700; }
 
-/* ===== Buyback Ticker ===== */
+/* ===== Buyback / Burn Ticker (deux jauges empilées) ===== */
 .bb-ticker {
   display: flex;
-  align-items: center;
-  gap: 10px;
+  flex-direction: column;
+  gap: 3px;
   padding: 6px 14px;
   background: rgba(0, 0, 0, 0.35);
   border-bottom: 1px solid var(--line);
   font-family: var(--font-mono);
   font-size: 12px;
 }
-.bb-ticker .bb-label { color: var(--text-dim); white-space: nowrap; }
-.bb-ticker .bb-bar {
+.bb-line { display: flex; align-items: center; gap: 10px; }
+.bb-icon { flex: 0 0 auto; }
+.bb-label { color: var(--text-dim); white-space: nowrap; }
+.bb-bar {
   flex: 1;
   min-width: 60px;
   height: 8px;
@@ -729,19 +731,20 @@ input { font-family: var(--font-mono); }
   background: var(--line);
   overflow: hidden;
 }
-.bb-ticker .bb-bar > i {
-  display: block;
-  height: 100%;
-  width: 0%;
-  background: linear-gradient(90deg, var(--fire), var(--gold));
-  transition: width 0.6s ease;
-}
-.bb-ticker .bb-nums { color: var(--fire); font-weight: 700; white-space: nowrap; }
-.bb-ticker .bb-bought { color: var(--text-dim); white-space: nowrap; }
-.bb-ticker .bb-bought b { color: var(--success); font-weight: 700; }
-.bb-ticker .bb-tx { color: var(--elec); text-decoration: none; white-space: nowrap; }
-.bb-ticker .bb-tx:hover { text-decoration: underline; }
+.bb-bar > i { display: block; height: 100%; width: 0%; transition: width 0.6s ease; }
+/* Couleur par jambe : liquidité = cyan, rachat = orange */
+.bb-row.liq .bb-bar > i { background: linear-gradient(90deg, var(--elec), var(--success)); }
+.bb-row.buy .bb-bar > i { background: linear-gradient(90deg, var(--fire), var(--gold)); }
+.bb-nums { font-weight: 700; white-space: nowrap; color: var(--text-dim); }
+.bb-row.liq .bb-nums { color: var(--elec); }
+.bb-row.buy .bb-nums { color: var(--fire); }
+.bb-tx { color: var(--elec); text-decoration: none; white-space: nowrap; }
+.bb-tx:hover { text-decoration: underline; }
+.bb-sub { color: var(--text-dim); padding-left: 28px; }
+.bb-sub b { color: var(--success); font-weight: 700; }
 @media (max-width: 640px) {
-  .bb-ticker { font-size: 11px; gap: 7px; padding: 5px 10px; }
-  .bb-ticker .bb-bought { display: none; }
+  .bb-ticker { font-size: 11px; padding: 5px 10px; }
+  .bb-line { gap: 7px; }
+  .bb-label { display: none; }
+  .bb-sub { padding-left: 0; }
 }
