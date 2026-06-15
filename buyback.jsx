@@ -1,13 +1,13 @@
 // buyback.jsx
-// Buyback Ticker — bandeau permanent : jauge de la réserve de rachat (total / seuil),
-// total cumulé racheté-et-verrouillé, lien de preuve vers l'adresse du wallet de rachat.
-// Auto-suffisant : fait son propre fetch + polling. Aucune prop. Exposé sur window.
+// Ticker économie — deux jauges empilées sous le header :
+//   🔒 Liquidité verrouillée (burn = LP-lock)   ← /burn/status
+//   💰 Réserve de rachat (buyback)              ← /buyback/status
+// Preuve = page d'adresse du wallet dédié de chaque jambe (pas un txid de swap épars).
+// Auto-suffisant : fait ses propres fetch + polling. Aucune prop. Exposé sur window.
 
 const API_URL = "https://fractal-arena-server-production.up.railway.app";
 
-// Base de l'explorateur Fractal Bitcoin — PAGE D'ADRESSE. La preuve = l'historique
-// on-chain du wallet dédié au rachat (exposé par l'API comme `buyback_wallet`), pas un
-// txid de swap épars. ⚠️ À confirmer : qu'une adresse s'ouvre bien sur cette base.
+// Base de l'explorateur Fractal Bitcoin — PAGE D'ADRESSE (confirmée OK le 15/06/2026).
 const FRACTAL_ADDR_EXPLORER = "https://fractal.unisat.io/explorer/address/";
 
 // Pur : fraction de remplissage de la jauge, bornée [0, 1].
@@ -21,48 +21,73 @@ function bbFmt(n) {
   return Math.round(n || 0).toLocaleString("en-US");
 }
 
+// Une rangée = une jambe économique (liquidité ou rachat).
+function TickerRow({ kind, icon, label, total, threshold, wallet, proofLabel, sub }) {
+  const frac = buybackFraction(total, threshold);
+  return (
+    <div className={"bb-row " + kind}>
+      <div className="bb-line">
+        <span className="bb-icon">{icon}</span>
+        <span className="bb-label">{label}</span>
+        <div className="bb-bar"><i style={{ width: (frac * 100) + "%" }} /></div>
+        <span className="bb-nums">{bbFmt(total)} / {bbFmt(threshold)}</span>
+        {wallet && (
+          <a className="bb-tx" href={FRACTAL_ADDR_EXPLORER + wallet} target="_blank" rel="noreferrer">{proofLabel} ↗</a>
+        )}
+      </div>
+      {sub && <div className="bb-sub">{sub}</div>}
+    </div>
+  );
+}
+
 function BuybackTicker() {
   const [bb, setBb] = React.useState(null);
+  const [burn, setBurn] = React.useState(null);
 
   React.useEffect(() => {
     let alive = true;
     async function load() {
-      try {
-        const r = await fetch(API_URL + "/buyback/status");
-        const j = await r.json();
-        if (alive && j && j.buyback) setBb(j.buyback);
-      } catch (e) {
-        /* erreur réseau : on conserve l'état précédent, pas de crash */
-      }
+      const [rb, rk] = await Promise.all([
+        fetch(API_URL + "/buyback/status").then((r) => r.json()).catch(() => null),
+        fetch(API_URL + "/burn/status").then((r) => r.json()).catch(() => null),
+      ]);
+      if (!alive) return;
+      if (rb && rb.buyback) setBb(rb.buyback);
+      if (rk && rk.burn) setBurn(rk.burn);
     }
     load();
     const id = setInterval(load, 60000); // rafraîchit chaque minute
     return () => { alive = false; clearInterval(id); };
   }, []);
 
-  // Tant que rien n'est chargé (ou API absente) : on n'affiche rien — pas de bandeau vide.
-  if (!bb) return null;
+  // Rien tant qu'aucune des deux jambes n'est chargée — pas de bandeau vide.
+  if (!bb && !burn) return null;
 
   const I = window.FA_I18N;
-  const frac = buybackFraction(bb.total, bb.threshold);
-  // Preuve = adresse du wallet dédié (toujours auditable), exposée par l'API.
-  const proofWallet = bb.buyback_wallet;
-  // Cumul racheté-et-verrouillé à vie, exposé par l'API (`total_bought`, en FRACTALARENA).
-  const bought = bb.total_bought || 0;
-
   return (
     <div className="bb-ticker" title={I.t("BB_TICK_TITLE")}>
-      <span className="bb-label">{I.t("BB_RESERVE")}</span>
-      <div className="bb-bar"><i style={{ width: (frac * 100) + "%" }} /></div>
-      <span className="bb-nums">{bbFmt(bb.total)} / {bbFmt(bb.threshold)}</span>
-      <span className="bb-bought">{I.t("BB_BOUGHT")} : <b>{bbFmt(bought)}</b> FA</span>
-      {proofWallet && (
-        <a
-          className="bb-tx"
-          href={FRACTAL_ADDR_EXPLORER + proofWallet}
-          target="_blank"
-          rel="noreferrer"
-        >{I.t("BB_PROOF")} ↗</a>
+      {burn && (
+        <TickerRow
+          kind="liq"
+          icon="🔒"
+          label={I.t("BB_LIQ")}
+          total={burn.total}
+          threshold={burn.threshold}
+          wallet={burn.burn_wallet}
+          proofLabel={I.t("BB_PROOF")}
+        />
+      )}
+      {bb && (
+        <TickerRow
+          kind="buy"
+          icon="💰"
+          label={I.t("BB_RESERVE")}
+          total={bb.total}
+          threshold={bb.threshold}
+          wallet={bb.buyback_wallet}
+          proofLabel={I.t("BB_PROOF")}
+          sub={I.t("BB_BOUGHT_SUB", bbFmt(bb.total_bought || 0))}
+        />
       )}
     </div>
   );
