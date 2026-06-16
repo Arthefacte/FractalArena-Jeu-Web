@@ -409,7 +409,7 @@ function App() {
         const resp = await fetch(`${API_URL}/fight`, {
           method: "POST",
           headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
-          body: JSON.stringify({ bet_tier: free ? "" : tier, is_free: free, selected: s.selected, use_locked: s.useLocked }),
+          body: JSON.stringify({ bet_tier: free ? "" : tier, is_free: free, selected: s.selected, use_locked: s.useLocked, is_loop: isLoop }),
         });
         if (resp.status === 401) {
           // session expirée → tenter une re-signature silencieuse (1 clic UniSat)
@@ -443,8 +443,10 @@ function App() {
               patch.locked = st.locked - (bet - fromLiquid);
             }
           }
-          if (!free && isLoop && tier === "silver") patch.loopSilverToday = st.loopSilverToday + 1;
-          if (!free && isLoop && tier === "gold") patch.loopGoldToday = st.loopGoldToday + 1;
+          // Compteurs loop : SERVER-OWNED (plafond + reset quotidien tranchés par le
+          // serveur, infalsifiables). On reflète simplement les valeurs renvoyées.
+          if (!free && data.loop_silver_today !== undefined) patch.loopSilverToday = data.loop_silver_today;
+          if (!free && data.loop_gold_today !== undefined) patch.loopGoldToday = data.loop_gold_today;
           return patch;
         });
         return {
