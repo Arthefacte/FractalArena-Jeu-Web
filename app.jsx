@@ -160,6 +160,14 @@ function App() {
       fetch(`${API_URL}/save/${s.wallet}`, {
         method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
         body: JSON.stringify(stateToServer(s)),
+      }).then((r) => (r.ok ? r.json() : null)).then((data) => {
+        // creatures SERVER-OWNED : on adopte le roster faisant foi renvoyé par le serveur
+        // (roster de départ généré serveur pour un nouveau joueur, resync sinon). Compare
+        // par signature pour ne PAS reboucler l'autosave quand c'est déjà synchrone.
+        if (data && Array.isArray(data.creatures)) {
+          const sig = (arr) => arr.map((b) => `${b.id}:${b.level}:${b.xp}:${b.rarity}`).join("|");
+          setG((st) => (sig(st.roster) === sig(data.creatures) ? st : { ...st, roster: data.creatures }));
+        }
       }).catch(() => {});
     }, 1500);
   }, [g.liquid, g.locked, g.roster, g.freeFights, g.totalFights,
@@ -479,9 +487,6 @@ function App() {
         const session = { ...s.session };
         const boosts = { ...s.boosts };
         if (srv && srv.milestone) summary.milestone = true;
-        // roster (xp mutates in place; clone array for React)
-        const selBeasts = s.selected.map((id) => s.roster.find((b) => b.id === id)).filter(Boolean);
-
         if (win) {
           session.wins += 1;
           const base = free ? D.ECON.BET.bronze : betAmount;
@@ -492,12 +497,12 @@ function App() {
           if (!free) session.net += net;
           // lucky strike : appliqué et crédité CÔTÉ SERVEUR (déjà inclus dans le solde srv)
           if (srv && srv.lucky_bonus > 0) summary.luckyBonus = srv.lucky_bonus;
-          // xp
-          const xpAmt = D.ECON.XP_PER_VICTORY * (boosts.xp_boost > 0 ? 2 : 1);
-          summary.xp = xpAmt;
-          const events = D.grantXp(selBeasts, xpAmt);
-          summary.levelUps = events.filter((e) => e.type === "levelup");
-          summary.rarityUps = events.filter((e) => e.type === "rarity_up");
+          // xp / level-ups : ATTRIBUÉS CÔTÉ SERVEUR (infalsifiable). On affiche les valeurs
+          // renvoyées ; le roster serveur est adopté plus bas (plus de calcul d'XP local).
+          summary.xp = srv ? (srv.xp ?? 0) : 0;
+          const lvEvents = (srv && srv.level_events) ? srv.level_events : [];
+          summary.levelUps = lvEvents.filter((e) => e.type === "levelup");
+          summary.rarityUps = lvEvents.filter((e) => e.type === "rarity_up");
         } else {
           session.losses += 1;
           if (srv && srv.insurance_used) {
@@ -510,24 +515,17 @@ function App() {
             session.net -= betAmount;
           }
         }
-        // lucky_strike & insurance : charges consommées CÔTÉ SERVEUR → resync depuis srv.boosts
+        // boosts : TOUTES les charges (lucky/insurance/xp_boost) sont consommées CÔTÉ
+        // SERVEUR dans /fight, uniquement sur victoire → on resynchronise simplement.
         if (srv && srv.boosts) {
           if (srv.boosts.lucky_strike !== undefined) boosts.lucky_strike = srv.boosts.lucky_strike;
           if (srv.boosts.insurance !== undefined) boosts.insurance = srv.boosts.insurance;
+          if (srv.boosts.xp_boost !== undefined) boosts.xp_boost = srv.boosts.xp_boost;
         }
-        // xp_boost reste géré client (la XP est appliquée localement)
-        if (boosts.xp_boost > 0) boosts.xp_boost -= 1;
-
-        return { ...s, liquid, locked, totalFights, ticketsSilver, ticketsGold, session, boosts, roster: [...s.roster] };
+        // roster SERVER-OWNED : on adopte les creatures renvoyées (XP/niveaux serveur).
+        const roster = (srv && srv.creatures) ? srv.creatures : s.roster;
+        return { ...s, liquid, locked, totalFights, ticketsSilver, ticketsGold, session, boosts, roster };
       });
-      // consommation des boosts côté serveur
-      const prevBoosts = gRef.current.boosts;
-      const w2 = gRef.current.wallet;
-      if (w2) {
-        const hb = { "Content-Type": "application/json", "Authorization": `Bearer ${gRef.current.authToken}` };
-        // lucky_strike & insurance : consommés côté serveur dans /fight. Seul xp_boost (XP locale) reste consommé ici.
-        if (prevBoosts.xp_boost > 0) fetch(`${API_URL}/boosts/use`, { method: "POST", headers: hb, body: JSON.stringify({ wallet: w2, boost_type: "xp_boost" }) }).catch(() => {});
-      }
       // record-pool / record-airdrop / record-burn supprimés : le serveur route les pools dans POST /fight
       setG((st) => ({ ...st, serverFight: null }));
       return summary;
