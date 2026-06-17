@@ -138,7 +138,7 @@
     AR_NEXT_MS: { FR: "Milestone dans %d", EN: "Milestone in %d", ZH: "里程碑还差 %d" },
     AR_TICKETS: { FR: "Tickets — Argent %d · Or %d", EN: "Tickets — Silver %d · Gold %d", ZH: "券 — 白银 %d · 黄金 %d" },
     AR_LOOP_CAP: { FR: "Limite loop atteinte — repli sur Bronze", EN: "Loop cap reached — falling back to Bronze", ZH: "循环已达上限 — 回退至青铜" },
-    AR_LOOPS_LEFT: { FR: "🔁 Loops — Argent %d · Or %d", EN: "🔁 Loops — Silver %d · Gold %d", ZH: "🔁 循环 — 白银 %d · 黄金 %d" },
+    AR_LOOPS_LEFT: { FR: "🔁 Loops Argent %d/%d · Or %d/%d", EN: "🔁 Loops Silver %d/%d · Gold %d/%d", ZH: "🔁 循环 白银 %d/%d · 黄金 %d/%d" },
     AR_ROUND: { FR: "Round %d", EN: "Round %d", ZH: "回合 %d" },
     AR_TYPE_ADV: { FR: "%s › %s : +25% dégâts", EN: "%s › %s: +25% damage", ZH: "%s › %s：+25% 伤害" },
     AR_TYPE_DIS: { FR: "%s › %s : -20% dégâts infligés", EN: "%s › %s: -20% damage dealt", ZH: "%s › %s：-20% 造成伤害" },
