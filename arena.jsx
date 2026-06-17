@@ -5,6 +5,7 @@ const { useState, useEffect, useRef, useMemo } = React;
 const D = window.FA_DATA, I18N = window.FA_I18N;
 const { useFA, cx, fmt, presetLabel, rarityLabel, Bar, Modal } = window;
 const { cosmeticEnemyScale } = window.FA_COSMETIC;
+const { loopDecision } = window.FA_LOOP;
 
 // Formate une durée en ms vers HH:MM:SS (borné à 0).
 // NB : nom unique — le scope global est partagé entre les .jsx et quests.jsx
@@ -277,22 +278,24 @@ function Arena() {
     setPlaying(false);
     battleRef.current = null;
 
-    if (loopRef.current && isLoopRunAllowed()) {
-      stepRef.current = setTimeout(() => { if (loopRef.current) playFight(true); }, 640 / spd);
+    if (loopRef.current) {
+      // Décision pure sur l'état FRAIS (gRef.current) — la closure de la boucle fige
+      // `g`, donc lire `g` ici raterait la montée des compteurs de loop et du solde.
+      const dec = loopDecision(gRef.current, betTier, D.ECON);
+      if (dec.go) {
+        stepRef.current = setTimeout(() => { if (loopRef.current) playFight(true); }, 640 / spd);
+        return;
+      }
+      // Boucle terminée. On prévient quand c'est le plafond quotidien du tier qui
+      // l'arrête (plus de repli auto sur Bronze) ; arrêt silencieux sinon (solde / gratuits).
+      loopRef.current = false; setLoop(false);
+      if (dec.reason === "cap") {
+        toast(I18N.t(dec.tier === "gold" ? "AR_LOOP_END_GOLD" : "AR_LOOP_END_SILVER"), "info");
+      }
       return;
     }
     loopRef.current = false; setLoop(false);
     if (!isLoopRun) setResult({ win, free, ...summary });
-  }
-
-  function isLoopRunAllowed() {
-    // continue loop only if we can afford / have free fights
-    if (betTier === "") return g.freeFights > 0;
-    const amt = D.ECON.BET[betTier];
-    // Verrouillage ON : on ne mise QUE depuis le verrouillé. Dès qu'il ne couvre
-    // plus une mise, la boucle s'arrête — le solde disponible n'est jamais entamé.
-    if (g.useLocked) return g.locked >= amt;
-    return g.liquid + g.locked >= amt;
   }
 
   function onFight() { if (playing) return; setResult(null); playFight(false); }
