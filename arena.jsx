@@ -323,6 +323,7 @@ function Arena() {
         <div className="flex gap8 wrap">
           <span className="pill" style={{ color: wr >= 60 ? "var(--success)" : wr >= 45 ? "var(--gold)" : "var(--alert)" }}>{I18N.t("AR_WINRATE", g.session.wins, g.session.losses, wr)}</span>
           <span className="pill">{I18N.t("AR_NEXT_MS", nextMs)}</span>
+          <span className="pill" style={{ color: "var(--gold)" }}>{I18N.t("AR_LOOPS_LEFT", Math.max(0, D.ECON.LOOP_SILVER_MAX - g.loopSilverToday), Math.max(0, D.ECON.LOOP_GOLD_MAX - g.loopGoldToday))}</span>
           <span className="pill" style={{ color: "var(--elec)" }}>{I18N.t("AR_TICKETS", g.ticketsSilver, g.ticketsGold)}</span>
         </div>
       </div>
