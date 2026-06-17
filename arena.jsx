@@ -91,6 +91,10 @@ function CombatCard({ meta, live, side, cref, oppMeta, scale = 1 }) {
 
 function Arena() {
   const { g, actions, toast } = useFA();
+  // Référence vivante vers l'état : la chaîne de la boucle (settleBattle → playFight)
+  // réutilise sa closure de départ ; sans ce ref, le roster (niveau/stats) reste figé
+  // au lancement du Loop et l'affichage "recule" après une montée de niveau.
+  const gRef = useRef(g); gRef.current = g;
   const selectedBeasts = g.selected.map((id) => g.roster.find((b) => b.id === id)).filter(Boolean);
   const ready = selectedBeasts.length === 3;
 
@@ -184,9 +188,15 @@ function Arena() {
     // Le serveur a joué le combat : on rejoue sa séquence d'events et son équipe adverse
     const enemies = bet.enemy || [];
     const events = bet.events || [];
-    setP1Meta(selectedBeasts.map(beastMeta));
+    // Roster VIVANT (via gRef) — sinon la closure du Loop fige niveau/stats au démarrage
+    // de la boucle, et l'affichage du joueur "recule" d'un niveau après une montée serveur.
+    const liveSelected = gRef.current.selected
+      .map((id) => gRef.current.roster.find((b) => b.id === id))
+      .filter(Boolean);
+    const playerBeasts = liveSelected.length === 3 ? liveSelected : selectedBeasts;
+    setP1Meta(playerBeasts.map(beastMeta));
     setP2Meta(enemies.map(beastMeta));
-    setP2Scale(cosmeticEnemyScale(enemies, selectedBeasts));
+    setP2Scale(cosmeticEnemyScale(enemies, playerBeasts));
 
     const battle = { events, winner: bet.won ? "p1" : "p2" };
     if (events.length) { setP1Live(events[0]?.state?.p1); setP2Live(events[0]?.state?.p2); }
@@ -313,6 +323,7 @@ function Arena() {
         <div className="flex gap8 wrap">
           <span className="pill" style={{ color: wr >= 60 ? "var(--success)" : wr >= 45 ? "var(--gold)" : "var(--alert)" }}>{I18N.t("AR_WINRATE", g.session.wins, g.session.losses, wr)}</span>
           <span className="pill">{I18N.t("AR_NEXT_MS", nextMs)}</span>
+          <span className="pill" style={{ color: "var(--gold)" }}>{I18N.t("AR_LOOPS_LEFT", Math.max(0, D.ECON.LOOP_SILVER_MAX - g.loopSilverToday), Math.max(0, D.ECON.LOOP_GOLD_MAX - g.loopGoldToday))}</span>
           <span className="pill" style={{ color: "var(--elec)" }}>{I18N.t("AR_TICKETS", g.ticketsSilver, g.ticketsGold)}</span>
         </div>
       </div>
