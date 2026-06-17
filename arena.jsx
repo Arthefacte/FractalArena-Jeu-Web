@@ -302,6 +302,17 @@ function Arena() {
   function onLoop() {
     if (loop) { loopRef.current = false; setLoop(false); return; }
     if (!ready) { toast(I18N.t("AR_NEED3"), "bad"); return; }
+    // Même garde-fou qu'entre deux combats (settleBattle) : si le plafond du tier est
+    // atteint (ou plus de gratuits / solde insuffisant), la boucle NE DÉMARRE PAS.
+    // Sans ça, le 1er combat partait quand même (rabattu sur Bronze, ponctionnant la
+    // mise) avant de s'arrêter au tour suivant.
+    const dec = loopDecision(gRef.current, betTier, D.ECON);
+    if (!dec.go) {
+      if (dec.reason === "cap") toast(I18N.t(dec.tier === "gold" ? "AR_LOOP_END_GOLD" : "AR_LOOP_END_SILVER"), "info");
+      else if (dec.reason === "free") toast(I18N.t("AR_FREE_EMPTY"), "bad");
+      else toast(I18N.t("AR_INSUFF"), "bad");
+      return;
+    }
     loopRef.current = true; setLoop(true);
     if (!playing) playFight(true);
   }
