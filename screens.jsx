@@ -33,6 +33,29 @@ function Team() {
           <button className="btn btn-elec lg" disabled={selCount !== 3} onClick={() => actions.setView("arena")}>{I18N.t("TEAM_ENTER")} →</button>
         </div>
       </div>
+      {/* Slot Capitaine (Totem) — affichage seul, clic → écran Lien */}
+      {(() => {
+        const TU = window.FA_TOTEM_UI;
+        const t = g.totem;
+        return (
+          <div className="totem-slot" onClick={() => actions.setView("lien")}
+               style={{ cursor: "pointer", display: "flex", gap: 12, alignItems: "center",
+                        border: "1px solid var(--gold, #F7931A)", borderRadius: 12, padding: 10, marginBottom: 12 }}>
+            <img alt="Totem"
+                 src={t ? TU.totemArtFallback(t.type) : "assets/HASHBYTE.png"}
+                 style={{ width: 56, height: 56, borderRadius: 8, filter: t && t.tier > 0 ? "none" : "grayscale(1) opacity(0.5)" }} />
+            <div>
+              <div style={{ fontWeight: 700 }}>
+                {I18N.t("LINK_CAPTAIN")} · {t ? t.type : "—"} · {t ? TU.tierName(t.tier) : TU.tierName(0)}
+              </div>
+              <div style={{ fontSize: 12, opacity: 0.8 }}>
+                {t ? TU.auraSummary(t.aura) : I18N.t("LINK_DORMANT_HINT")}
+              </div>
+            </div>
+            <div style={{ marginLeft: "auto", opacity: 0.6 }}>›</div>
+          </div>
+        );
+      })()}
       <div className="grid-cards">
         {sorted.map((b) => (
           <CreatureCard key={b.id} beast={b} selectable selected={g.selected.includes(b.id)} onClick={() => toggle(b)} showXp />

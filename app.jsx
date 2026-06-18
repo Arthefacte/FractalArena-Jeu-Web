@@ -4,7 +4,7 @@
 const { useState, useEffect, useRef, useMemo } = React;
 const D = window.FA_DATA, I18N = window.FA_I18N;
 const { FA_Ctx, useFA, cx, fmt, Coin, Bar } = window;
-const { Team, Arena, Forge, Wallet, Boosts, Perso, Options, ChatFab, RoomFab, Leaderboard, Quests, Campaign, LoginGate, TutorialGate } = window;
+const { Team, Arena, Forge, Wallet, Boosts, Perso, Options, ChatFab, RoomFab, Leaderboard, Quests, Campaign, LoginGate, TutorialGate, Link } = window;
 const SAVE_KEY = "fractal_arena_v1";
 const API_URL = "https://fractal-arena-server-production.up.railway.app";
 const CLIENT_SECRET = "pastouche";
@@ -105,6 +105,7 @@ function freshState() {
     view: "team",
     authToken: "",
     serverFight: null,
+    totem: null,   // { type, tier, active, loyaltyDays, worldsCompleted, paidWins, aura }
   };
 }
 
@@ -223,10 +224,13 @@ function App() {
 
     async connectWallet(addr) {
       try {
-        const [saveResp, boostsResp] = await Promise.all([
+        const [saveResp, boostsResp, totemResp] = await Promise.all([
           fetch(`${API_URL}/save/${addr}`),
           fetch(`${API_URL}/boosts/status/${addr}`),
+          fetch(`${API_URL}/totem/${addr}`),
         ]);
+        // État du Totem (déterministe + dérivé serveur) — non bloquant
+        const totem = totemResp.ok ? await totemResp.json() : null;
         if (saveResp.ok) {
           const { save } = await saveResp.json();
           const boostsData = boostsResp.ok ? await boostsResp.json() : null;
@@ -234,6 +238,7 @@ function App() {
             const next = serverToState(save, addr, s);
             if (boostsData) next.boosts = { xp_boost: boostsData.xp_boost?.charges ?? 0, insurance: boostsData.insurance?.charges ?? 0, lucky_strike: boostsData.lucky_strike?.charges ?? 0 };
             next.ordinalName = save.ordinal_name || ""; // nom ordinal du serveur, vide si absent
+            next.totem = totem;
             return next;
           });
           return false; // joueur existant
@@ -252,6 +257,7 @@ function App() {
             ticketsGold: 0,
             freeFights: D.ECON.FREE_FIGHTS_PER_DAY,
             freeResetTs: Date.now(),
+            totem,
           }));
           return true; // nouveau joueur → l'airdrop est réclamé APRÈS authentification (token requis)
         } else {
@@ -876,7 +882,7 @@ function App() {
     );
   }
 
-  const VIEWS = { team: Team, arena: Arena, campaign: Campaign, quests: Quests, forge: Forge, wallet: Wallet, boosts: Boosts, perso: Perso, leaderboard: Leaderboard, options: Options };
+  const VIEWS = { team: Team, arena: Arena, campaign: Campaign, quests: Quests, forge: Forge, wallet: Wallet, boosts: Boosts, perso: Perso, leaderboard: Leaderboard, options: Options, lien: Link };
   const View = VIEWS[g.view] || Team;
 
   return (

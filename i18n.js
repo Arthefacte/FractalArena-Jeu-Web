@@ -114,6 +114,17 @@
     TEAM_FULL: { FR: "Équipe pleine (3 max)", EN: "Team full (3 max)", ZH: "队伍已满（最多3个）" },
     TEAM_COUNT: { FR: "%d entités", EN: "%d entities", ZH: "%d 个实体" },
 
+    // totem (écran « Lien »)
+    LINK_TITLE:        { FR: "Lien du Totem", EN: "Totem Link", ZH: "图腾之链" },
+    LINK_CAPTAIN:      { FR: "Capitaine", EN: "Captain", ZH: "队长" },
+    LINK_DORMANT_HINT: { FR: "Totem dormant — détiens le seuil de FRACTALARENA pour l'éveiller", EN: "Totem dormant — hold the FRACTALARENA threshold to awaken it", ZH: "图腾休眠 — 持有 FRACTALARENA 阈值以唤醒" },
+    LINK_TIER:         { FR: "Palier", EN: "Tier", ZH: "等级" },
+    LINK_LOYALTY:      { FR: "Fidélité : %d jours", EN: "Loyalty: %d days", ZH: "忠诚：%d 天" },
+    LINK_WORLDS:       { FR: "Mondes bouclés : %d", EN: "Worlds cleared: %d", ZH: "已通关世界：%d" },
+    LINK_WINS:         { FR: "Victoires payantes : %d", EN: "Paid wins: %d", ZH: "付费胜场：%d" },
+    LINK_AURA:         { FR: "Aura", EN: "Aura", ZH: "光环" },
+    LINK_BACK:         { FR: "← Retour à l'équipe", EN: "← Back to team", ZH: "← 返回队伍" },
+
     // arena
     AR_VERSUS: { FR: "FRACTAL", EN: "FRACTAL", ZH: "分形" },
     AR_YOU: { FR: "Toi", EN: "You", ZH: "你" },
