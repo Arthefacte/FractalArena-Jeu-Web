@@ -16,8 +16,12 @@
     if (!aura || (!aura.ampSameType && !aura.globalBuff)) return "Aucun bonus (dormant)";
     return `+${pct(aura.ampSameType)}% même type · +${pct(aura.globalBuff)}% global`;
   }
+  function totemArt(t) {
+    if (t && t.artUrl) return t.artUrl;
+    return totemArtFallback(t ? t.type : "HASH");
+  }
 
-  const api = { totemArtFallback, tierName, auraSummary, TIER_NAMES };
+  const api = { totemArtFallback, totemArt, tierName, auraSummary, TIER_NAMES };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   if (typeof window !== "undefined") window.FA_TOTEM_UI = api;
 })();

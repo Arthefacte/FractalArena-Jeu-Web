@@ -42,7 +42,8 @@ function Team() {
                style={{ cursor: "pointer", display: "flex", gap: 12, alignItems: "center",
                         border: "1px solid var(--gold, #F7931A)", borderRadius: 12, padding: 10, marginBottom: 12 }}>
             <img alt="Totem"
-                 src={t ? TU.totemArtFallback(t.type) : "assets/HASHBYTE.png"}
+                 src={t ? TU.totemArt(t) : "assets/HASHBYTE.png"}
+                 onError={(e) => { e.currentTarget.src = t ? TU.totemArtFallback(t.type) : "assets/HASHBYTE.png"; }}
                  style={{ width: 56, height: 56, borderRadius: 8, filter: t && t.tier > 0 ? "none" : "grayscale(1) opacity(0.5)" }} />
             <div>
               <div style={{ fontWeight: 700 }}>
