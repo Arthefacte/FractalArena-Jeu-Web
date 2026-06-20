@@ -124,6 +124,10 @@
     LINK_WINS:         { FR: "Victoires payantes : %d", EN: "Paid wins: %d", ZH: "付费胜场：%d" },
     LINK_AURA:         { FR: "Aura", EN: "Aura", ZH: "光环" },
     LINK_BACK:         { FR: "← Retour à l'équipe", EN: "← Back to team", ZH: "← 返回队伍" },
+    TOTEM_INVOKE_BTN:    { FR: "✨ Invoquer mon Totem", EN: "✨ Invoke my Totem", ZH: "✨ 召唤我的图腾" },
+    TOTEM_PREPARING:     { FR: "Totem en préparation…", EN: "Totem preparing…", ZH: "图腾准备中…" },
+    TOTEM_GALLERY_TITLE: { FR: "Galerie", EN: "Gallery", ZH: "画廊" },
+    TOTEM_GALLERY_COSMETIC: { FR: "Image cosmétique — tes stats restent celles de ton palier réel.", EN: "Cosmetic image — your stats stay those of your real tier.", ZH: "装饰图像 — 你的属性仍取决于你的真实阶位。" },
 
     // arena
     AR_VERSUS: { FR: "FRACTAL", EN: "FRACTAL", ZH: "分形" },
