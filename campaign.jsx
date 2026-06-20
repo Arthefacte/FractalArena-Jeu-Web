@@ -26,13 +26,17 @@ function floorUnlocked(stars, floorIndex) {
   return floorIndex === 0 || (stars[floorIndex - 1] || 0) >= 1;
 }
 
-// Durée ms → format compact « 7h32 » / « 42min » (borné à 0). Nom unique : le
-// scope global est partagé entre les .jsx, on n'écrase pas fmtFreeCountdown.
+// Durée ms → compte à rebours complet « 7h32m15s » / « 42m15s » / « 15s »
+// (borné à 0). Nom unique : le scope global est partagé entre les .jsx,
+// on n'écrase pas fmtFreeCountdown.
 function campFreeCompact(ms) {
   const s = Math.max(0, Math.floor(ms / 1000));
   const h = Math.floor(s / 3600);
   const m = Math.floor((s % 3600) / 60);
-  return h > 0 ? `${h}h${String(m).padStart(2, "0")}` : `${m}min`;
+  const sec = s % 60;
+  if (h > 0) return `${h}h${String(m).padStart(2, "0")}m${String(sec).padStart(2, "0")}s`;
+  if (m > 0) return `${m}m${String(sec).padStart(2, "0")}s`;
+  return `${sec}s`;
 }
 
 // ---- petits visuels ----
@@ -137,7 +141,7 @@ function CampaignCombat({ worldIndex, floorIndex, onBack, onCleared }) {
   useEffect(() => { if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight; }, [logLines]);
   // rafraîchit le compte à rebours « prochaine entrée gratuite » sans recharger
   const [, setTick] = useState(0);
-  useEffect(() => { const id = setInterval(() => setTick((t) => t + 1), 30000); return () => clearInterval(id); }, []);
+  useEffect(() => { const id = setInterval(() => setTick((t) => t + 1), 1000); return () => clearInterval(id); }, []);
 
   function log(text, cls) { setLogLines((L) => [...L.slice(-120), { text, cls }]); }
 
