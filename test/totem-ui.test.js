@@ -31,3 +31,21 @@ test("totemArt : pas d'artUrl → repli par type", () => {
 test("totemArt : totem absent → repli HASHBYTE", () => {
   assert.strictEqual(TU.totemArt(null), "assets/HASHBYTE.png");
 });
+
+test("totemArt : privilégie displayArtUrl (image cosmétique choisie)", () => {
+  assert.strictEqual(TU.totemArt({ type:"HASH", artUrl:"a.webp", displayArtUrl:"d.webp" }), "d.webp");
+});
+test("totemArt : sans displayArtUrl, retombe sur artUrl", () => {
+  assert.strictEqual(TU.totemArt({ type:"HASH", artUrl:"a.webp", displayArtUrl:null }), "a.webp");
+});
+test("totemArt : sans image, fallback du type", () => {
+  assert.strictEqual(TU.totemArt({ type:"GENESIS" }), "assets/GENESIS.png");
+});
+test("galleryItems : paliers révélés triés, [] si aucun", () => {
+  assert.deepStrictEqual(
+    TU.galleryItems({ revealedTier:3, artByTier:{ "1":"u1", "3":"u3" } }),
+    [{ tier:1, url:"u1" }, { tier:3, url:"u3" }]
+  );
+  assert.deepStrictEqual(TU.galleryItems({ revealedTier:0, artByTier:{} }), []);
+  assert.deepStrictEqual(TU.galleryItems(null), []);
+});
