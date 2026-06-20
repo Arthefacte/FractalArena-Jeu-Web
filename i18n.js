@@ -322,6 +322,7 @@
     CAMP_BOSS: { FR: "⚠ BOSS ⚠", EN: "⚠ BOSS ⚠", ZH: "⚠ 首领 ⚠" },
     CAMP_TICKET_COST: { FR: "🎟 1 ticket Argent", EN: "🎟 1 Silver ticket", ZH: "🎟 1 白银券" },
     CAMP_FREE_TODAY: { FR: "🎁 Entrée gratuite du jour", EN: "🎁 Free entry today", ZH: "🎁 今日免费进入" },
+    CAMP_FREE_NEXT: { FR: "🎟 Prochaine gratuite dans %s · coûte 1 ticket", EN: "🎟 Next free in %s · costs 1 ticket", ZH: "🎟 %s 后免费 · 需 1 张券" },
     CAMP_NO_TICKET: { FR: "Plus de ticket Argent — farme-en via les milestones d'arène", EN: "No Silver ticket left — farm them via arena milestones", ZH: "白银券已用完 — 通过竞技场里程碑获取" },
     CAMP_TICKET_HINT: { FR: "Besoin de tickets ? Joue dans l'Arène — les milestones (50 combats) t'en donnent 2 !", EN: "Need tickets? Play Arena — milestones (50 fights) give you 2!", ZH: "需要券？在竞技场玩 — 里程碑（50 场）给你 2 张！" },
     CAMP_FIGHT: { FR: "⚔️ Combattre", EN: "⚔️ Fight", ZH: "⚔️ 战斗" },

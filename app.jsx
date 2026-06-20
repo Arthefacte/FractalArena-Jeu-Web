@@ -38,6 +38,7 @@ function serverToState(save, addr, s) {
     ticketsSilver: save.tickets_silver ?? 0,
     ticketsGold: save.tickets_gold ?? 0,
     campaignProgress: nestProgress(save.campaign_progress),
+    campaignFreeTs: Number(save.campaign_free_ts) || 0,
     session: { wins: save.session_wins ?? 0, losses: save.session_losses ?? 0, net: save.session_arte_net ?? 0 },
     roster,
     selected: s.selected.filter((id) => rosterIds.has(id)), // retire les ids absents du nouveau roster
@@ -852,6 +853,7 @@ function App() {
           ticketsSilver: data.tickets_silver ?? st.ticketsSilver,
           ticketsGold: data.tickets_gold ?? st.ticketsGold,
           campaignProgress: nested,
+          campaignFreeTs: data.campaign_free_ts ?? st.campaignFreeTs,
           campaignTitles: titles,
         }));
         return {
