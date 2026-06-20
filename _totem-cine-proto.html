@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Totem — Prototype cinématique</title>
+<style>
+  html,body { margin:0; height:100%; background:#000; overflow:hidden; font-family:monospace; }
+  #stage { position:fixed; inset:0; background:#000; }
+  canvas { display:block; }
+  /* flash blanc-bleu plein cadre */
+  #flash { position:fixed; inset:0; background:radial-gradient(circle at 50% 50%, #ffffff 0%, #cfe9ff 35%, #6fb7ff 60%, rgba(0,0,0,0) 80%);
+           opacity:0; pointer-events:none; z-index:20; }
+  /* image révélée (stand-in du Totem) */
+  #reveal { position:fixed; inset:0; display:grid; place-items:center; opacity:0; pointer-events:none; z-index:15; transition:opacity .9s ease, transform .9s ease; transform:scale(.85); }
+  #reveal img { max-width:min(80vw,80vh); max-height:min(80vw,80vh); border-radius:14px;
+                box-shadow:0 0 40px rgba(0,240,255,.35), 0 0 80px rgba(247,147,26,.2); }
+  #ui { position:fixed; left:0; right:0; bottom:18px; text-align:center; z-index:30; color:#9fb4d8; font-size:12px; letter-spacing:1px; }
+  #ui button { font-family:monospace; background:#0a1326; color:#cfe1ff; border:1px solid #25406e; padding:9px 16px; border-radius:8px; cursor:pointer; letter-spacing:1px; }
+  #ui button:hover { background:#12203c; }
+  #hint { margin-top:8px; opacity:.7; }
+  #err { position:fixed; inset:0; display:none; place-items:center; color:#ff8080; z-index:40; padding:20px; text-align:center; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<div id="flash"></div>
+<div id="reveal"><img id="revealImg" src="assets/HASHBYTE.png" alt="" /></div>
+<div id="err"></div>
+<div id="ui">
+  <button id="replay">▶ Rejouer l'invocation</button>
+  <label style="margin-left:14px;"><input type="checkbox" id="inspect" /> inspecter (souris)</label>
+  <div id="hint">médaillon = ton logo3d.glb · image révélée = stand-in (HASHBYTE.png)</div>
+</div>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+}}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+const stage = document.getElementById('stage');
+const flashEl = document.getElementById('flash');
+const revealEl = document.getElementById('reveal');
+const errEl = document.getElementById('err');
+
+function showErr(m){ errEl.style.display='grid'; errEl.textContent = 'Erreur : ' + m; }
+
+const renderer = new THREE.WebGLRenderer({ antialias:true, alpha:false });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.15;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+stage.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x000000);
+
+const camera = new THREE.PerspectiveCamera(38, innerWidth/innerHeight, 0.1, 100);
+camera.position.set(0, 0, 6);
+
+// environnement pour reflets métalliques (PBR)
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(renderer), 0.04).texture;
+
+// éclairage teinté orange/cyan (identité du logo)
+scene.add(new THREE.AmbientLight(0x404858, 0.6));
+const key = new THREE.DirectionalLight(0xffffff, 2.2); key.position.set(3,4,5); scene.add(key);
+const orange = new THREE.PointLight(0xff7a1a, 60, 30); orange.position.set(-4,-1,3); scene.add(orange);
+const cyan = new THREE.PointLight(0x00f0ff, 60, 30); cyan.position.set(4,2,2); scene.add(cyan);
+
+// groupe qui tourne (recto-verso = 2 instances dos-à-dos)
+const pivot = new THREE.Group();
+scene.add(pivot);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enabled = false; controls.enablePan = false;
+document.getElementById('inspect').addEventListener('change', e => { controls.enabled = e.target.checked; });
+
+// post-process bloom (fait rayonner l'énergie orange/cyan)
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.7, 0.6, 0.85);
+composer.addPass(bloom);
+composer.addPass(new OutputPass());
+
+// ----- étincelles (volent autour du médaillon, intensité pilotée par l'énergie) -----
+const SPARK_N = 240;
+const sparkPos = new Float32Array(SPARK_N * 3);
+const sparkCol = new Float32Array(SPARK_N * 3);
+const sparkVel = [];
+const _cO = new THREE.Color(0xff8a2a), _cC = new THREE.Color(0x46e6ff);
+function seedSpark(i){
+  const r = 0.15 + Math.random() * 0.35;
+  const a = Math.random() * Math.PI * 2, b = (Math.random() - 0.5) * Math.PI;
+  sparkPos[i*3]   = Math.cos(a)*Math.cos(b)*r;
+  sparkPos[i*3+1] = Math.sin(b)*r;
+  sparkPos[i*3+2] = Math.sin(a)*Math.cos(b)*r;
+  const sp = 0.5 + Math.random() * 1.3;
+  sparkVel[i] = new THREE.Vector3((Math.random()-0.5), (Math.random()*0.7+0.15), (Math.random()-0.5)).normalize().multiplyScalar(sp);
+  const c = Math.random() < 0.5 ? _cO : _cC;
+  sparkCol[i*3] = c.r; sparkCol[i*3+1] = c.g; sparkCol[i*3+2] = c.b;
+}
+for (let i = 0; i < SPARK_N; i++) seedSpark(i);
+const sparkGeo = new THREE.BufferGeometry();
+sparkGeo.setAttribute('position', new THREE.BufferAttribute(sparkPos, 3));
+sparkGeo.setAttribute('color', new THREE.BufferAttribute(sparkCol, 3));
+const sparkMat = new THREE.PointsMaterial({ size: 0.04, vertexColors: true, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false });
+const sparks = new THREE.Points(sparkGeo, sparkMat); scene.add(sparks);
+function updateSparks(dt){
+  for (let i = 0; i < SPARK_N; i++){
+    sparkPos[i*3]   += sparkVel[i].x * dt;
+    sparkPos[i*3+1] += sparkVel[i].y * dt;
+    sparkPos[i*3+2] += sparkVel[i].z * dt;
+    const d = Math.hypot(sparkPos[i*3], sparkPos[i*3+1], sparkPos[i*3+2]);
+    if (d > 2.6) seedSpark(i);
+  }
+  sparkGeo.attributes.position.needsUpdate = true;
+}
+
+let model = null;
+const emissiveMats = [];   // énergie orange/cyan modulée en crescendo
+const loader = new GLTFLoader();
+loader.load('assets/logo3d.glb', (gltf) => {
+  const root = gltf.scene;
+  // MATÉRIAU 100% D'ORIGINE (Meshy) — on ne touche à RIEN (ni metalness, ni roughness, ni brillance/émissif).
+  // normaliser taille + centrer
+  const box = new THREE.Box3().setFromObject(root);
+  const size = box.getSize(new THREE.Vector3());
+  const center = box.getCenter(new THREE.Vector3());
+  const maxDim = Math.max(size.x, size.y, size.z) || 1;
+  const scale = 2.6 / maxDim;
+  root.position.sub(center);
+  const wrap = new THREE.Group(); wrap.add(root); wrap.scale.setScalar(scale);
+
+  // recto-verso = 2 instances dos-à-dos, DÉCALÉES sur Z d'une demi-profondeur
+  // (pas d'interpénétration) → le « FA » en relief sur les deux faces de la pièce.
+  const depth = (size.z * scale) || 0.2;
+  const front = wrap;
+  const back = wrap.clone(true);
+  front.position.z =  depth / 2;
+  back.position.z  = -depth / 2;
+  back.rotation.y  = Math.PI;
+  pivot.add(front); pivot.add(back);
+  model = pivot;
+  play();
+}, undefined, (e) => showErr('chargement GLB : ' + (e?.message || e)));
+
+// ---- timeline cinématique ----
+let t0 = null, raf = null, phase = 'idle', windT0 = 0, spinT0 = 0, lastNow = 0;
+const INTRO_DUR = 1.5;  // logo brut émerge du noir + zoom caméra
+const WIND_DUR  = 3.8;  // 2 allers-retours lents
+const WIND_AMP  = 1.05; // amplitude du balancement (rad)
+const SPIN_DUR  = 2.8;  // accélération jusqu'au flash
+const CAM_FAR = 9.5, CAM_NEAR = 5.6;
+const easeOut = x => 1 - Math.pow(1 - x, 3);
+
+// Illumination en crescendo : e ∈ [~0.04 .. 1]. Pilote bloom + lumières + émissif + étincelles.
+function applyEnergy(e){
+  bloom.strength   = 0.10 + 2.6 * e;
+  orange.intensity = 5 + 70 * e;
+  cyan.intensity   = 5 + 70 * e;
+  for (const { m, base } of emissiveMats) m.emissiveIntensity = base * (0.10 + 0.95 * e);
+  sparkMat.opacity = Math.min(1, e * 1.25);
+  sparkMat.size    = 0.03 + 0.05 * e;
+}
+function setCam(z){ if (!controls.enabled){ camera.position.set(0, 0, z); camera.lookAt(0, 0, 0); } }
+function play(){
+  flashEl.style.transition = 'none'; flashEl.style.opacity = 0;
+  revealEl.style.opacity = 0; revealEl.style.transform = 'scale(.85)';
+  pivot.rotation.y = 0; renderer.toneMappingExposure = 0.08; setCam(CAM_FAR);
+  applyEnergy(0.04); t0 = performance.now(); lastNow = t0; phase = 'intro';
+}
+function frame(now){
+  raf = requestAnimationFrame(frame);
+  const dt = Math.min(0.05, (now - (lastNow || now)) / 1000); lastNow = now;
+  controls.update();
+  updateSparks(dt);
+  if (model && phase === 'intro'){
+    // le logo brut émerge du noir (expo montante) + la caméra zoome ; commence à tourner tout doucement
+    const k = Math.min((now - t0) / 1000 / INTRO_DUR, 1), e = easeOut(k);
+    setCam(CAM_FAR + (CAM_NEAR - CAM_FAR) * e);
+    renderer.toneMappingExposure = 0.08 + (1.15 - 0.08) * e;
+    pivot.rotation.y = 0.15 * e;
+    applyEnergy(0.04 + 0.04 * e);                     // logo BRUT, à peine éclairé
+    if (k >= 1){ phase = 'wind'; windT0 = now; }
+  } else if (model && phase === 'wind'){
+    const t = (now - windT0) / 1000;
+    pivot.rotation.y = 0.15 + WIND_AMP * Math.sin((t / WIND_DUR) * Math.PI * 2 * 2);
+    applyEnergy(0.08 + 0.20 * (t / WIND_DUR));        // commence à s'illuminer
+    if (t >= WIND_DUR){ phase = 'spin'; spinT0 = now; }
+  } else if (model && phase === 'spin'){
+    const t = (now - spinT0) / 1000, k = Math.min(t / SPIN_DUR, 1);
+    pivot.rotation.y += (0.8 + 24 * (k*k)) * dt;      // accélère
+    applyEnergy(0.28 + 0.72 * (k*k));                 // crescendo jusqu'au pic
+    if (t >= SPIN_DUR){ phase = 'flash'; triggerFlash(); }
+  }
+  composer.render();
+}
+function triggerFlash(){
+  flashEl.style.transition = 'opacity .18s ease-out';
+  flashEl.style.opacity = 1;
+  setTimeout(() => {                 // au pic du flash : reveal de l'image + retombée
+    revealEl.style.opacity = 1; revealEl.style.transform = 'scale(1)';
+    flashEl.style.transition = 'opacity .8s ease-in'; flashEl.style.opacity = 0;
+    bloom.strength = 0.7; phase = 'done';
+  }, 200);
+}
+requestAnimationFrame(frame);
+
+document.getElementById('replay').addEventListener('click', play);
+addEventListener('resize', () => {
+  camera.aspect = innerWidth/innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight); composer.setSize(innerWidth, innerHeight);
+});
+</script>
+</body>
+</html>
