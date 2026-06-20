@@ -26,6 +26,15 @@ function floorUnlocked(stars, floorIndex) {
   return floorIndex === 0 || (stars[floorIndex - 1] || 0) >= 1;
 }
 
+// Durée ms → format compact « 7h32 » / « 42min » (borné à 0). Nom unique : le
+// scope global est partagé entre les .jsx, on n'écrase pas fmtFreeCountdown.
+function campFreeCompact(ms) {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  return h > 0 ? `${h}h${String(m).padStart(2, "0")}` : `${m}min`;
+}
+
 // ---- petits visuels ----
 function Stars({ n, max, size }) {
   max = max || 3;
@@ -126,6 +135,9 @@ function CampaignCombat({ worldIndex, floorIndex, onBack, onCleared }) {
 
   useEffect(() => () => { runIdRef.current++; if (stepRef.current) clearTimeout(stepRef.current); }, []);
   useEffect(() => { if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight; }, [logLines]);
+  // rafraîchit le compte à rebours « prochaine entrée gratuite » sans recharger
+  const [, setTick] = useState(0);
+  useEffect(() => { const id = setInterval(() => setTick((t) => t + 1), 30000); return () => clearInterval(id); }, []);
 
   function log(text, cls) { setLogLines((L) => [...L.slice(-120), { text, cls }]); }
 
@@ -334,8 +346,10 @@ function CampaignCombat({ worldIndex, floorIndex, onBack, onCleared }) {
             </>
           ) : (
             <>
-              <div className="mono" style={{ fontSize: 11, color: "var(--text-dim)", textAlign: "center" }}>
-                {freeReady ? I18N.t("CAMP_FREE_TODAY") : I18N.t("CAMP_TICKET_COST")}
+              <div className="mono" style={{ fontSize: 11, textAlign: "center", color: freeReady ? "var(--success)" : "var(--text-dim)" }}>
+                {freeReady
+                  ? I18N.t("CAMP_FREE_TODAY")
+                  : I18N.t("CAMP_FREE_NEXT", campFreeCompact((g.campaignFreeTs || 0) + 86400000 - Date.now()))}
               </div>
               <button className="btn btn-fire block lg" disabled={playing} onClick={startFight}>
                 {isBoss ? "⚔️ " + bossName : I18N.t("CAMP_FIGHT")}
