@@ -22,6 +22,12 @@
     #boot .b { font-family: 'JetBrains Mono', monospace; color: #00F0FF; letter-spacing: 4px; font-size: 13px; animation: bootPulse 1.1s ease-in-out infinite; }
     @keyframes bootPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.04); } }
   </style>
+  <script type="importmap">
+  { "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }}
+  </script>
 </head>
 
 <body>
@@ -48,6 +54,7 @@
   <script src="cosmetic.js?v=30"></script>
   <script src="loop.js?v=30"></script>
   <script src="totem-ui.js?v=30"></script>
+  <script type="module" src="totem-cine.js?v=30"></script>
 
   <!-- React (Babel) — order matters: components → screens → chat/room → app -->
   <script type="text/babel" src="components.jsx?v=30"></script>
