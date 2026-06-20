@@ -222,6 +222,39 @@ function App() {
     setUseLocked(v) { setG((s) => ({ ...s, useLocked: v })); },
     setView(v) { setG((s) => ({ ...s, view: v })); },
 
+    // Révélation d'un palier (après la cinématique). Écrit serveur, puis MAJ g.totem.
+    async invokeTotem(tier) {
+      const s = gRef.current;
+      if (!s.wallet) return { ok: false };
+      const doPost = () => fetch(`${API_URL}/totem/invoke`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${gRef.current.authToken}` },
+        body: JSON.stringify({ wallet: s.wallet, tier }),
+      });
+      let resp = await doPost();
+      if (resp.status === 401) { const re = await actions.authenticate(s.wallet); if (!re) return { ok: false }; resp = await doPost(); }
+      if (!resp.ok) return { ok: false };
+      const totem = await resp.json();
+      setG((st) => ({ ...st, totem }));
+      return { ok: true };
+    },
+    // Choix COSMÉTIQUE de l'image affichée (n'affecte jamais la puissance).
+    async pickTotemImage(tier) {
+      const s = gRef.current;
+      if (!s.wallet) return { ok: false };
+      const doPost = () => fetch(`${API_URL}/totem/display`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${gRef.current.authToken}` },
+        body: JSON.stringify({ wallet: s.wallet, tier }),
+      });
+      let resp = await doPost();
+      if (resp.status === 401) { const re = await actions.authenticate(s.wallet); if (!re) return { ok: false }; resp = await doPost(); }
+      if (!resp.ok) return { ok: false };
+      const totem = await resp.json();
+      setG((st) => ({ ...st, totem }));
+      return { ok: true };
+    },
+
     async connectWallet(addr) {
       try {
         const [saveResp, boostsResp, totemResp] = await Promise.all([
