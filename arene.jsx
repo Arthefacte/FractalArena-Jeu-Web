@@ -119,7 +119,7 @@ function Arene() {
       {sc.prelaunch ? (
         <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 24, textAlign: "center" }}>
           <div className="h1" style={{ color: "var(--elec)", marginBottom: 8 }}>{I18N.t("AR2_PRELAUNCH_TITLE")}</div>
-          <div className="mono" style={{ fontSize: 28, color: "var(--gold)", margin: "12px 0" }}>{I18N.t("AR2_STARTS_IN", AU.fmtCountdown(sc.ms))}</div>
+          <div className="mono" style={{ fontSize: 28, color: "var(--gold)", margin: "12px 0" }}>{I18N.t("AR2_STARTS_IN", AU.fmtCountdownSec(sc.ms))}</div>
           <div className="mono" style={{ fontSize: 13, color: "var(--text-dim)" }}>{I18N.t("AR2_PRELAUNCH_HINT")}</div>
         </div>
       ) : (

@@ -18,6 +18,18 @@
     return m + "m";
   }
 
+  // Compte à rebours AVEC secondes (pour le pré-lancement, qui tick chaque seconde).
+  function fmtCountdownSec(ms) {
+    const s = Math.max(0, Math.floor(ms / 1000));
+    const d = Math.floor(s / 86400);
+    const h = Math.floor((s % 86400) / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const sec = s % 60;
+    const pad = (n) => String(n).padStart(2, "0");
+    if (d > 0) return d + "j " + pad(h) + "h " + pad(m) + "m " + pad(sec) + "s";
+    return h + "h " + pad(m) + "m " + pad(sec) + "s";
+  }
+
   function eventLogLines(events) {
     if (!Array.isArray(events)) return [];
     const out = [];
@@ -47,5 +59,5 @@
     return { prelaunch: true, ms: Math.max(0, Number(season.starts_at) - now) };
   }
 
-  window.FA_ARENE_UI = { leagueLabel, leagueColor, fmtCountdown, eventLogLines, entryModes, seasonCountdown };
+  window.FA_ARENE_UI = { leagueLabel, leagueColor, fmtCountdown, fmtCountdownSec, eventLogLines, entryModes, seasonCountdown };
 })();

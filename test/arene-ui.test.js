@@ -24,6 +24,13 @@ test("fmtCountdown", () => {
   assert.strictEqual(U.fmtCountdown(50 * 3600000), "2j 2h");
 });
 
+test("fmtCountdownSec : affiche les secondes, borné à 0", () => {
+  assert.strictEqual(U.fmtCountdownSec(0), "0h 00m 00s");
+  assert.strictEqual(U.fmtCountdownSec(-5000), "0h 00m 00s");
+  assert.strictEqual(U.fmtCountdownSec((5 * 3600 + 30 * 60 + 9) * 1000), "5h 30m 09s");
+  assert.strictEqual(U.fmtCountdownSec(50 * 3600000), "2j 02h 00m 00s");
+});
+
 test("eventLogLines : tableau de chaînes, tolère vide", () => {
   assert.deepStrictEqual(U.eventLogLines([]), []);
   const lines = U.eventLogLines([{ t: "crit", tname: "Nyx", down: true }, { t: "win" }]);
