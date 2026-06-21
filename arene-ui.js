@@ -39,5 +39,13 @@
     ];
   }
 
-  window.FA_ARENE_UI = { leagueLabel, leagueColor, fmtCountdown, eventLogLines, entryModes };
+  // Mode de saison. Si la saison existe et n'est pas encore ouverte (live === false),
+  // renvoie prelaunch=true + le temps restant (ms) avant l'ouverture (starts_at).
+  // Tout autre cas (pas de saison, ou live === true) → prelaunch=false.
+  function seasonCountdown(season, now) {
+    if (!season || season.live !== false) return { prelaunch: false, ms: 0 };
+    return { prelaunch: true, ms: Math.max(0, Number(season.starts_at) - now) };
+  }
+
+  window.FA_ARENE_UI = { leagueLabel, leagueColor, fmtCountdown, eventLogLines, entryModes, seasonCountdown };
 })();

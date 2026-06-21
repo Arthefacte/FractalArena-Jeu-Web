@@ -49,10 +49,20 @@ function Arene() {
   const [entry, setEntry] = useState("free");
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState(null);
+  const [nowTs, setNowTs] = useState(Date.now());
 
   useEffect(() => { if (g.wallet) actions.pvpRefresh(); }, [g.wallet]);
+  useEffect(() => {
+    const id = setInterval(() => setNowTs(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  // Bascule auto en mode jouable quand l'heure d'ouverture est atteinte.
+  useEffect(() => {
+    if (pvp.season && pvp.season.live === false && Date.now() >= Number(pvp.season.starts_at)) actions.pvpRefresh();
+  }, [nowTs]);
 
   const defenseReady = g.selected.length === 3;
+  const sc = AU.seasonCountdown(pvp.season, nowTs);
 
   async function onSetDefense() {
     if (!defenseReady) { toast(I18N.t("AR2_NO_DEFENSE"), "bad"); return; }
@@ -106,6 +116,13 @@ function Arene() {
         {!defenseReady && <div className="mono" style={{ fontSize: 11, color: "var(--alert)", marginTop: 8 }}>{I18N.t("AR2_NO_DEFENSE")}</div>}
       </div>
 
+      {sc.prelaunch ? (
+        <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 24, textAlign: "center" }}>
+          <div className="h1" style={{ color: "var(--elec)", marginBottom: 8 }}>{I18N.t("AR2_PRELAUNCH_TITLE")}</div>
+          <div className="mono" style={{ fontSize: 28, color: "var(--gold)", margin: "12px 0" }}>{I18N.t("AR2_STARTS_IN", AU.fmtCountdown(sc.ms))}</div>
+          <div className="mono" style={{ fontSize: 13, color: "var(--text-dim)" }}>{I18N.t("AR2_PRELAUNCH_HINT")}</div>
+        </div>
+      ) : (
       <div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.8fr", gap: 16 }} className="arena-lower">
         {/* Adversaires */}
         <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 16 }}>
@@ -157,6 +174,7 @@ function Arene() {
           {pvp.season && <div className="mono" style={{ fontSize: 11, color: "var(--text-dim)", marginTop: 12 }}>{I18N.t("AR2_PRIZE", pvp.season.dotation || 0)}</div>}
         </div>
       </div>
+      )}
 
       {result && <ResultModal data={result} onClose={() => setResult(null)} />}
     </div>

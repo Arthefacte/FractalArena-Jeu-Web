@@ -40,3 +40,22 @@ test("entryModes : free dispo si free_remaining>0, fa toujours, ticket toujours"
   const m0 = U.entryModes({ free_remaining: 0, fa_cost: 50 });
   assert.strictEqual(m0.find((x) => x.key === "free").available, false);
 });
+
+test("seasonCountdown : live===false → prelaunch + ms restant jusqu'à starts_at", () => {
+  const now = 1000;
+  const r = U.seasonCountdown({ live: false, starts_at: now + 5000 }, now);
+  assert.strictEqual(r.prelaunch, true);
+  assert.strictEqual(r.ms, 5000);
+});
+
+test("seasonCountdown : ms borné à 0 si starts_at déjà passé", () => {
+  const r = U.seasonCountdown({ live: false, starts_at: 500 }, 1000);
+  assert.strictEqual(r.prelaunch, true);
+  assert.strictEqual(r.ms, 0);
+});
+
+test("seasonCountdown : live===true ou pas de saison → prelaunch=false", () => {
+  assert.strictEqual(U.seasonCountdown({ live: true, starts_at: 9e15 }, 0).prelaunch, false);
+  assert.strictEqual(U.seasonCountdown(null, 0).prelaunch, false);
+  assert.strictEqual(U.seasonCountdown(undefined, 0).prelaunch, false);
+});
