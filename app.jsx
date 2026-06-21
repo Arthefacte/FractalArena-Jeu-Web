@@ -4,7 +4,7 @@
 const { useState, useEffect, useRef, useMemo } = React;
 const D = window.FA_DATA, I18N = window.FA_I18N;
 const { FA_Ctx, useFA, cx, fmt, Coin, Bar } = window;
-const { Team, Arena, Forge, Wallet, Boosts, Perso, Options, ChatFab, RoomFab, Leaderboard, Quests, Campaign, LoginGate, TutorialGate } = window;
+const { Team, Fosse, Arene, Forge, Wallet, Boosts, Perso, Options, ChatFab, RoomFab, Leaderboard, Quests, Campaign, LoginGate, TutorialGate, Link } = window;
 const SAVE_KEY = "fractal_arena_v1";
 const API_URL = "https://fractal-arena-server-production.up.railway.app";
 const CLIENT_SECRET = "pastouche";
@@ -106,6 +106,7 @@ function freshState() {
     view: "team",
     authToken: "",
     serverFight: null,
+    pvp: {},
   };
 }
 
@@ -864,6 +865,38 @@ function App() {
         };
       } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
     },
+
+    async pvpRefresh() {
+      const w = gRef.current.wallet; if (!w) return;
+      const authHeaders = () => ({ "Authorization": "Bearer " + gRef.current.authToken });
+      try {
+        const [cad, season, opp, ladder] = await Promise.all([
+          fetch(`${API_URL}/pvp/cadence`, { headers: authHeaders() }).then((r) => r.json()).catch(() => ({})),
+          fetch(`${API_URL}/pvp/season`).then((r) => r.json()).catch(() => ({})),
+          fetch(`${API_URL}/pvp/opponents`, { headers: authHeaders() }).then((r) => r.json()).catch(() => ({})),
+          fetch(`${API_URL}/pvp/ladder?wallet=${encodeURIComponent(w)}`).then((r) => r.json()).catch(() => ({})),
+        ]);
+        const myRow = (ladder.ladder || []).find((x) => x.wallet === w);
+        setG((s) => ({ ...s, pvp: {
+          league: (myRow && myRow.league) || ladder.league,
+          rating: myRow ? myRow.rating : undefined,
+          free_remaining: cad.free_remaining, fa_cost: cad.fa_cost, revanches: cad.revanches || [],
+          season: season && season.ok ? season : undefined,
+          opponents: opp.opponents || [], ladder: ladder.ladder || [],
+        } }));
+      } catch (e) { /* silencieux */ }
+    },
+    async pvpSetDefense() {
+      const authHeaders = () => ({ "Authorization": "Bearer " + gRef.current.authToken });
+      const sel = gRef.current.selected; if (sel.length !== 3) return { ok: false, error: "3 bêtes requises" };
+      const r = await fetch(`${API_URL}/pvp/defense`, { method: "POST", headers: { ...authHeaders(), "Content-Type": "application/json" }, body: JSON.stringify({ selected: sel }) });
+      const j = await r.json().catch(() => ({})); return j;
+    },
+    async pvpAttack(target, entry) {
+      const authHeaders = () => ({ "Authorization": "Bearer " + gRef.current.authToken });
+      const r = await fetch(`${API_URL}/pvp/attack`, { method: "POST", headers: { ...authHeaders(), "Content-Type": "application/json" }, body: JSON.stringify({ target, entry }) });
+      const j = await r.json().catch(() => ({})); return j;
+    },
   }), []);
 
   const ctx = { g, actions, toast };
@@ -878,7 +911,7 @@ function App() {
     );
   }
 
-  const VIEWS = { team: Team, arena: Arena, campaign: Campaign, quests: Quests, forge: Forge, wallet: Wallet, boosts: Boosts, perso: Perso, leaderboard: Leaderboard, options: Options };
+  const VIEWS = { team: Team, fosse: Fosse, arene: Arene, campaign: Campaign, quests: Quests, forge: Forge, wallet: Wallet, boosts: Boosts, perso: Perso, leaderboard: Leaderboard, options: Options, lien: Link };
   const View = VIEWS[g.view] || Team;
 
   return (
@@ -958,7 +991,7 @@ function Header({ chipPop }) {
 function Nav() {
   const { g, actions } = useFA();
   const tabs = [
-    ["team", "NAV_TEAM"], ["arena", "NAV_ARENA"], ["campaign", "NAV_CAMPAIGN"], ["quests", "NAV_QUESTS"], ["forge", "NAV_FORGE"],
+    ["team", "NAV_TEAM"], ["fosse", "NAV_FOSSE"], ["arene", "NAV_ARENE"], ["campaign", "NAV_CAMPAIGN"], ["quests", "NAV_QUESTS"], ["forge", "NAV_FORGE"],
     ["wallet", "NAV_WALLET"], ["boosts", "NAV_BOOSTS"], ["perso", "NAV_PERSO"], ["leaderboard", "NAV_LEADERBOARD"], ["options", "NAV_OPTIONS"],
   ];
   return (

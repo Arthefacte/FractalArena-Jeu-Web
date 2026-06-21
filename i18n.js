@@ -8,7 +8,8 @@
   const T = {
     // nav
     NAV_TEAM: { FR: "🦸 Équipe", EN: "🦸 Team", ZH: "🦸 队伍" },
-    NAV_ARENA: { FR: "⚔️ Arène", EN: "⚔️ Arena", ZH: "⚔️ 竞技场" },
+    NAV_FOSSE: { FR: "⚔️ La Fosse", EN: "⚔️ The Pit", ZH: "⚔️ 深坑" },
+    NAV_ARENE: { FR: "🏆 Arène", EN: "🏆 Arena", ZH: "🏆 竞技场" },
     NAV_FORGE: { FR: "🔨 Forge", EN: "🔨 Forge", ZH: "🔨 熔炉" },
     NAV_WALLET: { FR: "💰 Wallet", EN: "💰 Wallet", ZH: "💰 钱包" },
     NAV_BOOSTS: { FR: "⚡ Boosts", EN: "⚡ Boosts", ZH: "⚡ 强化" },
@@ -37,7 +38,7 @@
     TUT_NEXT:  { FR: "Suivant", EN: "Next", ZH: "下一步" },
     TUT_START: { FR: "Commencer", EN: "Start", ZH: "开始" },
     TUT_HELP:  { FR: "Revoir le tutoriel", EN: "Replay tutorial", ZH: "重看教程" },
-    TUT_S1_T: { FR: "Bienvenue dans l'Arène", EN: "Welcome to the Arena", ZH: "欢迎来到竞技场" },
+    TUT_S1_T: { FR: "Bienvenue dans Fractal Arena", EN: "Welcome to Fractal Arena", ZH: "欢迎来到 Fractal Arena" },
     TUT_S1_B: {
       FR: "Fractal Arena est un auto-battler sur Fractal Bitcoin. Tu démarres avec un cadeau de bienvenue en FA verrouillés — de quoi te faire la main.",
       EN: "Fractal Arena is an auto-battler on Fractal Bitcoin. You start with a welcome gift of locked FA — enough to get the hang of it.",
@@ -51,9 +52,9 @@
     },
     TUT_S3_T: { FR: "Combats & mises", EN: "Fights & bets", ZH: "战斗与下注" },
     TUT_S3_B: {
-      FR: "Entraîne-toi avec tes combats gratuits quotidiens, puis mise des FA (Bronze, Argent, Or) à l'Arène : une victoire rapporte gros, une défaite coûte ta mise.",
-      EN: "Train with your daily free fights, then bet FA (Bronze, Silver, Gold) in the Arena: a win pays big, a loss costs your stake.",
-      ZH: "用每日免费战斗练习，然后在竞技场下注 FA（铜、银、金）：获胜收益丰厚，失败则损失赌注。",
+      FR: "Entraîne-toi avec tes combats gratuits quotidiens, puis mise des FA (Bronze, Argent, Or) dans La Fosse : une victoire rapporte gros, une défaite coûte ta mise.",
+      EN: "Train with your daily free fights, then bet FA (Bronze, Silver, Gold) in The Pit: a win pays big, a loss costs your stake.",
+      ZH: "用每日免费战斗练习，然后在深坑下注 FA（铜、银、金）：获胜收益丰厚，失败则损失赌注。",
     },
     TUT_S4_T: { FR: "Verrouillé vs disponible", EN: "Locked vs available", ZH: "锁定与可用" },
     TUT_S4_B: {
@@ -110,11 +111,11 @@
     TEAM_TITLE: { FR: "Ma collection", EN: "My collection", ZH: "我的收藏" },
     TEAM_HINT: { FR: "Sélectionne 3 entités pour ton équipe", EN: "Select 3 entities for your team", ZH: "选择 3 个实体组成队伍" },
     TEAM_SELECTED: { FR: "%d / 3 sélectionnées", EN: "%d / 3 selected", ZH: "已选 %d / 3" },
-    TEAM_ENTER: { FR: "Entrer dans l'arène", EN: "Enter the arena", ZH: "进入竞技场" },
+    TEAM_ENTER: { FR: "Entrer dans La Fosse", EN: "Enter The Pit", ZH: "进入深坑" },
     TEAM_FULL: { FR: "Équipe pleine (3 max)", EN: "Team full (3 max)", ZH: "队伍已满（最多3个）" },
     TEAM_COUNT: { FR: "%d entités", EN: "%d entities", ZH: "%d 个实体" },
 
-    // arena
+    // la fosse
     AR_VERSUS: { FR: "FRACTAL", EN: "FRACTAL", ZH: "分形" },
     AR_YOU: { FR: "Toi", EN: "You", ZH: "你" },
     AR_LOG: { FR: "Journal de combat", EN: "Battle log", ZH: "战斗日志" },
@@ -144,6 +145,31 @@
     AR_ROUND: { FR: "Round %d", EN: "Round %d", ZH: "回合 %d" },
     AR_TYPE_ADV: { FR: "%s › %s : +25% dégâts", EN: "%s › %s: +25% damage", ZH: "%s › %s：+25% 伤害" },
     AR_TYPE_DIS: { FR: "%s › %s : -20% dégâts infligés", EN: "%s › %s: -20% damage dealt", ZH: "%s › %s：-20% 造成伤害" },
+
+    // arène (pvp)
+    AR2_TITLE: { FR: "L'Arène", EN: "The Arena", ZH: "竞技场" },
+    AR2_TAG: { FR: "PVP CLASSÉ — LIGUES", EN: "RANKED PVP — LEAGUES", ZH: "排位 PVP — 联赛" },
+    AR2_MY_DEFENSE: { FR: "Ma défense", EN: "My defense", ZH: "我的防守" },
+    AR2_SET_DEFENSE: { FR: "Mettre à jour ma défense", EN: "Update my defense", ZH: "更新我的防守" },
+    AR2_OPPONENTS: { FR: "Adversaires", EN: "Opponents", ZH: "对手" },
+    AR2_LADDER: { FR: "Classement", EN: "Ladder", ZH: "排行榜" },
+    AR2_ATTACK: { FR: "Attaquer", EN: "Attack", ZH: "进攻" },
+    AR2_REVANCHE: { FR: "Revanche", EN: "Revenge", ZH: "复仇" },
+    AR2_ENTRY: { FR: "Entrée", EN: "Entry", ZH: "入场" },
+    AR2_FREE: { FR: "Gratuit", EN: "Free", ZH: "免费" },
+    AR2_FA: { FR: "%d FA", EN: "%d FA", ZH: "%d FA" },
+    AR2_TICKET: { FR: "🎟 Ticket Or", EN: "🎟 Gold ticket", ZH: "🎟 金券" },
+    AR2_NO_DEFENSE: { FR: "Définis ta défense (3 bêtes via l'onglet Équipe) pour entrer dans l'Arène.", EN: "Set your defense (pick 3 beasts in the Team tab) to enter the Arena.", ZH: "先在「队伍」选择 3 只野兽设定防守，方可进入竞技场。" },
+    AR2_SEASON: { FR: "Saison %d", EN: "Season %d", ZH: "第 %d 赛季" },
+    AR2_ENDS_IN: { FR: "finit dans %s", EN: "ends in %s", ZH: "%s 后结束" },
+    AR2_PRIZE: { FR: "Prize pool %d FA", EN: "Prize pool %d FA", ZH: "奖池 %d FA" },
+    AR2_WIN: { FR: "Victoire !", EN: "Victory!", ZH: "胜利！" },
+    AR2_LOSE: { FR: "Défaite", EN: "Defeat", ZH: "失败" },
+    AR2_ELO_DELTA: { FR: "ELO %s → %d", EN: "ELO %s → %d", ZH: "ELO %s → %d" },
+    AR2_NO_OPPONENTS: { FR: "Aucun adversaire pour l'instant — reviens bientôt.", EN: "No opponents yet — check back soon.", ZH: "暂无对手 — 请稍后再来。" },
+    AR2_POWER: { FR: "puissance %d", EN: "power %d", ZH: "战力 %d" },
+    AR2_RANK: { FR: "Rang", EN: "Rank", ZH: "排名" },
+    AR2_REFRESH: { FR: "Rafraîchir", EN: "Refresh", ZH: "刷新" },
 
     // combat log
     L_START: { FR: "COMBAT LANCÉ", EN: "FIGHT STARTED", ZH: "战斗开始" },
@@ -323,8 +349,8 @@
     CAMP_TICKET_COST: { FR: "🎟 1 ticket Argent", EN: "🎟 1 Silver ticket", ZH: "🎟 1 白银券" },
     CAMP_FREE_TODAY: { FR: "🎁 Entrée gratuite du jour", EN: "🎁 Free entry today", ZH: "🎁 今日免费进入" },
     CAMP_FREE_NEXT: { FR: "🎟 Prochaine gratuite dans %s · coûte 1 ticket", EN: "🎟 Next free in %s · costs 1 ticket", ZH: "🎟 %s 后免费 · 需 1 张券" },
-    CAMP_NO_TICKET: { FR: "Plus de ticket Argent — farme-en via les milestones d'arène", EN: "No Silver ticket left — farm them via arena milestones", ZH: "白银券已用完 — 通过竞技场里程碑获取" },
-    CAMP_TICKET_HINT: { FR: "Besoin de tickets ? Joue dans l'Arène — les milestones (50 combats) t'en donnent 2 !", EN: "Need tickets? Play Arena — milestones (50 fights) give you 2!", ZH: "需要券？在竞技场玩 — 里程碑（50 场）给你 2 张！" },
+    CAMP_NO_TICKET: { FR: "Plus de ticket Argent — farme-en via les milestones de La Fosse", EN: "No Silver ticket left — farm them via The Pit milestones", ZH: "白银券已用完 — 通过深坑里程碑获取" },
+    CAMP_TICKET_HINT: { FR: "Besoin de tickets ? Joue dans La Fosse — les milestones (50 combats) t'en donnent 2 !", EN: "Need tickets? Play The Pit — milestones (50 fights) give you 2!", ZH: "需要券？在深坑玩 — 里程碑（50 场）给你 2 张！" },
     CAMP_FIGHT: { FR: "⚔️ Combattre", EN: "⚔️ Fight", ZH: "⚔️ 战斗" },
     CAMP_RETRY: { FR: "🔄 Recommencer", EN: "🔄 Retry", ZH: "🔄 重试" },
     CAMP_NEXT_FLOOR: { FR: "Étage suivant →", EN: "Next floor →", ZH: "下一层 →" },

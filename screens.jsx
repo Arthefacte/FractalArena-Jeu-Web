@@ -30,7 +30,7 @@ function Team() {
         </div>
         <div className="flex gap12 center">
           <span className="pill" style={{ color: selCount === 3 ? "var(--success)" : "var(--text-dim)", fontSize: 13 }}>{I18N.t("TEAM_SELECTED", selCount)}</span>
-          <button className="btn btn-elec lg" disabled={selCount !== 3} onClick={() => actions.setView("arena")}>{I18N.t("TEAM_ENTER")} →</button>
+          <button className="btn btn-elec lg" disabled={selCount !== 3} onClick={() => actions.setView("fosse")}>{I18N.t("TEAM_ENTER")} →</button>
         </div>
       </div>
       <div className="grid-cards">
