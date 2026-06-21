@@ -596,8 +596,6 @@ function App() {
       const s = gRef.current;
       const beast = s.roster.find((b) => b.id === id);
       if (!beast) return { ok: false, reason: I18N.t("FG_PICK1") };
-      const cost = Math.round(D.FORGE.REROLL_BASE[beast.rarity] * (1 + 0.5 * beast.reroll_count));
-      if (s.liquid + s.locked < cost) return { ok: false, reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, cost) };
       if (!s.wallet) return { ok: false, reason: "Wallet requis" };
       try {
         const resp = await fetch(`${API_URL}/forge/reroll`, {
@@ -605,11 +603,42 @@ function App() {
           body: JSON.stringify({ wallet: s.wallet, beast_id: id }),
         });
         const data = await resp.json();
-        if (data.status === "insufficient_balance") return { ok: false, reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, cost) };
+        if (data.status === "insufficient_balance") return { ok: false, reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, data.cost || 0) };
+        if (data.status !== "ok") return { ok: false, reason: data.error || "Erreur serveur" };
+        // Mode pending : rien n'est appliqué ; on resynchronise le solde (débité) et on renvoie l'aperçu.
+        const sv = await fetch(`${API_URL}/save/${s.wallet}`);
+        if (sv.ok) { const { save } = await sv.json(); setG((st) => serverToState(save, s.wallet, st)); }
+        return { ok: true, preview: { old_stats: data.old_stats, new_stats: data.new_stats, cost: data.cost, next_reroll_cost: data.next_reroll_cost } };
+      } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
+    },
+    async rerollConfirm(id) {
+      const s = gRef.current;
+      if (!s.wallet) return { ok: false, reason: "Wallet requis" };
+      try {
+        const resp = await fetch(`${API_URL}/forge/reroll/confirm`, {
+          method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
+          body: JSON.stringify({ wallet: s.wallet, beast_id: id }),
+        });
+        const data = await resp.json();
         if (data.status !== "ok") return { ok: false, reason: data.error || "Erreur serveur" };
         const sv = await fetch(`${API_URL}/save/${s.wallet}`);
         if (sv.ok) { const { save } = await sv.json(); setG((st) => serverToState(save, s.wallet, st)); }
         return { ok: true };
+      } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
+    },
+    async rerollDiscard(id) {
+      const s = gRef.current;
+      if (!s.wallet) return { ok: false, reason: "Wallet requis" };
+      try {
+        const resp = await fetch(`${API_URL}/forge/reroll/discard`, {
+          method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
+          body: JSON.stringify({ wallet: s.wallet, beast_id: id }),
+        });
+        const data = await resp.json();
+        if (data.status !== "ok") return { ok: false, reason: data.error || "Erreur serveur" };
+        const sv = await fetch(`${API_URL}/save/${s.wallet}`);
+        if (sv.ok) { const { save } = await sv.json(); setG((st) => serverToState(save, s.wallet, st)); }
+        return { ok: true, refunded: data.refunded };
       } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
     },
 
