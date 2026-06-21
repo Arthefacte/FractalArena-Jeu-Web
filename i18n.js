@@ -174,6 +174,15 @@
     AR2_RANK: { FR: "Rang", EN: "Rank", ZH: "排名" },
     AR2_REFRESH: { FR: "Rafraîchir", EN: "Refresh", ZH: "刷新" },
 
+    // prix de saison PvP
+    PRIZE_TITLE:       { FR: "Récompense de saison !", EN: "Season reward!", ZH: "赛季奖励！" },
+    PRIZE_SEASON_RANK: { FR: "Saison %d — Rang %d · %s", EN: "Season %d — Rank %d · %s", ZH: "第 %d 赛季 — 第 %d 名 · %s" },
+    PRIZE_BEFORE:      { FR: "Solde avant : %d FA", EN: "Balance before: %d FA", ZH: "之前余额：%d FA" },
+    PRIZE_REWARD:      { FR: "Récompense : +%d FA", EN: "Reward: +%d FA", ZH: "奖励：+%d FA" },
+    PRIZE_AFTER:       { FR: "Tu es maintenant à : %d FA", EN: "You're now at: %d FA", ZH: "你现在有：%d FA" },
+    PRIZE_TOTAL:       { FR: "Total : +%d FA", EN: "Total: +%d FA", ZH: "合计：+%d FA" },
+    PRIZE_CLAIM:       { FR: "Récupérer", EN: "Claim", ZH: "领取" },
+
     // combat log
     L_START: { FR: "COMBAT LANCÉ", EN: "FIGHT STARTED", ZH: "战斗开始" },
     L_FREE: { FR: "COMBAT GRATUIT — gains verrouillés", EN: "FREE FIGHT — locked gains", ZH: "免费战斗 — 锁定收益" },

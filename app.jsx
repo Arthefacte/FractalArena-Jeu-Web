@@ -107,6 +107,7 @@ function freshState() {
     authToken: "",
     serverFight: null,
     pvp: {},
+    pvpPrizes: [],
   };
 }
 
@@ -148,6 +149,9 @@ function App() {
   useEffect(() => {
     try { localStorage.setItem(SAVE_KEY, JSON.stringify(g)); } catch (e) { }
   }, [g]);
+
+  // Fetch non-vu des prix PvP dès que le token est établi
+  useEffect(() => { if (g.authToken) actions.pvpPrizes(); }, [g.authToken]);
 
   // language
   useEffect(() => { I18N.setLang(g.lang); }, [g.lang]);
@@ -886,6 +890,20 @@ function App() {
         } }));
       } catch (e) { /* silencieux */ }
     },
+    async pvpPrizes() {
+      if (!gRef.current.authToken) return;
+      try {
+        const r = await fetch(`${API_URL}/pvp/prizes`, { headers: { "Authorization": "Bearer " + gRef.current.authToken } });
+        const data = await r.json().catch(() => ({}));
+        if (data.ok) setG((s) => ({ ...s, pvpPrizes: data.prizes || [] }));
+      } catch (e) { /* silencieux */ }
+    },
+    async pvpPrizesSeen() {
+      try {
+        await fetch(`${API_URL}/pvp/prizes/seen`, { method: "POST", headers: { "Authorization": "Bearer " + gRef.current.authToken } });
+      } catch (e) { /* silencieux */ }
+      setG((s) => ({ ...s, pvpPrizes: [] }));
+    },
     async pvpSetDefense() {
       const authHeaders = () => ({ "Authorization": "Bearer " + gRef.current.authToken });
       const sel = gRef.current.selected; if (sel.length !== 3) return { ok: false, error: "3 bêtes requises" };
@@ -928,6 +946,7 @@ function App() {
       <Toasts toasts={toasts} />
       {g.wallet && <TutorialGate />}
       {g.wallet && <LoginGate />}
+      {Array.isArray(g.pvpPrizes) && g.pvpPrizes.length > 0 && <window.PrizeModal prizes={g.pvpPrizes} onClaim={() => actions.pvpPrizesSeen()} />}
     </FA_Ctx.Provider>
   );
 }

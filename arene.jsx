@@ -181,4 +181,37 @@ function Arene() {
   );
 }
 
-Object.assign(window, { Arene });
+function PrizeModal({ prizes, onClaim }) {
+  const { Modal } = window;
+  const AU = window.FA_ARENE_UI;
+  const total = prizes.reduce((s, p) => s + (p.reward || 0), 0);
+  return (
+    <Modal onClose={onClaim} accent="var(--gold)">
+      <div style={{ textAlign: "center", marginBottom: 16 }}>
+        <div className="h1" style={{ fontSize: 28, color: "var(--gold)" }}>{I18N.t("PRIZE_TITLE")}</div>
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        {prizes.map((p, i) => (
+          <div key={i} className="panel oct" style={{ border: "1px solid var(--line)", padding: "10px 14px" }}>
+            <div className="mono" style={{ color: AU.leagueColor(p.league), marginBottom: 6, fontWeight: "bold" }}>
+              {I18N.t("PRIZE_SEASON_RANK", p.season, p.rank, AU.leagueLabel(p.league))}
+            </div>
+            <div className="mono" style={{ fontSize: 13 }}>{I18N.t("PRIZE_BEFORE", p.balance_before)}</div>
+            <div className="mono" style={{ fontSize: 13, color: "var(--success)" }}>{I18N.t("PRIZE_REWARD", p.reward)}</div>
+            <div className="mono" style={{ fontSize: 13 }}>{I18N.t("PRIZE_AFTER", p.balance_after)}</div>
+          </div>
+        ))}
+      </div>
+      {prizes.length > 1 && (
+        <div className="mono" style={{ textAlign: "center", marginTop: 12, color: "var(--success)", fontWeight: "bold" }}>
+          {I18N.t("PRIZE_TOTAL", total)}
+        </div>
+      )}
+      <button className="btn block lg btn-elec" style={{ marginTop: 16 }} onClick={onClaim}>
+        {I18N.t("PRIZE_CLAIM")}
+      </button>
+    </Modal>
+  );
+}
+
+Object.assign(window, { Arene, PrizeModal });
