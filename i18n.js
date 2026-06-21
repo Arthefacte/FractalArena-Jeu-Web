@@ -243,6 +243,14 @@
     FG_REROLL_OK: { FR: "Stats redistribuées", EN: "Stats redistributed", ZH: "属性已重新分配" },
     FG_SUMMON_OK: { FR: "Invoqué : %s [%s]", EN: "Summoned: %s [%s]", ZH: "召唤：%s [%s]" },
     FG_NOT_FUSABLE: { FR: "Légendaire non fusable", EN: "Legendary not fusable", ZH: "传说无法融合" },
+    REROLL_PREVIEW_TITLE: { FR: "Nouvelle répartition", EN: "New distribution", ZH: "新的分配" },
+    REROLL_CURRENT:  { FR: "Actuel", EN: "Current", ZH: "当前" },
+    REROLL_PROPOSED: { FR: "Proposé", EN: "Proposed", ZH: "提议" },
+    REROLL_VALIDATE: { FR: "Valider", EN: "Keep this", ZH: "确认" },
+    REROLL_AGAIN:    { FR: "Re-roll (%d)", EN: "Re-roll (%d)", ZH: "重抽 (%d)" },
+    REROLL_KEEP_OLD: { FR: "Garder les anciennes", EN: "Keep old stats", ZH: "保留原属性" },
+    REROLL_REFUND_HINT: { FR: "Budget total identique. Si tu gardes les anciennes, 50 % du coût t'est remboursé.", EN: "Same total budget. Keep the old ones and 50% of the cost is refunded.", ZH: "总预算不变。保留原属性可退还 50% 费用。" },
+    REROLL_KEPT_OLD: { FR: "Anciennes stats gardées — %d FA remboursés", EN: "Old stats kept — %d FA refunded", ZH: "保留原属性 — 退还 %d FA" },
 
     // boosts
     BO_TITLE: { FR: "Boosts", EN: "Boosts", ZH: "强化" },

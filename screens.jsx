@@ -127,10 +127,40 @@ function ForgeFusion() {
   );
 }
 
+function RerollPreviewModal({ preview, busy, onValidate, onAgain, onKeep }) {
+  const { Modal } = window;
+  const F = window.FA_FORGE_UI;
+  const rows = F.rerollDiff(preview.old_stats, preview.new_stats);
+  const color = (dir) => dir === "up" ? "var(--success)" : dir === "down" ? "var(--alert)" : "var(--text-dim)";
+  const arrow = (dir) => dir === "up" ? "▲" : dir === "down" ? "▼" : "=";
+  return (
+    <Modal onClose={onKeep} accent="var(--elec)">
+      <div className="h1" style={{ fontSize: 24, color: "var(--elec)", textAlign: "center", marginBottom: 14 }}>{I18N.t("REROLL_PREVIEW_TITLE")}</div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr auto auto", gap: "6px 14px", alignItems: "center", marginBottom: 12 }}>
+        <span className="mono muted" style={{ fontSize: 11 }}></span>
+        <span className="mono muted" style={{ fontSize: 11, textAlign: "right" }}>{I18N.t("REROLL_CURRENT")}</span>
+        <span className="mono muted" style={{ fontSize: 11, textAlign: "right" }}>{I18N.t("REROLL_PROPOSED")}</span>
+        {rows.map((r) => [
+          <span key={r.key + "l"} className="mono" style={{ fontSize: 13 }}>{r.label}</span>,
+          <span key={r.key + "f"} className="mono" style={{ fontSize: 13, textAlign: "right", color: "var(--text-dim)" }}>{r.from}</span>,
+          <span key={r.key + "t"} className="mono" style={{ fontSize: 13, textAlign: "right", color: color(r.dir) }}>{r.to} {arrow(r.dir)}</span>,
+        ])}
+      </div>
+      <div className="mono muted" style={{ fontSize: 11, marginBottom: 14 }}>{I18N.t("REROLL_REFUND_HINT")}</div>
+      <div className="flex gap8" style={{ flexWrap: "wrap" }}>
+        <button className="btn btn-success" disabled={busy} onClick={onValidate}>{I18N.t("REROLL_VALIDATE")}</button>
+        <button className="btn btn-elec" disabled={busy} onClick={onAgain}>{I18N.t("REROLL_AGAIN", preview.next_reroll_cost || 0)}</button>
+        <button className="btn" disabled={busy} onClick={onKeep}>{I18N.t("REROLL_KEEP_OLD")}</button>
+      </div>
+    </Modal>
+  );
+}
+
 function ForgeReroll() {
   const { g, actions, toast } = useFA();
   const [sel, setSel] = useState(null);
   const [rerollBusy, setRerollBusy] = useState(false);
+  const [preview, setPreview] = useState(null);
   const beast = sel ? g.roster.find((b) => b.id === sel) : null;
   const cost = beast ? Math.round(D.FORGE.REROLL_BASE[beast.rarity] * (1 + 0.5 * beast.reroll_count)) : 0;
   const balOk = (g.liquid + g.locked) >= cost;
@@ -140,7 +170,28 @@ function ForgeReroll() {
     const r = await actions.reroll(sel);
     setRerollBusy(false);
     if (!r.ok) { toast(r.reason, "bad"); return; }
-    toast(I18N.t("FG_REROLL_OK"), "good");
+    setPreview(r.preview);
+  }
+  async function onValidate() {
+    setRerollBusy(true);
+    const r = await actions.rerollConfirm(sel);
+    setRerollBusy(false);
+    setPreview(null);
+    if (r.ok) toast(I18N.t("FG_REROLL_OK"), "good"); else toast(r.reason, "bad");
+  }
+  async function onAgain() {
+    setRerollBusy(true);
+    const r = await actions.reroll(sel);
+    setRerollBusy(false);
+    if (!r.ok) { toast(r.reason, "bad"); setPreview(null); return; }
+    setPreview(r.preview);
+  }
+  async function onKeep() {
+    setRerollBusy(true);
+    const r = await actions.rerollDiscard(sel);
+    setRerollBusy(false);
+    setPreview(null);
+    if (r.ok) toast(I18N.t("REROLL_KEPT_OLD", r.refunded || 0), "good"); else toast(r.reason, "bad");
   }
   return (
     <div>
@@ -159,6 +210,7 @@ function ForgeReroll() {
           <CreatureCard key={b.id} beast={b} selectable selected={sel === b.id} onClick={() => setSel(sel === b.id ? null : b.id)} />
         ))}
       </div>
+      {preview && <RerollPreviewModal preview={preview} busy={rerollBusy} onValidate={onValidate} onAgain={onAgain} onKeep={onKeep} />}
     </div>
   );
 }
