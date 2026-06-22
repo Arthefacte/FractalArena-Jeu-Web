@@ -350,8 +350,13 @@ function Cinematique(props) {
   }), []);
 
   return (
-    <div data-screen-label="cinematique-ouverture" style={{ position: 'fixed', inset: 0, overflow: 'hidden', background: '#05070f', fontFamily: "'Chakra Petch',sans-serif", color: '#EAF1FF', zIndex: 1000 }}>
-      <img src="assets/BACKGROUND.png" alt="" style={v.bgStyle} />
+    <div
+      data-screen-label="cinematique-ouverture"
+      onContextMenu={(e) => e.preventDefault()}
+      onDragStart={(e) => e.preventDefault()}
+      style={{ position: 'fixed', inset: 0, overflow: 'hidden', background: '#05070f', fontFamily: "'Chakra Petch',sans-serif", color: '#EAF1FF', zIndex: 1000, userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}
+    >
+      <img src="assets/BACKGROUND.png" alt="" draggable={false} style={v.bgStyle} />
       <div style={v.darkStyle} />
       <div style={v.scanStyle} />
       <div style={v.sweepStyle} />
@@ -363,7 +368,7 @@ function Cinematique(props) {
 
       <div className={v.glowClass} style={v.glowStyle} />
       <div style={v.emblemStyle}>
-        <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: 'block' }} />
+        <canvas ref={canvasRef} draggable={false} style={{ width: '100%', height: '100%', display: 'block' }} />
       </div>
 
       <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
