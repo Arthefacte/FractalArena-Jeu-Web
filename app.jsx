@@ -1019,7 +1019,9 @@ function Header({ chipPop }) {
   const { g, actions } = useFA();
   return (
     <header className="hdr">
-      <img className="hdr-logo" src="assets/LOGO_cut.png" alt="Fractal Arena" />
+      {window.Emblem3D
+        ? <span className="hdr-logo" style={{ display: "inline-block" }}><window.Emblem3D /></span>
+        : <img className="hdr-logo" src="assets/LOGO_cut.png" alt="Fractal Arena" />}
       <div className="hdr-word">
         <span className="hdr-title">FRACTAL ARENA</span>
         <span className="hdr-sub">FRACTAL BITCOIN · AUTO-BATTLER</span>
