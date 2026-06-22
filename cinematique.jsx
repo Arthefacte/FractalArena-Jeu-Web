@@ -112,7 +112,8 @@ function cineVals(t, opts) {
   const btnHover = { ...btnStyle, background: `linear-gradient(180deg, ${rgba(0.3)}, rgba(10,15,30,0.6))`, transform: 'translate(-50%,-50%) translateY(-2px)', boxShadow: `0 8px 30px ${rgba(0.4)}` };
 
   const skipStyle = { position: 'absolute', top: '22px', right: '24px', padding: '8px 14px', fontFamily: "'JetBrains Mono',monospace", fontSize: '12px', letterSpacing: '0.18em', color: '#7F8DAD', background: 'rgba(10,15,30,0.5)', border: '1px solid #1d2740', cursor: 'pointer', textTransform: 'uppercase', opacity: (1 - S(14.6, 15.4)), pointerEvents: t < 14.9 ? 'auto' : 'none' };
-  const replayStyle = { position: 'absolute', bottom: '22px', left: '24px', padding: '8px 14px', fontFamily: "'JetBrains Mono',monospace", fontSize: '12px', letterSpacing: '0.18em', color: '#7F8DAD', background: 'rgba(10,15,30,0.5)', border: '1px solid #1d2740', cursor: 'pointer', textTransform: 'uppercase', opacity: ended ? 1 : 0, transition: 'opacity .4s ease', pointerEvents: ended ? 'auto' : 'none' };
+  // Discret : fond transparent, bordure/couleur atténuées, petit ; révélé au survol (cf. render).
+  const replayStyle = { position: 'absolute', bottom: '20px', left: '22px', padding: '6px 10px', fontFamily: "'JetBrains Mono',monospace", fontSize: '11px', letterSpacing: '0.16em', color: '#566380', background: 'transparent', border: '1px solid rgba(29,39,64,0.5)', borderRadius: '2px', cursor: 'pointer', textTransform: 'uppercase', opacity: ended ? 0.38 : 0, transition: 'opacity .35s ease, color .2s ease, border-color .2s ease', pointerEvents: ended ? 'auto' : 'none' };
 
   const vignetteStyle = { position: 'absolute', inset: 0, pointerEvents: 'none', background: 'radial-gradient(125% 125% at 50% 44%, transparent 48%, rgba(3,5,11,0.88) 100%)' };
 
@@ -145,6 +146,7 @@ function Cinematique(props) {
   const [audioStarted, setAudioStarted] = useState(false);
   const [audioMuted, setAudioMuted] = useState(false);
   const [hover, setHover] = useState(false);
+  const [replayHover, setReplayHover] = useState(false);
 
   const tRef = useRef(0);
   const rafRef = useRef(0);
@@ -388,7 +390,14 @@ function Cinematique(props) {
       <audio ref={audioRef} src="assets/FA_intro.mp3" preload="auto" />
       <button style={soundBtnStyle} onClick={toggleSound}>{soundLabel}</button>
       <button style={v.skipStyle} onClick={skip}>Passer ▸</button>
-      <button style={v.replayStyle} onClick={replay}>⟳ Revoir</button>
+      <button
+        style={replayHover && v.replayStyle.pointerEvents === 'auto'
+          ? { ...v.replayStyle, opacity: 0.92, color: '#9FB0CF', borderColor: 'rgba(0,240,255,0.28)' }
+          : v.replayStyle}
+        onMouseEnter={() => setReplayHover(true)}
+        onMouseLeave={() => setReplayHover(false)}
+        onClick={replay}
+      >⟳ Revoir</button>
 
       <div style={v.vignetteStyle} />
 
