@@ -199,6 +199,7 @@ function Cinematique(props) {
   const startAudio = useCallback(() => {
     const a = audioRef.current;
     if (!a) return;
+    if (audioStartedRef.current) return; // déjà démarré
     a.loop = false;
     a.muted = audioMutedRef.current;
     a.volume = 0;
@@ -208,15 +209,16 @@ function Cinematique(props) {
 
   const toggleSound = useCallback(() => {
     const a = audioRef.current;
-    if (!audioStartedRef.current) { setAudioMuted(false); audioMutedRef.current = false; startAudio(); return; }
     const m = !audioMutedRef.current;
     audioMutedRef.current = m; setAudioMuted(m);
     if (a) a.muted = m;
+    if (!m && !audioStartedRef.current) startAudio(); // on réactive → (re)tente le démarrage
   }, [startAudio]);
 
   // démarrage timeline + listeners audio
   useEffect(() => {
     start();
+    startAudio(); // tentative d'autoplay au montage ; bloquée sans geste par le navigateur → fallback sur le 1er clic
     const onGesture = () => startAudio();
     window.addEventListener('pointerdown', onGesture);
     window.addEventListener('keydown', onGesture);
@@ -321,7 +323,7 @@ function Cinematique(props) {
     accent, loreAnim, titleText, ctaText, tagline, loreLine1, loreLine2, ended, leaving, loading,
   }), [t, accent, loreAnim, titleText, ctaText, tagline, loreLine1, loreLine2, ended, leaving, loading]);
 
-  const soundOn = audioStarted && !audioMuted;
+  const soundOn = !audioMuted; // intention : son activé par défaut (le 1er geste le démarre réellement)
   const soundLabel = soundOn ? 'SON ◉' : 'SON ○';
   const accColor = ({ elec: '#00F0FF', forge: '#B026FF', fire: '#F7931A', gold: '#FFE600' })[accent] || '#00F0FF';
   const ar = parseInt(accColor.slice(1, 3), 16), ag = parseInt(accColor.slice(3, 5), 16), ab = parseInt(accColor.slice(5, 7), 16);
