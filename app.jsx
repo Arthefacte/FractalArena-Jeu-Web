@@ -4,7 +4,7 @@
 const { useState, useEffect, useRef, useMemo } = React;
 const D = window.FA_DATA, I18N = window.FA_I18N;
 const { FA_Ctx, useFA, cx, fmt, Coin, Bar } = window;
-const { Team, Fosse, Arene, Forge, Wallet, Boosts, Perso, Options, ChatFab, RoomFab, Leaderboard, Quests, Campaign, LoginGate, TutorialGate, Link } = window;
+const { Team, Fosse, Arene, Forge, Wallet, Boosts, Perso, Options, ChatFab, RoomFab, Leaderboard, Quests, Campaign, LoginGate, TutorialGate, Link, Cinematique } = window;
 const SAVE_KEY = "fractal_arena_v1";
 const API_URL = "https://fractal-arena-server-production.up.railway.app";
 const CLIENT_SECRET = "pastouche";
@@ -132,6 +132,7 @@ function App() {
   const [toasts, setToasts] = useState([]);
   const [chipPop, setChipPop] = useState(0);
   const [, setNow] = useState(Date.now()); // tic 1s pour le compte à rebours combats gratuits
+  const [cineDone, setCineDone] = useState(false); // cinématique d'ouverture : jouée à chaque visite déconnecté
   const gRef = useRef(g);
   gRef.current = g;
   const saveTimerRef = useRef(null);
@@ -949,6 +950,13 @@ function App() {
   const ctx = { g, actions, toast };
 
   if (!g.wallet) {
+    if (!cineDone && Cinematique) {
+      return (
+        <FA_Ctx.Provider value={ctx}>
+          <Cinematique onEnter={() => setCineDone(true)} />
+        </FA_Ctx.Provider>
+      );
+    }
     return (
       <FA_Ctx.Provider value={ctx}>
         <Ambient />
