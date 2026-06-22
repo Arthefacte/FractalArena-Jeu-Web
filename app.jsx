@@ -1092,7 +1092,9 @@ function Onboarding() {
     <div className="app-shell" style={{ minHeight: "100vh", display: "grid", placeItems: "center", position: "relative", zIndex: 1 }}>
       <div style={{ textAlign: "center", maxWidth: 540, padding: 28, position: "relative" }}>
         <div className="ob-logo" style={{ position: "relative", width: 168, height: 168, margin: "0 auto 26px", animation: "obFloat 4.5s ease-in-out infinite" }}>
-          <img src="assets/LOGO_cut.png" alt="Fractal Arena" style={{ position: "relative", width: "100%", height: "100%", objectFit: "contain", filter: "drop-shadow(0 0 18px rgba(247,147,26,0.35))" }} />
+          {window.Emblem3D
+            ? <window.Emblem3D style={{ filter: "drop-shadow(0 0 18px rgba(247,147,26,0.35))" }} />
+            : <img src="assets/LOGO_cut.png" alt="Fractal Arena" style={{ position: "relative", width: "100%", height: "100%", objectFit: "contain", filter: "drop-shadow(0 0 18px rgba(247,147,26,0.35))" }} />}
         </div>
         <div className="eyebrow">{I18N.t("OB_TAG")}</div>
         <div className="hdr-title" style={{ fontSize: 40, letterSpacing: 6, display: "block", margin: "8px 0 18px" }}>FRACTAL ARENA</div>

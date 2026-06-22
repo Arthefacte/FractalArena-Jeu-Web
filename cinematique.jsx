@@ -130,6 +130,82 @@ function cineVals(t, opts) {
   };
 }
 
+// Emblème 3D réutilisable (même GLB + rotation que la cinématique). Remplit son conteneur.
+// Utilisé tel quel sur l'écran de connexion (Onboarding) via window.Emblem3D.
+function Emblem3D(props) {
+  const accent = props.accent || 'prisme';
+  const spin = props.spin != null ? props.spin : (Math.PI * 2 / 11);
+  const canvasRef = useRef(null);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    let disposed = false, raf = 0, renderer = null, group = null, rim = null;
+    (async () => {
+      try {
+        const dynImport = (m) => (new Function('m', 'return import(m)'))(m);
+        const THREE = await dynImport('three');
+        const { GLTFLoader } = await dynImport('three/addons/loaders/GLTFLoader.js');
+        const { RoomEnvironment } = await dynImport('three/addons/environments/RoomEnvironment.js');
+        if (disposed) return;
+
+        const dpr = Math.min(2, window.devicePixelRatio || 1);
+        renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+        renderer.setPixelRatio(dpr);
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.15;
+
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
+        camera.position.set(0, 0, 6);
+
+        const pmrem = new THREE.PMREMGenerator(renderer);
+        scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+        const key = new THREE.DirectionalLight(0xffffff, 2.4); key.position.set(2.5, 3, 4); scene.add(key);
+        rim = new THREE.DirectionalLight(0x00f0ff, 1.4); rim.position.set(-3, 1.5, -2.5); scene.add(rim);
+        scene.add(new THREE.AmbientLight(0xbfd8ff, 0.5));
+
+        group = new THREE.Group();
+        scene.add(group);
+
+        const loader = new GLTFLoader();
+        loader.load('assets/Emblem_optimise_12Mo.glb', (gltf) => {
+          if (disposed) return;
+          const m1 = gltf.scene;
+          const box = new THREE.Box3().setFromObject(m1);
+          const size = box.getSize(new THREE.Vector3());
+          const center = box.getCenter(new THREE.Vector3());
+          const maxDim = Math.max(size.x, size.y, size.z) || 1;
+          m1.position.sub(center);
+          const dz = size.z * 0.22;
+          const wrap1 = new THREE.Group(); wrap1.add(m1); wrap1.rotation.y = Math.PI; wrap1.position.z = -dz;
+          const m2 = m1.clone();
+          const wrap2 = new THREE.Group(); wrap2.add(m2); wrap2.position.z = dz;
+          group.add(wrap1); group.add(wrap2);
+          group.scale.setScalar(2.6 / maxDim);
+        }, undefined, (err) => { console.warn('GLB load error', err); });
+
+        const clock = new THREE.Clock();
+        const render = () => {
+          raf = requestAnimationFrame(render);
+          const w = canvas.clientWidth, h = canvas.clientHeight;
+          if (w && h && (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr))) {
+            renderer.setSize(w, h, false);
+            camera.aspect = w / h; camera.updateProjectionMatrix();
+          }
+          if (group) group.rotation.y = -clock.getElapsedTime() * spin;
+          if (accent === 'prisme' && rim) { const tri = Math.abs(((clock.getElapsedTime() / 5) % 1) * 2 - 1); rim.color.setHSL(0.092 + (0.511 - 0.092) * tri, 1, 0.62); }
+          renderer.render(scene, camera);
+        };
+        render();
+      } catch (e) { console.warn('three init failed', e); }
+    })();
+    return () => { disposed = true; cancelAnimationFrame(raf); if (renderer) { try { renderer.dispose(); } catch (e) {} } };
+  }, [accent, spin]);
+  return <canvas ref={canvasRef} draggable={false} style={{ width: '100%', height: '100%', display: 'block', ...(props.style || {}) }} />;
+}
+
 function Cinematique(props) {
   const accent = props.accent || 'prisme';
   const loreAnim = props.loreAnim || 'decrypt';
@@ -414,3 +490,4 @@ function Cinematique(props) {
 }
 
 window.Cinematique = Cinematique;
+window.Emblem3D = Emblem3D;
