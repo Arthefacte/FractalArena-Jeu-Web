@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Test cinématique (module réel)</title>
+<style>
+  body { margin:0; height:100vh; background:#05070f; color:#cfe1ff; font-family:monospace;
+         display:grid; place-items:center; }
+  .wrap { text-align:center; }
+  button { font-size:18px; padding:16px 28px; margin:6px; background:#0a1326; color:#cfe1ff;
+           border:1px solid #25406e; border-radius:10px; cursor:pointer; letter-spacing:1px; }
+  button:hover { background:#12203c; }
+  .hint { margin-top:12px; opacity:.65; font-size:12px; }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+}}
+</script>
+<script type="module" src="totem-cine.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <button id="go">▶ Tester l'invocation (image GENESIS)</button>
+  <button id="go2">▶ Tester (image NETWORK)</button>
+  <div class="hint">utilise le vrai totem-cine.js + le GLB optimisé · l'image révélée est un stand-in</div>
+</div>
+<script>
+  function run(img){
+    if (!window.FA_TOTEM_CINE) { alert("Module pas encore chargé — attends 1-2 s et réessaie."); return; }
+    window.FA_TOTEM_CINE.play({ imageUrl: img, fallbackUrl: "assets/HASHBYTE.png", onDone: function(){ console.log("cine done"); } });
+  }
+  document.getElementById("go").addEventListener("click", function(){ run("assets/GENESIS.png"); });
+  document.getElementById("go2").addEventListener("click", function(){ run("assets/NETWORK.png"); });
+</script>
+</body>
+</html>

@@ -110,6 +110,7 @@ function freshState() {
     view: "team",
     authToken: "",
     serverFight: null,
+    totem: null,   // { type, tier, active, loyaltyDays, worldsCompleted, paidWins, aura }
     pvp: {},
     pvpPrizes: [],
   };
@@ -232,12 +233,48 @@ function App() {
     setUseLocked(v) { setG((s) => ({ ...s, useLocked: v })); },
     setView(v) { setG((s) => ({ ...s, view: v })); },
 
+    // Révélation d'un palier (après la cinématique). Écrit serveur, puis MAJ g.totem.
+    async invokeTotem(tier) {
+      const s = gRef.current;
+      if (!s.wallet) return { ok: false };
+      const doPost = () => fetch(`${API_URL}/totem/invoke`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${gRef.current.authToken}` },
+        body: JSON.stringify({ wallet: s.wallet, tier }),
+      });
+      let resp = await doPost();
+      if (resp.status === 401) { const re = await actions.authenticate(s.wallet); if (!re) return { ok: false }; resp = await doPost(); }
+      if (!resp.ok) return { ok: false };
+      const totem = await resp.json();
+      setG((st) => ({ ...st, totem }));
+      return { ok: true };
+    },
+    // Choix COSMÉTIQUE de l'image affichée (n'affecte jamais la puissance).
+    async pickTotemImage(tier) {
+      const s = gRef.current;
+      if (!s.wallet) return { ok: false };
+      const doPost = () => fetch(`${API_URL}/totem/display`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${gRef.current.authToken}` },
+        body: JSON.stringify({ wallet: s.wallet, tier }),
+      });
+      let resp = await doPost();
+      if (resp.status === 401) { const re = await actions.authenticate(s.wallet); if (!re) return { ok: false }; resp = await doPost(); }
+      if (!resp.ok) return { ok: false };
+      const totem = await resp.json();
+      setG((st) => ({ ...st, totem }));
+      return { ok: true };
+    },
+
     async connectWallet(addr) {
       try {
-        const [saveResp, boostsResp] = await Promise.all([
+        const [saveResp, boostsResp, totemResp] = await Promise.all([
           fetch(`${API_URL}/save/${addr}`),
           fetch(`${API_URL}/boosts/status/${addr}`),
+          fetch(`${API_URL}/totem/${addr}`),
         ]);
+        // État du Totem (déterministe + dérivé serveur) — non bloquant
+        const totem = totemResp.ok ? await totemResp.json() : null;
         if (saveResp.ok) {
           const { save } = await saveResp.json();
           const boostsData = boostsResp.ok ? await boostsResp.json() : null;
@@ -245,6 +282,7 @@ function App() {
             const next = serverToState(save, addr, s);
             if (boostsData) next.boosts = { xp_boost: boostsData.xp_boost?.charges ?? 0, insurance: boostsData.insurance?.charges ?? 0, lucky_strike: boostsData.lucky_strike?.charges ?? 0 };
             next.ordinalName = save.ordinal_name || ""; // nom ordinal du serveur, vide si absent
+            next.totem = totem;
             return next;
           });
           return false; // joueur existant
@@ -263,6 +301,7 @@ function App() {
             ticketsGold: 0,
             freeFights: D.ECON.FREE_FIGHTS_PER_DAY,
             freeResetTs: Date.now(),
+            totem,
           }));
           return true; // nouveau joueur → l'airdrop est réclamé APRÈS authentification (token requis)
         } else {
@@ -971,6 +1010,7 @@ function App() {
   }
 
   const VIEWS = { team: Team, fosse: Fosse, arene: Arene, campaign: Campaign, quests: Quests, forge: Forge, wallet: Wallet, boosts: Boosts, perso: Perso, leaderboard: Leaderboard, options: Options, lien: Link };
+
   const View = VIEWS[g.view] || Team;
 
   return (
