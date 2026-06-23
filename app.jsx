@@ -4,7 +4,7 @@
 const { useState, useEffect, useRef, useMemo } = React;
 const D = window.FA_DATA, I18N = window.FA_I18N;
 const { FA_Ctx, useFA, cx, fmt, Coin, Bar } = window;
-const { Team, Arena, Forge, Wallet, Boosts, Perso, Options, ChatFab, RoomFab, Leaderboard, Quests, Campaign, LoginGate, TutorialGate, Link } = window;
+const { Team, Fosse, Arene, Forge, Wallet, Boosts, Perso, Options, ChatFab, RoomFab, Leaderboard, Quests, Campaign, LoginGate, TutorialGate, Link, Cinematique } = window;
 const SAVE_KEY = "fractal_arena_v1";
 const API_URL = "https://fractal-arena-server-production.up.railway.app";
 const CLIENT_SECRET = "pastouche";
@@ -38,6 +38,7 @@ function serverToState(save, addr, s) {
     ticketsSilver: save.tickets_silver ?? 0,
     ticketsGold: save.tickets_gold ?? 0,
     campaignProgress: nestProgress(save.campaign_progress),
+    campaignFreeTs: Number(save.campaign_free_ts) || 0,
     session: { wins: save.session_wins ?? 0, losses: save.session_losses ?? 0, net: save.session_arte_net ?? 0 },
     roster,
     selected: s.selected.filter((id) => rosterIds.has(id)), // retire les ids absents du nouveau roster
@@ -45,7 +46,11 @@ function serverToState(save, addr, s) {
     playerTitle: save.player_title || "",
     holderDays: save.holder_badge_days ?? 0,
     lang: save.lang || s.lang || "FR",
-    view: "team",
+    // Préserve la vue courante : ce helper sert aussi à resynchroniser après une
+    // action (reroll/fusion/boosts…) ; forcer "team" éjectait l'utilisateur de la
+    // forge et démontait l'aperçu de reroll. L'atterrissage "team" au login est
+    // déjà garanti par freshState()/loadState().
+    view: s.view || "team",
   };
 }
 
@@ -106,6 +111,8 @@ function freshState() {
     authToken: "",
     serverFight: null,
     totem: null,   // { type, tier, active, loyaltyDays, worldsCompleted, paidWins, aura }
+    pvp: {},
+    pvpPrizes: [],
   };
 }
 
@@ -130,6 +137,7 @@ function App() {
   const [toasts, setToasts] = useState([]);
   const [chipPop, setChipPop] = useState(0);
   const [, setNow] = useState(Date.now()); // tic 1s pour le compte à rebours combats gratuits
+  const [cineDone, setCineDone] = useState(false); // cinématique d'ouverture : jouée à chaque visite déconnecté
   const gRef = useRef(g);
   gRef.current = g;
   const saveTimerRef = useRef(null);
@@ -147,6 +155,9 @@ function App() {
   useEffect(() => {
     try { localStorage.setItem(SAVE_KEY, JSON.stringify(g)); } catch (e) { }
   }, [g]);
+
+  // Fetch non-vu des prix PvP dès que le token est établi
+  useEffect(() => { if (g.authToken) actions.pvpPrizes(); }, [g.authToken]);
 
   // language
   useEffect(() => { I18N.setLang(g.lang); }, [g.lang]);
@@ -629,8 +640,6 @@ function App() {
       const s = gRef.current;
       const beast = s.roster.find((b) => b.id === id);
       if (!beast) return { ok: false, reason: I18N.t("FG_PICK1") };
-      const cost = Math.round(D.FORGE.REROLL_BASE[beast.rarity] * (1 + 0.5 * beast.reroll_count));
-      if (s.liquid + s.locked < cost) return { ok: false, reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, cost) };
       if (!s.wallet) return { ok: false, reason: "Wallet requis" };
       try {
         const resp = await fetch(`${API_URL}/forge/reroll`, {
@@ -638,11 +647,42 @@ function App() {
           body: JSON.stringify({ wallet: s.wallet, beast_id: id }),
         });
         const data = await resp.json();
-        if (data.status === "insufficient_balance") return { ok: false, reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, cost) };
+        if (data.status === "insufficient_balance") return { ok: false, reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, data.cost || 0) };
+        if (data.status !== "ok") return { ok: false, reason: data.error || "Erreur serveur" };
+        // Mode pending : rien n'est appliqué ; on resynchronise le solde (débité) et on renvoie l'aperçu.
+        const sv = await fetch(`${API_URL}/save/${s.wallet}`);
+        if (sv.ok) { const { save } = await sv.json(); setG((st) => serverToState(save, s.wallet, st)); }
+        return { ok: true, preview: { old_stats: data.old_stats, new_stats: data.new_stats, cost: data.cost, next_reroll_cost: data.next_reroll_cost } };
+      } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
+    },
+    async rerollConfirm(id) {
+      const s = gRef.current;
+      if (!s.wallet) return { ok: false, reason: "Wallet requis" };
+      try {
+        const resp = await fetch(`${API_URL}/forge/reroll/confirm`, {
+          method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
+          body: JSON.stringify({ wallet: s.wallet, beast_id: id }),
+        });
+        const data = await resp.json();
         if (data.status !== "ok") return { ok: false, reason: data.error || "Erreur serveur" };
         const sv = await fetch(`${API_URL}/save/${s.wallet}`);
         if (sv.ok) { const { save } = await sv.json(); setG((st) => serverToState(save, s.wallet, st)); }
         return { ok: true };
+      } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
+    },
+    async rerollDiscard(id) {
+      const s = gRef.current;
+      if (!s.wallet) return { ok: false, reason: "Wallet requis" };
+      try {
+        const resp = await fetch(`${API_URL}/forge/reroll/discard`, {
+          method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
+          body: JSON.stringify({ wallet: s.wallet, beast_id: id }),
+        });
+        const data = await resp.json();
+        if (data.status !== "ok") return { ok: false, reason: data.error || "Erreur serveur" };
+        const sv = await fetch(`${API_URL}/save/${s.wallet}`);
+        if (sv.ok) { const { save } = await sv.json(); setG((st) => serverToState(save, s.wallet, st)); }
+        return { ok: true, refunded: data.refunded };
       } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
     },
 
@@ -891,6 +931,7 @@ function App() {
           ticketsSilver: data.tickets_silver ?? st.ticketsSilver,
           ticketsGold: data.tickets_gold ?? st.ticketsGold,
           campaignProgress: nested,
+          campaignFreeTs: data.campaign_free_ts ?? st.campaignFreeTs,
           campaignTitles: titles,
         }));
         return {
@@ -901,11 +942,64 @@ function App() {
         };
       } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
     },
+
+    async pvpRefresh() {
+      const w = gRef.current.wallet; if (!w) return;
+      const authHeaders = () => ({ "Authorization": "Bearer " + gRef.current.authToken });
+      try {
+        const [cad, season, opp, ladder] = await Promise.all([
+          fetch(`${API_URL}/pvp/cadence`, { headers: authHeaders() }).then((r) => r.json()).catch(() => ({})),
+          fetch(`${API_URL}/pvp/season`).then((r) => r.json()).catch(() => ({})),
+          fetch(`${API_URL}/pvp/opponents`, { headers: authHeaders() }).then((r) => r.json()).catch(() => ({})),
+          fetch(`${API_URL}/pvp/ladder?wallet=${encodeURIComponent(w)}`).then((r) => r.json()).catch(() => ({})),
+        ]);
+        const myRow = (ladder.ladder || []).find((x) => x.wallet === w);
+        setG((s) => ({ ...s, pvp: {
+          league: (myRow && myRow.league) || ladder.league,
+          rating: myRow ? myRow.rating : undefined,
+          free_remaining: cad.free_remaining, fa_cost: cad.fa_cost, revanches: cad.revanches || [],
+          season: season && season.ok ? season : undefined,
+          opponents: opp.opponents || [], ladder: ladder.ladder || [],
+        } }));
+      } catch (e) { /* silencieux */ }
+    },
+    async pvpPrizes() {
+      if (!gRef.current.authToken) return;
+      try {
+        const r = await fetch(`${API_URL}/pvp/prizes`, { headers: { "Authorization": "Bearer " + gRef.current.authToken } });
+        const data = await r.json().catch(() => ({}));
+        if (data.ok) setG((s) => ({ ...s, pvpPrizes: data.prizes || [] }));
+      } catch (e) { /* silencieux */ }
+    },
+    async pvpPrizesSeen() {
+      try {
+        await fetch(`${API_URL}/pvp/prizes/seen`, { method: "POST", headers: { "Authorization": "Bearer " + gRef.current.authToken } });
+      } catch (e) { /* silencieux */ }
+      setG((s) => ({ ...s, pvpPrizes: [] }));
+    },
+    async pvpSetDefense() {
+      const authHeaders = () => ({ "Authorization": "Bearer " + gRef.current.authToken });
+      const sel = gRef.current.selected; if (sel.length !== 3) return { ok: false, error: "3 bêtes requises" };
+      const r = await fetch(`${API_URL}/pvp/defense`, { method: "POST", headers: { ...authHeaders(), "Content-Type": "application/json" }, body: JSON.stringify({ selected: sel }) });
+      const j = await r.json().catch(() => ({})); return j;
+    },
+    async pvpAttack(target, entry) {
+      const authHeaders = () => ({ "Authorization": "Bearer " + gRef.current.authToken });
+      const r = await fetch(`${API_URL}/pvp/attack`, { method: "POST", headers: { ...authHeaders(), "Content-Type": "application/json" }, body: JSON.stringify({ target, entry }) });
+      const j = await r.json().catch(() => ({})); return j;
+    },
   }), []);
 
   const ctx = { g, actions, toast };
 
   if (!g.wallet) {
+    if (!cineDone && Cinematique) {
+      return (
+        <FA_Ctx.Provider value={ctx}>
+          <Cinematique onEnter={() => setCineDone(true)} />
+        </FA_Ctx.Provider>
+      );
+    }
     return (
       <FA_Ctx.Provider value={ctx}>
         <Ambient />
@@ -915,7 +1009,8 @@ function App() {
     );
   }
 
-  const VIEWS = { team: Team, arena: Arena, campaign: Campaign, quests: Quests, forge: Forge, wallet: Wallet, boosts: Boosts, perso: Perso, leaderboard: Leaderboard, options: Options, lien: Link };
+  const VIEWS = { team: Team, fosse: Fosse, arene: Arene, campaign: Campaign, quests: Quests, forge: Forge, wallet: Wallet, boosts: Boosts, perso: Perso, leaderboard: Leaderboard, options: Options, lien: Link };
+
   const View = VIEWS[g.view] || Team;
 
   return (
@@ -932,6 +1027,7 @@ function App() {
       <Toasts toasts={toasts} />
       {g.wallet && <TutorialGate />}
       {g.wallet && <LoginGate />}
+      {Array.isArray(g.pvpPrizes) && g.pvpPrizes.length > 0 && <window.PrizeModal prizes={g.pvpPrizes} onClaim={() => actions.pvpPrizesSeen()} />}
     </FA_Ctx.Provider>
   );
 }
@@ -967,7 +1063,9 @@ function Header({ chipPop }) {
   const { g, actions } = useFA();
   return (
     <header className="hdr">
-      <img className="hdr-logo" src="assets/LOGO_cut.png" alt="Fractal Arena" />
+      {window.Emblem3D
+        ? <span className="hdr-logo" style={{ display: "inline-block" }}><window.Emblem3D /></span>
+        : <img className="hdr-logo" src="assets/LOGO_cut.png" alt="Fractal Arena" />}
       <div className="hdr-word">
         <span className="hdr-title">FRACTAL ARENA</span>
         <span className="hdr-sub">FRACTAL BITCOIN · AUTO-BATTLER</span>
@@ -995,7 +1093,7 @@ function Header({ chipPop }) {
 function Nav() {
   const { g, actions } = useFA();
   const tabs = [
-    ["team", "NAV_TEAM"], ["arena", "NAV_ARENA"], ["campaign", "NAV_CAMPAIGN"], ["quests", "NAV_QUESTS"], ["forge", "NAV_FORGE"],
+    ["team", "NAV_TEAM"], ["fosse", "NAV_FOSSE"], ["arene", "NAV_ARENE"], ["campaign", "NAV_CAMPAIGN"], ["quests", "NAV_QUESTS"], ["forge", "NAV_FORGE"],
     ["wallet", "NAV_WALLET"], ["boosts", "NAV_BOOSTS"], ["perso", "NAV_PERSO"], ["leaderboard", "NAV_LEADERBOARD"], ["options", "NAV_OPTIONS"],
   ];
   return (
@@ -1040,7 +1138,9 @@ function Onboarding() {
     <div className="app-shell" style={{ minHeight: "100vh", display: "grid", placeItems: "center", position: "relative", zIndex: 1 }}>
       <div style={{ textAlign: "center", maxWidth: 540, padding: 28, position: "relative" }}>
         <div className="ob-logo" style={{ position: "relative", width: 168, height: 168, margin: "0 auto 26px", animation: "obFloat 4.5s ease-in-out infinite" }}>
-          <img src="assets/LOGO_cut.png" alt="Fractal Arena" style={{ position: "relative", width: "100%", height: "100%", objectFit: "contain", filter: "drop-shadow(0 0 18px rgba(247,147,26,0.35))" }} />
+          {window.Emblem3D
+            ? <window.Emblem3D style={{ filter: "drop-shadow(0 0 18px rgba(247,147,26,0.35))" }} />
+            : <img src="assets/LOGO_cut.png" alt="Fractal Arena" style={{ position: "relative", width: "100%", height: "100%", objectFit: "contain", filter: "drop-shadow(0 0 18px rgba(247,147,26,0.35))" }} />}
         </div>
         <div className="eyebrow">{I18N.t("OB_TAG")}</div>
         <div className="hdr-title" style={{ fontSize: 40, letterSpacing: 6, display: "block", margin: "8px 0 18px" }}>FRACTAL ARENA</div>

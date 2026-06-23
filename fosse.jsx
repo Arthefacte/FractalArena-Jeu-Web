@@ -1,5 +1,5 @@
 /* ============================================================
-   FRACTAL ARENA — Arena screen (combat)
+   FRACTAL ARENA — La Fosse screen (combat solo / paris vs maison)
    ============================================================ */
 const { useState, useEffect, useRef, useMemo } = React;
 const D = window.FA_DATA, I18N = window.FA_I18N;
@@ -90,7 +90,7 @@ function CombatCard({ meta, live, side, cref, oppMeta, scale = 1 }) {
   );
 }
 
-function Arena() {
+function Fosse() {
   const { g, actions, toast } = useFA();
   // Référence vivante vers l'état : la chaîne de la boucle (settleBattle → playFight)
   // réutilise sa closure de départ ; sans ce ref, le roster (niveau/stats) reste figé
@@ -332,7 +332,7 @@ function Arena() {
       <div className="flex between center wrap" style={{ marginBottom: 14, gap: 12 }}>
         <div>
           <div className="eyebrow">{I18N.t("OB_TAG")}</div>
-          <div className="h1" style={{ marginBottom: 0 }}>{I18N.t("NAV_ARENA")}</div>
+          <div className="h1" style={{ marginBottom: 0 }}>{I18N.t("NAV_FOSSE")}</div>
         </div>
         <div className="flex gap8 wrap">
           <span className="pill" style={{ color: wr >= 60 ? "var(--success)" : wr >= 45 ? "var(--gold)" : "var(--alert)" }}>{I18N.t("AR_WINRATE", g.session.wins, g.session.losses, wr)}</span>
@@ -488,4 +488,4 @@ function ResRow({ label, value, color }) {
   );
 }
 
-Object.assign(window, { Arena });
+Object.assign(window, { Fosse });
