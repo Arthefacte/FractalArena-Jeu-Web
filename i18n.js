@@ -192,6 +192,10 @@
     AR2_WON:    { FR: "Victoire !", EN: "Victory!", ZH: "胜利！" },
     AR2_LOST:   { FR: "Défaite", EN: "Defeat", ZH: "失败" },
     AR2_CLOSE:  { FR: "Fermer", EN: "Close", ZH: "关闭" },
+    AR2_ATTACKS_TITLE: { FR: "Attaques subies récemment", EN: "Recent attacks on you", ZH: "最近受到的攻击" },
+    AR2_ATTACKS_NONE:  { FR: "Personne ne t'a attaqué récemment.", EN: "No recent attacks.", ZH: "最近无人攻击你。" },
+    AR2_ATTACKS_BEAT:  { FR: "a battu ta défense", EN: "beat your defense", ZH: "击败了你的防御" },
+    AR2_ATTACKS_REPELLED: { FR: "repoussé", EN: "repelled", ZH: "被击退" },
 
     // prix de saison PvP
     PRIZE_TITLE:       { FR: "Récompense de saison !", EN: "Season reward!", ZH: "赛季奖励！" },

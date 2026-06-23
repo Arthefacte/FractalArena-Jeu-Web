@@ -28,7 +28,7 @@ function Arene() {
   const [result, setResult] = useState(null);
   const [nowTs, setNowTs] = useState(Date.now());
 
-  useEffect(() => { if (g.wallet) actions.pvpRefresh(); }, [g.wallet]);
+  useEffect(() => { if (g.wallet) { actions.pvpRefresh(); actions.pvpAttacksSeen(); } }, [g.wallet]);
   useEffect(() => {
     const id = setInterval(() => setNowTs(Date.now()), 1000);
     return () => clearInterval(id);
@@ -153,6 +153,33 @@ function Arene() {
         </div>
       </div>
       )}
+
+      <div className="card" style={{ marginTop: 14 }}>
+          <h3 style={{ margin: "0 0 8px" }}>{I18N.t("AR2_ATTACKS_TITLE")}</h3>
+          {(!pvp.attacks || pvp.attacks.length === 0)
+            ? <div style={{ color: "var(--text-dim)", fontSize: 12 }}>{I18N.t("AR2_ATTACKS_NONE")}</div>
+            : pvp.attacks.map((a, i) => (
+              <div key={i} style={{ borderTop: i ? "1px solid var(--line,#1c2740)" : "none", padding: "8px 0" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
+                  <span style={{ fontWeight: 700 }}>{a.attacker_name || (a.attacker.slice(0, 6) + "…" + a.attacker.slice(-4))}</span>
+                  <span style={{ color: a.attacker_won ? "var(--alert)" : "var(--success)" }}>
+                    {a.attacker_won ? I18N.t("AR2_ATTACKS_BEAT") : I18N.t("AR2_ATTACKS_REPELLED")}
+                  </span>
+                </div>
+                <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
+                  {(a.team || []).map((b, j) => (
+                    <div key={j} style={{ flex: 1, textAlign: "center", fontSize: 10, color: "var(--text-dim)" }}>
+                      <div style={{ width: 36, height: 36, margin: "0 auto", borderRadius: 6, overflow: "hidden", background: "#0b1020" }}>
+                        {D.ART[b.image_key] ? <img src={D.ART[b.image_key]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : null}
+                      </div>
+                      <div style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{D.displayName(b)}</div>
+                      <div>{I18N.t("LINK_TIER")}{b.level} · {Math.round(D.eff(b, "atk"))}/{Math.round(D.eff(b, "def"))}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+        </div>
 
       {result && <AreneBattle
         events={result.events}

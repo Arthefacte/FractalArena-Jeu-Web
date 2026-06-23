@@ -947,11 +947,12 @@ function App() {
       const w = gRef.current.wallet; if (!w) return;
       const authHeaders = () => ({ "Authorization": "Bearer " + gRef.current.authToken });
       try {
-        const [cad, season, opp, ladder] = await Promise.all([
+        const [cad, season, opp, ladder, atk] = await Promise.all([
           fetch(`${API_URL}/pvp/cadence`, { headers: authHeaders() }).then((r) => r.json()).catch(() => ({})),
           fetch(`${API_URL}/pvp/season`).then((r) => r.json()).catch(() => ({})),
           fetch(`${API_URL}/pvp/opponents`, { headers: authHeaders() }).then((r) => r.json()).catch(() => ({})),
           fetch(`${API_URL}/pvp/ladder?wallet=${encodeURIComponent(w)}`).then((r) => r.json()).catch(() => ({})),
+          fetch(`${API_URL}/pvp/attacks-on-me`, { headers: authHeaders() }).then((r) => r.json()).catch(() => ({})),
         ]);
         const myRow = (ladder.ladder || []).find((x) => x.wallet === w);
         setG((s) => ({ ...s, pvp: {
@@ -960,6 +961,7 @@ function App() {
           free_remaining: cad.free_remaining, fa_cost: cad.fa_cost, revanches: cad.revanches || [],
           season: season && season.ok ? season : undefined,
           opponents: opp.opponents || [], ladder: ladder.ladder || [],
+          attacks: atk.attacks || [], attacksUnseen: atk.unseen || 0,
         } }));
       } catch (e) { /* silencieux */ }
     },
@@ -976,6 +978,13 @@ function App() {
         await fetch(`${API_URL}/pvp/prizes/seen`, { method: "POST", headers: { "Authorization": "Bearer " + gRef.current.authToken } });
       } catch (e) { /* silencieux */ }
       setG((s) => ({ ...s, pvpPrizes: [] }));
+    },
+    async pvpAttacksSeen() {
+      if (!gRef.current.authToken) return;
+      try {
+        await fetch(`${API_URL}/pvp/attacks-seen`, { method: "POST", headers: { "Authorization": "Bearer " + gRef.current.authToken } });
+      } catch (e) { /* silencieux */ }
+      setG((s) => ({ ...s, pvp: { ...s.pvp, attacksUnseen: 0 } }));
     },
     async pvpSetDefense() {
       const authHeaders = () => ({ "Authorization": "Bearer " + gRef.current.authToken });
