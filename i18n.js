@@ -188,6 +188,10 @@
     AR2_POWER: { FR: "puissance %d", EN: "power %d", ZH: "战力 %d" },
     AR2_RANK: { FR: "Rang", EN: "Rank", ZH: "排名" },
     AR2_REFRESH: { FR: "Rafraîchir", EN: "Refresh", ZH: "刷新" },
+    AR2_BATTLE: { FR: "Combat", EN: "Battle", ZH: "战斗" },
+    AR2_WON:    { FR: "Victoire !", EN: "Victory!", ZH: "胜利！" },
+    AR2_LOST:   { FR: "Défaite", EN: "Defeat", ZH: "失败" },
+    AR2_CLOSE:  { FR: "Fermer", EN: "Close", ZH: "关闭" },
 
     // prix de saison PvP
     PRIZE_TITLE:       { FR: "Récompense de saison !", EN: "Season reward!", ZH: "赛季奖励！" },
