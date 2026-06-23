@@ -3,7 +3,7 @@
    ============================================================ */
 const { useState, useEffect } = React;
 const D = window.FA_DATA, I18N = window.FA_I18N;
-const { useFA, cx, fmt, presetLabel, rarityLabel } = window;
+const { useFA, cx, fmt, presetLabel, rarityLabel, AreneBattle } = window;
 const AU = window.FA_ARENE_UI;
 
 function TeamPreview({ team }) {
@@ -19,29 +19,6 @@ function TeamPreview({ team }) {
   );
 }
 
-function ResultModal({ data, onClose }) {
-  const { Modal } = window;
-  const win = data.won;
-  const lines = AU.eventLogLines(data.events);
-  return (
-    <Modal onClose={onClose} accent={win ? "var(--success)" : "var(--alert)"}>
-      <div style={{ textAlign: "center", marginBottom: 16 }}>
-        <div className="h1" style={{ fontSize: 34, color: win ? "var(--success)" : "var(--alert)" }}>{win ? I18N.t("AR2_WIN") : I18N.t("AR2_LOSE")}</div>
-        {typeof data.rating === "number" && (
-          <div className="mono" style={{ color: "var(--elec)", marginTop: 6 }}>
-            {I18N.t("AR2_ELO_DELTA", (data.delta != null ? (data.delta >= 0 ? "+" + data.delta : "" + data.delta) : ""), data.rating)}
-          </div>
-        )}
-      </div>
-      {lines.length > 0 && (
-        <div className="log" style={{ maxHeight: 160, marginBottom: 14 }}>
-          {lines.map((l, i) => <div key={i} className="log-line">{l}</div>)}
-        </div>
-      )}
-      <button className={cx("btn block lg", win ? "btn-success" : "btn-elec")} onClick={onClose}>OK</button>
-    </Modal>
-  );
-}
 
 function Arene() {
   const { g, actions, toast } = useFA();
@@ -80,7 +57,8 @@ function Arene() {
     setBusy(false);
     if (!r || !r.ok) { toast((r && r.error) || "error", "bad"); return; }
     const delta = (prev != null && typeof r.rating === "number") ? r.rating - prev : null;
-    setResult({ ...r, delta });
+    const myTeam = g.selected.map((id) => g.roster.find((b) => b.id === id)).filter(Boolean);
+    setResult({ ...r, delta, p1Team: myTeam, p2Team: r.enemy || [] });
     actions.pvpRefresh();
   }
 
@@ -176,7 +154,13 @@ function Arene() {
       </div>
       )}
 
-      {result && <ResultModal data={result} onClose={() => setResult(null)} />}
+      {result && <AreneBattle
+        events={result.events}
+        p1Team={result.p1Team || []}
+        p2Team={result.p2Team || []}
+        won={result.won}
+        delta={result.delta}
+        onClose={() => setResult(null)} />}
     </div>
   );
 }
