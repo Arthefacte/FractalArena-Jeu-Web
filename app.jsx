@@ -1121,6 +1121,11 @@ function Nav() {
       {tabs.map(([k, key]) => (
         <button key={k} className={cx("nav-tab", g.view === k && "on")} onClick={() => actions.setView(k)}>
           {I18N.t(key)}
+          {k === "arene" && g.pvp && g.pvp.attacksUnseen > 0 && (
+            <span className="nav-badge" style={{ marginLeft: 4, background: "var(--alert)", color: "#fff", borderRadius: 9, fontSize: 10, padding: "0 5px", fontWeight: 700 }}>
+              {g.pvp.attacksUnseen}
+            </span>
+          )}
         </button>
       ))}
     </nav>
