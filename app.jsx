@@ -46,7 +46,11 @@ function serverToState(save, addr, s) {
     playerTitle: save.player_title || "",
     holderDays: save.holder_badge_days ?? 0,
     lang: save.lang || s.lang || "FR",
-    view: "team",
+    // Préserve la vue courante : ce helper sert aussi à resynchroniser après une
+    // action (reroll/fusion/boosts…) ; forcer "team" éjectait l'utilisateur de la
+    // forge et démontait l'aperçu de reroll. L'atterrissage "team" au login est
+    // déjà garanti par freshState()/loadState().
+    view: s.view || "team",
   };
 }
 
