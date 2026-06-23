@@ -66,7 +66,7 @@ function Link() {
           </div>
         );
       })()}
-      <button onClick={() => actions.setView("team")}>{I18N.t("LINK_BACK")}</button>
+      <button className="btn ghost sm" style={{ marginTop: 16 }} onClick={() => actions.setView("team")}>{I18N.t("LINK_BACK")}</button>
     </div>
   );
 }

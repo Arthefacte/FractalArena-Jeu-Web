@@ -22,7 +22,7 @@ function buildOverlay() {
   // blanc PLEIN écran (opaque) → masque totalement le médaillon au pic ; z au-dessus du reveal
   flash.style.cssText = 'position:fixed;inset:0;opacity:0;pointer-events:none;z-index:9996;background:radial-gradient(circle at 50% 50%,#ffffff 0%,#eaf4ff 62%,#bfe0ff 100%);';
   const reveal = document.createElement('div');
-  reveal.style.cssText = 'position:fixed;inset:0;display:grid;place-items:center;opacity:0;z-index:9995;transition:opacity .9s ease,transform .9s ease;transform:scale(.85);';
+  reveal.style.cssText = 'position:fixed;inset:0;display:grid;place-items:center;opacity:0;pointer-events:none;z-index:9995;transition:opacity .9s ease,transform .9s ease;transform:scale(.85);';
   const img = document.createElement('img');
   img.style.cssText = 'max-width:min(80vw,80vh);max-height:min(80vw,80vh);border-radius:14px;box-shadow:0 0 30px rgba(0,240,255,.3);';
   reveal.appendChild(img);
