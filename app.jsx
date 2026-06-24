@@ -6,6 +6,13 @@ const D = window.FA_DATA, I18N = window.FA_I18N;
 const { FA_Ctx, useFA, cx, fmt, Coin, Bar } = window;
 const { Team, Fosse, Arene, Forge, Wallet, Boosts, Perso, Options, ChatFab, RoomFab, Leaderboard, Quests, Campaign, LoginGate, TutorialGate, Link, Cinematique } = window;
 const SAVE_KEY = "fractal_arena_v1";
+// Le bearer authToken vit en sessionStorage (et JAMAIS dans le blob localStorage) : il survit
+// au rechargement de l'onglet (pas de re-signature à chaque F5) mais est effacé à la fermeture
+// de l'onglet → bien moins exposé qu'un token persisté en localStorage (audit 2026-06-24).
+const TOKEN_KEY = "fa_auth_token";
+function readToken() { try { return sessionStorage.getItem(TOKEN_KEY) || ""; } catch (e) { return ""; } }
+function writeToken(t) { try { if (t) sessionStorage.setItem(TOKEN_KEY, t); else sessionStorage.removeItem(TOKEN_KEY); } catch (e) {} }
+function clearToken() { try { sessionStorage.removeItem(TOKEN_KEY); } catch (e) {} }
 const API_URL = "https://fractal-arena-server-production.up.railway.app";
 const CLIENT_SECRET = "pastouche";
 const HAS_UNISAT = () => typeof window.unisat !== "undefined";
@@ -123,7 +130,9 @@ function loadState() {
     const s = JSON.parse(raw);
     return Object.assign(freshState(), s, {
       view: "team",
-      authToken: "",    // JAMAIS persisté (anti-vol via XSS/localStorage) — re-signé à la connexion
+      // Token restauré depuis sessionStorage (survit au rechargement de l'onglet, effacé à
+      // sa fermeture — bien moins exposé que localStorage). JAMAIS dans le blob localStorage.
+      authToken: readToken(),
       selected: [],     // ids orphelins d'une session précédente → vidés, réconciliés à la connexion
       ordinalName: "",  // sera écrasé par le nom serveur à la connexion (branche 200)
       options: Object.assign(freshState().options, s.options || {}, { speed: 1 }),
@@ -150,10 +159,10 @@ function App() {
   };
   const saveTimerRef = useRef(null);
 
-  // Reconnexion à l'ouverture : le token n'est plus persisté (anti-vol), donc si un wallet est
-  // mémorisé on RE-SIGNE pour obtenir un token frais (popup UniSat), puis on recharge la save
-  // AVEC ce token (lecture /save auth-gatée). Sans UniSat, pas de token → l'UI invite à se
-  // (re)connecter (comportement existant).
+  // Reconnexion à l'ouverture : si un token est encore valide en sessionStorage (rechargement
+  // de l'onglet), on l'utilise directement → pas de re-signature, et la save se recharge AVEC
+  // (lecture /save auth-gatée → solde serveur à jour). Sinon (nouvel onglet / token absent),
+  // on re-signe (popup UniSat). Sans UniSat, pas de token → l'UI invite à se (re)connecter.
   const didAutoConnectRef = useRef(false);
   useEffect(() => {
     if (didAutoConnectRef.current) return;
@@ -161,7 +170,8 @@ function App() {
     const w = gRef.current.wallet;
     if (w) {
       (async () => {
-        const token = await actions.authenticate(w);
+        let token = gRef.current.authToken;        // restauré depuis sessionStorage
+        if (!token) token = await actions.authenticate(w);
         await actions.connectWallet(w, token);
       })();
     }
@@ -169,9 +179,10 @@ function App() {
 
   // persist
   useEffect(() => {
-    // authToken EXCLU de la persistance : il vit en mémoire (state) le temps de la session,
-    // jamais dans localStorage (sinon volable trivialement par une XSS). Re-signé à l'ouverture.
+    // authToken EXCLU du blob localStorage (sinon volable trivialement par une XSS) ; il est
+    // stocké à part en sessionStorage (effacé à la fermeture de l'onglet, survit au F5).
     try { localStorage.setItem(SAVE_KEY, JSON.stringify({ ...g, authToken: "" })); } catch (e) { }
+    writeToken(g.authToken);
   }, [g]);
 
   // Fetch non-vu des prix PvP dès que le token est établi
@@ -426,6 +437,7 @@ function App() {
     },
     disconnect() {
       try { localStorage.removeItem(SAVE_KEY); } catch (e) { }
+      clearToken();
       setG((s) => ({ ...freshState(), lang: s.lang, options: s.options }));
     },
     async resetProgress() {
