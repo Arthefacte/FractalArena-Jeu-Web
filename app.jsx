@@ -123,6 +123,7 @@ function loadState() {
     const s = JSON.parse(raw);
     return Object.assign(freshState(), s, {
       view: "team",
+      authToken: "",    // JAMAIS persisté (anti-vol via XSS/localStorage) — re-signé à la connexion
       selected: [],     // ids orphelins d'une session précédente → vidés, réconciliés à la connexion
       ordinalName: "",  // sera écrasé par le nom serveur à la connexion (branche 200)
       options: Object.assign(freshState().options, s.options || {}, { speed: 1 }),
@@ -149,18 +150,28 @@ function App() {
   };
   const saveTimerRef = useRef(null);
 
-  // Reconnexion silencieuse : si un wallet est mémorisé, on recharge la sauvegarde serveur fraîche
+  // Reconnexion à l'ouverture : le token n'est plus persisté (anti-vol), donc si un wallet est
+  // mémorisé on RE-SIGNE pour obtenir un token frais (popup UniSat), puis on recharge la save
+  // AVEC ce token (lecture /save auth-gatée). Sans UniSat, pas de token → l'UI invite à se
+  // (re)connecter (comportement existant).
   const didAutoConnectRef = useRef(false);
   useEffect(() => {
     if (didAutoConnectRef.current) return;
     didAutoConnectRef.current = true;
     const w = gRef.current.wallet;
-    if (w) { actions.connectWallet(w); }
+    if (w) {
+      (async () => {
+        const token = await actions.authenticate(w);
+        await actions.connectWallet(w, token);
+      })();
+    }
   }, []);
 
   // persist
   useEffect(() => {
-    try { localStorage.setItem(SAVE_KEY, JSON.stringify(g)); } catch (e) { }
+    // authToken EXCLU de la persistance : il vit en mémoire (state) le temps de la session,
+    // jamais dans localStorage (sinon volable trivialement par une XSS). Re-signé à l'ouverture.
+    try { localStorage.setItem(SAVE_KEY, JSON.stringify({ ...g, authToken: "" })); } catch (e) { }
   }, [g]);
 
   // Fetch non-vu des prix PvP dès que le token est établi
@@ -273,10 +284,13 @@ function App() {
       return { ok: true };
     },
 
-    async connectWallet(addr) {
+    async connectWallet(addr, token) {
       try {
+        // token explicite (juste après authenticate) sinon celui en mémoire : la lecture
+        // /save est authentifiée dès la connexion (le state React n'est pas encore à jour).
+        const saveOpts = token ? { headers: { Authorization: `Bearer ${token}` } } : svOpts();
         const [saveResp, boostsResp, totemResp] = await Promise.all([
-          fetch(`${API_URL}/save/${addr}`, svOpts()),
+          fetch(`${API_URL}/save/${addr}`, saveOpts),
           fetch(`${API_URL}/boosts/status/${addr}`),
           fetch(`${API_URL}/totem/${addr}`),
         ]);
@@ -378,8 +392,10 @@ function App() {
         const accounts = await window.unisat.requestAccounts();
         const addr = (accounts && accounts[0]) || "";
         if (!/^bc1/i.test(addr)) return { ok: false, reason: "bad-address" };
-        const isNew = await actions.connectWallet(addr);
+        // Authentifier D'ABORD (obtenir le token) puis charger la save AVEC le token :
+        // la lecture /save est auth-gatée côté serveur (anti-IDOR).
         const token = await actions.authenticate(addr);
+        const isNew = await actions.connectWallet(addr, token);
         await actions.claimAirdropIfNew(addr, token, isNew);
         return token ? { ok: true } : { ok: false, reason: "auth" };
       } catch (e) {
@@ -1162,8 +1178,8 @@ function Onboarding() {
     if (a.length < 20 || !/^bc1/i.test(a)) { toast(I18N.t("OB_INVALID"), "bad"); return; }
     setChecking(true);
     try {
-      const isNew = await actions.connectWallet(a);
       const token = await actions.authenticate(a);
+      const isNew = await actions.connectWallet(a, token);
       await actions.claimAirdropIfNew(a, token, isNew);
     } finally {
       setChecking(false);
