@@ -140,6 +140,13 @@ function App() {
   const [cineDone, setCineDone] = useState(false); // cinématique d'ouverture : jouée à chaque visite déconnecté
   const gRef = useRef(g);
   gRef.current = g;
+  // Options fetch pour les lectures /save : joint le Bearer du joueur connecté (preuve de
+  // propriété). Rétro-compatible : le serveur l'ignore tant que la route n'est pas auth-gatée,
+  // et le prendra en compte ensuite (corrige l'IDOR en lecture sur /save/:wallet — audit 2026-06-24).
+  const svOpts = () => {
+    const t = gRef.current && gRef.current.authToken;
+    return t ? { headers: { Authorization: `Bearer ${t}` } } : {};
+  };
   const saveTimerRef = useRef(null);
 
   // Reconnexion silencieuse : si un wallet est mémorisé, on recharge la sauvegarde serveur fraîche
@@ -269,7 +276,7 @@ function App() {
     async connectWallet(addr) {
       try {
         const [saveResp, boostsResp, totemResp] = await Promise.all([
-          fetch(`${API_URL}/save/${addr}`),
+          fetch(`${API_URL}/save/${addr}`, svOpts()),
           fetch(`${API_URL}/boosts/status/${addr}`),
           fetch(`${API_URL}/totem/${addr}`),
         ]);
@@ -346,10 +353,12 @@ function App() {
     async authenticate(addr) {
       if (typeof window.unisat === "undefined") return "";
       try {
-        const cr = await fetch(`${API_URL}/auth/challenge?wallet=${encodeURIComponent(addr)}`);
+        const cr = await fetch(`${API_URL}/auth/challenge?wallet=${encodeURIComponent(addr)}&scope=session`);
         if (!cr.ok) return "";
-        const { nonce } = await cr.json();
-        const signature = await window.unisat.signMessage(nonce);
+        const ch = await cr.json();
+        // Signe le message lié au scope si le serveur le fournit, sinon le nonce brut
+        // (rétro-compat : le serveur actuel ne renvoie que `nonce`).
+        const signature = await window.unisat.signMessage(ch.message || ch.nonce);
         const vr = await fetch(`${API_URL}/auth/verify`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -382,10 +391,12 @@ function App() {
       if (!s.wallet) return { ok: false, reason: "wallet" };
       if (typeof window.unisat === "undefined") return { ok: false, reason: "unisat" };
       try {
-        const cr = await fetch(`${API_URL}/auth/challenge?wallet=${encodeURIComponent(s.wallet)}`);
+        const cr = await fetch(`${API_URL}/auth/challenge?wallet=${encodeURIComponent(s.wallet)}&scope=withdraw`);
         if (!cr.ok) return { ok: false, reason: "challenge" };
-        const { nonce } = await cr.json();
-        const signature = await window.unisat.signMessage(nonce);
+        const ch = await cr.json();
+        // Signe le message lié au scope « withdraw » si le serveur le fournit, sinon le nonce
+        // brut (rétro-compat). Lie la signature à l'intention de retrait une fois le serveur à jour.
+        const signature = await window.unisat.signMessage(ch.message || ch.nonce);
         const vr = await fetch(`${API_URL}/auth/verify`, {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ wallet: s.wallet, signature, scope: "withdraw" }),
@@ -593,7 +604,7 @@ function App() {
         });
         const data = await resp.json();
         if (data.status !== "ok") return { ok: false, reason: data.error || "Erreur serveur" };
-        const [svResp, bResp] = await Promise.all([fetch(`${API_URL}/save/${s.wallet}`), fetch(`${API_URL}/boosts/status/${s.wallet}`)]);
+        const [svResp, bResp] = await Promise.all([fetch(`${API_URL}/save/${s.wallet}`, svOpts()), fetch(`${API_URL}/boosts/status/${s.wallet}`)]);
         if (svResp.ok && bResp.ok) {
           const [{ save }, bd] = await Promise.all([svResp.json(), bResp.json()]);
           setG((st) => { const n = serverToState(save, s.wallet, st); n.boosts = { xp_boost: bd.xp_boost?.charges ?? 0, insurance: bd.insurance?.charges ?? 0, lucky_strike: bd.lucky_strike?.charges ?? 0 }; return n; });
@@ -627,7 +638,7 @@ function App() {
         if (data.status === "insufficient_balance") return { ok: false, reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, cost) };
         if (data.status === "error" && data.reason === "no_gold_ticket") return { ok: false, reason: "Pas de ticket Or" };
         if (data.status !== "success" && data.status !== "fail") return { ok: false, reason: data.error || "Erreur serveur" };
-        const sv = await fetch(`${API_URL}/save/${s.wallet}`);
+        const sv = await fetch(`${API_URL}/save/${s.wallet}`, svOpts());
         if (sv.ok) {
           const { save } = await sv.json();
           setG((st) => { const n = serverToState(save, s.wallet, st); n.selected = st.selected.filter((x) => n.roster.some((r) => r.id === x)); return n; });
@@ -650,7 +661,7 @@ function App() {
         if (data.status === "insufficient_balance") return { ok: false, reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, data.cost || 0) };
         if (data.status !== "ok") return { ok: false, reason: data.error || "Erreur serveur" };
         // Mode pending : rien n'est appliqué ; on resynchronise le solde (débité) et on renvoie l'aperçu.
-        const sv = await fetch(`${API_URL}/save/${s.wallet}`);
+        const sv = await fetch(`${API_URL}/save/${s.wallet}`, svOpts());
         if (sv.ok) { const { save } = await sv.json(); setG((st) => serverToState(save, s.wallet, st)); }
         return { ok: true, preview: { old_stats: data.old_stats, new_stats: data.new_stats, cost: data.cost, next_reroll_cost: data.next_reroll_cost } };
       } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
@@ -665,7 +676,7 @@ function App() {
         });
         const data = await resp.json();
         if (data.status !== "ok") return { ok: false, reason: data.error || "Erreur serveur" };
-        const sv = await fetch(`${API_URL}/save/${s.wallet}`);
+        const sv = await fetch(`${API_URL}/save/${s.wallet}`, svOpts());
         if (sv.ok) { const { save } = await sv.json(); setG((st) => serverToState(save, s.wallet, st)); }
         return { ok: true };
       } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
@@ -680,7 +691,7 @@ function App() {
         });
         const data = await resp.json();
         if (data.status !== "ok") return { ok: false, reason: data.error || "Erreur serveur" };
-        const sv = await fetch(`${API_URL}/save/${s.wallet}`);
+        const sv = await fetch(`${API_URL}/save/${s.wallet}`, svOpts());
         if (sv.ok) { const { save } = await sv.json(); setG((st) => serverToState(save, s.wallet, st)); }
         return { ok: true, refunded: data.refunded };
       } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
@@ -699,7 +710,7 @@ function App() {
         const data = await resp.json();
         if (data.status === "insufficient_balance") return { ok: false, reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, cost) };
         if (data.status !== "ok") return { ok: false, reason: data.error || "Erreur serveur" };
-        const sv = await fetch(`${API_URL}/save/${s.wallet}`);
+        const sv = await fetch(`${API_URL}/save/${s.wallet}`, svOpts());
         if (sv.ok) { const { save } = await sv.json(); setG((st) => serverToState(save, s.wallet, st)); }
         return { ok: true, beast: data.beast };
       } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
@@ -854,7 +865,7 @@ function App() {
         });
         const data = await resp.json();
         if (data.status !== "ok") return { ok: false, reason: data.error || "Erreur serveur" };
-        const sv = await fetch(`${API_URL}/save/${s.wallet}`);
+        const sv = await fetch(`${API_URL}/save/${s.wallet}`, svOpts());
         if (sv.ok) { const { save } = await sv.json(); setG((st) => serverToState(save, s.wallet, st)); }
         return { ok: true };
       } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
@@ -871,7 +882,7 @@ function App() {
         });
         const data = await resp.json();
         if (data.status !== "ok") return { ok: false, reason: data.error || "Erreur serveur" };
-        const sv = await fetch(`${API_URL}/save/${s.wallet}`);
+        const sv = await fetch(`${API_URL}/save/${s.wallet}`, svOpts());
         if (sv.ok) { const { save } = await sv.json(); setG((st) => serverToState(save, s.wallet, st)); }
         return { ok: true };
       } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
