@@ -1,8 +1,8 @@
 /* ============================================================
    FRACTAL ARENA — PvE Campaign (Mode Histoire)
-   6 mondes × 10 étages. Combat joué CÔTÉ CLIENT via
-   FA_ENGINE.runBattle (aucune dépendance serveur). Progression
-   locale dans g.campaignProgress / g.campaignTitles.
+   6 mondes × 10 étages. Le combat est résolu CÔTÉ SERVEUR (le moteur client
+   FA_ENGINE/engine.js est obsolète et retiré) ; l'UI rejoue les events renvoyés.
+   La progression est reflétée dans g.campaignProgress / g.campaignTitles.
    ============================================================ */
 const { useState, useEffect, useRef, useMemo } = React;
 const D = window.FA_DATA, I18N = window.FA_I18N;

@@ -1,6 +1,13 @@
 /* ============================================================
    FRACTAL ARENA — Combat engine (auto, faithful)
    Produces a timed event stream the UI replays.
+
+   ⚠️ CODE MORT (audit 2026-06-24) — CE FICHIER N'EST PLUS CHARGÉ (retiré d'index.html).
+   window.FA_ENGINE n'est appelé NULLE PART dans le client ; le combat est résolu
+   CÔTÉ SERVEUR (engine.node.js via /fight, /campaign/fight, /pvp/attack) et l'UI ne fait
+   que rejouer les events renvoyés. Ce moteur a divergé du serveur (pas d'affinités de type,
+   de Totem, ni des mêmes seuils). NE PAS l'éditer en croyant modifier l'équilibrage :
+   la source de vérité est engine.node.js (repo serveur).
    ============================================================ */
 (function () {
   "use strict";
