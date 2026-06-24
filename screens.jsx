@@ -425,7 +425,9 @@ function WithdrawModal({ onClose }) {
   const { g, actions, toast } = useFA();
   const [amt, setAmt] = useState("500");
   const [busy, setBusy] = useState(false);
+  const [cdMsg, setCdMsg] = useState("");  // message cooldown persistant (1 retrait / 24h)
   async function go() {
+    setCdMsg("");
     const n = parseInt(amt, 10) || 0;
     const r = actions.withdraw(n);            // validation min/max + débit optimiste client
     if (!r.ok) { toast(r.reason, "bad"); return; }
@@ -445,10 +447,13 @@ function WithdrawModal({ onClose }) {
       if (resp.status === 401) { actions.deposit(n); toast(I18N.t("WL_WD_SIGN_NEEDED"), "bad"); return; }
       if (data.status === "ok") {
         toast(I18N.t("WL_WD_OK", n), "good");
+        // Resync du solde avec le serveur (qui a déjà déduit) : l'affichage reflète
+        // immédiatement le vrai solde au lieu de rester sur le débit optimiste.
+        try { await actions.connectWallet(g.wallet, a.token); } catch (e) { /* best-effort */ }
         onClose();
       } else if (data.status === "cooldown") {
         actions.deposit(n);
-        toast(`Cooldown — réessaie dans ${data.hours_left}h`, "bad");
+        setCdMsg(`Un seul retrait toutes les 24 h — prochain disponible dans ${data.hours_left} h.`);
       } else {
         actions.deposit(n);
         toast(data.error || "Erreur retrait serveur", "bad");
@@ -465,6 +470,7 @@ function WithdrawModal({ onClose }) {
       <div className="eyebrow" style={{ color: "var(--gold)" }}>{I18N.t("WL_WITHDRAW")}</div>
       <div className="h2" style={{ margin: "4px 0 10px" }}>{I18N.t("WL_LIQUID")} : <span className="mono" style={{ color: "var(--gold)" }}>{fmt(g.liquid)}</span></div>
       <div className="muted mono" style={{ fontSize: 12, lineHeight: 1.5, marginBottom: 16 }}>{I18N.t("WL_WD_INFO")}</div>
+      {cdMsg && <div className="mono" style={{ fontSize: 12, lineHeight: 1.4, marginBottom: 12, padding: "8px 10px", borderRadius: 8, background: "rgba(255,90,90,0.12)", color: "var(--alert)" }}>⏳ {cdMsg}</div>}
       <input className="field" value={amt} onChange={(e) => setAmt(e.target.value.replace(/[^0-9]/g, ""))} placeholder="500" />
       <button className="btn btn-gold block lg" style={{ marginTop: 18 }} disabled={busy} onClick={go}>{busy ? I18N.t("WL_WD_PROC") : I18N.t("WL_WD_SEND")}</button>
     </Modal>
