@@ -6,6 +6,26 @@ const { useState, useRef, useEffect, useCallback, useMemo } = React;
 
 const CINE_DUR = 20.0;
 
+// Libère TOUTES les ressources GPU d'une scène Three.js au démontage. Sans ça, le GLB
+// (12 Mo, cloné ×2), le render target PMREM et les textures fuient en VRAM, et le contexte
+// WebGL reste alloué → sur navigation répétée, perte de contexte (canvas 3D noir) et FPS qui
+// s'effondrent, surtout sur mobile/GPU faible. `forceContextLoss` rend le slot de contexte.
+function disposeThreeScene({ scene, envTex, pmrem, renderer }) {
+  try {
+    if (scene) scene.traverse((o) => {
+      if (o.geometry) o.geometry.dispose();
+      const mats = o.material ? (Array.isArray(o.material) ? o.material : [o.material]) : [];
+      for (const m of mats) {
+        for (const k in m) { const v = m[k]; if (v && v.isTexture) v.dispose(); }
+        if (m.dispose) m.dispose();
+      }
+    });
+    if (envTex) envTex.dispose();
+    if (pmrem) pmrem.dispose();
+    if (renderer) { renderer.forceContextLoss(); renderer.dispose(); }
+  } catch (e) { /* best-effort cleanup */ }
+}
+
 // ——— helpers timeline (identiques au design) ———
 function seg(t, a, b) { return Math.max(0, Math.min(1, (t - a) / (b - a))); }
 function lerp(a, b, p) { return a + (b - a) * p; }
@@ -139,7 +159,7 @@ function Emblem3D(props) {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    let disposed = false, raf = 0, renderer = null, group = null, rim = null;
+    let disposed = false, raf = 0, renderer = null, group = null, rim = null, scene = null, pmrem = null, envTex = null;
     (async () => {
       try {
         const dynImport = (m) => (new Function('m', 'return import(m)'))(m);
@@ -155,12 +175,13 @@ function Emblem3D(props) {
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
         renderer.toneMappingExposure = 1.15;
 
-        const scene = new THREE.Scene();
+        scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
         camera.position.set(0, 0, 6);
 
-        const pmrem = new THREE.PMREMGenerator(renderer);
-        scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+        pmrem = new THREE.PMREMGenerator(renderer);
+        envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+        scene.environment = envTex;
 
         const key = new THREE.DirectionalLight(0xffffff, 2.4); key.position.set(2.5, 3, 4); scene.add(key);
         rim = new THREE.DirectionalLight(0x00f0ff, 1.4); rim.position.set(-3, 1.5, -2.5); scene.add(rim);
@@ -201,7 +222,7 @@ function Emblem3D(props) {
         render();
       } catch (e) { console.warn('three init failed', e); }
     })();
-    return () => { disposed = true; cancelAnimationFrame(raf); if (renderer) { try { renderer.dispose(); } catch (e) {} } };
+    return () => { disposed = true; cancelAnimationFrame(raf); disposeThreeScene({ scene, envTex, pmrem, renderer }); };
   }, [accent, spin]);
   return <canvas ref={canvasRef} draggable={false} style={{ width: '100%', height: '100%', display: 'block', ...(props.style || {}) }} />;
 }
@@ -326,7 +347,7 @@ function Cinematique(props) {
     const canvas = canvasRef.current;
     if (!canvas) return;
     let disposed = false;
-    let raf = 0, renderer = null, group = null, rim = null;
+    let raf = 0, renderer = null, group = null, rim = null, scene = null, pmrem = null, envTex = null;
     (async () => {
       try {
         // import() natif masqué à Babel (le transformeur in-browser le réécrirait en require()).
@@ -344,12 +365,13 @@ function Cinematique(props) {
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
         renderer.toneMappingExposure = 1.15;
 
-        const scene = new THREE.Scene();
+        scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
         camera.position.set(0, 0, 6);
 
-        const pmrem = new THREE.PMREMGenerator(renderer);
-        scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+        pmrem = new THREE.PMREMGenerator(renderer);
+        envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+        scene.environment = envTex;
 
         const key = new THREE.DirectionalLight(0xffffff, 2.4); key.position.set(2.5, 3, 4); scene.add(key);
         rim = new THREE.DirectionalLight(0x00f0ff, 1.4); rim.position.set(-3, 1.5, -2.5); scene.add(rim);
@@ -393,7 +415,7 @@ function Cinematique(props) {
     return () => {
       disposed = true;
       cancelAnimationFrame(raf);
-      if (renderer) { try { renderer.dispose(); } catch (e) {} }
+      disposeThreeScene({ scene, envTex, pmrem, renderer });
     };
   }, [accent]);
 
