@@ -308,9 +308,9 @@
   }
 
   // ============================================================
-  //  PvE CAMPAIGN — 6 mondes × 10 étages, génération procédurale
-  //  (cf. specs/CAMPAIGN.spec.md). Tout est local : aucune dépendance
-  //  serveur. Le combat est joué côté client via FA_ENGINE.runBattle.
+  //  PvE CAMPAIGN — 6 mondes × 10 étages, génération procédurale des étages
+  //  (cf. specs/CAMPAIGN.spec.md), déterministe côté client. Le COMBAT, lui, est
+  //  résolu côté serveur (FA_ENGINE/engine.js client est obsolète et retiré).
   // ============================================================
   const FLOORS_PER_WORLD = 10;
   const BOSS_FLOOR = 9;               // 10e étage (index 0-based)
