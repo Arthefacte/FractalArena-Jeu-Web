@@ -69,7 +69,7 @@ function BuybackTicker() {
       {burn && (
         <TickerRow
           kind="liq"
-          icon="🔒"
+          icon="🔥"
           label={I.t("BB_LIQ")}
           total={burn.total}
           threshold={burn.threshold}
