@@ -1,7 +1,7 @@
 /* ============================================================
    FRACTAL ARENA — Écran Arène (PvP classé, ligues)
    ============================================================ */
-const { useState, useEffect } = React;
+const { useState, useEffect, useRef } = React;
 const D = window.FA_DATA, I18N = window.FA_I18N;
 const { useFA, cx, fmt, presetLabel, rarityLabel, AreneBattle } = window;
 const AU = window.FA_ARENE_UI;
@@ -25,6 +25,7 @@ function Arene() {
   const pvp = g.pvp || {};
   const [entry, setEntry] = useState("free");
   const [busy, setBusy] = useState(false);
+  const attackLock = useRef(false); // verrou synchrone anti double-clic (le state `busy` ne se met à jour qu'au re-render)
   const [result, setResult] = useState(null);
   const [nowTs, setNowTs] = useState(Date.now());
 
@@ -50,16 +51,21 @@ function Arene() {
   }
 
   async function onAttack(target, useRevanche) {
-    if (busy) return;
+    if (attackLock.current || busy) return; // le ref bloque les clics de la même rafale avant que `busy` ne re-render
+    attackLock.current = true;
     setBusy(true);
-    const prev = (g.pvp && typeof g.pvp.rating === "number") ? g.pvp.rating : null;
-    const r = await actions.pvpAttack(target, useRevanche ? "revanche" : entry);
-    setBusy(false);
-    if (!r || !r.ok) { toast((r && r.error) || "error", "bad"); return; }
-    const delta = (prev != null && typeof r.rating === "number") ? r.rating - prev : null;
-    const myTeam = g.selected.map((id) => g.roster.find((b) => b.id === id)).filter(Boolean);
-    setResult({ ...r, delta, p1Team: myTeam, p2Team: r.enemy || [] });
-    actions.pvpRefresh();
+    try {
+      const prev = (g.pvp && typeof g.pvp.rating === "number") ? g.pvp.rating : null;
+      const r = await actions.pvpAttack(target, useRevanche ? "revanche" : entry);
+      if (!r || !r.ok) { toast((r && r.error) || "error", "bad"); return; }
+      const delta = (prev != null && typeof r.rating === "number") ? r.rating - prev : null;
+      const myTeam = g.selected.map((id) => g.roster.find((b) => b.id === id)).filter(Boolean);
+      setResult({ ...r, delta, p1Team: myTeam, p2Team: r.enemy || [] });
+      actions.pvpRefresh();
+    } finally {
+      attackLock.current = false;
+      setBusy(false);
+    }
   }
 
   const seasonMs = pvp.season ? (Number(pvp.season.ends_at) - Date.now()) : 0;
