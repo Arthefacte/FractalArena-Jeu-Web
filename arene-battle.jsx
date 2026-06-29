@@ -7,15 +7,18 @@ const { useState, useEffect, useRef } = React;
 const D = window.FA_DATA, I18N = window.FA_I18N;
 const { Bar } = window;
 
-function AB_Unit({ beast, live, side }) {
+const AB_POS_LABEL = ["AV", "MI", "AR"]; // Avant / Milieu / Arrière (ordre de formation)
+
+function AB_Unit({ beast, live, side, pos }) {
   const maxHp = live ? live.maxHp : (beast ? D.eff(beast, "hp") : 1);
   const hp = live ? Math.max(0, live.hp) : maxHp;
   const frac = maxHp > 0 ? hp / maxHp : 0;
   const dead = live ? live.alive === false : false;
   return (
     <div className={"ab-unit" + (dead ? " ab-dead" : "")} style={{ opacity: dead ? 0.4 : 1, textAlign: "center", flex: 1, minWidth: 0 }}>
-      <div style={{ width: 48, height: 48, margin: "0 auto", borderRadius: 8, overflow: "hidden", background: "#0b1020" }}>
+      <div style={{ position: "relative", width: 48, height: 48, margin: "0 auto", borderRadius: 8, overflow: "hidden", background: "#0b1020" }}>
         {beast && D.ART[beast.image_key] ? <img src={D.ART[beast.image_key]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} draggable="false" /> : null}
+        {AB_POS_LABEL[pos] && <span className="mono" style={{ position: "absolute", top: 1, left: 1, fontSize: 8, lineHeight: "10px", padding: "0 3px", borderRadius: 4, background: "rgba(0,0,0,0.6)", color: "var(--text-dim)" }}>{AB_POS_LABEL[pos]}</span>}
       </div>
       <div style={{ fontSize: 10, marginTop: 2, color: "var(--text-dim)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
         {beast ? D.displayName(beast) : "—"} · {I18N.t("LINK_TIER")}{beast ? beast.level : 0}
@@ -67,11 +70,11 @@ function AreneBattle({ events, p1Team, p2Team, won, delta, onClose }) {
       <div className="modal" style={{ maxWidth: 520 }} onClick={(e) => e.stopPropagation()}>
         <h3 style={{ textAlign: "center", margin: "4px 0 10px" }}>{I18N.t("AR2_BATTLE")}</h3>
         <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
-          {[0, 1, 2].map((i) => <AB_Unit key={"p1" + i} beast={p1Team[i]} live={liveOf(p1Team, "p1")(i)} side="p1" />)}
+          {[0, 1, 2].map((i) => <AB_Unit key={"p1" + i} beast={p1Team[i]} live={liveOf(p1Team, "p1")(i)} side="p1" pos={i} />)}
         </div>
         <div style={{ textAlign: "center", color: "var(--text-dim)", fontSize: 11, margin: "2px 0" }}>{I18N.t("AR_VERSUS")}</div>
         <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
-          {[0, 1, 2].map((i) => <AB_Unit key={"p2" + i} beast={p2Team[i]} live={liveOf(p2Team, "p2")(i)} side="p2" />)}
+          {[0, 1, 2].map((i) => <AB_Unit key={"p2" + i} beast={p2Team[i]} live={liveOf(p2Team, "p2")(i)} side="p2" pos={i} />)}
         </div>
         <div ref={logRef} className="log" style={{ maxHeight: 120, overflowY: "auto", marginBottom: 12 }}>
           {lines.map((l, i) => <div key={i} className="log-line">{l}</div>)}
