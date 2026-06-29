@@ -223,7 +223,7 @@ function Arene() {
           return { ...p, ids };
         });
         const move = (i, j) => setPick((p) => {
-          if (!p || j < 0 || j >= p.ids.length) return p;
+          if (!p || j < 0 || j >= p.ids.length || i < 0 || i >= p.ids.length) return p;
           const ids = [...p.ids]; [ids[i], ids[j]] = [ids[j], ids[i]]; return { ...p, ids };
         });
         const ready = pick.ids.length === 3;
@@ -238,7 +238,7 @@ function Arene() {
                   <span key={i} className="pill" style={{ color: "var(--fire)" }}>{D.TYPE_LABEL ? (D.TYPE_LABEL[b.type] || b.type) : b.type}</span>
                 ))}
               </div>
-              <div className="mono" style={{ fontSize: 11, color: "var(--text-dim)", margin: "8px 0 2px" }}>⚔️ {I18N.t("AR2_MY_DEFENSE")} — Avant / Milieu / Arrière</div>
+              <div className="mono" style={{ fontSize: 11, color: "var(--text-dim)", margin: "8px 0 2px" }}>⚔️ {I18N.t("AR2_ATTACK")} — Avant / Milieu / Arrière</div>
               {/* Formation choisie (ordre) */}
               {[0, 1, 2].map((i) => {
                 const b = byId(pick.ids[i]);
