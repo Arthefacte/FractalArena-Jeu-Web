@@ -29,7 +29,7 @@ function AB_Unit({ beast, live, side, pos }) {
   );
 }
 
-function AreneBattle({ events, p1Team, p2Team, won, delta, onClose }) {
+function AreneBattle({ events, p1Team, p2Team, won, delta, onClose, opponentName }) {
   const evs = Array.isArray(events) ? events : [];
   const [p1Live, setP1Live] = useState(evs[0]?.state?.p1 || null);
   const [p2Live, setP2Live] = useState(evs[0]?.state?.p2 || null);
@@ -72,7 +72,7 @@ function AreneBattle({ events, p1Team, p2Team, won, delta, onClose }) {
         <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
           {[0, 1, 2].map((i) => <AB_Unit key={"p1" + i} beast={p1Team[i]} live={liveOf(p1Team, "p1")(i)} side="p1" pos={i} />)}
         </div>
-        <div style={{ textAlign: "center", color: "var(--text-dim)", fontSize: 11, margin: "2px 0" }}>{I18N.t("AR_VERSUS")}</div>
+        <div style={{ textAlign: "center", color: "var(--text-dim)", fontSize: 11, margin: "2px 0" }}>{opponentName || I18N.t("AR_VERSUS")}</div>
         <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
           {[0, 1, 2].map((i) => <AB_Unit key={"p2" + i} beast={p2Team[i]} live={liveOf(p2Team, "p2")(i)} side="p2" pos={i} />)}
         </div>

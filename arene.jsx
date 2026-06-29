@@ -279,6 +279,7 @@ function Arene() {
         p2Team={result.p2Team || []}
         won={result.won}
         delta={result.delta}
+        opponentName={result.opponent_name}
         onClose={() => setResult(null)} />}
     </div>
   );
