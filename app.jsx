@@ -1042,9 +1042,11 @@ function App() {
       const r = await fetch(`${API_URL}/pvp/defense`, { method: "POST", headers: { ...authHeaders(), "Content-Type": "application/json" }, body: JSON.stringify({ selected: sel }) });
       const j = await r.json().catch(() => ({})); return j;
     },
-    async pvpAttack(target, entry) {
+    async pvpAttack(target, entry, attackers) {
       const authHeaders = () => ({ "Authorization": "Bearer " + gRef.current.authToken });
-      const r = await fetch(`${API_URL}/pvp/attack`, { method: "POST", headers: { ...authHeaders(), "Content-Type": "application/json" }, body: JSON.stringify({ target, entry }) });
+      const body = { target, entry };
+      if (Array.isArray(attackers) && attackers.length === 3) body.attackers = attackers;
+      const r = await fetch(`${API_URL}/pvp/attack`, { method: "POST", headers: { ...authHeaders(), "Content-Type": "application/json" }, body: JSON.stringify(body) });
       const j = await r.json().catch(() => ({}));
       // Déduction optimiste à l'écran : le serveur a déjà débité (FA → liquid, ou 1 ticket or).
       // pvpRefresh ne recharge pas le solde, donc pas de double-comptage.
