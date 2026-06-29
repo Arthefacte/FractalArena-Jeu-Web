@@ -27,6 +27,7 @@ function Arene() {
   const [busy, setBusy] = useState(false);
   const attackLock = useRef(false); // verrou synchrone anti double-clic (le state `busy` ne se met à jour qu'au re-render)
   const [result, setResult] = useState(null);
+  const [pick, setPick] = useState(null); // { target, revanche, ids:[id,id,id], oppTeam } ou null
   const [nowTs, setNowTs] = useState(Date.now());
 
   useEffect(() => { if (g.wallet) { actions.pvpRefresh().then(() => actions.pvpAttacksSeen()); } }, [g.wallet]);
@@ -50,16 +51,16 @@ function Arene() {
     if (r && r.ok) toast(I18N.t("AR2_SET_DEFENSE"), "good"); else toast((r && r.error) || "error", "bad");
   }
 
-  async function onAttack(target, useRevanche) {
+  async function onAttack(target, useRevanche, attackers) {
     if (attackLock.current || busy) return; // le ref bloque les clics de la même rafale avant que `busy` ne re-render
     attackLock.current = true;
     setBusy(true);
     try {
       const prev = (g.pvp && typeof g.pvp.rating === "number") ? g.pvp.rating : null;
-      const r = await actions.pvpAttack(target, useRevanche ? "revanche" : entry);
+      const r = await actions.pvpAttack(target, useRevanche ? "revanche" : entry, attackers);
       if (!r || !r.ok) { toast((r && r.error) || "error", "bad"); return; }
       const delta = (prev != null && typeof r.rating === "number") ? r.rating - prev : null;
-      const myTeam = g.selected.map((id) => g.roster.find((b) => b.id === id)).filter(Boolean);
+      const myTeam = (attackers || g.selected).map((id) => g.roster.find((b) => b.id === id)).filter(Boolean);
       setResult({ ...r, delta, p1Team: myTeam, p2Team: r.enemy || [] });
       actions.pvpRefresh();
     } finally {
@@ -162,8 +163,8 @@ function Arene() {
                     <div style={{ marginTop: 6 }}><TeamPreview team={o.team} /></div>
                   </div>
                   {canRevanche
-                    ? <button className="btn btn-success sm" disabled={busy} onClick={() => onAttack(o.wallet, true)}>{I18N.t("AR2_REVANCHE")}</button>
-                    : <button className="btn btn-elec sm" disabled={busy} onClick={() => onAttack(o.wallet, false)}>{I18N.t("AR2_ATTACK")}</button>}
+                    ? <button className="btn btn-success sm" disabled={busy} onClick={() => setPick({ target: o.wallet, revanche: true, ids: [...g.selected], oppTeam: o.team })}>{I18N.t("AR2_REVANCHE")}</button>
+                    : <button className="btn btn-elec sm" disabled={busy} onClick={() => setPick({ target: o.wallet, revanche: false, ids: [...g.selected], oppTeam: o.team })}>{I18N.t("AR2_ATTACK")}</button>}
                 </div>
               );
             })}
@@ -212,6 +213,65 @@ function Arene() {
               </div>
             ))}
         </div>
+
+      {pick && (() => {
+        const byId = (id) => g.roster.find((b) => b.id === id);
+        const toggle = (id) => setPick((p) => {
+          if (!p) return p;
+          const has = p.ids.includes(id);
+          const ids = has ? p.ids.filter((x) => x !== id) : (p.ids.length < 3 ? [...p.ids, id] : p.ids);
+          return { ...p, ids };
+        });
+        const move = (i, j) => setPick((p) => {
+          if (!p || j < 0 || j >= p.ids.length) return p;
+          const ids = [...p.ids]; [ids[i], ids[j]] = [ids[j], ids[i]]; return { ...p, ids };
+        });
+        const ready = pick.ids.length === 3;
+        return (
+          <div className="modal-backdrop" style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50, padding: 16 }} onClick={() => setPick(null)}>
+            <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 16, maxWidth: 560, width: "100%", maxHeight: "90vh", overflow: "auto", background: "var(--bg)" }} onClick={(e) => e.stopPropagation()}>
+              <div className="h2" style={{ fontSize: 14, color: "var(--fire)", marginBottom: 8 }}>{I18N.t("AR2_ATTACK")}</div>
+              {/* Compo adverse + types */}
+              <div className="mono" style={{ fontSize: 11, color: "var(--text-dim)", marginBottom: 4 }}>{I18N.t("AR2_OPPONENTS")} :</div>
+              <div className="flex gap8" style={{ marginBottom: 4 }}>
+                {(pick.oppTeam || []).slice(0, 3).map((b, i) => (
+                  <span key={i} className="pill" style={{ color: "var(--fire)" }}>{D.TYPE_LABEL ? (D.TYPE_LABEL[b.type] || b.type) : b.type}</span>
+                ))}
+              </div>
+              <div className="mono" style={{ fontSize: 11, color: "var(--text-dim)", margin: "8px 0 2px" }}>⚔️ {I18N.t("AR2_MY_DEFENSE")} — Avant / Milieu / Arrière</div>
+              {/* Formation choisie (ordre) */}
+              {[0, 1, 2].map((i) => {
+                const b = byId(pick.ids[i]);
+                return (
+                  <div key={i} className="flex between center" style={{ gap: 8, padding: "2px 0", fontSize: 12 }}>
+                    <span>{["Avant", "Milieu", "Arrière"][i]} : {b ? (b.custom_name || b.name) : "—"} {b ? <span style={{ color: "var(--text-dim)" }}>({D.TYPE_LABEL ? (D.TYPE_LABEL[b.type] || b.type) : b.type})</span> : null}</span>
+                    <span className="flex gap8">
+                      <button className="btn xs" disabled={i === 0} onClick={() => move(i, i - 1)}>↑</button>
+                      <button className="btn xs" disabled={i === 2} onClick={() => move(i, i + 1)}>↓</button>
+                    </span>
+                  </div>
+                );
+              })}
+              {/* Roster : cocher 3 bêtes */}
+              <div className="mono" style={{ fontSize: 11, color: "var(--text-dim)", margin: "8px 0 2px" }}>{I18N.t("AR2_DEFENDER_EDGE_HINT") || "Le défenseur bénéficie d'un avantage terrain (+PV/DEF)."}</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
+                {(g.roster || []).map((b) => {
+                  const on = pick.ids.includes(b.id);
+                  return (
+                    <button key={b.id} className={cx("btn xs", on && "on")} onClick={() => toggle(b.id)} style={{ opacity: on ? 1 : 0.7 }}>
+                      {(b.custom_name || b.name)} · {D.TYPE_LABEL ? (D.TYPE_LABEL[b.type] || b.type) : b.type}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="flex gap8" style={{ marginTop: 12, justifyContent: "flex-end" }}>
+                <button className="btn sm" onClick={() => setPick(null)}>{I18N.t("CANCEL") || "Annuler"}</button>
+                <button className="btn btn-elec sm" disabled={!ready || busy} onClick={() => { const ids = [...pick.ids]; const t = pick.target, rv = pick.revanche; setPick(null); onAttack(t, rv, ids); }}>{I18N.t("AR2_ATTACK")}</button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {result && <AreneBattle
         events={result.events}
