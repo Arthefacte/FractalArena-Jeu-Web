@@ -59,5 +59,21 @@
     return { prelaunch: true, ms: Math.max(0, Number(season.starts_at) - now) };
   }
 
-  window.FA_ARENE_UI = { leagueLabel, leagueColor, fmtCountdown, fmtCountdownSec, eventLogLines, entryModes, seasonCountdown };
+  // Libellés des synergies de compo — PUREMENT COSMÉTIQUE (le serveur fait foi).
+  // Miroir EXACT des règles de computeSynergies (engine.node.js) : Affinité +8% (3 même
+  // type), Spectre +4% (3 types distincts), Duo +5% (la paire), Caste +4% (même rareté).
+  function computeSynergiesLabels(team) {
+    if (!Array.isArray(team) || team.length !== 3) return [];
+    const types = team.map((b) => b && b.type);
+    const rarities = team.map((b) => b && b.rarity);
+    const out = [];
+    const distinct = types.every(Boolean) ? new Set(types).size : 0;
+    if (distinct === 1) out.push({ key: "affinity", label: "Affinité", effect: "+8% stats (aucune couverture de type)" });
+    else if (distinct === 3) out.push({ key: "spectre", label: "Spectre", effect: "+4% stats à l'équipe" });
+    else if (distinct === 2) out.push({ key: "duo", label: "Duo", effect: "+5% stats à la paire de même type" });
+    if (new Set(rarities).size === 1 && rarities[0]) out.push({ key: "caste", label: "Caste", effect: "+4% stats (même rareté)" });
+    return out;
+  }
+
+  window.FA_ARENE_UI = { leagueLabel, leagueColor, fmtCountdown, fmtCountdownSec, eventLogLines, entryModes, seasonCountdown, computeSynergiesLabels };
 })();

@@ -457,6 +457,17 @@ function App() {
       });
     },
 
+    // Réordonne l'équipe sélectionnée (= ordre de formation : index 0 Avant / 1 Milieu / 2 Arrière).
+    // Échange local ; la persistance se fait via pvpSetDefense (qui poste `selected` dans l'ordre).
+    pvpReorderDefense(from, to) {
+      setG((s) => {
+        const sel = [...s.selected];
+        if (from < 0 || to < 0 || from >= sel.length || to >= sel.length || from === to) return s;
+        [sel[from], sel[to]] = [sel[to], sel[from]];
+        return { ...s, selected: sel };
+      });
+    },
+
     startBet({ free, betTier, isLoop }) {
       const s = gRef.current;
       if (free) {

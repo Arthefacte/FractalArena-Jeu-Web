@@ -98,6 +98,32 @@ function Arene() {
           <button className="btn btn-forge" disabled={busy || !defenseReady} onClick={onSetDefense}>{I18N.t("AR2_SET_DEFENSE")}</button>
         </div>
         {!defenseReady && <div className="mono" style={{ fontSize: 11, color: "var(--alert)", marginTop: 8 }}>{I18N.t("AR2_NO_DEFENSE")}</div>}
+        {/* Formation (Avant/Milieu/Arrière) + synergies actives */}
+        {defenseReady && (() => {
+          const selTeam = g.selected.map((id) => g.roster.find((b) => b.id === id)).filter(Boolean);
+          const syns = AU.computeSynergiesLabels(selTeam);
+          return (
+            <div className="mono" style={{ fontSize: 11, color: "var(--text-dim)", marginTop: 10 }}>
+              {["Avant", "Milieu", "Arrière"].map((pos, i) => {
+                const b = g.selected[i] && g.roster.find((x) => x.id === g.selected[i]);
+                return (
+                  <div key={i} className="flex between center" style={{ gap: 8, padding: "2px 0" }}>
+                    <span>{pos} : {b ? (b.custom_name || b.name) : "—"}</span>
+                    <span className="flex gap8">
+                      <button className="btn xs" disabled={busy || i === 0} onClick={() => actions.pvpReorderDefense(i, i - 1)}>↑</button>
+                      <button className="btn xs" disabled={busy || i === 2} onClick={() => actions.pvpReorderDefense(i, i + 1)}>↓</button>
+                    </span>
+                  </div>
+                );
+              })}
+              {syns.length > 0 && (
+                <div style={{ marginTop: 6 }}>
+                  {syns.map((s) => <span key={s.key} className="pill" style={{ color: "var(--success)", marginRight: 6 }}>{s.label} · {s.effect}</span>)}
+                </div>
+              )}
+            </div>
+          );
+        })()}
       </div>
 
       {sc.prelaunch ? (
