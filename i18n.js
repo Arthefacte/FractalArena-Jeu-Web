@@ -261,6 +261,7 @@
     FG_FUSION: { FR: "Fusion", EN: "Fusion", ZH: "融合" },
     FG_REROLL: { FR: "Reroll", EN: "Reroll", ZH: "重铸" },
     FG_SUMMON: { FR: "Invoquer", EN: "Summon", ZH: "召唤" },
+    FG_RELIQUES: { FR: "Reliques", EN: "Relics", ZH: "圣物" },
     FG_FUSION_HINT: { FR: "Sélectionne 2 entités de même rareté. Succès → rareté supérieure.", EN: "Select 2 entities of the same rarity. Success → higher rarity.", ZH: "选择 2 个相同稀有度的实体。成功 → 提升稀有度。" },
     FG_REROLL_HINT: { FR: "Redistribue aléatoirement les stats. Total conservé.", EN: "Randomly redistribute stats. Total preserved.", ZH: "随机重新分配属性。总和保持不变。" },
     FG_SUMMON_HINT: { FR: "Forge une nouvelle entité. Rareté 70/20/8/2%.", EN: "Forge a new entity. Rarity 70/20/8/2%.", ZH: "铸造新实体。稀有度 70/20/8/2%。" },
