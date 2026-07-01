@@ -3,7 +3,7 @@
    ============================================================ */
 const { useState, useEffect, useMemo } = React;
 const D = window.FA_DATA, I18N = window.FA_I18N;
-const { useFA, cx, fmt, presetLabel, rarityLabel, Bar, StatGrid, CreatureCard, Modal, SectionHead, MiniStats } = window;
+const { useFA, cx, fmt, presetLabel, rarityLabel, Bar, StatGrid, CreatureCard, Modal, SectionHead, MiniStats, RelicIcon } = window;
 const API_URL = "https://fractal-arena-server-production.up.railway.app";
 
 /* ---------------- TEAM ---------------- */
@@ -86,15 +86,13 @@ function RelicSlot({ beast }) {
     setBusy(false); setOpen(false);
     if (!r || !r.ok) toast((r && r.reason) || "error", "bad");
   }
-  const pastille = (rar) => (<span style={{ width: 12, height: 12, display: "inline-block",
-    background: D.RARITY_COLORS[rar], clipPath: "polygon(50% 0,100% 50%,50% 100%,0 50%)" }} />);
   return (
     <>
       <div className="relic-slot mono" onClick={() => setOpen(true)}
         style={{ cursor: "pointer", fontSize: 11, marginTop: 6, padding: "4px 8px",
                  border: "1px solid var(--line)", borderRadius: 8, display: "flex", gap: 6, alignItems: "center" }}>
         {equipped
-          ? (<>{pastille(equipped.rarity)}<span style={{ color: D.RARITY_COLORS[equipped.rarity] }}>{I18N.t("RELIC_" + equipped.type.toUpperCase())}</span>
+          ? (<><RelicIcon type={equipped.type} rarity={equipped.rarity} size={18} /><span style={{ color: D.RARITY_COLORS[equipped.rarity] }}>{I18N.t("RELIC_" + equipped.type.toUpperCase())}</span>
               <span style={{ color: "var(--text-dim)" }}>{D.relicStatDelta(eff)}</span></>)
           : (<span style={{ color: "var(--text-faint)" }}>◇ {I18N.t("RELIC_NONE")}</span>)}
       </div>
@@ -109,7 +107,7 @@ function RelicSlot({ beast }) {
               return (
                 <button key={inst.id} className={cx("btn sm", on && "on")} disabled={busy}
                   onClick={() => doEquip(on ? null : inst.id)} style={{ justifyContent: "flex-start", gap: 8 }}>
-                  {pastille(inst.rarity)} {I18N.t("RELIC_" + inst.type.toUpperCase())} · {rarityLabel(inst.rarity)} · {D.relicStatDelta(e)} {on ? "✓" : ""}
+                  <RelicIcon type={inst.type} rarity={inst.rarity} size={18} /> {I18N.t("RELIC_" + inst.type.toUpperCase())} · {rarityLabel(inst.rarity)} · {D.relicStatDelta(e)} {on ? "✓" : ""}
                 </button>
               );
             })}
@@ -384,7 +382,7 @@ function ForgeReliques() {
           ) : last ? (
             <div style={{ width: "100%", textAlign: "center" }}>
               <div className="eyebrow" style={{ marginBottom: 10, color: D.RARITY_COLORS[last.rarity] }}>{I18N.t("MINT_TITLE") || "FORGED"}</div>
-              <span style={{ width: 48, height: 48, margin: "0 auto 12px", background: D.RARITY_COLORS[last.rarity], display: "inline-block", clipPath: "polygon(50% 0,100% 50%,50% 100%,0 50%)" }} />
+              <div style={{ margin: "0 auto 12px", display: "flex", justifyContent: "center" }}><RelicIcon type={last.type} rarity={last.rarity} size={48} /></div>
               <div style={{ fontWeight: 700, fontSize: 16 }}>{I18N.t("RELIC_" + last.type.toUpperCase())}</div>
               <div style={{ color: D.RARITY_COLORS[last.rarity], fontWeight: 600, marginTop: 4 }}>{rarityLabel(last.rarity)}</div>
               <div className="mono muted" style={{ fontSize: 13, marginTop: 8 }}>{D.relicStatDelta(D.relicEffect(last.type, last.rarity))}</div>
@@ -406,7 +404,7 @@ function ForgeReliques() {
               return (
                 <div key={inst.id} className="panel oct" style={{ border: `1px solid ${D.RARITY_COLORS[inst.rarity]}`, padding: 16, display: "flex", flexDirection: "column", gap: 8 }}>
                   <div className="flex center gap8">
-                    <span style={{ width: 16, height: 16, background: D.RARITY_COLORS[inst.rarity], display: "inline-block", clipPath: "polygon(50% 0,100% 50%,50% 100%,0 50%)" }} />
+                    <RelicIcon type={inst.type} rarity={inst.rarity} size={28} />
                     <span style={{ fontWeight: 700 }}>{I18N.t("RELIC_" + inst.type.toUpperCase())}</span>
                   </div>
                   <span style={{ color: D.RARITY_COLORS[inst.rarity], fontWeight: 600, fontSize: 12 }}>{rarityLabel(inst.rarity)}</span>

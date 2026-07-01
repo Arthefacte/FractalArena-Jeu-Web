@@ -153,4 +153,14 @@ function PostureSelect({ value, onChange, disabled }) {
   );
 }
 
-Object.assign(window, { FA_Ctx, useFA, cx, fmt, presetLabel, rarityLabel, Coin, Bar, StatGrid, CreatureCard, Modal, SectionHead, MiniStats, PostureSelect });
+// Icône 3D des reliques (2.1) — vignette Three.js en cache, repli pastille si WebGL indispo
+function RelicIcon({ type, rarity, size }) {
+  const s = size || 28;
+  const url = (window.FA_RELIC_ICON && window.FA_RELIC_ICON.get(type, rarity, s * 2)) || null;
+  if (url) return <img src={url} alt="" width={s} height={s} draggable="false" style={{ display: "inline-block", verticalAlign: "middle" }} />;
+  // repli pastille losange (WebGL indispo ou module pas encore chargé)
+  const col = (window.FA_DATA && window.FA_DATA.RARITY_COLORS[rarity]) || "#9CA3AF";
+  return <span style={{ width: Math.round(s * 0.45), height: Math.round(s * 0.45), display: "inline-block", background: col, clipPath: "polygon(50% 0,100% 50%,50% 100%,0 50%)" }} />;
+}
+
+Object.assign(window, { FA_Ctx, useFA, cx, fmt, presetLabel, rarityLabel, Coin, Bar, StatGrid, CreatureCard, Modal, SectionHead, MiniStats, PostureSelect, RelicIcon });
