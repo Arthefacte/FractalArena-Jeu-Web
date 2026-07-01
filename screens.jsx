@@ -59,10 +59,66 @@ function Team() {
       })()}
       <div className="grid-cards">
         {sorted.map((b) => (
-          <CreatureCard key={b.id} beast={b} selectable selected={g.selected.includes(b.id)} onClick={() => toggle(b)} showXp />
+          <div key={b.id} style={{ display: "flex", flexDirection: "column" }}>
+            <CreatureCard beast={b} selectable selected={g.selected.includes(b.id)} onClick={() => toggle(b)} showXp />
+            <RelicSlot beast={b} />
+          </div>
         ))}
       </div>
     </div>
+  );
+}
+
+function RelicSlot({ beast }) {
+  const { g, actions, toast } = useFA();
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const equipped = beast.relic_id ? (g.equipment || []).find((e) => e.id === beast.relic_id) : null;
+  const eff = equipped ? D.relicEffect(equipped.type, equipped.rarity) : null;
+  // reliques équipables = non portées, ou déjà sur CETTE bête
+  const available = (g.equipment || []).filter((inst) => {
+    const holder = g.roster.find((b) => b.relic_id === inst.id);
+    return !holder || holder.id === beast.id;
+  });
+  async function doEquip(relicId) {
+    if (busy) return; setBusy(true);
+    const r = await actions.relicEquip(beast.id, relicId);
+    setBusy(false); setOpen(false);
+    if (!r || !r.ok) toast((r && r.reason) || "error", "bad");
+  }
+  const pastille = (rar) => (<span style={{ width: 12, height: 12, display: "inline-block",
+    background: D.RARITY_COLORS[rar], clipPath: "polygon(50% 0,100% 50%,50% 100%,0 50%)" }} />);
+  return (
+    <>
+      <div className="relic-slot mono" onClick={() => setOpen(true)}
+        style={{ cursor: "pointer", fontSize: 11, marginTop: 6, padding: "4px 8px",
+                 border: "1px solid var(--line)", borderRadius: 8, display: "flex", gap: 6, alignItems: "center" }}>
+        {equipped
+          ? (<>{pastille(equipped.rarity)}<span style={{ color: D.RARITY_COLORS[equipped.rarity] }}>{I18N.t("RELIC_" + equipped.type.toUpperCase())}</span>
+              <span style={{ color: "var(--text-dim)" }}>{D.relicStatDelta(eff)}</span></>)
+          : (<span style={{ color: "var(--text-faint)" }}>◇ {I18N.t("RELIC_NONE")}</span>)}
+      </div>
+      {open && (
+        <Modal onClose={() => setOpen(false)}>
+          <div className="h2" style={{ fontSize: 14, marginBottom: 10 }}>{I18N.t("RELIC_EQUIP")} — {D.displayName(beast)}</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: "50vh", overflow: "auto" }}>
+            {available.length === 0 && <div className="mono muted" style={{ fontSize: 12 }}>{I18N.t("RELIC_INVENTORY")}: —</div>}
+            {available.map((inst) => {
+              const on = beast.relic_id === inst.id;
+              const e = D.relicEffect(inst.type, inst.rarity);
+              return (
+                <button key={inst.id} className={cx("btn sm", on && "on")} disabled={busy}
+                  onClick={() => doEquip(on ? null : inst.id)} style={{ justifyContent: "flex-start", gap: 8 }}>
+                  {pastille(inst.rarity)} {I18N.t("RELIC_" + inst.type.toUpperCase())} · {rarityLabel(inst.rarity)} · {D.relicStatDelta(e)} {on ? "✓" : ""}
+                </button>
+              );
+            })}
+          </div>
+          <button className="btn sm block" style={{ marginTop: 10 }} disabled={busy || !beast.relic_id}
+            onClick={() => doEquip(null)}>{I18N.t("RELIC_UNEQUIP")}</button>
+        </Modal>
+      )}
+    </>
   );
 }
 
