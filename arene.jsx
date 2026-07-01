@@ -288,6 +288,8 @@ function Arene() {
         won={result.won}
         delta={result.delta}
         opponentName={result.opponent_name}
+        p1Posture={result.p1Posture}
+        p2Posture={result.p2Posture}
         onClose={() => setResult(null)} />}
     </div>
   );
