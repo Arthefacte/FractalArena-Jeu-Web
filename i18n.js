@@ -409,7 +409,7 @@
     RELIC_ONYX_MEMBRANE_D: { FR: "−8% dégâts subis", EN: "−8% damage taken", ZH: "−8% 受到伤害" },
     RELIC_JADE_CIRCUIT_D: { FR: "+5% critique", EN: "+5% crit chance", ZH: "+5% 暴击率" },
     RELIC_PRISM_MATRIX_D: { FR: "+6% toutes stats", EN: "+6% all stats", ZH: "+6% 全属性" },
-    RELIC_TAB: { FR: "Reliques", EN: "Relics", ZH: "圣物" },
+    RELIC_FORGED: { FR: "Forgée", EN: "Forged", ZH: "已锻造" },
     RELIC_SUMMON: { FR: "Invoquer une relique", EN: "Summon a relic", ZH: "召唤圣物" },
     RELIC_EQUIP: { FR: "Équiper", EN: "Equip", ZH: "装备" },
     RELIC_UNEQUIP: { FR: "Retirer", EN: "Unequip", ZH: "卸下" },

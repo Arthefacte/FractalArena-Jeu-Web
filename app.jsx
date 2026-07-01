@@ -759,7 +759,7 @@ function App() {
 
     async relicSummon() {
       const s = gRef.current;
-      if (!s.wallet) return { ok: false, reason: "Wallet requis" };
+      if (!s.wallet || !s.authToken) return { ok: false, reason: "Wallet requis" };
       const cost = 8000; // RELIC_SUMMON_COST serveur
       if (s.liquid + s.locked < cost) return { ok: false, reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, cost) };
       try {
@@ -778,7 +778,7 @@ function App() {
 
     async relicEquip(beastId, relicId) {
       const s = gRef.current;
-      if (!s.wallet) return { ok: false, reason: "Wallet requis" };
+      if (!s.wallet || !s.authToken) return { ok: false, reason: "Wallet requis" };
       try {
         const resp = await fetch(`${API_URL}/forge/relic-equip`, {
           method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },

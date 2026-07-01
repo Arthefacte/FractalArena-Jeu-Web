@@ -381,7 +381,7 @@ function ForgeReliques() {
             <div className="mono" style={{ color: "var(--gold)", fontSize: 13, letterSpacing: 2 }}>FORGING…</div>
           ) : last ? (
             <div style={{ width: "100%", textAlign: "center" }}>
-              <div className="eyebrow" style={{ marginBottom: 10, color: D.RARITY_COLORS[last.rarity] }}>{I18N.t("MINT_TITLE") || "FORGED"}</div>
+              <div className="eyebrow" style={{ marginBottom: 10, color: D.RARITY_COLORS[last.rarity] }}>{I18N.t("RELIC_FORGED")}</div>
               <div style={{ margin: "0 auto 12px", display: "flex", justifyContent: "center" }}><RelicIcon type={last.type} rarity={last.rarity} size={48} /></div>
               <div style={{ fontWeight: 700, fontSize: 16 }}>{I18N.t("RELIC_" + last.type.toUpperCase())}</div>
               <div style={{ color: D.RARITY_COLORS[last.rarity], fontWeight: 600, marginTop: 4 }}>{rarityLabel(last.rarity)}</div>
@@ -394,11 +394,11 @@ function ForgeReliques() {
       </div>
       <div style={{ marginTop: 26 }}>
         <div className="eyebrow" style={{ marginBottom: 10 }}>{I18N.t("RELIC_INVENTORY")}</div>
-        {g.equipment.length === 0 ? (
+        {(g.equipment || []).length === 0 ? (
           <div className="mono muted" style={{ fontSize: 13 }}>{I18N.t("RELIC_NONE")}</div>
         ) : (
           <div className="grid-cards">
-            {g.equipment.map((inst) => {
+            {(g.equipment || []).map((inst) => {
               const holder = g.roster.find((b) => b.relic_id === inst.id);
               const effect = D.relicEffect(inst.type, inst.rarity);
               return (
