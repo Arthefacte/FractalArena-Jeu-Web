@@ -129,4 +129,28 @@ function MiniStats({ beast }) {
   );
 }
 
-Object.assign(window, { FA_Ctx, useFA, cx, fmt, presetLabel, rarityLabel, Coin, Bar, StatGrid, CreatureCard, Modal, SectionHead, MiniStats });
+// Posture pré-combat (1.3) — sélecteur partagé PvE/PvP
+const POSTURE_KEYS = ["equilibre", "assaut", "rempart", "tactique"];
+function PostureSelect({ value, onChange, disabled }) {
+  const active = POSTURE_KEYS.includes(value) ? value : "equilibre";
+  return (
+    <div>
+      <div className="mono" style={{ fontSize: 11, color: "var(--text-dim)", marginBottom: 4 }}>{I18N.t("POSTURE_TITLE")}</div>
+      <div className="flex gap8" style={{ flexWrap: "wrap" }}>
+        {POSTURE_KEYS.map((k) => (
+          <button
+            key={k}
+            className={cx("btn sm", active === k && "on")}
+            disabled={disabled}
+            onClick={() => onChange && onChange(k)}
+          >
+            <div>{I18N.t("POSTURE_" + k.toUpperCase())}</div>
+            <div className="mono" style={{ fontSize: 10, color: "var(--text-dim)" }}>{I18N.t("POSTURE_" + k.toUpperCase() + "_D")}</div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, { FA_Ctx, useFA, cx, fmt, presetLabel, rarityLabel, Coin, Bar, StatGrid, CreatureCard, Modal, SectionHead, MiniStats, PostureSelect });
