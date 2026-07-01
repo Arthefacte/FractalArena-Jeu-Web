@@ -15,6 +15,38 @@
   // Mint odds
   const MINT_ODDS = [ ["Common", 0.70], ["Rare", 0.20], ["Epic", 0.08], ["Legendary", 0.02] ];
 
+  // ---- Reliques (miroir serveur — data.node.js, fait foi) ----
+  const RELIC_RARITY_MULT = { Common: 1.0, Rare: 1.25, Epic: 1.5, Legendary: 2.0 };
+  const RELICS = {
+    ruby_shard:     { name: "Ruby Shard",     stat: "atk",      bonus: 0.12 },
+    sapphire_plate: { name: "Sapphire Plate", stat: "def",      bonus: 0.10 },
+    quartz_lens:    { name: "Quartz Lens",    stat: "mag",      bonus: 0.10 },
+    amber_cell:     { name: "Amber Cell",     stat: "hp",       bonus: 0.08 },
+    cobalt_spring:  { name: "Cobalt Spring",  stat: "spd",      bonus: 0.10 },
+    onyx_membrane:  { name: "Onyx Membrane",  stat: "dmgTaken", bonus: 0.08 },
+    jade_circuit:   { name: "Jade Circuit",   stat: "crit",     bonus: 0.05 },
+    prism_matrix:   { name: "Prism Matrix",   stat: "all",      bonus: 0.06 },
+  };
+  const RELIC_KEYS = Object.keys(RELICS);
+  function relicEffect(type, rarity) {          // IDENTIQUE serveur (Object.hasOwn)
+    const r = Object.hasOwn(RELICS, type) ? RELICS[type] : null;
+    const m = Object.hasOwn(RELIC_RARITY_MULT, rarity) ? RELIC_RARITY_MULT[rarity] : null;
+    if (!r || m == null) return null;
+    return { stat: r.stat, bonus: r.bonus * m };
+  }
+  // Libellé court pour l'affichage des stats effectives (bonus déjà mis à l'échelle par rareté).
+  const RELIC_STAT_LABEL = {
+    atk: "ATK", def: "DEF", spd: "SPD", mag: "MAG", hp: "PV",
+    all: "toutes stats", crit: "crit", dmgTaken: "dégâts subis",
+  };
+  function relicStatDelta(effect) {
+    if (!effect) return "";
+    const pct = Math.round(effect.bonus * 100);
+    const label = RELIC_STAT_LABEL[effect.stat] || effect.stat;
+    if (effect.stat === "dmgTaken") return "−" + pct + "% " + label; // − U+2212
+    return "+" + pct + "% " + label;
+  }
+
   // ---- Presets ----
   const PRESET_COLORS = {
     aggressive: "#FF3B5C", berserker: "#F7931A", tactician: "#9F00FF",
@@ -403,6 +435,7 @@
 
   window.FA_DATA = {
     RARITY_ORDER, RARITY_LIST, RARITY_COLORS, RARITY_UPGRADE, MINT_ODDS,
+    RELICS, RELIC_KEYS, RELIC_RARITY_MULT, relicEffect, relicStatDelta,
     PRESET_COLORS, TYPE_TO_PRESET, TYPE_LABEL, ART,
     TYPE_ADVANTAGE, getTypeMultiplier,
     TEMPLATES, TEMPLATE_KEYS, TEMPLATES_BY_TYPE,
