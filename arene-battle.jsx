@@ -29,7 +29,12 @@ function AB_Unit({ beast, live, side, pos }) {
   );
 }
 
-function AreneBattle({ events, p1Team, p2Team, won, delta, onClose, opponentName }) {
+function AB_PostureBadge({ posture }) {
+  const key = String(posture || "equilibre");
+  return <span className="pill mono" style={{ fontSize: 9, padding: "1px 6px" }}>{I18N.t("POSTURE_" + key.toUpperCase())}</span>;
+}
+
+function AreneBattle({ events, p1Team, p2Team, won, delta, onClose, opponentName, p1Posture, p2Posture }) {
   const evs = Array.isArray(events) ? events : [];
   const [p1Live, setP1Live] = useState(evs[0]?.state?.p1 || null);
   const [p2Live, setP2Live] = useState(evs[0]?.state?.p2 || null);
@@ -69,10 +74,12 @@ function AreneBattle({ events, p1Team, p2Team, won, delta, onClose, opponentName
     <div className="modal-backdrop" onClick={done ? onClose : undefined}>
       <div className="modal" style={{ maxWidth: 520 }} onClick={(e) => e.stopPropagation()}>
         <h3 style={{ textAlign: "center", margin: "4px 0 10px" }}>{I18N.t("AR2_BATTLE")}</h3>
+        <div style={{ textAlign: "center", marginBottom: 4 }}><AB_PostureBadge posture={p1Posture} /></div>
         <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
           {[0, 1, 2].map((i) => <AB_Unit key={"p1" + i} beast={p1Team[i]} live={liveOf(p1Team, "p1")(i)} side="p1" pos={i} />)}
         </div>
         <div style={{ textAlign: "center", color: "var(--text-dim)", fontSize: 11, margin: "2px 0" }}>{opponentName || I18N.t("AR_VERSUS")}</div>
+        <div style={{ textAlign: "center", marginBottom: 4 }}><AB_PostureBadge posture={p2Posture} /></div>
         <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
           {[0, 1, 2].map((i) => <AB_Unit key={"p2" + i} beast={p2Team[i]} live={liveOf(p2Team, "p2")(i)} side="p2" pos={i} />)}
         </div>

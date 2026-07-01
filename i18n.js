@@ -197,6 +197,18 @@
     AR2_ATTACKS_BEAT:  { FR: "a battu ta défense", EN: "beat your defense", ZH: "击败了你的防御" },
     AR2_ATTACKS_REPELLED: { FR: "repoussé", EN: "repelled", ZH: "被击退" },
 
+    // posture pré-combat (1.3)
+    POSTURE_TITLE: { FR: "Posture", EN: "Stance", ZH: "姿态" },
+    POSTURE_EQUILIBRE: { FR: "Équilibre", EN: "Balanced", ZH: "均衡" },
+    POSTURE_ASSAUT: { FR: "Assaut", EN: "Assault", ZH: "突袭" },
+    POSTURE_REMPART: { FR: "Rempart", EN: "Bulwark", ZH: "壁垒" },
+    POSTURE_TACTIQUE: { FR: "Tactique", EN: "Tactical", ZH: "战术" },
+    POSTURE_EQUILIBRE_D: { FR: "Neutre", EN: "Neutral", ZH: "中立" },
+    POSTURE_ASSAUT_D: { FR: "+ATK/Vitesse, −Défense", EN: "+ATK/Speed, −Defense", ZH: "+攻击/速度，−防御" },
+    POSTURE_REMPART_D: { FR: "+Défense/PV, −Vitesse", EN: "+Defense/HP, −Speed", ZH: "+防御/生命，−速度" },
+    POSTURE_TACTIQUE_D: { FR: "Focus + crit, −ATK", EN: "Focus + crit, −ATK", ZH: "集火+暴击，−攻击" },
+    POSTURE_ENEMY: { FR: "Posture adverse", EN: "Enemy stance", ZH: "敌方姿态" },
+
     // prix de saison PvP
     PRIZE_TITLE:       { FR: "Récompense de saison !", EN: "Season reward!", ZH: "赛季奖励！" },
     PRIZE_SEASON_RANK: { FR: "Saison %d — Rang %d · %s", EN: "Season %d — Rank %d · %s", ZH: "第 %d 赛季 — 第 %d 名 · %s" },
