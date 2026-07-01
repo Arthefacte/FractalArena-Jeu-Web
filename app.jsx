@@ -943,14 +943,14 @@ function App() {
     // ticket Argent), exécute le combat, crédite les récompenses en delta et persiste
     // la progression. Renvoie { ok, events, enemy, won, survivors, stars, reward, free,
     // titleUnlocked, legend } ou { ok:false, reason }.
-    async campaignFight(worldIndex, floorIndex, selectedIds) {
+    async campaignFight(worldIndex, floorIndex, selectedIds, posture) {
       const s = gRef.current;
       if (!s.authToken) return { ok: false, reason: I18N.t("CAMP_NO_TICKET") };
       try {
         const resp = await fetch(`${API_URL}/campaign/fight`, {
           method: "POST",
           headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
-          body: JSON.stringify({ world_index: worldIndex, floor_index: floorIndex, selected: selectedIds }),
+          body: JSON.stringify({ world_index: worldIndex, floor_index: floorIndex, selected: selectedIds, posture: posture || "equilibre" }),
         });
         const data = await resp.json();
         if (!resp.ok) {
@@ -1036,15 +1036,24 @@ function App() {
       } catch (e) { /* silencieux */ }
       setG((s) => ({ ...s, pvp: { ...s.pvp, attacksUnseen: 0 } }));
     },
-    async pvpSetDefense() {
+    async pvpSetDefense(posture) {
       const authHeaders = () => ({ "Authorization": "Bearer " + gRef.current.authToken });
       const sel = gRef.current.selected; if (sel.length !== 3) return { ok: false, error: "3 bêtes requises" };
-      const r = await fetch(`${API_URL}/pvp/defense`, { method: "POST", headers: { ...authHeaders(), "Content-Type": "application/json" }, body: JSON.stringify({ selected: sel }) });
+      const r = await fetch(`${API_URL}/pvp/defense`, { method: "POST", headers: { ...authHeaders(), "Content-Type": "application/json" }, body: JSON.stringify({ selected: sel, posture: posture || "equilibre" }) });
       const j = await r.json().catch(() => ({})); return j;
     },
-    async pvpAttack(target, entry, attackers) {
+    async pvpDefenseOf(wallet) {
+      if (!wallet) return { posture: "equilibre" };
+      try {
+        const r = await fetch(`${API_URL}/pvp/defense/${encodeURIComponent(wallet)}`);
+        const j = await r.json().catch(() => ({}));
+        if (!r.ok || !j) return { posture: "equilibre" };
+        return { team: j.team || [], posture: j.posture || "equilibre" };
+      } catch (e) { return { posture: "equilibre" }; }
+    },
+    async pvpAttack(target, entry, attackers, posture) {
       const authHeaders = () => ({ "Authorization": "Bearer " + gRef.current.authToken });
-      const body = { target, entry };
+      const body = { target, entry, posture: posture || "equilibre" };
       if (Array.isArray(attackers) && attackers.length === 3) body.attackers = attackers;
       const r = await fetch(`${API_URL}/pvp/attack`, { method: "POST", headers: { ...authHeaders(), "Content-Type": "application/json" }, body: JSON.stringify(body) });
       const j = await r.json().catch(() => ({}));

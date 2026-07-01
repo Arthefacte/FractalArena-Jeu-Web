@@ -6,7 +6,7 @@
    ============================================================ */
 const { useState, useEffect, useRef, useMemo } = React;
 const D = window.FA_DATA, I18N = window.FA_I18N;
-const { useFA, cx, fmt, presetLabel, rarityLabel, Bar, Modal, SectionHead } = window;
+const { useFA, cx, fmt, presetLabel, rarityLabel, Bar, Modal, SectionHead, PostureSelect } = window;
 
 // ---- helpers progression ----
 function worldStarsArr(g, i) {
@@ -121,6 +121,7 @@ function CampaignCombat({ worldIndex, floorIndex, onBack, onCleared }) {
   const [logLines, setLogLines] = useState([]);
   const [round, setRound] = useState(0);
   const [result, setResult] = useState(null);
+  const [posture, setPosture] = useState("equilibre");
 
   const runIdRef = useRef(0);
   const stepRef = useRef(null);
@@ -179,7 +180,7 @@ function CampaignCombat({ worldIndex, floorIndex, onBack, onCleared }) {
     setPlaying(true); // verrou anti double-clic pendant l'appel serveur
 
     // Combat SERVEUR-AUTORITATIF : entrée, combat et récompenses gérés côté serveur.
-    const resp = await actions.campaignFight(worldIndex, floorIndex, g.selected.slice(0, 3));
+    const resp = await actions.campaignFight(worldIndex, floorIndex, g.selected.slice(0, 3), posture);
     if (!resp.ok) { setPlaying(false); toast(resp.reason, "bad"); return; }
 
     const enemies = resp.enemy;
@@ -355,6 +356,7 @@ function CampaignCombat({ worldIndex, floorIndex, onBack, onCleared }) {
                   ? I18N.t("CAMP_FREE_TODAY")
                   : I18N.t("CAMP_FREE_NEXT", campFreeCompact((g.campaignFreeTs || 0) + 86400000 - Date.now()))}
               </div>
+              <PostureSelect value={posture} onChange={setPosture} disabled={playing} />
               <button className="btn btn-fire block lg" disabled={playing} onClick={startFight}>
                 {isBoss ? "⚔️ " + bossName : I18N.t("CAMP_FIGHT")}
               </button>

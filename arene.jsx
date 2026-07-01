@@ -3,7 +3,7 @@
    ============================================================ */
 const { useState, useEffect, useRef } = React;
 const D = window.FA_DATA, I18N = window.FA_I18N;
-const { useFA, cx, fmt, presetLabel, rarityLabel, AreneBattle } = window;
+const { useFA, cx, fmt, presetLabel, rarityLabel, AreneBattle, PostureSelect } = window;
 const AU = window.FA_ARENE_UI;
 
 function TeamPreview({ team }) {
@@ -27,10 +27,11 @@ function Arene() {
   const [busy, setBusy] = useState(false);
   const attackLock = useRef(false); // verrou synchrone anti double-clic (le state `busy` ne se met à jour qu'au re-render)
   const [result, setResult] = useState(null);
-  const [pick, setPick] = useState(null); // { target, revanche, ids:[id,id,id], oppTeam } ou null
+  const [pick, setPick] = useState(null); // { target, revanche, ids:[id,id,id], oppTeam, posture, oppPosture } ou null
   const [nowTs, setNowTs] = useState(Date.now());
+  const [defPosture, setDefPosture] = useState("equilibre");
 
-  useEffect(() => { if (g.wallet) { actions.pvpRefresh().then(() => actions.pvpAttacksSeen()); } }, [g.wallet]);
+  useEffect(() => { if (g.wallet) { actions.pvpRefresh().then(() => actions.pvpAttacksSeen()); actions.pvpDefenseOf(g.wallet).then((r) => setDefPosture((r && r.posture) || "equilibre")); } }, [g.wallet]);
   useEffect(() => {
     const id = setInterval(() => setNowTs(Date.now()), 1000);
     return () => clearInterval(id);
@@ -46,22 +47,22 @@ function Arene() {
   async function onSetDefense() {
     if (!defenseReady) { toast(I18N.t("AR2_NO_DEFENSE"), "bad"); return; }
     setBusy(true);
-    const r = await actions.pvpSetDefense();
+    const r = await actions.pvpSetDefense(defPosture);
     setBusy(false);
     if (r && r.ok) toast(I18N.t("AR2_SET_DEFENSE"), "good"); else toast((r && r.error) || "error", "bad");
   }
 
-  async function onAttack(target, useRevanche, attackers) {
+  async function onAttack(target, useRevanche, attackers, myPosture, enemyPosture) {
     if (attackLock.current || busy) return; // le ref bloque les clics de la même rafale avant que `busy` ne re-render
     attackLock.current = true;
     setBusy(true);
     try {
       const prev = (g.pvp && typeof g.pvp.rating === "number") ? g.pvp.rating : null;
-      const r = await actions.pvpAttack(target, useRevanche ? "revanche" : entry, attackers);
+      const r = await actions.pvpAttack(target, useRevanche ? "revanche" : entry, attackers, myPosture);
       if (!r || !r.ok) { toast((r && r.error) || "error", "bad"); return; }
       const delta = (prev != null && typeof r.rating === "number") ? r.rating - prev : null;
       const myTeam = (attackers || g.selected).map((id) => g.roster.find((b) => b.id === id)).filter(Boolean);
-      setResult({ ...r, delta, p1Team: myTeam, p2Team: r.enemy || [] });
+      setResult({ ...r, delta, p1Team: myTeam, p2Team: r.enemy || [], p1Posture: myPosture || "equilibre", p2Posture: enemyPosture || "equilibre" });
       actions.pvpRefresh();
     } finally {
       attackLock.current = false;
@@ -97,6 +98,9 @@ function Arene() {
             <TeamPreview team={g.selected.map((id) => g.roster.find((b) => b.id === id)).filter(Boolean)} />
           </div>
           <button className="btn btn-forge" disabled={busy || !defenseReady} onClick={onSetDefense}>{I18N.t("AR2_SET_DEFENSE")}</button>
+        </div>
+        <div style={{ marginTop: 10 }}>
+          <PostureSelect value={defPosture} onChange={setDefPosture} disabled={busy} />
         </div>
         {!defenseReady && <div className="mono" style={{ fontSize: 11, color: "var(--alert)", marginTop: 8 }}>{I18N.t("AR2_NO_DEFENSE")}</div>}
         {/* Formation (Avant/Milieu/Arrière) + synergies actives */}
@@ -163,8 +167,8 @@ function Arene() {
                     <div style={{ marginTop: 6 }}><TeamPreview team={o.team} /></div>
                   </div>
                   {canRevanche
-                    ? <button className="btn btn-success sm" disabled={busy} onClick={() => setPick({ target: o.wallet, revanche: true, ids: [...g.selected], oppTeam: o.team })}>{I18N.t("AR2_REVANCHE")}</button>
-                    : <button className="btn btn-elec sm" disabled={busy} onClick={() => setPick({ target: o.wallet, revanche: false, ids: [...g.selected], oppTeam: o.team })}>{I18N.t("AR2_ATTACK")}</button>}
+                    ? <button className="btn btn-success sm" disabled={busy} onClick={async () => { const r = await actions.pvpDefenseOf(o.wallet); setPick({ target: o.wallet, revanche: true, ids: [...g.selected], oppTeam: o.team, posture: "equilibre", oppPosture: (r && r.posture) || "equilibre" }); }}>{I18N.t("AR2_REVANCHE")}</button>
+                    : <button className="btn btn-elec sm" disabled={busy} onClick={async () => { const r = await actions.pvpDefenseOf(o.wallet); setPick({ target: o.wallet, revanche: false, ids: [...g.selected], oppTeam: o.team, posture: "equilibre", oppPosture: (r && r.posture) || "equilibre" }); }}>{I18N.t("AR2_ATTACK")}</button>}
                 </div>
               );
             })}
@@ -238,6 +242,10 @@ function Arene() {
                   <span key={i} className="pill" style={{ color: "var(--fire)" }}>{D.TYPE_LABEL ? (D.TYPE_LABEL[b.type] || b.type) : b.type}</span>
                 ))}
               </div>
+              <div className="mono" style={{ fontSize: 11, color: "var(--text-dim)", marginBottom: 8 }}>
+                {I18N.t("POSTURE_ENEMY")} : {I18N.t("POSTURE_" + (pick.oppPosture || "equilibre").toUpperCase())}
+              </div>
+              <PostureSelect value={pick.posture || "equilibre"} onChange={(k) => setPick((p) => ({ ...p, posture: k }))} disabled={busy} />
               <div className="mono" style={{ fontSize: 11, color: "var(--text-dim)", margin: "8px 0 2px" }}>⚔️ {I18N.t("AR2_ATTACK")} — Avant / Milieu / Arrière</div>
               {/* Formation choisie (ordre) */}
               {[0, 1, 2].map((i) => {
@@ -266,7 +274,7 @@ function Arene() {
               </div>
               <div className="flex gap8" style={{ marginTop: 12, justifyContent: "flex-end" }}>
                 <button className="btn sm" onClick={() => setPick(null)}>{I18N.t("CANCEL") || "Annuler"}</button>
-                <button className="btn btn-elec sm" disabled={!ready || busy} onClick={() => { const ids = [...pick.ids]; const t = pick.target, rv = pick.revanche; setPick(null); onAttack(t, rv, ids); }}>{I18N.t("AR2_ATTACK")}</button>
+                <button className="btn btn-elec sm" disabled={!ready || busy} onClick={() => { const ids = [...pick.ids]; const t = pick.target, rv = pick.revanche, myPosture = pick.posture || "equilibre", oppPosture = pick.oppPosture || "equilibre"; setPick(null); onAttack(t, rv, ids, myPosture, oppPosture); }}>{I18N.t("AR2_ATTACK")}</button>
               </div>
             </div>
           </div>
