@@ -1,12 +1,12 @@
 // buyback.jsx
 // Ticker économie — 4 jauges de rachat (pools 5k/10k/25k/50k) sous le header ← /buyback/status.
-// Preuve = page d'adresse du wallet de rachat partagé (pas un txid de swap épars).
+// Preuve = le pool du DEX (InSwap) où le rachat est exécuté puis la liquidité verrouillée à vie.
 // Auto-suffisant : fait ses propres fetch + polling. Aucune prop. Exposé sur window.
 
 const API_URL = "https://fractal-arena-server-production.up.railway.app";
 
-// Base de l'explorateur Fractal Bitcoin — PAGE D'ADRESSE (confirmée OK le 15/06/2026).
-const FRACTAL_ADDR_EXPLORER = "https://fractal.unisat.io/explorer/address/";
+// Lien « preuve » = page du DEX InSwap (paire FractalArena / sFB) — même cible que la vitrine arthefacte.com.
+const DEX_URL = "https://inswap.net/swap?t0=FractalArena&t1=sFB___000";
 
 // Pur : fraction de remplissage de la jauge, bornée [0, 1].
 function buybackFraction(total, threshold) {
@@ -30,7 +30,7 @@ function TickerRow({ kind, icon, label, total, threshold, wallet, proofLabel, su
         <div className="bb-bar"><i style={{ width: (frac * 100) + "%" }} /></div>
         <span className="bb-nums">{bbFmt(total)} / {bbFmt(threshold)}</span>
         {wallet && (
-          <a className="bb-tx" href={FRACTAL_ADDR_EXPLORER + wallet} target="_blank" rel="noreferrer">{proofLabel} ↗</a>
+          <a className="bb-tx" href={DEX_URL} target="_blank" rel="noreferrer">{proofLabel} ↗</a>
         )}
       </div>
       {sub && <div className="bb-sub">{sub}</div>}
