@@ -460,10 +460,7 @@ function ResultModal({ data, onClose }) {
             {data.insuranceUsed ? (
               <ResRow label="Insurance 🛡" value={"+" + fmt(data.betAmount)} color="var(--success)" />
             ) : (
-              <>
-                <ResRow label={I18N.t("RES_POOL")} value={fmt(data.pool)} color="var(--elec)" />
-                <ResRow label={I18N.t("RES_BURN")} value={fmt(data.burn)} color="var(--alert)" />
-              </>
+              <ResRow label={I18N.t("RES_BUYBACK")} value={fmt(data.betAmount)} color="var(--alert)" />
             )}
             <ResRow label={I18N.t("RES_XP")} value="+0" color="var(--text-dim)" />
           </>

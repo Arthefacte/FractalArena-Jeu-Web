@@ -1,8 +1,6 @@
 // buyback.jsx
-// Ticker économie — deux jauges empilées sous le header :
-//   🔒 Liquidité verrouillée (burn = LP-lock)   ← /burn/status
-//   💰 Réserve de rachat (buyback)              ← /buyback/status
-// Preuve = page d'adresse du wallet dédié de chaque jambe (pas un txid de swap épars).
+// Ticker économie — 4 jauges de rachat (pools 5k/10k/25k/50k) sous le header ← /buyback/status.
+// Preuve = page d'adresse du wallet de rachat partagé (pas un txid de swap épars).
 // Auto-suffisant : fait ses propres fetch + polling. Aucune prop. Exposé sur window.
 
 const API_URL = "https://fractal-arena-server-production.up.railway.app";
@@ -42,53 +40,40 @@ function TickerRow({ kind, icon, label, total, threshold, wallet, proofLabel, su
 
 function BuybackTicker() {
   const [bb, setBb] = React.useState(null);
-  const [burn, setBurn] = React.useState(null);
 
   React.useEffect(() => {
     let alive = true;
     async function load() {
-      const [rb, rk] = await Promise.all([
-        fetch(API_URL + "/buyback/status").then((r) => r.json()).catch(() => null),
-        fetch(API_URL + "/burn/status").then((r) => r.json()).catch(() => null),
-      ]);
+      const rb = await fetch(API_URL + "/buyback/status").then((r) => r.json()).catch(() => null);
       if (!alive) return;
-      if (rb && rb.buyback) setBb(rb.buyback);
-      if (rk && rk.burn) setBurn(rk.burn);
+      if (rb && rb.buyback && Array.isArray(rb.buyback.pools)) setBb(rb.buyback);
     }
     load();
     const id = setInterval(load, 60000); // rafraîchit chaque minute
     return () => { alive = false; clearInterval(id); };
   }, []);
 
-  // Rien tant qu'aucune des deux jambes n'est chargée — pas de bandeau vide.
-  if (!bb && !burn) return null;
+  // Rien tant que les pools ne sont pas chargés — pas de bandeau vide.
+  if (!bb || !bb.pools || !bb.pools.length) return null;
 
   const I = window.FA_I18N;
+  const totalBought = bb.pools.reduce((s, p) => s + (p.total_bought || 0), 0);
+  const last = bb.pools.length - 1;
   return (
     <div className="bb-ticker" title={I.t("BB_TICK_TITLE")}>
-      {burn && (
+      {bb.pools.map((p, i) => (
         <TickerRow
-          kind="liq"
-          icon="🔥"
-          label={I.t("BB_LIQ")}
-          total={burn.total}
-          threshold={burn.threshold}
-          wallet={burn.burn_wallet}
-          proofLabel={I.t("BB_PROOF")}
-        />
-      )}
-      {bb && (
-        <TickerRow
+          key={p.tier}
           kind="buy"
-          icon="💰"
-          label={I.t("BB_RESERVE")}
-          total={bb.total}
-          threshold={bb.threshold}
-          wallet={bb.buyback_wallet}
+          icon={i === 0 ? "💰" : ""}
+          label={I.t("BB_POOL_LABEL", bbFmt(p.tier))}
+          total={p.total}
+          threshold={p.threshold}
+          wallet={i === 0 ? bb.buyback_wallet : null}
           proofLabel={I.t("BB_PROOF")}
-          sub={I.t("BB_BOUGHT_SUB", bbFmt(bb.total_bought || 0))}
+          sub={i === last ? I.t("BB_BOUGHT_SUB", bbFmt(totalBought)) : null}
         />
-      )}
+      ))}
     </div>
   );
 }

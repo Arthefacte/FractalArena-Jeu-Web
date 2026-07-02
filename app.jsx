@@ -573,7 +573,7 @@ function App() {
       if (srv !== null) {
         win = srv.won ?? false;  // override le résultat local par le résultat serveur
       }
-      const summary = { payout: 0, net: 0, xp: 0, pool: 0, burn: 0, milestone: false, luckyBonus: 0, insuranceUsed: false, betAmount, levelUps: [], rarityUps: [] };
+      const summary = { payout: 0, net: 0, xp: 0, milestone: false, luckyBonus: 0, insuranceUsed: false, betAmount, levelUps: [], rarityUps: [] };
       setG((s) => {
         // Solde final serveur appliqué ICI (fin du combat), pas au lancement → le gain
         // n'apparaît qu'une fois le replay terminé.
@@ -609,9 +609,7 @@ function App() {
             // remboursement de la mise géré CÔTÉ SERVEUR (solde srv déjà à jour)
             summary.insuranceUsed = true;
           } else if (!free) {
-            const pool = Math.floor(betAmount * D.ECON.DEFEAT_POOL_RATIO);
-            const burn = betAmount - pool;
-            summary.pool = pool; summary.burn = burn;
+            // Mise perdue : 100 % → rachat (réparti côté serveur dans les 4 pools).
             session.net -= betAmount;
           }
         }
