@@ -7,7 +7,7 @@ const I18N = window.FA_I18N;
 
 const SECTIONS = {
   compet: [["wins", "LB_TAB_WINS"], ["collection", "LB_TAB_POWER"]],
-  eco: [["earned", "LB_TAB_EARNED"], ["burned", "LB_TAB_BURNED"], ["liquidity", "LB_TAB_LIQUIDITY"], ["airdrop", "LB_TAB_AIRDROP"]],
+  eco: [["earned", "LB_TAB_EARNED"], ["buyback", "LB_TAB_BUYBACK"]],
 };
 
 function Leaderboard() {
