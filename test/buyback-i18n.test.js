@@ -17,10 +17,10 @@ test("clés retirées absentes", () => {
   }
 });
 
-test("BB_POOL_LABEL contient un placeholder %s", () => {
-  assert.ok(/%s/.test(T.BB_POOL_LABEL.FR));
+test("BB_POOL_LABEL contient un placeholder %s dans les 3 langues", () => {
+  for (const lang of ["FR", "EN", "ZH"]) assert.ok(/%s/.test(T.BB_POOL_LABEL[lang]), `BB_POOL_LABEL.${lang} sans %s`);
 });
 
-test("FG_SUB ne mentionne plus l'ancien split 70/30", () => {
-  assert.ok(!/70%|Reward Pool|Mega buyback/.test(T.FG_SUB.FR));
+test("FG_SUB ne mentionne plus l'ancien split 70/30 dans les 3 langues", () => {
+  for (const lang of ["FR", "EN", "ZH"]) assert.ok(!/70%|Reward Pool|Mega buyback|超级回购/.test(T.FG_SUB[lang]), `FG_SUB.${lang} mentionne encore l'ancien split`);
 });
