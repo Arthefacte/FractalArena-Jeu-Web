@@ -347,6 +347,8 @@ function ForgeReliques() {
   const { g, actions, toast } = useFA();
   const [last, setLast] = useState(null);
   const [rolling, setRolling] = useState(false);
+  const [detail, setDetail] = useState(null);
+  const RV = window.RelicViewer;
   const cost = 8000;
   const balOk = (g.liquid + g.locked) >= cost;
   async function doSummon() {
@@ -382,7 +384,9 @@ function ForgeReliques() {
           ) : last ? (
             <div style={{ width: "100%", textAlign: "center" }}>
               <div className="eyebrow" style={{ marginBottom: 10, color: D.RARITY_COLORS[last.rarity] }}>{I18N.t("RELIC_FORGED")}</div>
-              <div style={{ margin: "0 auto 12px", display: "flex", justifyContent: "center" }}><RelicIcon type={last.type} rarity={last.rarity} size={48} /></div>
+              <div style={{ margin: "0 auto 12px", display: "flex", justifyContent: "center" }}>
+                {RV ? <RV type={last.type} rarity={last.rarity} size={200} /> : <RelicIcon type={last.type} rarity={last.rarity} size={48} />}
+              </div>
               <div style={{ fontWeight: 700, fontSize: 16 }}>{I18N.t("RELIC_" + last.type.toUpperCase())}</div>
               <div style={{ color: D.RARITY_COLORS[last.rarity], fontWeight: 600, marginTop: 4 }}>{rarityLabel(last.rarity)}</div>
               <div className="mono muted" style={{ fontSize: 13, marginTop: 8 }}>{D.relicStatDelta(D.relicEffect(last.type, last.rarity))}</div>
@@ -402,7 +406,7 @@ function ForgeReliques() {
               const holder = g.roster.find((b) => b.relic_id === inst.id);
               const effect = D.relicEffect(inst.type, inst.rarity);
               return (
-                <div key={inst.id} className="panel oct" style={{ border: `1px solid ${D.RARITY_COLORS[inst.rarity]}`, padding: 16, display: "flex", flexDirection: "column", gap: 8 }}>
+                <div key={inst.id} className="panel oct" onClick={() => setDetail(inst)} style={{ border: `1px solid ${D.RARITY_COLORS[inst.rarity]}`, padding: 16, display: "flex", flexDirection: "column", gap: 8, cursor: "pointer" }}>
                   <div className="flex center gap8">
                     <RelicIcon type={inst.type} rarity={inst.rarity} size={28} />
                     <span style={{ fontWeight: 700 }}>{I18N.t("RELIC_" + inst.type.toUpperCase())}</span>
@@ -416,6 +420,16 @@ function ForgeReliques() {
           </div>
         )}
       </div>
+      {detail && (
+        <Modal onClose={() => setDetail(null)} accent={D.RARITY_COLORS[detail.rarity]}>
+          <div style={{ textAlign: "center", padding: 8 }}>
+            {RV && <RV type={detail.type} rarity={detail.rarity} size={240} />}
+            <div style={{ fontWeight: 700, fontSize: 16, marginTop: 10 }}>{I18N.t("RELIC_" + detail.type.toUpperCase())}</div>
+            <div style={{ color: D.RARITY_COLORS[detail.rarity], fontWeight: 600, marginTop: 4 }}>{rarityLabel(detail.rarity)}</div>
+            <div className="mono muted" style={{ fontSize: 13, marginTop: 8 }}>{D.relicStatDelta(D.relicEffect(detail.type, detail.rarity))}</div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }
