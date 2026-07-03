@@ -7,6 +7,7 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
   const loader = new GLTFLoader();
   const _loaded = {};   // type -> THREE.Group (normalisé, matériaux d'origine)
   const _loading = {};  // type -> Promise
+  const _failed = {};   // type -> true (échec mémorisé, pas de re-fetch)
 
   // Centre le modèle sur l'origine et le met à l'échelle pour tenir dans une boîte ~2 unités.
   function _normalize(root) {
@@ -23,7 +24,7 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
   }
 
   function loadModel(type) {
-    if (_loaded[type]) return Promise.resolve();
+    if (_loaded[type] || _failed[type]) return Promise.resolve();
     if (_loading[type]) return _loading[type];
     _loading[type] = new Promise((resolve) => {
       loader.load(
@@ -35,7 +36,7 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
           resolve();
         },
         undefined,
-        () => { delete _loading[type]; resolve(); } // échec silencieux → l'appelant garde le repli
+        () => { delete _loading[type]; _failed[type] = true; resolve(); } // échec mémorisé → repli, pas de re-fetch
       );
     });
     return _loading[type];
@@ -51,13 +52,14 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
     const glow = A.RARITY_GLOW[rarity] || A.RARITY_GLOW.Common;
     inst.traverse((o) => {
       if (!o.isMesh || !o.material) return;
-      const mats = Array.isArray(o.material) ? o.material : [o.material];
-      o.material = mats.map((m) => {
+      const wasArray = Array.isArray(o.material);
+      const mats = wasArray ? o.material : [o.material];
+      const cloned = mats.map((m) => {
         const c = m.clone();
         if (c.emissive) { c.emissive = new THREE.Color(glow.color); c.emissiveIntensity = glow.intensity; }
         return c;
       });
-      if (!Array.isArray(o.material)) o.material = o.material[0];
+      o.material = wasArray ? cloned : cloned[0];
     });
     return inst;
   }

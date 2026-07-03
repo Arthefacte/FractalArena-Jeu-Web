@@ -16,15 +16,40 @@ function RelicViewer({ type, rarity, size }) {
     const key = new THREE.DirectionalLight(0xffffff, 1.4); key.position.set(2, 3, 4); scene.add(key);
     scene.add(new THREE.AmbientLight(0xffffff, 0.55));
 
-    let obj = null, raf = 0, dragging = false, lastX = 0, autoRot = true, disposed = false;
+    let obj = null, objIsPrimitive = false, raf = 0, dragging = false, lastX = 0, autoRot = true, disposed = false;
+    function geoFor(t) {
+      switch (t) {
+        case "ruby_shard":     return new THREE.OctahedronGeometry(1);
+        case "sapphire_plate": return new THREE.BoxGeometry(1.3, 1.3, 0.55);
+        case "quartz_lens":    return new THREE.IcosahedronGeometry(1);
+        case "amber_cell":     return new THREE.DodecahedronGeometry(1);
+        case "cobalt_spring":  return new THREE.TorusGeometry(0.75, 0.3, 14, 28);
+        case "onyx_membrane":  return new THREE.TetrahedronGeometry(1.25);
+        case "jade_circuit":   return new THREE.TorusKnotGeometry(0.6, 0.22, 80, 10);
+        case "prism_matrix":   return new THREE.ConeGeometry(1, 1.7, 6);
+        default:               return new THREE.OctahedronGeometry(1);
+      }
+    }
     function mountObj() {
       obj = window.FA_RELIC_MODELS.makeInstance(type, rarity);
+      objIsPrimitive = false;
+      obj.rotation.set(0.3, 0.6, 0);
+      scene.add(obj);
+    }
+    function mountPrimitive() {
+      const hex = { Common: 0x9CA3AF, Rare: 0x3B82F6, Epic: 0xB026FF, Legendary: 0xF7931A }[rarity] || 0x9CA3AF;
+      const mat = new THREE.MeshStandardMaterial({ color: hex, emissive: hex, emissiveIntensity: 0.4, metalness: 0.6, roughness: 0.25 });
+      obj = new THREE.Mesh(geoFor(type), mat);
+      objIsPrimitive = true;
       obj.rotation.set(0.3, 0.6, 0);
       scene.add(obj);
     }
     function ensure() {
-      if (window.FA_RELIC_MODELS.isReady(type)) { mountObj(); }
-      else { window.FA_RELIC_MODELS.loadModel(type).then(() => { if (!disposed && window.FA_RELIC_MODELS.isReady(type)) mountObj(); }); }
+      if (window.FA_RELIC_MODELS.isReady(type)) { mountObj(); return; }
+      window.FA_RELIC_MODELS.loadModel(type).then(() => {
+        if (disposed || obj) return;
+        if (window.FA_RELIC_MODELS.isReady(type)) mountObj(); else mountPrimitive();
+      });
     }
     ensure();
     function loop() {
@@ -52,6 +77,7 @@ function RelicViewer({ type, rarity, size }) {
         if (o.isMesh) {
           const mats = Array.isArray(o.material) ? o.material : [o.material];
           mats.forEach((m) => m && m.dispose());
+          if (objIsPrimitive && o.geometry) o.geometry.dispose(); // primitive = géométrie propre → à disposer (le modèle partage la sienne avec le cache)
         }
       });
       renderer.dispose();

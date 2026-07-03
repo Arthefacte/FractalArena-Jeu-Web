@@ -83,7 +83,7 @@ import * as THREE from "three";
       const url = _renderObject(obj, size);
       dispose();
       return url;                    // repli non caché
-    } catch (e) { ok = false; return null; }
+    } catch (e) { return null; }     // erreur ponctuelle → pastille pour cet appel, ne pas tuer le renderer partagé
   }
 
   if (window.FA_RELIC_MODELS) window.FA_RELIC_MODELS.preload();
