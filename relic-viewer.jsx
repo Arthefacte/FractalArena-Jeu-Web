@@ -1,0 +1,65 @@
+// relic-viewer.jsx — viewer 3D interactif d'une relique (rotation auto + drag), dispose GPU strict.
+function RelicViewer({ type, rarity, size }) {
+  const px = size || 220;
+  const ref = React.useRef(null);
+  React.useEffect(() => {
+    const THREE = window.__FA_THREE; // exposé par relic-viewer-boot (import module)
+    if (!THREE || !window.FA_RELIC_MODELS) return;
+    const mount = ref.current;
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(px, px);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    mount.appendChild(renderer.domElement);
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
+    camera.position.set(0, 0, 4.2);
+    const key = new THREE.DirectionalLight(0xffffff, 1.4); key.position.set(2, 3, 4); scene.add(key);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+
+    let obj = null, raf = 0, dragging = false, lastX = 0, autoRot = true, disposed = false;
+    function mountObj() {
+      obj = window.FA_RELIC_MODELS.makeInstance(type, rarity);
+      obj.rotation.set(0.3, 0.6, 0);
+      scene.add(obj);
+    }
+    function ensure() {
+      if (window.FA_RELIC_MODELS.isReady(type)) { mountObj(); }
+      else { window.FA_RELIC_MODELS.loadModel(type).then(() => { if (!disposed && window.FA_RELIC_MODELS.isReady(type)) mountObj(); }); }
+    }
+    ensure();
+    function loop() {
+      raf = requestAnimationFrame(loop);
+      if (obj && autoRot && !dragging) obj.rotation.y += 0.012;
+      renderer.render(scene, camera);
+    }
+    loop();
+
+    const el = renderer.domElement;
+    const onDown = (e) => { dragging = true; autoRot = false; lastX = e.clientX; };
+    const onMove = (e) => { if (dragging && obj) obj.rotation.y += (e.clientX - lastX) * 0.01, lastX = e.clientX; };
+    const onUp = () => { dragging = false; };
+    el.addEventListener("pointerdown", onDown);
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+
+    return () => {
+      disposed = true;
+      cancelAnimationFrame(raf);
+      el.removeEventListener("pointerdown", onDown);
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      if (obj) obj.traverse((o) => {
+        if (o.isMesh) {
+          const mats = Array.isArray(o.material) ? o.material : [o.material];
+          mats.forEach((m) => m && m.dispose());
+        }
+      });
+      renderer.dispose();
+      renderer.forceContextLoss();
+      if (el.parentNode) el.parentNode.removeChild(el);
+    };
+  }, [type, rarity, px]);
+
+  return <div ref={ref} style={{ width: px, height: px, margin: "0 auto" }} />;
+}
+window.RelicViewer = RelicViewer;
