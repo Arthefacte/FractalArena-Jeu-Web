@@ -153,12 +153,17 @@ function PostureSelect({ value, onChange, disabled }) {
   );
 }
 
-// Icône 3D des reliques (2.1) — vignette Three.js en cache, repli pastille si WebGL indispo
+// Icône 3D des reliques (2.1/2.2) — vignette Three.js (modèle .glb), repli primitive/pastille
 function RelicIcon({ type, rarity, size }) {
   const s = size || 28;
+  const [, force] = useState(0);
+  useEffect(() => {
+    const onReady = (e) => { if (!e.detail || e.detail.type === type) force((n) => n + 1); };
+    window.addEventListener("fa:relic-model-ready", onReady);
+    return () => window.removeEventListener("fa:relic-model-ready", onReady);
+  }, [type]);
   const url = (window.FA_RELIC_ICON && window.FA_RELIC_ICON.get(type, rarity, s * 2)) || null;
   if (url) return <img src={url} alt="" width={s} height={s} draggable="false" style={{ display: "inline-block", verticalAlign: "middle" }} />;
-  // repli pastille losange (WebGL indispo ou module pas encore chargé)
   const col = (window.FA_DATA && window.FA_DATA.RARITY_COLORS[rarity]) || "#9CA3AF";
   return <span style={{ width: Math.round(s * 0.45), height: Math.round(s * 0.45), display: "inline-block", background: col, clipPath: "polygon(50% 0,100% 50%,50% 100%,0 50%)" }} />;
 }
