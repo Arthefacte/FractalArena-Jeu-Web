@@ -1151,8 +1151,8 @@ function Header({ chipPop }) {
       </div>
       <div className="hdr-spacer" />
       <div className="flex gap8 center wrap" style={{ justifyContent: "flex-end" }}>
-        <span key={chipPop} className="chip pop"><span className="coin">◎</span> {fmt(g.liquid)}</span>
-        {g.locked > 0 && <span className="chip locked"><span className="ico">🔒</span> {fmt(g.locked)} {I18N.t("LOCKED_CHIP")}</span>}
+        <span key={chipPop} className="chip pop"><img src="assets/TOKEN.png" alt="" width="16" height="16" style={{ borderRadius: 3, border: "1px solid var(--line)" }} /> {fmt(g.liquid)}</span>
+        {g.locked > 0 && <span className="chip locked"><img src="assets/TOKEN.png" alt="" width="16" height="16" style={{ borderRadius: 3, border: "1px solid var(--line)" }} /> {fmt(g.locked)} {I18N.t("LOCKED_CHIP")}</span>}
         <div className="lang-switch">
           {[["FR", "FR"], ["EN", "EN"], ["ZH", "中文"]].map(([code, lbl]) => (
             <button key={code} className={g.lang === code ? "on" : ""} onClick={() => actions.setLang(code)}>{lbl}</button>
