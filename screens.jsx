@@ -339,12 +339,18 @@ function Wallet() {
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }} className="wallet-grid">
         <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 22 }}>
           <div className="eyebrow" style={{ color: "var(--gold)" }}>{I18N.t("WL_LIQUID")}</div>
-          <div className="mono" style={{ fontSize: 36, fontWeight: 700, color: "var(--gold)", margin: "6px 0" }}>{fmt(g.liquid)}</div>
+          <div className="mono" style={{ fontSize: 36, fontWeight: 700, color: "var(--gold)", margin: "6px 0", display: "flex", alignItems: "center", gap: 10 }}>
+            <img src="assets/TOKEN.png" alt="FRACTALARENA" width="30" height="30" style={{ borderRadius: 6, border: "1px solid var(--line)", flexShrink: 0 }} />
+            {fmt(g.liquid)}
+          </div>
           <div className="muted mono" style={{ fontSize: 12 }}>{I18N.t("WL_LIQUID_DESC")}</div>
         </div>
         <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 22 }}>
           <div className="eyebrow" style={{ color: "var(--fire)" }}>{I18N.t("WL_LOCKED")}</div>
-          <div className="mono" style={{ fontSize: 36, fontWeight: 700, color: "var(--fire)", margin: "6px 0" }}>{fmt(g.locked)}</div>
+          <div className="mono" style={{ fontSize: 36, fontWeight: 700, color: "var(--fire)", margin: "6px 0", display: "flex", alignItems: "center", gap: 10 }}>
+            <img src="assets/TOKEN.png" alt="FRACTALARENA" width="30" height="30" style={{ borderRadius: 6, border: "1px solid var(--line)", flexShrink: 0 }} />
+            {fmt(g.locked)}
+          </div>
           <div className="muted mono" style={{ fontSize: 12 }}>{I18N.t("WL_LOCKED_DESC")}</div>
         </div>
       </div>
