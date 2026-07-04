@@ -3,7 +3,7 @@
    ============================================================ */
 const { useState, useEffect, useMemo } = React;
 const D = window.FA_DATA, I18N = window.FA_I18N;
-const { useFA, cx, fmt, presetLabel, rarityLabel, Bar, StatGrid, CreatureCard, Modal, SectionHead, MiniStats } = window;
+const { useFA, cx, fmt, presetLabel, rarityLabel, Bar, StatGrid, CreatureCard, Modal, SectionHead, MiniStats, RelicIcon } = window;
 const API_URL = "https://fractal-arena-server-production.up.railway.app";
 
 /* ---------------- TEAM ---------------- */
@@ -59,10 +59,64 @@ function Team() {
       })()}
       <div className="grid-cards">
         {sorted.map((b) => (
-          <CreatureCard key={b.id} beast={b} selectable selected={g.selected.includes(b.id)} onClick={() => toggle(b)} showXp />
+          <div key={b.id} style={{ display: "flex", flexDirection: "column" }}>
+            <CreatureCard beast={b} selectable selected={g.selected.includes(b.id)} onClick={() => toggle(b)} showXp />
+            <RelicSlot beast={b} />
+          </div>
         ))}
       </div>
     </div>
+  );
+}
+
+function RelicSlot({ beast }) {
+  const { g, actions, toast } = useFA();
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const equipped = beast.relic_id ? (g.equipment || []).find((e) => e.id === beast.relic_id) : null;
+  const eff = equipped ? D.relicEffect(equipped.type, equipped.rarity) : null;
+  // reliques équipables = non portées, ou déjà sur CETTE bête
+  const available = (g.equipment || []).filter((inst) => {
+    const holder = g.roster.find((b) => b.relic_id === inst.id);
+    return !holder || holder.id === beast.id;
+  });
+  async function doEquip(relicId) {
+    if (busy) return; setBusy(true);
+    const r = await actions.relicEquip(beast.id, relicId);
+    setBusy(false); setOpen(false);
+    if (!r || !r.ok) toast((r && r.reason) || "error", "bad");
+  }
+  return (
+    <>
+      <div className="relic-slot mono" onClick={() => setOpen(true)}
+        style={{ cursor: "pointer", fontSize: 11, marginTop: 6, padding: "4px 8px",
+                 border: "1px solid var(--line)", borderRadius: 8, display: "flex", gap: 6, alignItems: "center" }}>
+        {equipped
+          ? (<><RelicIcon type={equipped.type} rarity={equipped.rarity} size={18} /><span style={{ color: D.RARITY_COLORS[equipped.rarity] }}>{I18N.t("RELIC_" + equipped.type.toUpperCase())}</span>
+              <span style={{ color: "var(--text-dim)" }}>{D.relicStatDelta(eff)}</span></>)
+          : (<span style={{ color: "var(--text-faint)" }}>◇ {I18N.t("RELIC_NONE")}</span>)}
+      </div>
+      {open && (
+        <Modal onClose={() => setOpen(false)}>
+          <div className="h2" style={{ fontSize: 14, marginBottom: 10 }}>{I18N.t("RELIC_EQUIP")} — {D.displayName(beast)}</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: "50vh", overflow: "auto" }}>
+            {available.length === 0 && <div className="mono muted" style={{ fontSize: 12 }}>{I18N.t("RELIC_INVENTORY")}: —</div>}
+            {available.map((inst) => {
+              const on = beast.relic_id === inst.id;
+              const e = D.relicEffect(inst.type, inst.rarity);
+              return (
+                <button key={inst.id} className={cx("btn sm", on && "on")} disabled={busy}
+                  onClick={() => doEquip(on ? null : inst.id)} style={{ justifyContent: "flex-start", gap: 8 }}>
+                  <RelicIcon type={inst.type} rarity={inst.rarity} size={18} /> {I18N.t("RELIC_" + inst.type.toUpperCase())} · {rarityLabel(inst.rarity)} · {D.relicStatDelta(e)} {on ? "✓" : ""}
+                </button>
+              );
+            })}
+          </div>
+          <button className="btn sm block" style={{ marginTop: 10 }} disabled={busy || !beast.relic_id}
+            onClick={() => doEquip(null)}>{I18N.t("RELIC_UNEQUIP")}</button>
+        </Modal>
+      )}
+    </>
   );
 }
 
@@ -70,7 +124,7 @@ function Team() {
 function Forge() {
   const { g, actions, toast } = useFA();
   const [tab, setTab] = useState("fusion");
-  const tabs = [{ k: "fusion", c: "var(--forge)" }, { k: "reroll", c: "var(--elec)" }, { k: "summon", c: "var(--fire)" }];
+  const tabs = [{ k: "fusion", c: "var(--forge)" }, { k: "reroll", c: "var(--elec)" }, { k: "summon", c: "var(--fire)" }, { k: "reliques", c: "var(--gold)" }];
   return (
     <div className="container">
       <SectionHead eyebrow={I18N.t("FG_SUB")} title={I18N.t("FG_TITLE")} />
@@ -84,6 +138,7 @@ function Forge() {
       {tab === "fusion" && <ForgeFusion />}
       {tab === "reroll" && <ForgeReroll />}
       {tab === "summon" && <ForgeSummon />}
+      {tab === "reliques" && <ForgeReliques />}
     </div>
   );
 }
@@ -284,6 +339,97 @@ function ForgeSummon() {
           <div className="mono" style={{ color: "var(--text-faint)", fontSize: 12, textAlign: "center" }}>⬡<br />{I18N.t("FG_SUMMON")}</div>
         )}
       </div>
+    </div>
+  );
+}
+
+function ForgeReliques() {
+  const { g, actions, toast } = useFA();
+  const [last, setLast] = useState(null);
+  const [rolling, setRolling] = useState(false);
+  const [detail, setDetail] = useState(null);
+  const RV = window.RelicViewer;
+  const cost = 8000;
+  const balOk = (g.liquid + g.locked) >= cost;
+  async function doSummon() {
+    if (!balOk || rolling) return;
+    setRolling(true); setLast(null);
+    const r = await actions.relicSummon();
+    setRolling(false);
+    if (!r.ok) { toast(r.reason, "bad"); return; }
+    setLast(r.relic);
+    toast(I18N.t("FG_SUMMON_OK", I18N.t("RELIC_" + r.relic.type.toUpperCase()), rarityLabel(r.relic.rarity)), "good");
+  }
+  const odds = [["Common", 70], ["Rare", 20], ["Epic", 8], ["Legendary", 2]];
+  return (
+    <div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 26, alignItems: "start" }} className="summon-grid">
+        <div>
+          <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 22 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {odds.map(([r, p]) => (
+                <div key={r} className="flex between center">
+                  <span className="flex center gap8"><span style={{ width: 10, height: 10, background: D.RARITY_COLORS[r], display: "inline-block", clipPath: "polygon(50% 0,100% 50%,50% 100%,0 50%)" }} /><span style={{ color: D.RARITY_COLORS[r], fontWeight: 600 }}>{rarityLabel(r)}</span></span>
+                  <span className="mono" style={{ color: "var(--text-dim)" }}>{p}%</span>
+                </div>
+              ))}
+            </div>
+            <div className="divider" />
+            <button className="btn btn-gold block lg" disabled={!balOk || rolling} onClick={doSummon}>{rolling ? "…" : I18N.t("FG_SUMMON_BTN", cost)}</button>
+          </div>
+        </div>
+        <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 18, minHeight: 300, display: "grid", placeItems: "center" }}>
+          {rolling ? (
+            <div className="mono" style={{ color: "var(--gold)", fontSize: 13, letterSpacing: 2 }}>FORGING…</div>
+          ) : last ? (
+            <div style={{ width: "100%", textAlign: "center" }}>
+              <div className="eyebrow" style={{ marginBottom: 10, color: D.RARITY_COLORS[last.rarity] }}>{I18N.t("RELIC_FORGED")}</div>
+              <div style={{ margin: "0 auto 12px", display: "flex", justifyContent: "center" }}>
+                {RV ? <RV type={last.type} rarity={last.rarity} size={200} /> : <RelicIcon type={last.type} rarity={last.rarity} size={48} />}
+              </div>
+              <div style={{ fontWeight: 700, fontSize: 16 }}>{I18N.t("RELIC_" + last.type.toUpperCase())}</div>
+              <div style={{ color: D.RARITY_COLORS[last.rarity], fontWeight: 600, marginTop: 4 }}>{rarityLabel(last.rarity)}</div>
+              <div className="mono muted" style={{ fontSize: 13, marginTop: 8 }}>{D.relicStatDelta(D.relicEffect(last.type, last.rarity))}</div>
+            </div>
+          ) : (
+            <div className="mono" style={{ color: "var(--text-faint)", fontSize: 12, textAlign: "center" }}>⬡<br />{I18N.t("RELIC_SUMMON")}</div>
+          )}
+        </div>
+      </div>
+      <div style={{ marginTop: 26 }}>
+        <div className="eyebrow" style={{ marginBottom: 10 }}>{I18N.t("RELIC_INVENTORY")}</div>
+        {(g.equipment || []).length === 0 ? (
+          <div className="mono muted" style={{ fontSize: 13 }}>{I18N.t("RELIC_NONE")}</div>
+        ) : (
+          <div className="grid-cards">
+            {(g.equipment || []).map((inst) => {
+              const holder = g.roster.find((b) => b.relic_id === inst.id);
+              const effect = D.relicEffect(inst.type, inst.rarity);
+              return (
+                <div key={inst.id} className="panel oct" onClick={() => setDetail(inst)} style={{ border: `1px solid ${D.RARITY_COLORS[inst.rarity]}`, padding: 16, display: "flex", flexDirection: "column", gap: 8, cursor: "pointer" }}>
+                  <div className="flex center gap8">
+                    <RelicIcon type={inst.type} rarity={inst.rarity} size={28} />
+                    <span style={{ fontWeight: 700 }}>{I18N.t("RELIC_" + inst.type.toUpperCase())}</span>
+                  </div>
+                  <span style={{ color: D.RARITY_COLORS[inst.rarity], fontWeight: 600, fontSize: 12 }}>{rarityLabel(inst.rarity)}</span>
+                  <span className="mono muted" style={{ fontSize: 12 }}>{D.relicStatDelta(effect)}</span>
+                  {holder && <span className="pill" style={{ color: "var(--gold)", fontSize: 11 }}>⚔ {D.displayName(holder)}</span>}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+      {detail && (
+        <Modal onClose={() => setDetail(null)} accent={D.RARITY_COLORS[detail.rarity]}>
+          <div style={{ textAlign: "center", padding: 8 }}>
+            {RV && <RV type={detail.type} rarity={detail.rarity} size={240} />}
+            <div style={{ fontWeight: 700, fontSize: 16, marginTop: 10 }}>{I18N.t("RELIC_" + detail.type.toUpperCase())}</div>
+            <div style={{ color: D.RARITY_COLORS[detail.rarity], fontWeight: 600, marginTop: 4 }}>{rarityLabel(detail.rarity)}</div>
+            <div className="mono muted" style={{ fontSize: 13, marginTop: 8 }}>{D.relicStatDelta(D.relicEffect(detail.type, detail.rarity))}</div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }

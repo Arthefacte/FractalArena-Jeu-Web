@@ -48,6 +48,7 @@ function serverToState(save, addr, s) {
     campaignFreeTs: Number(save.campaign_free_ts) || 0,
     session: { wins: save.session_wins ?? 0, losses: save.session_losses ?? 0, net: save.session_arte_net ?? 0 },
     roster,
+    equipment: Array.isArray(save.equipment) ? save.equipment : [],
     selected: s.selected.filter((id) => rosterIds.has(id)), // retire les ids absents du nouveau roster
     playerName: save.player_name || (addr.slice(0, 6) + "…" + addr.slice(-4)),
     playerTitle: save.player_title || "",
@@ -94,6 +95,7 @@ function freshState() {
     locked: 0,
     useLocked: false,
     roster: [],
+    equipment: [],
     selected: [],
     freeFights: D.ECON.FREE_FIGHTS_PER_DAY,
     freeResetTs: Date.now(),
@@ -750,6 +752,40 @@ function App() {
         const sv = await fetch(`${API_URL}/save/${s.wallet}`, svOpts());
         if (sv.ok) { const { save } = await sv.json(); setG((st) => serverToState(save, s.wallet, st)); }
         return { ok: true, beast: data.beast };
+      } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
+    },
+
+    async relicSummon() {
+      const s = gRef.current;
+      if (!s.wallet || !s.authToken) return { ok: false, reason: "Wallet requis" };
+      const cost = 8000; // RELIC_SUMMON_COST serveur
+      if (s.liquid + s.locked < cost) return { ok: false, reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, cost) };
+      try {
+        const resp = await fetch(`${API_URL}/forge/relic-summon`, {
+          method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
+          body: JSON.stringify({ wallet: s.wallet }),
+        });
+        const data = await resp.json();
+        if (data.status === "insufficient_balance") return { ok: false, reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, cost) };
+        if (data.status !== "ok") return { ok: false, reason: data.error || "Erreur serveur" };
+        const sv = await fetch(`${API_URL}/save/${s.wallet}`, svOpts());
+        if (sv.ok) { const { save } = await sv.json(); setG((st) => serverToState(save, s.wallet, st)); }
+        return { ok: true, relic: data.relic };
+      } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
+    },
+
+    async relicEquip(beastId, relicId) {
+      const s = gRef.current;
+      if (!s.wallet || !s.authToken) return { ok: false, reason: "Wallet requis" };
+      try {
+        const resp = await fetch(`${API_URL}/forge/relic-equip`, {
+          method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
+          body: JSON.stringify({ wallet: s.wallet, beast_id: beastId, relic_id: relicId }),
+        });
+        const data = await resp.json();
+        if (data.status !== "ok") return { ok: false, reason: data.error || "Erreur serveur" };
+        if (Array.isArray(data.creatures)) setG((st) => ({ ...st, roster: data.creatures }));
+        return { ok: true };
       } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
     },
 
