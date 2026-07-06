@@ -1,10 +1,14 @@
 // relic-models.js — chargement + cache + instances teintées des modèles de reliques.
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 
 (function () {
   const A = window.FA_RELIC_ASSETS;
   const loader = new GLTFLoader();
+  // Les .glb des reliques sont compressés en EXT_meshopt_compression (gltf-transform) :
+  // sans ce décodeur, GLTFLoader échoue au chargement → repli primitive. Requis.
+  loader.setMeshoptDecoder(MeshoptDecoder);
   const _loaded = {};   // type -> THREE.Group (normalisé, matériaux d'origine)
   const _loading = {};  // type -> Promise
   const _failed = {};   // type -> true (échec mémorisé, pas de re-fetch)
