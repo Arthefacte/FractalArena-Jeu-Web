@@ -10,8 +10,10 @@
        SRI, cf. scripts en bas) ; Three.js désormais AUTO-HÉBERGÉ (vendor/, plus d'unpkg pour lui).
        connect-src verrouillé sur l'API Railway (seul hôte appelé) : même une lib CDN compromise
        ne pourrait pas exfiltrer le token sessionStorage vers un tiers. blob:/data: pour les
-       textures GLB et les vignettes canvas des reliques. -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; media-src 'self'; connect-src 'self' https://fractal-arena-server-production.up.railway.app blob: data:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'" />
+       textures GLB et les vignettes canvas des reliques. Google Fonts (@import styles.css) exige
+       fonts.googleapis.com en style-src + fonts.gstatic.com en font-src ; l'art des totems
+       upgradés est servi depuis totems.fractalarena.com (img-src). -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https://totems.fractalarena.com; font-src 'self' data: https://fonts.gstatic.com; media-src 'self'; connect-src 'self' https://fractal-arena-server-production.up.railway.app blob: data:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'" />
   <title>Fractal Arena</title>
   <link rel="icon" type="image/png" href="assets/favicon.png?v=1" />
   <link rel="stylesheet" href="styles.css?v=61" />
