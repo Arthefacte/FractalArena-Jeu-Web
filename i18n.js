@@ -610,6 +610,13 @@
     TAL_blk_rempart_D:      { FR: "La première fois qu'un coup serait fatal : survit avec 1 PV (une fois par combat).", EN: "The first time a hit would be fatal: survives at 1 HP (once per battle).", ZH: "首次受到致命一击时：以 1 点生命存活（每场一次）。" },
     TAL_blk_forteresse:     { FR: "Forteresse", EN: "Fortress", ZH: "堡垒" },
     TAL_blk_forteresse_D:   { FR: "Sous %s %% PV : renvoie en plus %s %% des dégâts subis à toute l'équipe adverse.", EN: "Below %s%% HP: additionally reflects %s%% of damage taken to the whole enemy team.", ZH: "生命低于 %s%% 时：额外将受到伤害的 %s%% 反弹给敌方全队。" },
+
+    // ---- Forge : verrous de reroll ----
+    FG_LOCK_HINT:  { FR: "Verrouille jusqu'à 2 stats : elles ne bougeront pas (surcoût ×1.5 par verrou).", EN: "Lock up to 2 stats: they won't change (×1.5 cost per lock).", ZH: "最多锁定 2 项属性：锁定后不会改变（每个锁定费用 ×1.5）。" },
+    FG_LOCK_MAX:   { FR: "2 verrous maximum", EN: "2 locks maximum", ZH: "最多锁定 2 项" },
+    FG_LOCK_TAG:   { FR: "verrouillée", EN: "locked", ZH: "已锁定" },
+    FG_ERR_LOCKS:  { FR: "Verrous invalides", EN: "Invalid locks", ZH: "锁定无效" },
+    FG_ERR_BUDGET: { FR: "Stats trop concentrées dans les verrous — libère une stat", EN: "Too much budget locked — free up a stat", ZH: "锁定的属性占比过高——请解锁一项" },
   };
 
   let lang = "FR";
