@@ -336,7 +336,7 @@ function ForgeReroll() {
     setRerollBusy(true);
     const r = await actions.reroll(sel, locks);
     setRerollBusy(false);
-    if (!r.ok) { toast(r.reason, "bad"); setPreview(null); return; }
+    if (!r.ok) { toast(r.reason, "bad"); return; }
     setPreview(r.preview);
   }
   async function onKeep() {
@@ -369,7 +369,7 @@ function ForgeReroll() {
                   setLocks(next);
                 }}
                 style={{ cursor: "pointer", userSelect: "none", border: on ? "1px solid var(--gold)" : undefined, color: on ? "var(--gold)" : undefined }}>
-                {on ? "🔒" : "🔓"} {label} {D.eff(beast, key.replace("base_", ""))}
+                {on ? "🔒" : "🔓"} {label} {beast[key]}
               </span>
             );
           })}
