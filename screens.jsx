@@ -62,6 +62,7 @@ function Team() {
           <div key={b.id} style={{ display: "flex", flexDirection: "column" }}>
             <CreatureCard beast={b} selectable selected={g.selected.includes(b.id)} onClick={() => toggle(b)} showXp />
             <RelicSlot beast={b} />
+            <TalentSlot beast={b} />
           </div>
         ))}
       </div>
@@ -114,6 +115,76 @@ function RelicSlot({ beast }) {
           </div>
           <button className="btn sm block" style={{ marginTop: 10 }} disabled={busy || !beast.relic_id}
             onClick={() => doEquip(null)}>{I18N.t("RELIC_UNEQUIP")}</button>
+        </Modal>
+      )}
+    </>
+  );
+}
+
+/* --- Bande talents sous la carte : 3 paliers L25/50/75, 1 choix parmi 2 --- */
+function TalentSlot({ beast }) {
+  const { actions, toast } = useFA();
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const TAL = window.FA_TALENTS, TUI = window.FA_TALENTS_UI;
+  const slots = TUI.slotState(beast);
+  const nUnlocked = slots.filter((sl) => sl.unlocked).length;
+  const nChosen = slots.filter((sl) => sl.unlocked && sl.chosen).length;
+
+  const pick = async (tierKey, talentId) => {
+    if (busy) return;
+    setBusy(true);
+    const r = await actions.chooseTalent(beast.id, Number(tierKey), talentId);
+    setBusy(false);
+    if (!r.ok) { toast(r.reason, "bad"); return; }
+    toast(I18N.t("TAL_TITLE") + " ✓", "good");
+  };
+
+  return (
+    <>
+      <div className="relic-slot mono" onClick={() => setOpen(true)} title={I18N.t("TAL_TITLE")}
+        style={{ cursor: "pointer", fontSize: 11, marginTop: 6, padding: "4px 8px",
+                 border: "1px solid var(--line)", borderRadius: 8, display: "flex", gap: 6, alignItems: "center" }}>
+        {nUnlocked === 0
+          ? <span className="muted">✦ {I18N.t("TAL_NONE_UNLOCKED")}</span>
+          : <span>✦ {I18N.t("TAL_TITLE")} {nChosen}/{nUnlocked}</span>}
+      </div>
+      {open && (
+        <Modal onClose={() => setOpen(false)} accent={D.RARITY_COLORS[beast.rarity]} wide>
+          <h3>{I18N.t("TAL_TITLE")} — {D.displayName(beast)}</h3>
+          {slots.map(({ key, unlocked, chosen }) => {
+            const { cost, freeRespec } = TUI.chooseCost(beast, key);
+            return (
+              <div key={key} className="panel" style={{ marginBottom: 8, opacity: unlocked ? 1 : 0.55 }}>
+                <div className="flex between center">
+                  <b>{I18N.t("TAL_TIER", key)}</b>
+                  {!unlocked && <span className="muted">{I18N.t("TAL_TIER_LOCKED", key)}</span>}
+                  {unlocked && !chosen && <span className="muted">{I18N.t("TAL_PICK_FREE")}</span>}
+                  {unlocked && chosen && (freeRespec
+                    ? <span className="muted">{I18N.t("TAL_RESPEC_FREE")}</span>
+                    : <span className="muted">{I18N.t("TAL_RESPEC_COST", cost)}</span>)}
+                </div>
+                {unlocked && (
+                  <div className="flex wrap" style={{ gap: 6, marginTop: 6 }}>
+                    {TAL.talentsFor(beast.type, Number(key)).map((t) => {
+                      const on = chosen === t.id;
+                      return (
+                        <button key={t.id} disabled={busy || on}
+                                className={cx("btn sm", on && "on")}
+                                onClick={() => pick(key, t.id)}
+                                style={{ flex: 1, minWidth: 150, textAlign: "left" }}>
+                          <b>{I18N.t("TAL_" + t.id)}</b>{on ? " ✓" : ""}
+                          <div className="muted" style={{ fontSize: 11, marginTop: 2 }}>
+                            {TUI.talentDesc(t, beast.rarity, I18N.t)}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </Modal>
       )}
     </>
