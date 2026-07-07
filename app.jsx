@@ -789,6 +789,33 @@ function App() {
       } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
     },
 
+    // Talents : choix / respec d'un talent de palier. Le serveur renvoie creatures
+    // directement ; un respec payant change aussi le solde → re-fetch /save complet.
+    async chooseTalent(beastId, tier, talentId) {
+      const s = gRef.current;
+      if (!s.wallet || !s.authToken) return { ok: false, reason: "Wallet requis" };
+      try {
+        const resp = await fetch(`${API_URL}/talents/choose`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
+          body: JSON.stringify({ beast_id: beastId, tier: tier | 0, talent_id: talentId }),
+        });
+        const data = await resp.json();
+        if (data.status !== "ok") {
+          const map = { palier_verrouille: "TAL_ERR_LOCKED", deja_choisi: "TAL_ERR_ALREADY", solde_insuffisant: "TAL_ERR_BALANCE" };
+          return { ok: false, reason: map[data.error] ? I18N.t(map[data.error]) : (data.error || "Erreur serveur") };
+        }
+        if (Array.isArray(data.creatures)) setG((st) => ({ ...st, roster: data.creatures }));
+        if (data.cost > 0) {
+          const sv = await fetch(`${API_URL}/save/${s.wallet}`, svOpts());
+          if (sv.ok) { const { save } = await sv.json(); setG((st) => serverToState(save, s.wallet, st)); }
+        }
+        return { ok: true, cost: data.cost };
+      } catch (e) {
+        return { ok: false, reason: "Erreur réseau" };
+      }
+    },
+
     async callChat(messages) {
       const s = gRef.current;
       if (!s.wallet || !s.authToken) return { ok: false, reason: "Wallet requis" };
