@@ -803,12 +803,16 @@ function App() {
         const data = await resp.json();
         if (data.status !== "ok") {
           const map = { palier_verrouille: "TAL_ERR_LOCKED", deja_choisi: "TAL_ERR_ALREADY", solde_insuffisant: "TAL_ERR_BALANCE" };
-          return { ok: false, reason: map[data.error] ? I18N.t(map[data.error]) : (data.error || "Erreur serveur") };
+          return { ok: false, reason: map[data.error] ? I18N.t(map[data.error]) : "Erreur serveur" };
         }
         if (Array.isArray(data.creatures)) setG((st) => ({ ...st, roster: data.creatures }));
         if (data.cost > 0) {
-          const sv = await fetch(`${API_URL}/save/${s.wallet}`, svOpts());
-          if (sv.ok) { const { save } = await sv.json(); setG((st) => serverToState(save, s.wallet, st)); }
+          // Resync best-effort : le choix est déjà commité serveur — un échec ici
+          // ne doit pas se présenter comme un échec du pick (solde resynchronisé plus tard).
+          try {
+            const sv = await fetch(`${API_URL}/save/${s.wallet}`, svOpts());
+            if (sv.ok) { const { save } = await sv.json(); setG((st) => serverToState(save, s.wallet, st)); }
+          } catch (e) { /* solde momentanément non resynchronisé */ }
         }
         return { ok: true, cost: data.cost };
       } catch (e) {
