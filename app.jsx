@@ -686,7 +686,7 @@ function App() {
       } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
     },
 
-    async reroll(id) {
+    async reroll(id, locks = []) {
       const s = gRef.current;
       const beast = s.roster.find((b) => b.id === id);
       if (!beast) return { ok: false, reason: I18N.t("FG_PICK1") };
@@ -694,15 +694,17 @@ function App() {
       try {
         const resp = await fetch(`${API_URL}/forge/reroll`, {
           method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
-          body: JSON.stringify({ wallet: s.wallet, beast_id: id }),
+          body: JSON.stringify({ wallet: s.wallet, beast_id: id, locks }),
         });
         const data = await resp.json();
         if (data.status === "insufficient_balance") return { ok: false, reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, data.cost || 0) };
+        if (data.error === "locks_invalide") return { ok: false, reason: I18N.t("FG_ERR_LOCKS") };
+        if (data.error === "budget_insuffisant") return { ok: false, reason: I18N.t("FG_ERR_BUDGET") };
         if (data.status !== "ok") return { ok: false, reason: data.error || "Erreur serveur" };
         // Mode pending : rien n'est appliqué ; on resynchronise le solde (débité) et on renvoie l'aperçu.
         const sv = await fetch(`${API_URL}/save/${s.wallet}`, svOpts());
         if (sv.ok) { const { save } = await sv.json(); setG((st) => serverToState(save, s.wallet, st)); }
-        return { ok: true, preview: { old_stats: data.old_stats, new_stats: data.new_stats, cost: data.cost, next_reroll_cost: data.next_reroll_cost } };
+        return { ok: true, preview: { old_stats: data.old_stats, new_stats: data.new_stats, cost: data.cost, next_reroll_cost: data.next_reroll_cost, locks: Array.isArray(data.locks) ? data.locks : [] } };
       } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
     },
     async rerollConfirm(id) {

@@ -280,7 +280,7 @@ function ForgeFusion() {
 function RerollPreviewModal({ preview, busy, onValidate, onAgain, onKeep }) {
   const { Modal } = window;
   const F = window.FA_FORGE_UI;
-  const rows = F.rerollDiff(preview.old_stats, preview.new_stats);
+  const rows = F.rerollDiff(preview.old_stats, preview.new_stats, preview.locks);
   const color = (dir) => dir === "up" ? "var(--success)" : dir === "down" ? "var(--alert)" : "var(--text-dim)";
   const arrow = (dir) => dir === "up" ? "▲" : dir === "down" ? "▼" : "=";
   return (
@@ -291,15 +291,15 @@ function RerollPreviewModal({ preview, busy, onValidate, onAgain, onKeep }) {
         <span className="mono muted" style={{ fontSize: 11, textAlign: "right" }}>{I18N.t("REROLL_CURRENT")}</span>
         <span className="mono muted" style={{ fontSize: 11, textAlign: "right" }}>{I18N.t("REROLL_PROPOSED")}</span>
         {rows.map((r) => [
-          <span key={r.key + "l"} className="mono" style={{ fontSize: 13 }}>{r.label}</span>,
+          <span key={r.key + "l"} className="mono" style={{ fontSize: 13, opacity: r.locked ? 0.6 : 1 }}>{r.locked ? "🔒 " : ""}{r.label}</span>,
           <span key={r.key + "f"} className="mono" style={{ fontSize: 13, textAlign: "right", color: "var(--text-dim)" }}>{r.from}</span>,
-          <span key={r.key + "t"} className="mono" style={{ fontSize: 13, textAlign: "right", color: color(r.dir) }}>{r.to} {arrow(r.dir)}</span>,
+          <span key={r.key + "t"} className="mono" style={{ fontSize: 13, textAlign: "right", color: r.locked ? "var(--text-dim)" : color(r.dir), opacity: r.locked ? 0.6 : 1 }}>{r.to} {r.locked ? "=" : arrow(r.dir)}</span>,
         ])}
       </div>
       <div className="mono muted" style={{ fontSize: 11, marginBottom: 14 }}>{I18N.t("REROLL_REFUND_HINT")}</div>
       <div className="flex gap8" style={{ flexWrap: "wrap" }}>
         <button className="btn btn-success" disabled={busy} onClick={onValidate}>{I18N.t("REROLL_VALIDATE")}</button>
-        <button className="btn btn-elec" disabled={busy} onClick={onAgain}>{I18N.t("REROLL_AGAIN", preview.next_reroll_cost || 0)}</button>
+        <button className="btn btn-elec" disabled={busy} onClick={onAgain}>{I18N.t("REROLL_AGAIN", F.withLockCost(preview.next_reroll_cost || 0, (preview.locks || []).length))}</button>
         <button className="btn" disabled={busy} onClick={onKeep}>{I18N.t("REROLL_KEEP_OLD")}</button>
       </div>
     </Modal>
@@ -311,13 +311,16 @@ function ForgeReroll() {
   const [sel, setSel] = useState(null);
   const [rerollBusy, setRerollBusy] = useState(false);
   const [preview, setPreview] = useState(null);
+  const [locks, setLocks] = useState([]);
   const beast = sel ? g.roster.find((b) => b.id === sel) : null;
-  const cost = beast ? Math.round(D.FORGE.REROLL_BASE[beast.rarity] * (1 + 0.5 * beast.reroll_count)) : 0;
+  const F = window.FA_FORGE_UI;
+  const baseCost = beast ? Math.round(D.FORGE.REROLL_BASE[beast.rarity] * (1 + 0.5 * beast.reroll_count)) : 0;
+  const cost = F.withLockCost(baseCost, locks.length);
   const balOk = (g.liquid + g.locked) >= cost;
   async function doReroll() {
     if (rerollBusy) return;
     setRerollBusy(true);
-    const r = await actions.reroll(sel);
+    const r = await actions.reroll(sel, locks);
     setRerollBusy(false);
     if (!r.ok) { toast(r.reason, "bad"); return; }
     setPreview(r.preview);
@@ -331,9 +334,9 @@ function ForgeReroll() {
   }
   async function onAgain() {
     setRerollBusy(true);
-    const r = await actions.reroll(sel);
+    const r = await actions.reroll(sel, locks);
     setRerollBusy(false);
-    if (!r.ok) { toast(r.reason, "bad"); setPreview(null); return; }
+    if (!r.ok) { toast(r.reason, "bad"); return; }
     setPreview(r.preview);
   }
   async function onKeep() {
@@ -354,10 +357,28 @@ function ForgeReroll() {
           </div>
         )}
       </div>
+      {beast && (
+        <div className="flex wrap center" style={{ gap: 6, marginBottom: 10 }}>
+          <span className="mono muted" style={{ fontSize: 11 }}>{I18N.t("FG_LOCK_HINT")}</span>
+          {F.LOCKABLE.map(({ stat, key, label }) => {
+            const on = locks.includes(stat);
+            return (
+              <span key={stat} className="pill" onClick={() => {
+                  const next = F.toggleLock(locks, stat);
+                  if (next === null) { toast(I18N.t("FG_LOCK_MAX"), "bad"); return; }
+                  setLocks(next);
+                }}
+                style={{ cursor: "pointer", userSelect: "none", border: on ? "1px solid var(--gold)" : undefined, color: on ? "var(--gold)" : undefined }}>
+                {on ? "🔒" : "🔓"} {label} {beast[key]}
+              </span>
+            );
+          })}
+        </div>
+      )}
       {!balOk && beast && <div className="mono" style={{ color: "var(--alert)", fontSize: 12, marginBottom: 10 }}>{I18N.t("INSUFFICIENT", g.liquid + g.locked, cost)}</div>}
       <div className="grid-cards">
         {g.roster.slice().sort((a, b) => D.RARITY_ORDER[b.rarity] - D.RARITY_ORDER[a.rarity]).map((b) => (
-          <CreatureCard key={b.id} beast={b} selectable selected={sel === b.id} onClick={() => setSel(sel === b.id ? null : b.id)} />
+          <CreatureCard key={b.id} beast={b} selectable selected={sel === b.id} onClick={() => { setSel(sel === b.id ? null : b.id); setLocks([]); }} />
         ))}
       </div>
       {preview && <RerollPreviewModal preview={preview} busy={rerollBusy} onValidate={onValidate} onAgain={onAgain} onKeep={onKeep} />}
