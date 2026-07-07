@@ -142,9 +142,11 @@ function TalentSlot({ beast }) {
 
   return (
     <>
-      <div className="relic-slot" onClick={() => setOpen(true)} title={I18N.t("TAL_TITLE")}>
+      <div className="relic-slot mono" onClick={() => setOpen(true)} title={I18N.t("TAL_TITLE")}
+        style={{ cursor: "pointer", fontSize: 11, marginTop: 6, padding: "4px 8px",
+                 border: "1px solid var(--line)", borderRadius: 8, display: "flex", gap: 6, alignItems: "center" }}>
         {nUnlocked === 0
-          ? <span className="dim">✦ {I18N.t("TAL_NONE_UNLOCKED")}</span>
+          ? <span className="muted">✦ {I18N.t("TAL_NONE_UNLOCKED")}</span>
           : <span>✦ {I18N.t("TAL_TITLE")} {nChosen}/{nUnlocked}</span>}
       </div>
       {open && (
@@ -156,11 +158,11 @@ function TalentSlot({ beast }) {
               <div key={key} className="panel" style={{ marginBottom: 8, opacity: unlocked ? 1 : 0.55 }}>
                 <div className="flex between center">
                   <b>{I18N.t("TAL_TIER", key)}</b>
-                  {!unlocked && <span className="dim">{I18N.t("TAL_TIER_LOCKED", key)}</span>}
-                  {unlocked && !chosen && <span className="dim">{I18N.t("TAL_PICK_FREE")}</span>}
+                  {!unlocked && <span className="muted">{I18N.t("TAL_TIER_LOCKED", key)}</span>}
+                  {unlocked && !chosen && <span className="muted">{I18N.t("TAL_PICK_FREE")}</span>}
                   {unlocked && chosen && (freeRespec
-                    ? <span className="dim">{I18N.t("TAL_RESPEC_FREE")}</span>
-                    : <span className="dim">{I18N.t("TAL_RESPEC_COST", cost)}</span>)}
+                    ? <span className="muted">{I18N.t("TAL_RESPEC_FREE")}</span>
+                    : <span className="muted">{I18N.t("TAL_RESPEC_COST", cost)}</span>)}
                 </div>
                 {unlocked && (
                   <div className="flex wrap" style={{ gap: 6, marginTop: 6 }}>
@@ -172,7 +174,7 @@ function TalentSlot({ beast }) {
                                 onClick={() => pick(key, t.id)}
                                 style={{ flex: 1, minWidth: 150, textAlign: "left" }}>
                           <b>{I18N.t("TAL_" + t.id)}</b>{on ? " ✓" : ""}
-                          <div className="dim" style={{ fontSize: 11, marginTop: 2 }}>
+                          <div className="muted" style={{ fontSize: 11, marginTop: 2 }}>
                             {TUI.talentDesc(t, beast.rarity, I18N.t)}
                           </div>
                         </button>
