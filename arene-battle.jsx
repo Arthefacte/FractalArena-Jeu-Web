@@ -71,7 +71,7 @@ function AreneBattle({ events, p1Team, p2Team, won, delta, onClose, opponentName
   };
 
   return (
-    <div className="modal-backdrop" onClick={done ? onClose : undefined}>
+    <div className="overlay" onClick={done ? onClose : undefined}>
       <div className="modal" style={{ maxWidth: 520 }} onClick={(e) => e.stopPropagation()}>
         <h3 style={{ textAlign: "center", margin: "4px 0 10px" }}>{I18N.t("AR2_BATTLE")}</h3>
         <div style={{ textAlign: "center", marginBottom: 4 }}><AB_PostureBadge posture={p1Posture} /></div>
