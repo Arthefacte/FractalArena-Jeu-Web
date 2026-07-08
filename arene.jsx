@@ -63,7 +63,8 @@ function Arene() {
       const delta = (prev != null && typeof r.rating === "number") ? r.rating - prev : null;
       const myTeam = (attackers || g.selected).map((id) => g.roster.find((b) => b.id === id)).filter(Boolean);
       setResult({ ...r, delta, p1Team: myTeam, p2Team: r.enemy || [], p1Posture: myPosture || "equilibre", p2Posture: enemyPosture || "equilibre" });
-      actions.pvpRefresh();
+      // Pas de refresh PvP ici (différé au onClose du rejeu) : rafraîchir maintenant
+      // mettrait à jour le pill ELO du header et le ladder pendant le combat → résultat spoilé.
     } finally {
       attackLock.current = false;
       setBusy(false);
@@ -290,7 +291,7 @@ function Arene() {
         opponentName={result.opponent_name}
         p1Posture={result.p1Posture}
         p2Posture={result.p2Posture}
-        onClose={() => setResult(null)} />}
+        onClose={() => { setResult(null); actions.pvpRefresh(); }} />}
     </div>
   );
 }
