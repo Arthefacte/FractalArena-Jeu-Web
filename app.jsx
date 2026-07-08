@@ -4,7 +4,7 @@
 const { useState, useEffect, useRef, useMemo } = React;
 const D = window.FA_DATA, I18N = window.FA_I18N;
 const { FA_Ctx, useFA, cx, fmt, Coin, Bar } = window;
-const { Team, Fosse, Arene, Forge, Wallet, Boosts, Perso, Options, ChatFab, RoomFab, Leaderboard, Quests, Campaign, LoginGate, TutorialGate, Link, Cinematique } = window;
+const { Team, Fosse, Arene, Forge, Wallet, Boosts, Perso, Options, ChatFab, RoomFab, Leaderboard, Quests, Campaign, Tour, LoginGate, TutorialGate, Link, Cinematique } = window;
 const SAVE_KEY = "fractal_arena_v1";
 // Le bearer authToken vit en sessionStorage (et JAMAIS dans le blob localStorage) : il survit
 // au rechargement de l'onglet (pas de re-signature à chaque F5) mais est effacé à la fermeture
@@ -1060,6 +1060,90 @@ function App() {
       } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
     },
 
+    // ---- Tour infinie (serveur-autoritaire, routes /tower/*) ----
+    // reason = code serveur brut ("run_actif", "solde_insuffisant", "pas_de_run",
+    // "betes_invalides") ou "auth"/"Erreur réseau" — mappé en i18n par tour.jsx.
+    async towerState() {
+      const s = gRef.current;
+      if (!s.wallet || !s.authToken) return { ok: false, reason: "auth" };
+      try {
+        const resp = await fetch(`${API_URL}/tower/state`, { headers: { "Authorization": `Bearer ${s.authToken}` } });
+        const data = await resp.json();
+        if (!resp.ok) return { ok: false, reason: data.error || "Erreur serveur" };
+        return { ok: true, weekKey: data.week_key, weekEndsAt: data.week_ends_at, run: data.run, score: data.score };
+      } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
+    },
+
+    async towerStart() {
+      const s = gRef.current;
+      if (!s.wallet || !s.authToken) return { ok: false, reason: "auth" };
+      try {
+        const resp = await fetch(`${API_URL}/tower/start`, {
+          method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` }, body: "{}",
+        });
+        const data = await resp.json();
+        if (!resp.ok || data.status !== "ok") return { ok: false, reason: data.error || "Erreur serveur" };
+        if ((data.cost || 0) > 0) {
+          // Miroir EXACT de deductBalance serveur : liquide d'abord, puis verrouillé.
+          setG((st) => {
+            const dl = Math.min(data.cost, st.liquid);
+            return { ...st, liquid: st.liquid - dl, locked: st.locked - (data.cost - dl) };
+          });
+        }
+        return { ok: true, freeUsed: !!data.free_used, cost: data.cost || 0, run: data.run };
+      } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
+    },
+
+    async towerFight(selectedIds, posture) {
+      const s = gRef.current;
+      if (!s.wallet || !s.authToken) return { ok: false, reason: "auth" };
+      try {
+        const resp = await fetch(`${API_URL}/tower/fight`, {
+          method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
+          body: JSON.stringify({ beast_ids: selectedIds, posture: posture || "equilibre" }),
+        });
+        const data = await resp.json();
+        if (!resp.ok || data.status !== "ok") return { ok: false, reason: data.error || "Erreur serveur" };
+        const rw = data.rewards || { fa: 0, silver: 0, gold: 0, tiers: [] };
+        if ((rw.fa || 0) > 0 || (rw.silver || 0) > 0 || (rw.gold || 0) > 0) {
+          // Paliers crédités serveur en FA LIQUIDES (contrairement à la campagne) + tickets.
+          setG((st) => ({
+            ...st,
+            liquid: st.liquid + (rw.fa || 0),
+            ticketsSilver: st.ticketsSilver + (rw.silver || 0),
+            ticketsGold: st.ticketsGold + (rw.gold || 0),
+          }));
+        }
+        return {
+          ok: true, won: !!data.won, floor: data.floor, bestFloor: data.best_floor || 0,
+          rewards: rw, runOver: !!data.run_over, rosterState: data.roster_state || {},
+          events: data.events || [], enemy: data.enemy || [],
+        };
+      } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
+    },
+
+    async towerAbandon() {
+      const s = gRef.current;
+      if (!s.wallet || !s.authToken) return { ok: false, reason: "auth" };
+      try {
+        const resp = await fetch(`${API_URL}/tower/abandon`, {
+          method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` }, body: "{}",
+        });
+        const data = await resp.json();
+        if (!resp.ok || data.status !== "ok") return { ok: false, reason: data.error || "Erreur serveur" };
+        return { ok: true };
+      } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
+    },
+
+    async towerLeaderboard() {
+      try {
+        const resp = await fetch(`${API_URL}/tower/leaderboard`);
+        const data = await resp.json();
+        if (!resp.ok) return { ok: false };
+        return { ok: true, weekKey: data.week_key, weekEndsAt: data.week_ends_at, top: data.top || [] };
+      } catch (e) { return { ok: false }; }
+    },
+
     async pvpRefresh() {
       const w = gRef.current.wallet; if (!w) return;
       const authHeaders = () => ({ "Authorization": "Bearer " + gRef.current.authToken });
@@ -1157,7 +1241,7 @@ function App() {
     );
   }
 
-  const VIEWS = { team: Team, fosse: Fosse, arene: Arene, campaign: Campaign, quests: Quests, forge: Forge, wallet: Wallet, boosts: Boosts, perso: Perso, leaderboard: Leaderboard, options: Options, lien: Link };
+  const VIEWS = { team: Team, fosse: Fosse, arene: Arene, campaign: Campaign, tour: Tour, quests: Quests, forge: Forge, wallet: Wallet, boosts: Boosts, perso: Perso, leaderboard: Leaderboard, options: Options, lien: Link };
 
   const View = VIEWS[g.view] || Team;
 
@@ -1241,7 +1325,7 @@ function Header({ chipPop }) {
 function Nav() {
   const { g, actions } = useFA();
   const tabs = [
-    ["team", "NAV_TEAM"], ["fosse", "NAV_FOSSE"], ["arene", "NAV_ARENE"], ["campaign", "NAV_CAMPAIGN"], ["quests", "NAV_QUESTS"], ["forge", "NAV_FORGE"],
+    ["team", "NAV_TEAM"], ["fosse", "NAV_FOSSE"], ["arene", "NAV_ARENE"], ["campaign", "NAV_CAMPAIGN"], ["tour", "NAV_TOUR"], ["quests", "NAV_QUESTS"], ["forge", "NAV_FORGE"],
     ["wallet", "NAV_WALLET"], ["boosts", "NAV_BOOSTS"], ["perso", "NAV_PERSO"], ["leaderboard", "NAV_LEADERBOARD"], ["options", "NAV_OPTIONS"],
   ];
   return (
