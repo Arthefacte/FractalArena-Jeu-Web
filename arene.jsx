@@ -188,6 +188,7 @@ function Arene() {
             ))}
           </div>
           {pvp.season && <div className="mono" style={{ fontSize: 11, color: "var(--text-dim)", marginTop: 12 }}>{I18N.t("AR2_PRIZE", pvp.season.dotation || 0)}</div>}
+          {pvp.season && <div className="mono" style={{ fontSize: 11, color: "var(--text-dim)", marginTop: 2 }}>{I18N.t("AR2_PRIZE_FLAT")}</div>}
         </div>
       </div>
       )}
@@ -303,16 +304,20 @@ function PrizeModal({ prizes, onClaim }) {
   return (
     <Modal onClose={onClaim} accent="var(--gold)">
       <div style={{ textAlign: "center", marginBottom: 16 }}>
-        <div className="h1" style={{ fontSize: 28, color: "var(--gold)" }}>{I18N.t("PRIZE_TITLE")}</div>
+        <div className="h1" style={{ fontSize: 28, color: "var(--gold)" }}>{I18N.t(prizes.every((p) => p.kind === "tower") ? "PRIZE_TOWER_TITLE" : "PRIZE_TITLE")}</div>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         {prizes.map((p, i) => (
           <div key={i} className="panel oct" style={{ border: "1px solid var(--line)", padding: "10px 14px" }}>
-            <div className="mono" style={{ color: AU.leagueColor(p.league), marginBottom: 6, fontWeight: "bold" }}>
-              {I18N.t("PRIZE_SEASON_RANK", p.season, p.rank, AU.leagueLabel(p.league))}
-            </div>
+            {p.kind === "tower"
+              ? <div className="mono" style={{ color: "var(--elec)", marginBottom: 6, fontWeight: "bold" }}>
+                  🗼 {I18N.t("PRIZE_TOWER_RANK", p.week_key, p.rank, p.best_floor)}
+                </div>
+              : <div className="mono" style={{ color: AU.leagueColor(p.league), marginBottom: 6, fontWeight: "bold" }}>
+                  {I18N.t("PRIZE_SEASON_RANK", p.season, p.rank, AU.leagueLabel(p.league))}
+                </div>}
             <div className="mono" style={{ fontSize: 13 }}>{I18N.t("PRIZE_BEFORE", p.balance_before)}</div>
-            <div className="mono" style={{ fontSize: 13, color: "var(--success)" }}>{I18N.t("PRIZE_REWARD", p.reward)}</div>
+            <div className="mono" style={{ fontSize: 13, color: "var(--success)" }}>{I18N.t(p.locked ? "PRIZE_REWARD_LOCKED" : "PRIZE_REWARD", p.reward)}</div>
             <div className="mono" style={{ fontSize: 13 }}>{I18N.t("PRIZE_AFTER", p.balance_after)}</div>
           </div>
         ))}

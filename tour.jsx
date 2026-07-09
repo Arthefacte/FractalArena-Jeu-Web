@@ -91,6 +91,7 @@ function TourLeaderboard() {
   return (
     <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 12 }}>
       <div className="h2" style={{ fontSize: 13, color: "var(--elec)", marginBottom: 8 }}>🗼 {I18N.t("TOUR_LB_TITLE")}</div>
+      <div className="mono" style={{ fontSize: 11, color: "var(--text-dim)", marginBottom: 8 }}>{I18N.t("TOUR_LB_DOTATION")}</div>
       {st.loading && <div className="muted mono" style={{ fontSize: 12, padding: 8 }}>{I18N.t("TOUR_LOADING")}</div>}
       {st.error && <div className="muted mono" style={{ fontSize: 12, padding: 8, color: "var(--alert)" }}>{I18N.t("TOUR_ERROR")}</div>}
       {!st.loading && !st.error && (
