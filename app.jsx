@@ -122,6 +122,7 @@ function freshState() {
     totem: null,   // { type, tier, active, loyaltyDays, worldsCompleted, paidWins, aura }
     pvp: {},
     pvpPrizes: [],
+    towerPrizes: [],
   };
 }
 
