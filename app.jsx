@@ -122,6 +122,7 @@ function freshState() {
     totem: null,   // { type, tier, active, loyaltyDays, worldsCompleted, paidWins, aura }
     pvp: {},
     pvpPrizes: [],
+    towerPrizes: [],
   };
 }
 
@@ -189,6 +190,7 @@ function App() {
 
   // Fetch non-vu des prix PvP dès que le token est établi
   useEffect(() => { if (g.authToken) actions.pvpPrizes(); }, [g.authToken]);
+  useEffect(() => { if (g.authToken) actions.towerPrizes(); }, [g.authToken]);
 
   // language
   useEffect(() => { I18N.setLang(g.lang); }, [g.lang]);
@@ -1180,6 +1182,20 @@ function App() {
       } catch (e) { /* silencieux */ }
       setG((s) => ({ ...s, pvpPrizes: [] }));
     },
+    async towerPrizes() {
+      if (!gRef.current.authToken) return;
+      try {
+        const r = await fetch(`${API_URL}/tower/prizes`, { headers: { "Authorization": "Bearer " + gRef.current.authToken } });
+        const data = await r.json().catch(() => ({}));
+        if (data.ok) setG((s) => ({ ...s, towerPrizes: data.prizes || [] }));
+      } catch (e) { /* silencieux */ }
+    },
+    async towerPrizesSeen() {
+      try {
+        await fetch(`${API_URL}/tower/prizes/seen`, { method: "POST", headers: { "Authorization": "Bearer " + gRef.current.authToken } });
+      } catch (e) { /* silencieux */ }
+      setG((s) => ({ ...s, towerPrizes: [] }));
+    },
     async pvpAttacksSeen() {
       if (!gRef.current.authToken) return;
       try {
@@ -1259,7 +1275,16 @@ function App() {
       <Toasts toasts={toasts} />
       {g.wallet && <TutorialGate />}
       {g.wallet && <LoginGate />}
-      {Array.isArray(g.pvpPrizes) && g.pvpPrizes.length > 0 && <window.PrizeModal prizes={g.pvpPrizes} onClaim={() => actions.pvpPrizesSeen()} />}
+      {(() => {
+        const pz = [
+          ...(Array.isArray(g.pvpPrizes) ? g.pvpPrizes.map((p) => ({ ...p, kind: "pvp" })) : []),
+          ...(Array.isArray(g.towerPrizes) ? g.towerPrizes.map((p) => ({ ...p, kind: "tower" })) : []),
+        ];
+        return pz.length > 0 && <window.PrizeModal prizes={pz} onClaim={() => {
+          if (g.pvpPrizes && g.pvpPrizes.length) actions.pvpPrizesSeen();
+          if (g.towerPrizes && g.towerPrizes.length) actions.towerPrizesSeen();
+        }} />;
+      })()}
     </FA_Ctx.Provider>
   );
 }

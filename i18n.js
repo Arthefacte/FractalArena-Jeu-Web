@@ -220,6 +220,11 @@
     PRIZE_AFTER:       { FR: "Tu es maintenant à : %d FA", EN: "You're now at: %d FA", ZH: "你现在有：%d FA" },
     PRIZE_TOTAL:       { FR: "Total : +%d FA", EN: "Total: +%d FA", ZH: "合计：+%d FA" },
     PRIZE_CLAIM:       { FR: "Récupérer", EN: "Claim", ZH: "领取" },
+    PRIZE_TOWER_TITLE:   { FR: "Récompense de la Tour !", EN: "Tower reward!", ZH: "高塔奖励！" },
+    PRIZE_TOWER_RANK:    { FR: "Semaine %s — Rang %d · Étage %d", EN: "Week %s — Rank %d · Floor %d", ZH: "第 %s 周 — 第 %d 名 · 第 %d 层" },
+    PRIZE_REWARD_LOCKED: { FR: "Récompense : +%d FA 🔒", EN: "Reward: +%d FA 🔒", ZH: "奖励：+%d FA 🔒" },
+    AR2_PRIZE_FLAT:      { FR: "Rangs 11-50 : +25 FA 🔒 chacun (min. 3 combats)", EN: "Ranks 11-50: +25 FA 🔒 each (min. 3 fights)", ZH: "第 11-50 名：每人 +25 FA 🔒（至少 3 场战斗）" },
+    TOUR_LB_DOTATION:    { FR: "Dotation hebdo : 3 000 FA au top 10", EN: "Weekly prize pool: 3,000 FA for top 10", ZH: "每周奖池：前 10 名瓜分 3000 FA" },
 
     // combat log
     L_START: { FR: "COMBAT LANCÉ", EN: "FIGHT STARTED", ZH: "战斗开始" },
