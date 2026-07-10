@@ -908,9 +908,6 @@ function Options() {
             ))}
           </div>
         </Row>
-        <Row label={I18N.t("OP_ANIM")}>
-          <Toggle on={g.options.anim} onClick={() => actions.setOption("anim", !g.options.anim)} />
-        </Row>
         <Row label={I18N.t("OP_SOUND")}>
           <Toggle on={g.options.sound} onClick={() => actions.setOption("sound", !g.options.sound)} />
         </Row>

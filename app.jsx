@@ -115,7 +115,7 @@ function freshState() {
     playerTitle: "",
     ordinalName: "",
     holderDays: 0,
-    options: { sound: true, anim: true, speed: 1 },
+    options: { sound: true, speed: 1 },
     view: "team",
     authToken: "",
     serverFight: null,
