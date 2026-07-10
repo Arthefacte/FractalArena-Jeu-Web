@@ -147,7 +147,7 @@ function CampaignCombat({ worldIndex, floorIndex, onBack, onCleared }) {
   function log(text, cls) { setLogLines((L) => [...L.slice(-120), { text, cls }]); }
 
   function floatText(cardEl, text, color) {
-    if (!cardEl || !g.options.anim) return;
+    if (!cardEl) return;
     const art = cardEl.querySelector(".art");
     if (!art) return;
     const el = document.createElement("div");
@@ -158,7 +158,6 @@ function CampaignCombat({ worldIndex, floorIndex, onBack, onCleared }) {
     setTimeout(() => el.remove(), 980);
   }
   function animHit(side, idx) {
-    if (!g.options.anim) return;
     const el = (side === "p1" ? p1Refs : p2Refs).current[idx];
     if (!el) return;
     el.classList.remove("shake", "flash"); void el.offsetWidth;
@@ -166,7 +165,6 @@ function CampaignCombat({ worldIndex, floorIndex, onBack, onCleared }) {
     setTimeout(() => el.classList.remove("shake", "flash"), 360);
   }
   function animLunge(side, idx) {
-    if (!g.options.anim) return;
     const el = (side === "p1" ? p1Refs : p2Refs).current[idx];
     if (!el) return;
     const cls = side === "p1" ? "lunge-l" : "lunge-r";
@@ -197,7 +195,7 @@ function CampaignCombat({ worldIndex, floorIndex, onBack, onCleared }) {
     log(I18N.t("L_START"), "lc-elec");
 
     const spd = g.options.speed || 1;
-    const baseDelay = g.options.anim ? 165 : 42;
+    const baseDelay = 165; // animations toujours actives : cadence plancher du déroulé de combat
     battleRef.current = { battle: { events, winner: resp.won ? "p1" : "p2" }, i: 0, spd, baseDelay, serverResult: resp };
     if (stepRef.current) clearTimeout(stepRef.current);
     stepRef.current = setTimeout(stepBattle, 220 / spd);

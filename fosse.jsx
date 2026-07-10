@@ -138,7 +138,7 @@ function Fosse() {
   useEffect(() => { if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight; }, [logLines]);
 
   function floatText(cardEl, text, color) {
-    if (!cardEl || !g.options.anim) return;
+    if (!cardEl) return;
     const art = cardEl.querySelector(".art");
     if (!art) return;
     const el = document.createElement("div");
@@ -151,7 +151,6 @@ function Fosse() {
     setTimeout(() => el.remove(), 980);
   }
   function animHit(side, idx) {
-    if (!g.options.anim) return;
     const el = (side === "p1" ? p1Refs : p2Refs).current[idx];
     if (!el) return;
     el.classList.remove("shake", "flash"); void el.offsetWidth;
@@ -159,7 +158,6 @@ function Fosse() {
     setTimeout(() => el.classList.remove("shake", "flash"), 360);
   }
   function animLunge(side, idx) {
-    if (!g.options.anim) return;
     const el = (side === "p1" ? p1Refs : p2Refs).current[idx];
     if (!el) return;
     const cls = side === "p1" ? "lunge-l" : "lunge-r";
@@ -207,7 +205,7 @@ function Fosse() {
     log(I18N.t("L_START"), "lc-elec");
 
     const spd = g.options.speed || 1;
-    const baseDelay = g.options.anim ? 165 : 42;
+    const baseDelay = 165; // animations toujours actives : cadence plancher du déroulé de combat
     battleRef.current = { battle, i: 0, isLoopRun, free, effTier, bet, spd, baseDelay };
 
     stopBattle();

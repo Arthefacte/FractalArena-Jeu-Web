@@ -375,7 +375,6 @@
     OP_WALLET_ADDR: { FR: "Adresse du wallet", EN: "Wallet address", ZH: "钱包地址" },
     OP_LANG: { FR: "Langue", EN: "Language", ZH: "语言" },
     OP_SOUND: { FR: "Effets sonores", EN: "Sound effects", ZH: "音效" },
-    OP_ANIM: { FR: "Animations de combat", EN: "Combat animations", ZH: "战斗动画" },
     OP_SPEED: { FR: "Vitesse de combat", EN: "Combat speed", ZH: "战斗速度" },
     OP_RESET: { FR: "Réinitialiser la progression", EN: "Reset progress", ZH: "重置进度" },
     OP_RESET_CONFIRM: { FR: "Effacer toute la progression ?", EN: "Erase all progress?", ZH: "清除所有进度？" },
