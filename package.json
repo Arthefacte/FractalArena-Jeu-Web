@@ -1,0 +1,28 @@
+{
+  "name": "fractal-arena-web",
+  "version": "1.0.0",
+  "description": "**Fractal Arena** est un auto-battler crypto/blockchain jouable, construit en **React 18 (JSX via Babel standalone, sans build step)**. Le joueur connecte un wallet (simulé), constitue une équipe de 3 entités, mise des jetons FRACTALARENA, lance des combats automatiques, gagne de l'XP et des récompenses, puis fait progresser / forge / invoque ses entités.",
+  "main": "arene-ui.js",
+  "directories": {
+    "doc": "docs",
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Arthefacte/FractalArena-Jeu-Web.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Arthefacte/FractalArena-Jeu-Web/issues"
+  },
+  "homepage": "https://github.com/Arthefacte/FractalArena-Jeu-Web#readme",
+  "devDependencies": {
+    "@babel/standalone": "^8.0.4"
+  }
+}
