@@ -4,7 +4,7 @@
 const { useState, useEffect, useRef, useMemo } = React;
 const D = window.FA_DATA, I18N = window.FA_I18N;
 const { FA_Ctx, useFA, cx, fmt, Coin, Bar } = window;
-const { Team, Fosse, Arene, Forge, Wallet, Boosts, Perso, Options, ChatFab, RoomFab, Leaderboard, Quests, Campaign, Tour, LoginGate, TutorialGate, Link, Cinematique } = window;
+const { Team, Fosse, Arene, Forge, Wallet, Boosts, Perso, Options, ChatFab, RoomFab, Leaderboard, Quests, Campaign, Tour, LoginGate, TutorialGate, Link, Cinematique, Market } = window;
 const SAVE_KEY = "fractal_arena_v1";
 // Le bearer authToken vit en sessionStorage (et JAMAIS dans le blob localStorage) : il survit
 // au rechargement de l'onglet (pas de re-signature à chaque F5) mais est effacé à la fermeture
@@ -123,6 +123,7 @@ function freshState() {
     pvp: {},
     pvpPrizes: [],
     towerPrizes: [],
+    market: { listings: [], mine: null },
   };
 }
 
@@ -1236,6 +1237,63 @@ function App() {
       }
       return j;
     },
+
+    // ---- Marché (hôtel des ventes reliques) ----
+    async marketRefresh() {
+      const s = gRef.current;
+      try {
+        const r = await fetch(`${API_URL}/market/listings`);
+        const j = await r.json().catch(() => ({}));
+        let mine = null;
+        if (s.authToken) {
+          const rm = await fetch(`${API_URL}/market/mine`, { headers: { "Authorization": "Bearer " + s.authToken } });
+          if (rm.ok) mine = await rm.json().catch(() => null);
+        }
+        setG((st) => ({ ...st, market: { listings: (j && j.listings) || [], mine } }));
+      } catch (e) { /* réseau : on garde l'état précédent */ }
+    },
+    // Après toute mutation : resync du save (solde + inventaire), pattern relicSummon.
+    async marketResync() {
+      const s = gRef.current;
+      if (!s.wallet) return;
+      try {
+        const sv = await fetch(`${API_URL}/save/${s.wallet}`, svOpts());
+        if (sv.ok) { const { save } = await sv.json(); setG((st) => serverToState(save, s.wallet, st)); }
+      } catch (e) { /* silencieux */ }
+    },
+    async marketList(relicId, price) {
+      const s = gRef.current;
+      if (!s.wallet || !s.authToken) return { error: "auth" };
+      const r = await fetch(`${API_URL}/market/list`, {
+        method: "POST", headers: { "Content-Type": "application/json", "Authorization": "Bearer " + s.authToken },
+        body: JSON.stringify({ wallet: s.wallet, relic_id: relicId, price }),
+      });
+      const j = await r.json().catch(() => ({ error: "erreur_serveur" }));
+      if (j && j.status === "ok") { await actions.marketResync(); await actions.marketRefresh(); }
+      return j;
+    },
+    async marketBuy(listingId) {
+      const s = gRef.current;
+      if (!s.wallet || !s.authToken) return { error: "auth" };
+      const r = await fetch(`${API_URL}/market/buy`, {
+        method: "POST", headers: { "Content-Type": "application/json", "Authorization": "Bearer " + s.authToken },
+        body: JSON.stringify({ wallet: s.wallet, listing_id: listingId }),
+      });
+      const j = await r.json().catch(() => ({ error: "erreur_serveur" }));
+      if (j && j.status === "ok") { await actions.marketResync(); await actions.marketRefresh(); }
+      return j;
+    },
+    async marketCancel(listingId) {
+      const s = gRef.current;
+      if (!s.wallet || !s.authToken) return { error: "auth" };
+      const r = await fetch(`${API_URL}/market/cancel`, {
+        method: "POST", headers: { "Content-Type": "application/json", "Authorization": "Bearer " + s.authToken },
+        body: JSON.stringify({ wallet: s.wallet, listing_id: listingId }),
+      });
+      const j = await r.json().catch(() => ({ error: "erreur_serveur" }));
+      if (j && j.status === "ok") { await actions.marketResync(); await actions.marketRefresh(); }
+      return j;
+    },
   }), []);
 
   const ctx = { g, actions, toast };
@@ -1257,7 +1315,7 @@ function App() {
     );
   }
 
-  const VIEWS = { team: Team, fosse: Fosse, arene: Arene, campaign: Campaign, tour: Tour, quests: Quests, forge: Forge, wallet: Wallet, boosts: Boosts, perso: Perso, leaderboard: Leaderboard, options: Options, lien: Link };
+  const VIEWS = { team: Team, fosse: Fosse, arene: Arene, campaign: Campaign, tour: Tour, quests: Quests, forge: Forge, market: Market, wallet: Wallet, boosts: Boosts, perso: Perso, leaderboard: Leaderboard, options: Options, lien: Link };
 
   const View = VIEWS[g.view] || Team;
 
@@ -1350,7 +1408,7 @@ function Header({ chipPop }) {
 function Nav() {
   const { g, actions } = useFA();
   const tabs = [
-    ["team", "NAV_TEAM"], ["fosse", "NAV_FOSSE"], ["arene", "NAV_ARENE"], ["campaign", "NAV_CAMPAIGN"], ["tour", "NAV_TOUR"], ["quests", "NAV_QUESTS"], ["forge", "NAV_FORGE"],
+    ["team", "NAV_TEAM"], ["fosse", "NAV_FOSSE"], ["arene", "NAV_ARENE"], ["campaign", "NAV_CAMPAIGN"], ["tour", "NAV_TOUR"], ["quests", "NAV_QUESTS"], ["forge", "NAV_FORGE"], ["market", "NAV_MARKET"],
     ["wallet", "NAV_WALLET"], ["boosts", "NAV_BOOSTS"], ["perso", "NAV_PERSO"], ["leaderboard", "NAV_LEADERBOARD"], ["options", "NAV_OPTIONS"],
   ];
   return (

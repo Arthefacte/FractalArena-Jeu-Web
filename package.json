@@ -1,0 +1,27 @@
+{
+  "name": "fractal-arena-web",
+  "version": "1.0.0",
+  "description": "Client web Fractal Arena (React sans build, Babel in-browser)",
+  "directories": {
+    "doc": "docs",
+    "test": "test"
+  },
+  "scripts": {
+    "test": "node --test --test-force-exit test/*.test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Arthefacte/FractalArena-Jeu-Web.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Arthefacte/FractalArena-Jeu-Web/issues"
+  },
+  "homepage": "https://github.com/Arthefacte/FractalArena-Jeu-Web#readme",
+  "devDependencies": {
+    "@babel/standalone": "7.29.0"
+  }
+}
