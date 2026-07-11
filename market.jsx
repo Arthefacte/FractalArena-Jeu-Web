@@ -137,7 +137,7 @@ function MarketMine() {
       )}
       <button className="btn btn-elec" style={{ marginTop: 8 }} disabled={!sel || !fees || busy} onClick={doList}>{I18N.t("MKT_LIST_ACTION")}</button>
 
-      <SectionHead title={I18N.t("MKT_MY_ACTIVE", (mine.active || []).length)} />
+      <SectionHead title={I18N.t("MKT_MY_ACTIVE", (mine.active || []).length + (mine.expired || []).length)} />
       {(mine.active || []).map((l) => (
         <div key={l.id} className="oct-sm" style={{ border: "1px solid var(--line-soft)", display: "flex", alignItems: "center", gap: 8, padding: 8, marginBottom: 6 }}>
           <RelicIcon type={l.item.type} rarity={l.item.rarity} size={24} />
