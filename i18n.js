@@ -176,7 +176,7 @@
     AR2_ENTRY: { FR: "Entrée", EN: "Entry", ZH: "入场" },
     AR2_FREE: { FR: "Gratuit", EN: "Free", ZH: "免费" },
     AR2_FA: { FR: "%d FA", EN: "%d FA", ZH: "%d FA" },
-    AR2_TICKET: { FR: "🎟 Ticket Or", EN: "🎟 Gold ticket", ZH: "🎟 金券" },
+    AR2_TICKET: { FR: "🎟 Ticket Argent", EN: "🎟 Silver ticket", ZH: "🎟 白银券" },
     AR2_NO_DEFENSE: { FR: "Définis ta défense (3 bêtes via l'onglet Équipe) pour entrer dans l'Arène.", EN: "Set your defense (pick 3 beasts in the Team tab) to enter the Arena.", ZH: "先在「队伍」选择 3 只野兽设定防守，方可进入竞技场。" },
     AR2_SEASON: { FR: "Saison %d", EN: "Season %d", ZH: "第 %d 赛季" },
     AR2_ENDS_IN: { FR: "finit dans %s", EN: "ends in %s", ZH: "%s 后结束" },

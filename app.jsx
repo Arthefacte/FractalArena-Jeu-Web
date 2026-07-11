@@ -1225,14 +1225,14 @@ function App() {
       if (Array.isArray(attackers) && attackers.length === 3) body.attackers = attackers;
       const r = await fetch(`${API_URL}/pvp/attack`, { method: "POST", headers: { ...authHeaders(), "Content-Type": "application/json" }, body: JSON.stringify(body) });
       const j = await r.json().catch(() => ({}));
-      // Déduction optimiste à l'écran : le serveur a déjà débité (FA → liquid, ou 1 ticket or).
+      // Déduction optimiste à l'écran : le serveur a déjà débité (FA → liquid, ou 1 ticket Argent).
       // pvpRefresh ne recharge pas le solde, donc pas de double-comptage.
       if (j && j.ok) {
         if (j.entry === "fa") {
           const cost = (gRef.current.pvp && gRef.current.pvp.fa_cost) || 50;
           setG((s) => ({ ...s, liquid: Math.max(0, (s.liquid || 0) - cost) }));
         } else if (j.entry === "ticket") {
-          setG((s) => ({ ...s, ticketsGold: Math.max(0, (s.ticketsGold || 0) - 1) }));
+          setG((s) => ({ ...s, ticketsSilver: Math.max(0, (s.ticketsSilver || 0) - 1) }));
         }
       }
       return j;
