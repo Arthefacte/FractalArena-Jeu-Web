@@ -89,7 +89,7 @@ function stateToServer(g) {
 
 function freshState() {
   return {
-    lang: "FR",
+    lang: I18N.detectLang(navigator.language),
     wallet: null,
     liquid: 0,
     locked: 0,

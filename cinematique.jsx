@@ -3,6 +3,7 @@
 // + GLB), titre prismatique, CTA. Joue à chaque visite tant que le joueur n'est pas connecté.
 // Exposé sur window.Cinematique ; intégré dans app.jsx (branche !g.wallet).
 const { useState, useRef, useEffect, useCallback, useMemo } = React;
+const I18N = window.FA_I18N;
 
 const CINE_DUR = 20.0;
 
@@ -231,10 +232,10 @@ function Cinematique(props) {
   const accent = props.accent || 'prisme';
   const loreAnim = props.loreAnim || 'decrypt';
   const titleText = props.titleText || 'FRACTAL ARENA';
-  const ctaText = props.ctaText || 'APPUYER POUR COMMENCER';
-  const tagline = props.tagline || 'Protocole éveillé · Fractal Arena';
-  const loreLine1 = props.loreLine1 || 'Aux confins de la blockchain fractal,';
-  const loreLine2 = props.loreLine2 || "une arène s'éveille.";
+  const ctaText = props.ctaText || I18N.t('CINE_CTA');
+  const tagline = props.tagline || I18N.t('CINE_TAGLINE');
+  const loreLine1 = props.loreLine1 || I18N.t('CINE_LORE1');
+  const loreLine2 = props.loreLine2 || I18N.t('CINE_LORE2');
 
   const [t, setT] = useState(0);
   const [ended, setEnded] = useState(false);
@@ -424,7 +425,7 @@ function Cinematique(props) {
   }), [t, accent, loreAnim, titleText, ctaText, tagline, loreLine1, loreLine2, ended, leaving, loading]);
 
   const soundOn = !audioMuted; // intention : son activé par défaut (le 1er geste le démarre réellement)
-  const soundLabel = soundOn ? 'SON ◉' : 'SON ○';
+  const soundLabel = `${I18N.t('CINE_SOUND')} ${soundOn ? '◉' : '○'}`;
   const accColor = ({ elec: '#00F0FF', forge: '#B026FF', fire: '#F7931A', gold: '#FFE600' })[accent] || '#00F0FF';
   const ar = parseInt(accColor.slice(1, 3), 16), ag = parseInt(accColor.slice(3, 5), 16), ab = parseInt(accColor.slice(5, 7), 16);
   const soundBtnStyle = { position: 'absolute', top: '22px', left: '24px', padding: '8px 14px', fontFamily: "'JetBrains Mono',monospace", fontSize: '12px', letterSpacing: '0.18em', color: soundOn ? accColor : '#7F8DAD', background: 'rgba(10,15,30,0.5)', border: `1px solid ${soundOn ? `rgba(${ar},${ag},${ab},0.5)` : '#1d2740'}`, cursor: 'pointer', textTransform: 'uppercase' };
@@ -492,7 +493,7 @@ function Cinematique(props) {
 
       <audio ref={audioRef} src="assets/FA_intro.mp3" preload="auto" />
       <button style={soundBtnStyle} onClick={toggleSound}>{soundLabel}</button>
-      <button style={v.skipStyle} onClick={skip}>Passer ▸</button>
+      <button style={v.skipStyle} onClick={skip}>{I18N.t('CINE_SKIP')}</button>
       <button
         style={replayHover && v.replayStyle.pointerEvents === 'auto'
           ? { ...v.replayStyle, opacity: 0.92, color: '#9FB0CF', borderColor: 'rgba(0,240,255,0.28)' }
@@ -500,12 +501,12 @@ function Cinematique(props) {
         onMouseEnter={() => setReplayHover(true)}
         onMouseLeave={() => setReplayHover(false)}
         onClick={replay}
-      >⟳ Revoir</button>
+      >{I18N.t('CINE_REPLAY')}</button>
 
       <div style={v.vignetteStyle} />
 
       <div style={v.leaveStyle}>
-        <span style={v.loadStyle}>Initialisation du protocole…</span>
+        <span style={v.loadStyle}>{I18N.t('CINE_LOADING')}</span>
       </div>
     </div>
   );

@@ -722,11 +722,29 @@
     FG_LOCK_TAG:   { FR: "verrouillée", EN: "locked", ZH: "已锁定" },
     FG_ERR_LOCKS:  { FR: "Verrous invalides", EN: "Invalid locks", ZH: "锁定无效" },
     FG_ERR_BUDGET: { FR: "Stats trop concentrées dans les verrous — libère une stat", EN: "Too much budget locked — free up a stat", ZH: "锁定的属性占比过高——请解锁一项" },
+
+    // ---- Cinématique d'ouverture ----
+    CINE_CTA:     { FR: "APPUYER POUR COMMENCER", EN: "PRESS TO START", ZH: "点击开始" },
+    CINE_TAGLINE: { FR: "Protocole éveillé · Fractal Arena", EN: "Protocol awakened · Fractal Arena", ZH: "协议觉醒 · Fractal Arena" },
+    CINE_LORE1:   { FR: "Aux confins de la blockchain fractal,", EN: "At the edge of the fractal blockchain,", ZH: "在分形区块链的尽头，" },
+    CINE_LORE2:   { FR: "une arène s'éveille.", EN: "an arena awakens.", ZH: "一座竞技场正在苏醒。" },
+    CINE_SKIP:    { FR: "Passer ▸", EN: "Skip ▸", ZH: "跳过 ▸" },
+    CINE_REPLAY:  { FR: "⟳ Revoir", EN: "⟳ Replay", ZH: "⟳ 重播" },
+    CINE_LOADING: { FR: "Initialisation du protocole…", EN: "Initializing protocol…", ZH: "协议初始化中…" },
+    CINE_SOUND:   { FR: "SON", EN: "SOUND", ZH: "声音" },
   };
 
   let lang = "FR";
   function setLang(l) { if (["FR", "EN", "ZH"].includes(l)) lang = l; }
   function getLang() { return lang; }
+
+  // Langue par défaut d'un tout premier visiteur, depuis navigator.language.
+  function detectLang(navLang) {
+    const l = String(navLang || "").toLowerCase();
+    if (l.startsWith("fr")) return "FR";
+    if (l.startsWith("zh")) return "ZH";
+    return "EN";
+  }
 
   function fmt(str, args) {
     let i = 0;
@@ -743,5 +761,5 @@
     return args.length ? fmt(s, args) : s;
   }
 
-  window.FA_I18N = { t, setLang, getLang, T };
+  window.FA_I18N = { t, setLang, getLang, detectLang, T };
 })();
