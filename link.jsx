@@ -58,6 +58,7 @@ function Link() {
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               {items.map((it) => (
                 <img key={it.tier} alt={TU.tierName(it.tier)} src={it.url}
+                     onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = TU.totemArtFallback(t.type); }}
                      onClick={() => actions.pickTotemImage(it.tier)}
                      style={{ width: 64, height: 64, borderRadius: 8, cursor: "pointer",
                               border: (t.displayTier === it.tier) ? "2px solid var(--gold,#F7931A)" : "2px solid transparent" }} />
