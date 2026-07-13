@@ -130,7 +130,7 @@ posture/combat :
 
 ## 9. i18n
 
-Nouvelles clés (`test/tour-i18n.test.js` vérifie la parité FR/EN) :
+Nouvelles clés (`test/tour-i18n.test.js` vérifie la parité **FR/EN/ZH**) :
 `TOUR_AUTO`, `TOUR_AUTO_STOP`, `TOUR_AUTO_RUNNING`, `TOUR_AUTO_LOG_WIN`,
 `TOUR_AUTO_LOG_LOSS`, `TOUR_AUTO_RECAP_TITLE`, `TOUR_AUTO_RECAP_CLIMB`.
 
