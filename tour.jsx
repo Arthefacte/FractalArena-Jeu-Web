@@ -173,6 +173,11 @@ function Tour() {
   const [battle, setBattle] = useState(null);   // { events, p1Team, p2Team, won, floorFought }
   const [result, setResult] = useState(null);   // TourResultModal (affichée à la fermeture du rejeu)
   const [, setTick] = useState(0);
+  const [autoRunning, setAutoRunning] = useState(false);
+  const [autoLog, setAutoLog] = useState([]);      // [{ floor, won, casualties:[nom], tiers:[floor] }]
+  const [autoRecap, setAutoRecap] = useState(null); // { startFloor, bestFloor, tiers:[], silver, gold }
+  const stopRef = React.useRef(false);
+  const runningRef = React.useRef(false);
 
   async function refresh() {
     const r = await actions.towerState();
@@ -234,6 +239,66 @@ function Tour() {
     }));
   }
 
+  function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
+
+  // Bêtes passées de vivantes à mortes entre deux états de run (pour le log).
+  function newCasualties(prevState, nextState) {
+    const names = [];
+    for (const b of g.roster) {
+      if (!TU.isDeadInRun(prevState, b.id) && TU.isDeadInRun(nextState, b.id)) names.push(D.displayName(b));
+    }
+    return names;
+  }
+
+  async function onAuto() {
+    if (runningRef.current || busy || !run) return;
+    runningRef.current = true;
+    stopRef.current = false;
+    setAutoRunning(true);
+    setAutoLog([]);
+    let curState = run.roster_state || {};
+    let curFloor = run.floor;
+    const startFloor = run.floor;
+    const sessionTiers = []; let sSilver = 0, sGold = 0, sessionBest = 0;
+    let over = false;
+    try {
+      while (!stopRef.current) {
+        const fittest = TU.pickFittest3(g.roster, curState);
+        if (!fittest) { over = true; break; } // < 3 vivantes → run terminé
+        const r = await actions.towerFight(fittest, posture);
+        if (!r.ok) {
+          if (r.reason === "trop_rapide") { await sleep(300); continue; } // throttle serveur : ré-attente
+          toast(tourErr(r.reason), "bad");
+          break;
+        }
+        const nextState = r.rosterState || {};
+        const casualties = newCasualties(curState, nextState);
+        setAutoLog((L) => [...L, { floor: curFloor, won: r.won, casualties, tiers: r.rewards.tiers }]);
+        r.rewards.tiers.forEach((f) => sessionTiers.push(f));
+        sSilver += r.rewards.silver || 0; sGold += r.rewards.gold || 0;
+        if (r.won) sessionBest = Math.max(sessionBest, curFloor);
+        setSt((s) => ({
+          ...s,
+          run: r.runOver ? null : { floor: r.floor, roster_state: nextState },
+          score: {
+            ...s.score,
+            best_floor: Math.max(s.score.best_floor, r.bestFloor),
+            claimed_tiers: Array.from(new Set([...(s.score.claimed_tiers || []), ...r.rewards.tiers])),
+          },
+        }));
+        curState = nextState;
+        curFloor = r.runOver ? curFloor : r.floor;
+        if (r.runOver) { over = true; break; }
+        if (stopRef.current) break;
+        await sleep(350);
+      }
+    } finally {
+      runningRef.current = false;
+      setAutoRunning(false);
+      setAutoRecap({ startFloor, bestFloor: sessionBest, tiers: sessionTiers, silver: sSilver, gold: sGold, over });
+    }
+  }
+
   async function onAbandon() {
     if (busy) return;
     setBusy(true);
@@ -270,7 +335,7 @@ function Tour() {
           <div className="flex between center wrap" style={{ marginBottom: 12, gap: 10 }}>
             <span className="h2" style={{ fontSize: 18, color: "var(--elec)" }}>{I18N.t("TOUR_FLOOR", run.floor)}</span>
             <span className="pill mono" style={{ fontSize: 11 }}>{I18N.t("TOUR_ALIVE", alive)}</span>
-            <button className="btn ghost sm" onClick={() => setShowAbandon(true)} disabled={busy}>{I18N.t("TOUR_ABANDON")}</button>
+            <button className="btn ghost sm" onClick={() => setShowAbandon(true)} disabled={busy || autoRunning}>{I18N.t("TOUR_ABANDON")}</button>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(96px, 1fr))", gap: 8, marginBottom: 14 }}>
@@ -281,12 +346,35 @@ function Tour() {
             ))}
           </div>
 
-          <div className="flex between center wrap" style={{ gap: 12 }}>
-            <PostureSelect value={posture} onChange={setPosture} disabled={busy} />
-            {engage.ok
-              ? <button className="btn btn-fire lg" onClick={onFight} disabled={busy}>{I18N.t("TOUR_FIGHT", run.floor)}</button>
-              : <span className="mono" style={{ fontSize: 12, color: "var(--alert)" }}>{I18N.t("TOUR_NEED3")}</span>}
-          </div>
+          {autoRunning ? (
+            <div>
+              <div className="flex between center" style={{ marginBottom: 8 }}>
+                <span className="mono" style={{ fontSize: 12, color: "var(--elec)" }}>{I18N.t("TOUR_AUTO_RUNNING")}</span>
+                <button className="btn btn-fire sm" onClick={() => { stopRef.current = true; }}>{I18N.t("TOUR_AUTO_STOP")}</button>
+              </div>
+              <div className="mono" style={{ maxHeight: 180, overflowY: "auto", fontSize: 11, display: "flex", flexDirection: "column-reverse", gap: 2, background: "rgba(0,0,0,0.2)", padding: 8, border: "1px solid var(--line-soft)" }}>
+                {autoLog.slice().reverse().map((e, i) => (
+                  <div key={autoLog.length - i} style={{ color: e.won ? "var(--success)" : "var(--alert)" }}>
+                    {I18N.t(e.won ? "TOUR_AUTO_LOG_WIN" : "TOUR_AUTO_LOG_LOSS", e.floor)}
+                    {e.tiers.length > 0 && <span style={{ color: "var(--gold)" }}> 🏆</span>}
+                    {e.casualties.length > 0 && <span style={{ color: "var(--text-dim)" }}> · {e.casualties.join(", ")} ☠</span>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="flex between center wrap" style={{ gap: 12 }}>
+              <PostureSelect value={posture} onChange={setPosture} disabled={busy} />
+              <div className="flex gap8">
+                {TU.pickFittest3(g.roster, rosterState) && (
+                  <button className="btn btn-elec lg" onClick={onAuto} disabled={busy}>{I18N.t("TOUR_AUTO")}</button>
+                )}
+                {engage.ok
+                  ? <button className="btn btn-fire lg" onClick={onFight} disabled={busy}>{I18N.t("TOUR_FIGHT", run.floor)}</button>
+                  : <span className="mono" style={{ fontSize: 12, color: "var(--alert)" }}>{I18N.t("TOUR_NEED3")}</span>}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -312,6 +400,26 @@ function Tour() {
           onClose={() => setBattle(null)} />
       )}
       {!battle && result && <TourResultModal result={result} onClose={() => setResult(null)} />}
+      {autoRecap && (
+        <Modal onClose={() => { setAutoRecap(null); refresh(); }} accent="var(--elec)">
+          <div className="h1" style={{ fontSize: 22, textAlign: "center", margin: "4px 0 12px" }}>{I18N.t(autoRecap.over ? "TOUR_AUTO_RECAP_TITLE" : "TOUR_AUTO_RECAP_STOPPED")}</div>
+          <div className="mono" style={{ fontSize: 14, textAlign: "center", color: "var(--elec)", marginBottom: 12 }}>
+            {I18N.t("TOUR_AUTO_RECAP_CLIMB", autoRecap.startFloor, Math.max(autoRecap.startFloor, autoRecap.bestFloor))}
+          </div>
+          {autoRecap.tiers.length > 0 && (
+            <div className="mono" style={{ fontSize: 12, textAlign: "center", color: "var(--gold)", marginBottom: 8 }}>
+              🏆 {autoRecap.tiers.map((f) => I18N.t("TOUR_FLOOR", f)).join(" · ")}
+            </div>
+          )}
+          {(autoRecap.silver > 0 || autoRecap.gold > 0) && (
+            <div className="mono" style={{ fontSize: 12, textAlign: "center", marginBottom: 8 }}>
+              {autoRecap.silver > 0 && <span style={{ color: "var(--elec)" }}>+{autoRecap.silver} 🎟 </span>}
+              {autoRecap.gold > 0 && <span style={{ color: "var(--gold)" }}>+{autoRecap.gold} 🎟</span>}
+            </div>
+          )}
+          <button className="btn btn-elec block lg" style={{ marginTop: 10 }} onClick={() => { setAutoRecap(null); refresh(); }}>{I18N.t("TOUR_CONTINUE")}</button>
+        </Modal>
+      )}
     </div>
   );
 }
