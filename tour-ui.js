@@ -61,5 +61,20 @@
     return TIERS.find((t) => t.floor > best) || null;
   }
 
-  window.FA_TOUR_UI = { ENTRY_COST, TIERS, tiersView, hpFracOf, isDeadInRun, rosterRunView, aliveCount, validateEngage, nextTier };
+  // Rotation auto (auto-combat) : les 3 vivantes au hp_frac le plus haut, la plus
+  // en forme d'abord (front). Départage déterministe par ordre du roster (testable).
+  // null si < 3 vivantes → signal d'arrêt de la boucle auto.
+  function pickFittest3(roster, rosterState) {
+    const list = roster || [];
+    const alive = list.filter((b) => b && !isDeadInRun(rosterState, b.id));
+    if (alive.length < 3) return null;
+    const idx = new Map(list.map((b, i) => [b.id, i]));
+    const sorted = alive.slice().sort((a, b) => {
+      const d = hpFracOf(rosterState, b.id) - hpFracOf(rosterState, a.id);
+      return d !== 0 ? d : idx.get(a.id) - idx.get(b.id);
+    });
+    return sorted.slice(0, 3).map((b) => b.id);
+  }
+
+  window.FA_TOUR_UI = { ENTRY_COST, TIERS, tiersView, hpFracOf, isDeadInRun, rosterRunView, aliveCount, validateEngage, nextTier, pickFittest3 };
 })();

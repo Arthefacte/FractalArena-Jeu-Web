@@ -68,3 +68,26 @@ test("nextTier : premier palier au-dessus du meilleur étage", () => {
   assert.strictEqual(TU.nextTier(50), null);
   assert.strictEqual(TU.nextTier(99), null);
 });
+
+test("pickFittest3 : 3 IDs vivants au hp_frac le plus haut, ordre décroissant", () => {
+  const roster = [{ id: "a" }, { id: "b" }, { id: "c" }, { id: "d" }, { id: "e" }];
+  const rs = {
+    a: { hp_frac: 0.30 }, b: { hp_frac: 0.90 }, c: { hp_frac: 0.10 },
+    d: { hp_frac: 0.60 }, e: { hp_frac: 1.0 },
+  };
+  assert.deepStrictEqual(TU.pickFittest3(roster, rs), ["e", "b", "d"]);
+});
+
+test("pickFittest3 : ignore les mortes, null si < 3 vivantes", () => {
+  const roster = [{ id: "a" }, { id: "b" }, { id: "c" }];
+  const rs = { b: { hp_frac: 0, dead: true } };
+  assert.strictEqual(TU.pickFittest3(roster, rs), null, "2 vivantes → null");
+  // roster vierge (aucun state) → 3 premiers
+  assert.deepStrictEqual(TU.pickFittest3(roster, {}), ["a", "b", "c"]);
+});
+
+test("pickFittest3 : départage stable par ordre du roster à hp_frac égal", () => {
+  const roster = [{ id: "a" }, { id: "b" }, { id: "c" }, { id: "d" }];
+  const rs = { a: { hp_frac: 0.5 }, b: { hp_frac: 0.5 }, c: { hp_frac: 0.5 }, d: { hp_frac: 0.5 } };
+  assert.deepStrictEqual(TU.pickFittest3(roster, rs), ["a", "b", "c"]);
+});
