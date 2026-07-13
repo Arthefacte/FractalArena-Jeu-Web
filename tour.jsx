@@ -177,6 +177,7 @@ function Tour() {
   const [autoLog, setAutoLog] = useState([]);      // [{ floor, won, casualties:[nom], tiers:[floor] }]
   const [autoRecap, setAutoRecap] = useState(null); // { startFloor, bestFloor, tiers:[], silver, gold }
   const stopRef = React.useRef(false);
+  const runningRef = React.useRef(false);
 
   async function refresh() {
     const r = await actions.towerState();
@@ -250,7 +251,8 @@ function Tour() {
   }
 
   async function onAuto() {
-    if (busy || autoRunning || !run) return;
+    if (runningRef.current || busy || !run) return;
+    runningRef.current = true;
     stopRef.current = false;
     setAutoRunning(true);
     setAutoLog([]);
@@ -258,10 +260,11 @@ function Tour() {
     let curFloor = run.floor;
     const startFloor = run.floor;
     const sessionTiers = []; let sSilver = 0, sGold = 0, sessionBest = 0;
+    let over = false;
     try {
       while (!stopRef.current) {
         const fittest = TU.pickFittest3(g.roster, curState);
-        if (!fittest) break; // < 3 vivantes → run terminé
+        if (!fittest) { over = true; break; } // < 3 vivantes → run terminé
         const r = await actions.towerFight(fittest, posture);
         if (!r.ok) {
           if (r.reason === "trop_rapide") { await sleep(300); continue; } // throttle serveur : ré-attente
@@ -285,13 +288,14 @@ function Tour() {
         }));
         curState = nextState;
         curFloor = r.runOver ? curFloor : r.floor;
-        if (r.runOver) break;
+        if (r.runOver) { over = true; break; }
         if (stopRef.current) break;
         await sleep(350);
       }
     } finally {
+      runningRef.current = false;
       setAutoRunning(false);
-      setAutoRecap({ startFloor, bestFloor: sessionBest, tiers: sessionTiers, silver: sSilver, gold: sGold });
+      setAutoRecap({ startFloor, bestFloor: sessionBest, tiers: sessionTiers, silver: sSilver, gold: sGold, over });
     }
   }
 
@@ -398,7 +402,7 @@ function Tour() {
       {!battle && result && <TourResultModal result={result} onClose={() => setResult(null)} />}
       {autoRecap && (
         <Modal onClose={() => { setAutoRecap(null); refresh(); }} accent="var(--elec)">
-          <div className="h1" style={{ fontSize: 22, textAlign: "center", margin: "4px 0 12px" }}>{I18N.t("TOUR_AUTO_RECAP_TITLE")}</div>
+          <div className="h1" style={{ fontSize: 22, textAlign: "center", margin: "4px 0 12px" }}>{I18N.t(autoRecap.over ? "TOUR_AUTO_RECAP_TITLE" : "TOUR_AUTO_RECAP_STOPPED")}</div>
           <div className="mono" style={{ fontSize: 14, textAlign: "center", color: "var(--elec)", marginBottom: 12 }}>
             {I18N.t("TOUR_AUTO_RECAP_CLIMB", autoRecap.startFloor, Math.max(autoRecap.startFloor, autoRecap.bestFloor))}
           </div>

@@ -559,6 +559,7 @@
     TOUR_AUTO_LOG_WIN: { FR: "Étage %d ✓", EN: "Floor %d ✓", ZH: "第%d层 ✓" },
     TOUR_AUTO_LOG_LOSS: { FR: "Étage %d ✗", EN: "Floor %d ✗", ZH: "第%d层 ✗" },
     TOUR_AUTO_RECAP_TITLE: { FR: "Run terminé", EN: "Run over", ZH: "挑战结束" },
+    TOUR_AUTO_RECAP_STOPPED: { FR: "Auto interrompu", EN: "Auto stopped", ZH: "自动已中断" },
     TOUR_AUTO_RECAP_CLIMB: { FR: "Étage %d → %d", EN: "Floor %d → %d", ZH: "第%d层 → 第%d层" },
     TOUR_ALIVE: { FR: "%d vivantes", EN: "%d alive", ZH: "存活 %d" },
     TOUR_DEAD_TAG: { FR: "MORTE", EN: "DEAD", ZH: "阵亡" },
