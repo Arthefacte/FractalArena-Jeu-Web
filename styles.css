@@ -24,6 +24,7 @@
   --success: #27E08A;
   --alert: #FF3B5C;
   --gold: #FFE600;
+  --sunset: #FF8A4B;
 
   /* Rarities */
   --r-common: #9CA3AF;
@@ -209,6 +210,13 @@ input { font-family: var(--font-mono); }
 @media (prefers-reduced-motion: reduce) {
   .nav-icon { animation: none; filter: drop-shadow(0 0 3px var(--glow-lo)); }
 }
+/* Label d'onglet en orange coucher de soleil ; plein sur l'onglet actif/survol. */
+.nav-label {
+  color: var(--sunset); opacity: .82;
+  transition: opacity .15s, text-shadow .15s;
+}
+.nav-tab:hover .nav-label { opacity: 1; }
+.nav-tab.on .nav-label { opacity: 1; text-shadow: 0 0 12px rgba(255,138,75,0.45); }
 .nav-tab::after {
   content: ""; position: absolute; left: 14px; right: 14px; bottom: 0; height: 2px;
   background: var(--elec); transform: scaleX(0); transform-origin: center;
