@@ -217,6 +217,29 @@ input { font-family: var(--font-mono); }
 }
 .nav-tab:hover .nav-label { opacity: 1; }
 .nav-tab.on .nav-label { opacity: 1; text-shadow: 0 0 12px rgba(255,138,75,0.45); }
+/* Transition d'entrée de vue au changement d'onglet (#2) : fondu + settle,
+   plus un balayage « circuit » cyan qui descend une fois. Wrapper keyé par g.view. */
+.view-anim { position: relative; animation: viewEnter .28s cubic-bezier(.22,.9,.3,1); }
+@keyframes viewEnter {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+.view-anim::before {
+  content: ""; position: absolute; inset: 0; z-index: 6; pointer-events: none; opacity: 0;
+  background: linear-gradient(to bottom, transparent 46%, rgba(0,240,255,.45) 50%, transparent 54%);
+  background-size: 100% 260%; background-repeat: no-repeat;
+  mix-blend-mode: screen;
+  animation: viewSweep .55s ease-out;
+}
+@keyframes viewSweep {
+  0%   { background-position: 0 -30%; opacity: 0; }
+  12%  { opacity: 1; }
+  100% { background-position: 0 130%; opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .view-anim { animation: none; }
+  .view-anim::before { display: none; }
+}
 .nav-tab::after {
   content: ""; position: absolute; left: 14px; right: 14px; bottom: 0; height: 2px;
   background: var(--elec); transform: scaleX(0); transform-origin: center;

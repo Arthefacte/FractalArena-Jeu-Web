@@ -1330,7 +1330,7 @@ function App() {
         <Header chipPop={chipPop} />
         <BuybackTicker />
         <Nav />
-        <View />
+        <div className="view-anim" key={g.view}><View /></div>
       </div>
       <ChatFab />
       <RoomFab />
