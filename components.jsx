@@ -85,12 +85,18 @@ function CreatureCard({ beast, selected, onClick, selectable, showXp, badge }) {
   );
 }
 
-function Modal({ children, onClose, wide, accent }) {
+function Modal({ children, onClose, wide, accent, openSound = "open" }) {
   useEffect(() => {
     const h = (e) => { if (e.key === "Escape") onClose && onClose(); };
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
   }, [onClose]);
+  // Son d'ouverture/fermeture (mount/unmount uniquement ; openSound=null pour laisser
+  // le contenu jouer son propre son — ex. victoire/défaite).
+  useEffect(() => {
+    if (openSound && window.FA_SFX) window.FA_SFX.play(openSound);
+    return () => { if (window.FA_SFX) window.FA_SFX.play("close"); };
+  }, []);
   return (
     <div className="overlay" onMouseDown={(e) => { if (e.target === e.currentTarget && onClose) onClose(); }}>
       <div className={cx("modal", wide && "wide")} style={accent ? { borderColor: accent } : null}>

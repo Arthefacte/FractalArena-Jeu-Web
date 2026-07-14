@@ -65,6 +65,9 @@ function AreneBattle({ events, p1Team, p2Team, won, delta, onClose, opponentName
 
   useEffect(() => { if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight; }, [lines]);
 
+  // SFX : victoire/défaite quand le combat est résolu.
+  useEffect(() => { if (done && window.FA_SFX) window.FA_SFX.play(won ? "victory" : "defeat"); }, [done]);
+
   const liveOf = (team, side) => (i) => {
     const arr = side === "p1" ? p1Live : p2Live;
     return arr && arr[i] ? arr[i] : null;

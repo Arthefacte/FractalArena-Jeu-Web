@@ -439,8 +439,9 @@ function Fosse() {
 
 function ResultModal({ data, onClose }) {
   const win = data.win;
+  useEffect(() => { if (window.FA_SFX) window.FA_SFX.play(win ? "victory" : "defeat"); }, []);
   return (
-    <Modal onClose={onClose} accent={win ? "var(--success)" : "var(--alert)"}>
+    <Modal onClose={onClose} accent={win ? "var(--success)" : "var(--alert)"} openSound={null}>
       <div style={{ textAlign: "center", marginBottom: 18 }}>
         <div className="eyebrow" style={{ color: win ? "var(--success)" : "var(--alert)" }}>{data.free ? I18N.t("RES_LOCKED_GAIN") : "FRACTALARENA"}</div>
         <div className="h1" style={{ fontSize: 38, color: win ? "var(--success)" : "var(--alert)", margin: "4px 0" }}>{win ? I18N.t("RES_WIN") : I18N.t("RES_LOSE")}</div>

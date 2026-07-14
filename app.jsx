@@ -246,10 +246,14 @@ function App() {
   const prevLiquid = useRef(g.liquid);
   useEffect(() => { if (g.liquid !== prevLiquid.current) { prevLiquid.current = g.liquid; setChipPop((n) => n + 1); } }, [g.liquid]);
 
+  // SFX : synchronise le module son avec le toggle options.sound (charge + bascule).
+  useEffect(() => { if (window.FA_SFX) window.FA_SFX.setEnabled(g.options.sound); }, [g.options.sound]);
+
   function toast(msg, kind) {
     const id = Math.random();
     setToasts((T) => [...T, { id, msg, kind }]);
     setTimeout(() => setToasts((T) => T.filter((t) => t.id !== id)), 2600);
+    if (window.FA_SFX) window.FA_SFX.play(kind === "bad" ? "error" : "success");
   }
 
   // ---- spending helper: liquid first then locked ----
@@ -1414,7 +1418,7 @@ function Nav() {
   return (
     <nav className="nav">
       {tabs.map(([k, key]) => (
-        <button key={k} className={cx("nav-tab", g.view === k && "on")} onClick={() => actions.setView(k)}>
+        <button key={k} className={cx("nav-tab", g.view === k && "on")} onClick={() => { if (window.FA_SFX) window.FA_SFX.play("tab"); actions.setView(k); }}>
           <img className="nav-icon" src={`assets/nav-icons/${k}.png?v=74`} alt="" aria-hidden="true" draggable="false" />
           <span className="nav-label">{I18N.t(key)}</span>
           {k === "arene" && g.pvp && g.pvp.attacksUnseen > 0 && (
