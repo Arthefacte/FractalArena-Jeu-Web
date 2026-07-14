@@ -1415,7 +1415,8 @@ function Nav() {
     <nav className="nav">
       {tabs.map(([k, key]) => (
         <button key={k} className={cx("nav-tab", g.view === k && "on")} onClick={() => actions.setView(k)}>
-          {I18N.t(key)}
+          <img className="nav-icon" src={`assets/nav-icons/${k}.png?v=74`} alt="" aria-hidden="true" draggable="false" />
+          <span className="nav-label">{I18N.t(key)}</span>
           {k === "arene" && g.pvp && g.pvp.attacksUnseen > 0 && (
             <span className="nav-badge" style={{ marginLeft: 4, background: "var(--alert)", color: "#fff", borderRadius: 9, fontSize: 10, padding: "0 5px", fontWeight: 700 }}>
               {g.pvp.attacksUnseen}

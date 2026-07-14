@@ -7,17 +7,17 @@
 
   const T = {
     // nav
-    NAV_TEAM: { FR: "🦸 Équipe", EN: "🦸 Team", ZH: "🦸 队伍" },
-    NAV_FOSSE: { FR: "⚔️ La Fosse", EN: "⚔️ The Pit", ZH: "⚔️ 深坑" },
-    NAV_ARENE: { FR: "🏆 Arène", EN: "🏆 Arena", ZH: "🏆 竞技场" },
-    NAV_FORGE: { FR: "🔨 Forge", EN: "🔨 Forge", ZH: "🔨 熔炉" },
-    NAV_WALLET: { FR: "💰 Wallet", EN: "💰 Wallet", ZH: "💰 钱包" },
-    NAV_BOOSTS: { FR: "⚡ Boosts", EN: "⚡ Boosts", ZH: "⚡ 强化" },
-    NAV_PERSO: { FR: "👑 Perso", EN: "👑 Vanity", ZH: "👑 外观" },
-    NAV_OPTIONS: { FR: "⚙️ Options", EN: "⚙️ Options", ZH: "⚙️ 设置" },
-    NAV_LEADERBOARD: { FR: "🏆 Classement", EN: "🏆 Ranking", ZH: "🏆 排行榜" },
-    NAV_QUESTS: { FR: "🎯 Quêtes", EN: "🎯 Quests", ZH: "🎯 任务" },
-    NAV_CAMPAIGN: { FR: "📜 Campagne", EN: "📜 Campaign", ZH: "📜 战役" },
+    NAV_TEAM: { FR: "Équipe", EN: "Team", ZH: "队伍" },
+    NAV_FOSSE: { FR: "La Fosse", EN: "The Pit", ZH: "深坑" },
+    NAV_ARENE: { FR: "Arène", EN: "Arena", ZH: "竞技场" },
+    NAV_FORGE: { FR: "Forge", EN: "Forge", ZH: "熔炉" },
+    NAV_WALLET: { FR: "Wallet", EN: "Wallet", ZH: "钱包" },
+    NAV_BOOSTS: { FR: "Boosts", EN: "Boosts", ZH: "强化" },
+    NAV_PERSO: { FR: "Perso", EN: "Vanity", ZH: "外观" },
+    NAV_OPTIONS: { FR: "Options", EN: "Options", ZH: "设置" },
+    NAV_LEADERBOARD: { FR: "Classement", EN: "Ranking", ZH: "排行榜" },
+    NAV_QUESTS: { FR: "Quêtes", EN: "Quests", ZH: "任务" },
+    NAV_CAMPAIGN: { FR: "Campagne", EN: "Campaign", ZH: "战役" },
     Q_TITLE: { FR: "Quêtes du jour", EN: "Daily quests", ZH: "每日任务" },
     Q_STREAK: { FR: "Série : %d jours", EN: "Streak: %d days", ZH: "连续 %d 天" },
     Q_RESET_IN: { FR: "Reset dans %s", EN: "Resets in %s", ZH: "%s 后重置" },
@@ -422,7 +422,7 @@
     RELIC_INVENTORY: { FR: "Inventaire", EN: "Inventory", ZH: "库存" },
 
     // ---- Marché (hôtel des ventes reliques) ----
-    NAV_MARKET: { FR: "🏪 Marché", EN: "🏪 Market", ZH: "🏪 市场" },
+    NAV_MARKET: { FR: "Marché", EN: "Market", ZH: "市场" },
     MKT_TITLE: { FR: "Marché", EN: "Market", ZH: "市场" },
     MKT_TAG: { FR: "Achetez et vendez vos reliques entre joueurs", EN: "Buy and sell relics with other players", ZH: "与其他玩家买卖遗物" },
     MKT_TAB_BROWSE: { FR: "Parcourir", EN: "Browse", ZH: "浏览" },
@@ -519,7 +519,7 @@
     CAMP_LEGEND_TITLE: { FR: "La Fin de NETWORK", EN: "NETWORK's End", ZH: "NETWORK 的终结" },
 
     // ---- Tour infinie ----
-    NAV_TOUR: { FR: "🗼 Tour", EN: "🗼 Tower", ZH: "🗼 高塔" },
+    NAV_TOUR: { FR: "Tour", EN: "Tower", ZH: "高塔" },
     TOUR_TITLE: { FR: "La Tour infinie", EN: "The Infinite Tower", ZH: "无尽之塔" },
     TOUR_SUB: {
       FR: "Grimpe le plus haut possible avec tout ton roster — les PV persistent entre les étages, les morts sont définitives pour le run.",

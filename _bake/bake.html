@@ -1,0 +1,98 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<style>
+  html, body { margin: 0; background: transparent; }
+  #stage { width: 256px; height: 256px; }
+</style>
+<script type="importmap">
+  { "imports": {
+      "three": "../vendor/three-0.160.0/three.module.js",
+      "three/addons/": "../vendor/three-0.160.0/addons/"
+  } }
+</script>
+</head>
+<body>
+<div id="stage"></div>
+<script type="module">
+import * as THREE from "three";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
+
+const params = new URLSearchParams(location.search);
+const key = params.get("key");
+const SIZE = 256;
+
+const stage = document.getElementById("stage");
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+renderer.setSize(SIZE, SIZE);
+renderer.setPixelRatio(2); // backing 512 pour l'anticrénelage, capturé en 256 CSS → PNG net + léger
+renderer.setClearColor(0x000000, 0); // fond transparent
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+stage.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 100);
+
+// Éclairage : lit le métal anodisé + rehausse les arêtes émissives (style « griffe »).
+scene.add(new THREE.HemisphereLight(0xbfe9ff, 0x0a0e18, 0.75));
+const key1 = new THREE.DirectionalLight(0xffffff, 2.2); key1.position.set(3, 4, 5); scene.add(key1);
+const rim  = new THREE.DirectionalLight(0x66d9ff, 1.4); rim.position.set(-4, 2, -3); scene.add(rim);
+const fill = new THREE.DirectionalLight(0xffd27a, 0.7); fill.position.set(-2, -3, 2); scene.add(fill);
+
+// Centre + met à l'échelle le modèle dans une boîte ~2 unités (repris de relic-models.js).
+function normalize(root) {
+  const box = new THREE.Box3().setFromObject(root);
+  const size = box.getSize(new THREE.Vector3());
+  const center = box.getCenter(new THREE.Vector3());
+  const maxDim = Math.max(size.x, size.y, size.z) || 1;
+  root.position.sub(center);
+  const wrap = new THREE.Group();
+  wrap.add(root);
+  wrap.scale.setScalar(2 / maxDim);
+  return wrap;
+}
+
+const loader = new GLTFLoader();
+loader.setMeshoptDecoder(MeshoptDecoder); // inoffensif si le .glb n'est pas compressé
+
+window.__bakeError = null;
+window.__baked = false;
+
+loader.load(
+  `./raw/${key}.glb`,
+  (gltf) => {
+    // Debug : dimensions brutes + comptage mesh (aide au diagnostic hors-cadre).
+    const rawBox = new THREE.Box3().setFromObject(gltf.scene);
+    const rs = rawBox.getSize(new THREE.Vector3()); const rc = rawBox.getCenter(new THREE.Vector3());
+    let meshCount = 0; gltf.scene.traverse((o) => { if (o.isMesh) meshCount++; });
+    window.__dbg = { size: [rs.x, rs.y, rs.z].map((n) => +n.toFixed(3)), center: [rc.x, rc.y, rc.z].map((n) => +n.toFixed(3)), meshCount };
+    const obj = normalize(gltf.scene);
+    // Objet « plaque » (une dimension nettement plus fine) : sa face large est un blason
+    // à présenter face caméra. Sinon : angle héros 3/4 iso pour les objets volumineux.
+    const dims = [rs.x, rs.y, rs.z];
+    const maxDim = Math.max(...dims), minDim = Math.min(...dims);
+    const plate = minDim / (maxDim || 1) < 0.4;
+    if (plate) {
+      const thin = dims.indexOf(minDim); // 0=X 1=Y 2=Z : axe le plus fin
+      if (thin === 0) obj.rotation.y = -Math.PI / 2;     // face large (plan YZ) → caméra
+      else if (thin === 1) obj.rotation.x = Math.PI / 2; // face large (plan XZ) → caméra
+      // thin === 2 : la face large regarde déjà +Z (caméra)
+      camera.position.set(0.9, 0.6, 3.7);                // léger 3/4 frontal
+    } else {
+      obj.rotation.set(0.15, -0.5, 0);
+      camera.position.set(2.4, 1.7, 3.1);
+    }
+    scene.add(obj);
+    camera.lookAt(0, 0, 0);
+    // Deux frames pour être sûr que tout est uploadé/rendu avant la capture.
+    renderer.render(scene, camera);
+    requestAnimationFrame(() => { renderer.render(scene, camera); window.__baked = true; });
+  },
+  undefined,
+  (err) => { window.__bakeError = String(err && err.message || err); window.__baked = true; }
+);
+</script>
+</body>
+</html>

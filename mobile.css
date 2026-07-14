@@ -28,10 +28,12 @@
   }
   .nav::-webkit-scrollbar { display: none; }
   .nav-tab {
-    flex: 0 0 auto; min-width: 72px; padding: 11px 10px 9px;
+    flex: 0 0 auto; min-width: 72px; padding: 7px 10px 6px;
+    flex-direction: column; gap: 3px;
     font-size: 10px; letter-spacing: 0.4px; text-align: center;
     white-space: nowrap;
   }
+  .nav-icon { width: 26px; height: 26px; }
   .nav-tab::after { top: 0; bottom: auto; left: 22%; right: 22%; }
 
   /* ---- Section heads ---- */
