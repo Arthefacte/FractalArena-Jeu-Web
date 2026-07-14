@@ -51,15 +51,50 @@ function StatGrid({ beast, compact }) {
 }
 
 // Collection / selection card
+// Intensité du foil holographique par rareté (subtile → éclatante).
+const FOIL_BY_RARITY = { Common: 0.4, Rare: 0.55, Epic: 0.72, Legendary: 0.92 };
+const MAX_TILT = 7; // degrés
+
 function CreatureCard({ beast, selected, onClick, selectable, showXp, badge }) {
   const rc = D.RARITY_COLORS[beast.rarity];
   const pc = D.PRESET_COLORS[beast.preset];
   const xpMax = D.xpToNext(beast);
+  const ref = useRef(null);
+  const raf = useRef(0);
+
+  // Tilt parallax + position du reflet, pilotés par des vars CSS (pas de re-render).
+  function onMove(e) {
+    const el = ref.current; if (!el) return;
+    if (window.matchMedia && window.matchMedia("(hover: none)").matches) return; // tactile : pas de tilt
+    const cx0 = e.clientX, cy0 = e.clientY;
+    if (raf.current) return;
+    raf.current = requestAnimationFrame(() => {
+      raf.current = 0;
+      const el2 = ref.current; if (!el2) return;
+      const r = el2.getBoundingClientRect();
+      const px = Math.min(1, Math.max(0, (cx0 - r.left) / r.width));
+      const py = Math.min(1, Math.max(0, (cy0 - r.top) / r.height));
+      el2.style.setProperty("--rx", ((px - 0.5) * 2 * MAX_TILT).toFixed(2) + "deg"); // rotateY
+      el2.style.setProperty("--ry", ((0.5 - py) * 2 * MAX_TILT).toFixed(2) + "deg"); // rotateX
+      el2.style.setProperty("--mx", (px * 100).toFixed(1) + "%");
+      el2.style.setProperty("--my", (py * 100).toFixed(1) + "%");
+    });
+  }
+  function onLeave() {
+    const el = ref.current; if (!el) return;
+    if (raf.current) { cancelAnimationFrame(raf.current); raf.current = 0; }
+    el.style.setProperty("--rx", "0deg");
+    el.style.setProperty("--ry", "0deg");
+  }
+
   return (
     <div
+      ref={ref}
       className={cx("card", selectable && "selectable", selected && "sel")}
-      style={{ "--rc": rc }}
+      style={{ "--rc": rc, "--foil": FOIL_BY_RARITY[beast.rarity] || 0.4 }}
       onClick={onClick}
+      onMouseMove={onMove}
+      onMouseLeave={onLeave}
     >
       <div className="art">
         <img src={D.ART[beast.image_key]} alt={beast.name} draggable="false" />
@@ -81,6 +116,7 @@ function CreatureCard({ beast, selected, onClick, selectable, showXp, badge }) {
           </div>
         )}
       </div>
+      <div className="foil" aria-hidden="true" />
     </div>
   );
 }

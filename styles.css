@@ -298,10 +298,12 @@ input { font-family: var(--font-mono); }
 /* ---- Creature card ---- */
 .card {
   --rc: var(--r-common);
+  --rx: 0deg; --ry: 0deg; --lift: 0px; --scl: 1; /* tilt foil + hover lift, combinés */
   position: relative; background: linear-gradient(180deg, var(--bg-panel-2), #070b16);
   border: 1px solid color-mix(in srgb, var(--rc) 45%, var(--line));
   --b: 10px;
   clip-path: polygon(var(--b) 0, calc(100% - var(--b)) 0, 100% var(--b), 100% calc(100% - var(--b)), calc(100% - var(--b)) 100%, var(--b) 100%, 0 calc(100% - var(--b)), 0 var(--b));
+  transform: perspective(760px) translateY(var(--lift)) scale(var(--scl)) rotateX(var(--ry)) rotateY(var(--rx));
   transition: transform .16s cubic-bezier(.2,1,.3,1), box-shadow .18s, border-color .15s;
   overflow: hidden;
 }
@@ -327,8 +329,30 @@ input { font-family: var(--font-mono); }
   padding: 3px 7px; background: rgba(5,8,16,0.78); color: var(--gold);
   border: 1px solid rgba(255,230,0,0.4);
 }
-.card.selectable:hover { transform: translateY(-5px) scale(1.015); box-shadow: 0 14px 34px rgba(0,0,0,0.5), 0 0 22px color-mix(in srgb, var(--rc) 28%, transparent); }
+.card.selectable:hover { --lift: -5px; --scl: 1.015; box-shadow: 0 14px 34px rgba(0,0,0,0.5), 0 0 22px color-mix(in srgb, var(--rc) 28%, transparent); }
 .card.selectable:hover .art img { transform: scale(1.07); }
+
+/* Foil holographique : reflet prismatique + glare qui suit le curseur (#3).
+   Intensité = var --foil (par rareté). Desktop uniquement. */
+.card .foil {
+  position: absolute; inset: 0; z-index: 4; pointer-events: none;
+  opacity: 0; transition: opacity .22s ease;
+  background:
+    radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(255,255,255,0.45), rgba(255,255,255,0) 42%),
+    linear-gradient(115deg, rgba(255,0,190,0) 12%, rgba(255,0,190,0.30), rgba(0,240,255,0.30), rgba(255,230,0,0.30), rgba(255,0,190,0) 88%);
+  background-size: 200% 200%, 260% 260%;
+  background-position: 0% 0%, var(--mx, 50%) var(--my, 50%);
+  background-repeat: no-repeat;
+  mix-blend-mode: screen;
+}
+.card:hover .foil { opacity: var(--foil, 0.5); }
+@media (hover: none) {
+  .card:hover .foil { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card { transform: none !important; }
+  .card .foil { display: none; }
+}
 .card.sel { border-color: var(--rc); box-shadow: 0 0 0 1px var(--rc), 0 0 28px color-mix(in srgb, var(--rc) 40%, transparent); }
 .card.sel::before {
   content: ""; position: absolute; inset: 0; z-index: 3; pointer-events: none;
