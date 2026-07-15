@@ -26,6 +26,9 @@
   --gold: #FFE600;
   --sunset: #FF8A4B;
 
+  /* #4 Accent contextuel par écran — défaut cyan, redéfini par body[data-view] (voir plus bas) */
+  --accent: var(--elec);
+
   /* Rarities */
   --r-common: #9CA3AF;
   --r-rare: #3B82F6;
@@ -42,6 +45,18 @@
   --font-display: 'Chakra Petch', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 }
+
+/* #4 Accent contextuel : chaque écran de jeu impose son humeur via --accent.
+   Les écrans utilitaires (wallet/boosts/perso/leaderboard/options/lien) et team
+   gardent le cyan neutre du défaut. Une seule variable à maintenir : les halos
+   sont dérivés par color-mix() chez les consommateurs. */
+body[data-view="fosse"]    { --accent: var(--fire); }        /* farm PvE, chaud/agressif */
+body[data-view="arene"]    { --accent: #FF2D78; }            /* PvP, rouge-magenta « sang d'arène » */
+body[data-view="campaign"] { --accent: var(--success); }     /* aventure, vert */
+body[data-view="tour"]     { --accent: var(--r-rare); }      /* Tour infinie, bleu glacial */
+body[data-view="forge"]    { --accent: var(--forge); }       /* alchimie, violet */
+body[data-view="market"]   { --accent: var(--gold); }        /* Marché, doré */
+body[data-view="quests"]   { --accent: var(--gold); }        /* Quêtes, doré */
 
 * { box-sizing: border-box; }
 
@@ -136,6 +151,10 @@ input { font-family: var(--font-mono); }
   background: linear-gradient(180deg, rgba(8,12,22,0.96), rgba(8,12,22,0.82));
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--line);
+  /* #4 : fin liseré + halo teinté à la couleur de l'écran courant */
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--accent) 40%, transparent),
+              0 10px 26px -16px color-mix(in srgb, var(--accent) 60%, transparent);
+  transition: box-shadow .35s ease;
 }
 .hdr-logo { width: 44px; height: 44px; flex: none; filter: drop-shadow(0 0 10px rgba(247,147,26,0.35)); }
 .hdr-word { display: flex; flex-direction: column; line-height: 1; }
@@ -226,7 +245,8 @@ input { font-family: var(--font-mono); }
 }
 .view-anim::before {
   content: ""; position: absolute; inset: 0; z-index: 6; pointer-events: none; opacity: 0;
-  background: linear-gradient(to bottom, transparent 46%, rgba(0,240,255,.45) 50%, transparent 54%);
+  /* #4 : le balayage descend dans la couleur de l'écran d'arrivée */
+  background: linear-gradient(to bottom, transparent 46%, color-mix(in srgb, var(--accent) 55%, transparent) 50%, transparent 54%);
   background-size: 100% 260%; background-repeat: no-repeat;
   mix-blend-mode: screen;
   animation: viewSweep .55s ease-out;
@@ -242,9 +262,9 @@ input { font-family: var(--font-mono); }
 }
 .nav-tab::after {
   content: ""; position: absolute; left: 14px; right: 14px; bottom: 0; height: 2px;
-  background: var(--elec); transform: scaleX(0); transform-origin: center;
-  transition: transform .22s cubic-bezier(.3,1,.4,1);
-  box-shadow: 0 0 10px var(--elec);
+  background: var(--accent); transform: scaleX(0); transform-origin: center;
+  transition: transform .22s cubic-bezier(.3,1,.4,1), background .35s ease, box-shadow .35s ease;
+  box-shadow: 0 0 10px var(--accent);
 }
 .nav-tab:hover { color: var(--text); }
 .nav-tab.on { color: var(--text); }
@@ -257,7 +277,7 @@ input { font-family: var(--font-mono); }
 }
 
 /* ---- Section heads ---- */
-.eyebrow { font-family: var(--font-mono); font-size: 11px; letter-spacing: 3px; color: var(--elec); text-transform: uppercase; }
+.eyebrow { font-family: var(--font-mono); font-size: 11px; letter-spacing: 3px; color: var(--accent); text-transform: uppercase; transition: color .35s ease; }
 .h1 { font-size: 30px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin: 6px 0 2px; }
 .h2 { font-size: 19px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; }
 .muted { color: var(--text-dim); }
@@ -453,8 +473,10 @@ input { font-family: var(--font-mono); }
 .embers { position: fixed; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
 .ember {
   position: absolute; bottom: -10px; width: 3px; height: 3px; border-radius: 50%;
-  background: var(--fire); box-shadow: 0 0 6px 1px rgba(247,147,26,0.7);
+  /* #4 : les braises prennent la couleur de l'écran ; transition douce au changement */
+  background: var(--accent); box-shadow: 0 0 6px 1px color-mix(in srgb, var(--accent) 70%, transparent);
   animation: rise linear infinite;
+  transition: background .35s ease, box-shadow .35s ease;
 }
 .ember.cy { background: var(--elec); box-shadow: 0 0 6px 1px rgba(0,240,255,0.6); }
 @keyframes rise {

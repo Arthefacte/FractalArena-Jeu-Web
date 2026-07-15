@@ -196,6 +196,9 @@ function App() {
   // language
   useEffect(() => { I18N.setLang(g.lang); }, [g.lang]);
 
+  // #4 accent contextuel : chaque écran teinte l'UI via body[data-view] (cascade CSS pure)
+  useEffect(() => { document.body.dataset.view = g.view || "team"; }, [g.view]);
+
   // server save debounced 1.5s
   useEffect(() => {
     if (!g.wallet || !g.authToken) return;
