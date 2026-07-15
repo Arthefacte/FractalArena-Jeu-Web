@@ -1,0 +1,140 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<style> html,body{margin:0;background:transparent;} #stage{width:300px;height:300px;} </style>
+<script type="importmap">
+  { "imports": { "three":"../vendor/three-0.160.0/three.module.js", "three/addons/":"../vendor/three-0.160.0/addons/" } }
+</script>
+</head>
+<body>
+<div id="stage"></div>
+<script type="module">
+import * as THREE from "three";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
+import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+
+const SIZE=300;
+const stage=document.getElementById("stage");
+const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,preserveDrawingBuffer:true});
+renderer.setSize(SIZE,SIZE); renderer.setPixelRatio(2);
+renderer.setClearColor(0x000000,0); renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.2;
+stage.appendChild(renderer.domElement);
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(30,1,0.1,100);
+camera.position.set(0.35,0.28,4.4); camera.lookAt(0,0,0);
+scene.add(new THREE.HemisphereLight(0xbfe9ff,0x0a0e18,0.9));
+const kL=new THREE.DirectionalLight(0xffffff,2.6); kL.position.set(3,4,5); scene.add(kL);
+const rL=new THREE.DirectionalLight(0x66d9ff,1.7); rL.position.set(-4,2,-3); scene.add(rL);
+const fL=new THREE.DirectionalLight(0xffb066,0.9); fL.position.set(-2,-3,2); scene.add(fL);
+const pmrem=new THREE.PMREMGenerator(renderer);
+scene.environment=pmrem.fromScene(new RoomEnvironment(),0.04).texture;
+const wrap=new THREE.Group(); scene.add(wrap);
+window.__ready=false; window.__err=null; window.__parts=0;
+
+const params=new URLSearchParams(location.search);
+const NX=+(params.get("nx")||3), NY=+(params.get("ny")||3), NZ=+(params.get("nz")||1);
+
+const loader=new GLTFLoader(); loader.setMeshoptDecoder(MeshoptDecoder);
+function loadGLB(url){ return new Promise((res,rej)=>loader.load(url,res,undefined,rej)); }
+
+const parts=[];
+function easeOut(t){return 1-Math.pow(1-t,3);}
+function easeInOut(t){return t<0.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;}
+
+async function build(){
+  const g=await loadGLB("./raw/boot-emblem.glb");
+  let src=null; g.scene.traverse(o=>{ if(o.isMesh && !src) src=o; });
+  // normalise le mesh dans une boîte ~2u
+  const box=new THREE.Box3().setFromObject(g.scene);
+  const size=box.getSize(new THREE.Vector3()), center=box.getCenter(new THREE.Vector3());
+  const maxDim=Math.max(size.x,size.y,size.z)||1, scl=2/maxDim;
+  src.updateWorldMatrix(true,true);
+  const M=src.matrixWorld;
+
+  const geo=src.geometry;
+  const pos=geo.attributes.position, uv=geo.attributes.uv, nrm=geo.attributes.normal;
+  const idx=geo.index;
+  const triN = idx? idx.count/3 : pos.count/3;
+  const vAt=(t,k)=> idx? idx.getX(t*3+k) : t*3+k;
+
+  // bornes normalisées
+  const v=new THREE.Vector3();
+  let mnx=1e9,mny=1e9,mnz=1e9,mxx=-1e9,mxy=-1e9,mxz=-1e9;
+  const P=(i)=>{ v.fromBufferAttribute(pos,i).applyMatrix4(M).sub(center).multiplyScalar(scl); return v; };
+  for(let t=0;t<triN;t++){ for(let k=0;k<3;k++){ const p=P(vAt(t,k));
+    mnx=Math.min(mnx,p.x);mny=Math.min(mny,p.y);mnz=Math.min(mnz,p.z);
+    mxx=Math.max(mxx,p.x);mxy=Math.max(mxy,p.y);mxz=Math.max(mxz,p.z); } }
+  const sx=(mxx-mnx)||1, sy=(mxy-mny)||1, sz=(mxz-mnz)||1;
+
+  // range chaque triangle dans une cellule (par centroïde) → blocs
+  const cells=new Map();
+  const cA=new THREE.Vector3(),cB=new THREE.Vector3(),cC=new THREE.Vector3();
+  for(let t=0;t<triN;t++){
+    cA.copy(P(vAt(t,0))); const ax=cA.x,ay=cA.y,az=cA.z;
+    cB.copy(P(vAt(t,1))); const bx=cB.x,by=cB.y,bz=cB.z;
+    cC.copy(P(vAt(t,2))); const cx=cC.x,cy=cC.y,cz=cC.z;
+    const gx=(ax+bx+cx)/3, gy=(ay+by+cy)/3, gz=(az+bz+cz)/3;
+    let ix=Math.min(NX-1,Math.floor((gx-mnx)/sx*NX));
+    let iy=Math.min(NY-1,Math.floor((gy-mny)/sy*NY));
+    let iz=Math.min(NZ-1,Math.floor((gz-mnz)/sz*NZ));
+    const key=ix+","+iy+","+iz; let a=cells.get(key); if(!a){a=[];cells.set(key,a);} a.push(t);
+  }
+
+  const gc=new THREE.Vector3(0,0,0);
+  const tmpN=new THREE.Vector3(), nMat=new THREE.Matrix3().getNormalMatrix(M);
+  for(const [key,tris] of cells){
+    const posArr=new Float32Array(tris.length*9), uvArr=new Float32Array(tris.length*6), nArr=nrm?new Float32Array(tris.length*9):null;
+    // centroïde du fragment
+    const cen=new THREE.Vector3();
+    for(let ti=0;ti<tris.length;ti++){ for(let k=0;k<3;k++){ cen.add(P(vAt(tris[ti],k))); } }
+    cen.multiplyScalar(1/(tris.length*3));
+    for(let ti=0;ti<tris.length;ti++){ const t=tris[ti];
+      for(let k=0;k<3;k++){ const i=vAt(t,k); const p=P(i);
+        const o=(ti*3+k);
+        posArr[o*3]=p.x-cen.x; posArr[o*3+1]=p.y-cen.y; posArr[o*3+2]=p.z-cen.z;
+        uvArr[o*2]=uv.getX(i); uvArr[o*2+1]=uv.getY(i);
+        if(nArr){ tmpN.fromBufferAttribute(nrm,i).applyMatrix3(nMat).normalize(); nArr[o*3]=tmpN.x;nArr[o*3+1]=tmpN.y;nArr[o*3+2]=tmpN.z; }
+      }
+    }
+    const fg=new THREE.BufferGeometry();
+    fg.setAttribute("position",new THREE.BufferAttribute(posArr,3));
+    fg.setAttribute("uv",new THREE.BufferAttribute(uvArr,2));
+    if(nArr) fg.setAttribute("normal",new THREE.BufferAttribute(nArr,3)); else fg.computeVertexNormals();
+    // matériau = clone du matériau texturé natif → vraie texture, NET
+    const mat=src.material.clone(); mat.transparent=true;
+    const mesh=new THREE.Mesh(fg,mat); mesh.position.copy(cen); wrap.add(mesh);
+    let dir=cen.clone().sub(gc); dir.z*=0.18;
+    if(dir.lengthSq()<1e-3){ const a=parts.length*2.399; dir.set(Math.cos(a),Math.sin(a),0); }
+    dir.normalize();
+    parts.push({ mesh, base:cen.clone(), dir, z:cen.z, mat,
+      spin:new THREE.Euler((Math.random()-0.5)*1.6,(Math.random()-0.5)*1.6,(Math.random()-0.5)*1.6) });
+  }
+  parts.sort((a,b)=>a.z-b.z);
+  const n=parts.length, dur=0.42, step=(1-dur)/Math.max(1,n-1);
+  parts.forEach((p,i)=>{ p.start=i*step; p.dur=dur; });
+  window.__parts=parts.length;
+}
+
+window.__setT=function(t){
+  const spread=0.8;
+  for(const p of parts){
+    const lt=Math.max(0,Math.min(1,(t-p.start)/p.dur));
+    const eA=easeOut(lt), eR=easeInOut(lt);
+    p.mesh.position.copy(p.base).addScaledVector(p.dir, spread*(1-eA));
+    p.mesh.rotation.set(p.spin.x*(1-eR),p.spin.y*(1-eR),p.spin.z*(1-eR));
+    p.mesh.material.opacity = lt<=0?0:Math.min(1,lt*3);
+  }
+  wrap.rotation.y=(-0.5)*(1-easeInOut(Math.min(1,t)));
+  wrap.rotation.x=0.06;
+  renderer.render(scene,camera);
+  renderer.getContext().finish();
+};
+window.__dbg=()=>({parts:parts.length});
+build().then(()=>{ window.__setT(1); requestAnimationFrame(()=>{ window.__setT(1); window.__ready=true; }); })
+       .catch(e=>{ window.__err=String(e&&e.stack||e); window.__ready=true; });
+</script>
+</body>
+</html>

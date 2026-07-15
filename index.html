@@ -17,8 +17,8 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https://totems.fractalarena.com https://pub-0b140013c6564ee080397bcdb722b776.r2.dev; font-src 'self' data: https://fonts.gstatic.com; media-src 'self'; connect-src 'self' https://fractal-arena-server-production.up.railway.app blob: data:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'" />
   <title>Fractal Arena</title>
   <link rel="icon" type="image/png" href="assets/favicon.png?v=1" />
-  <link rel="stylesheet" href="styles.css?v=79" />
-  <link rel="stylesheet" href="mobile.css?v=79" />
+  <link rel="stylesheet" href="styles.css?v=80" />
+  <link rel="stylesheet" href="mobile.css?v=80" />
   <!-- Three.js AUTO-HÉBERGÉ (0.160.0) : cœur + clôture transitive des addons vendorisés sous
        vendor/three-0.160.0/. Élimine la dépendance CDN tierce non protégeable par SRI (les
        importmaps ne supportent pas l'intégrité). Le dossier versionné sert de cache-bust. -->
@@ -48,9 +48,30 @@
     }
     @keyframes obHalo { 0%,100% { transform: scale(0.92); } 50% { transform: scale(1.06); } }
     @keyframes obSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-    #boot { position: fixed; inset: 0; display: grid; place-items: center; background: #05070f; z-index: 999; }
-    #boot .b { font-family: 'JetBrains Mono', monospace; color: #00F0FF; letter-spacing: 4px; font-size: 13px; animation: bootPulse 1.1s ease-in-out infinite; }
-    @keyframes bootPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+    /* Boot #5 — chargement de marque : l'emblème s'assemble en 3D (frames dans assets/boot-anim.js) */
+    #boot { position: fixed; inset: 0; display: grid; place-items: center; z-index: 999;
+      background:
+        radial-gradient(900px 620px at 50% 42%, rgba(0,240,255,.05), transparent 60%),
+        radial-gradient(700px 560px at 50% 108%, rgba(247,147,26,.06), transparent 55%),
+        #05070f; }
+    #boot .boot-in { display: flex; flex-direction: column; align-items: center; gap: 22px; }
+    #boot .emb-wrap { position: relative; width: 200px; height: 200px; }
+    #boot .halo { position: absolute; inset: -24%; border-radius: 50%;
+      background: radial-gradient(circle at 50% 48%, rgba(0,240,255,.28), rgba(247,147,26,.10) 44%, transparent 66%);
+      filter: blur(10px); opacity: 0; transition: opacity .5s; }
+    #boot #boot-emblem { position: absolute; inset: 0; width: 100%; height: 100%; }
+    #boot .flash { position: absolute; inset: -40%; pointer-events: none; opacity: 0;
+      background: radial-gradient(circle, rgba(180,250,255,.9), rgba(0,240,255,.22) 34%, transparent 62%); }
+    #boot .bword { font-family: 'Chakra Petch', sans-serif; font-weight: 700; letter-spacing: .42em; font-size: 20px; padding-left: .42em;
+      background: linear-gradient(90deg, #F7931A, #fff 52%, #00F0FF); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    #boot .bhash { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; letter-spacing: .14em; color: #7F8DAD; height: 15px; display: flex; gap: 9px; }
+    #boot .bhash .tag { color: #00F0FF; } #boot .bhash .hx { color: #9fb4d6; }
+    #boot.settled .halo { opacity: .7; }
+    #boot.settled .emb-wrap { animation: bootFloat 4.2s ease-in-out infinite; }
+    #boot.settled .flash { animation: bootFlash .5s ease-out; }
+    @keyframes bootFloat { 0%,100% { transform: translateY(-4px); } 50% { transform: translateY(4px); } }
+    @keyframes bootFlash { 0% { opacity: 0; } 40% { opacity: .85; } 100% { opacity: 0; } }
+    @media (prefers-reduced-motion: reduce) { #boot.settled .emb-wrap, #boot.settled .flash { animation: none; } }
   </style>
 </head>
 
@@ -64,7 +85,30 @@
       <text x="50" y="57" font-family="monospace" font-size="20" font-weight="700" fill="#EAF1FF" text-anchor="middle">FA</text>
     </svg>
   </template>
-  <div id="boot"><div class="b">FRACTAL ARENA · BOOTING</div></div>
+  <div id="boot">
+    <div class="boot-in">
+      <div class="emb-wrap">
+        <div class="halo"></div>
+        <img id="boot-emblem" alt="Fractal Arena" />
+        <div class="flash"></div>
+      </div>
+      <div class="bword">FRACTAL ARENA</div>
+      <div class="bhash"><span class="tag">MINING GENESIS</span><span class="hx" id="boot-hx">0x0000000000000000</span></div>
+    </div>
+  </div>
+  <script>
+    /* hash de minage du boot (inline → tourne immédiatement, avant même boot-anim.js) */
+    (function () {
+      var hx = document.getElementById("boot-hx"); if (!hx) return;
+      var H = "0123456789abcdef", solved = 0;
+      function line() { var s = "0x" + Array(solved + 1).join("0"); for (var i = 0; i < 16 - solved; i++) s += H[(Math.random() * 16) | 0]; return s; }
+      if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        setInterval(function () { hx.textContent = line(); }, 60);
+        setInterval(function () { solved = (solved + 1) % 13; }, 700);
+      }
+    })();
+  </script>
+  <script src="assets/boot-anim.js?v=80" async></script>
 
   <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
@@ -72,56 +116,62 @@
 
   <!-- plain JS data/logic -->
   <!-- Cache-busting : incrémenter ?v=X à chaque déploiement pour forcer le rechargement -->
-  <script src="data.js?v=79"></script>
-  <script src="i18n.js?v=79"></script>
+  <script src="data.js?v=80"></script>
+  <script src="i18n.js?v=80"></script>
   <!-- engine.js supprimé : moteur de combat client mort (FA_ENGINE jamais appelé), divergent
        du serveur qui fait autorité. -->
-  <script src="cosmetic.js?v=79"></script>
-  <script src="sfx.js?v=79"></script>
-  <script src="loop.js?v=79"></script>
-  <script src="arene-ui.js?v=79"></script>
-  <script src="market-ui.js?v=79"></script>
-  <script src="forge-ui.js?v=79"></script>
-  <script src="talents-data.js?v=79"></script>
-  <script src="talents-ui.js?v=79"></script>
-  <script src="tour-ui.js?v=79"></script>
-  <script src="totem-ui.js?v=79"></script>
-  <script src="relic-assets.js?v=79"></script>
-  <script type="module" src="totem-cine.js?v=79"></script>
-  <script type="module" src="relic-viewer-boot.js?v=79"></script>
-  <script type="module" src="relic-models.js?v=79"></script>
-  <script type="module" src="relic-icons.js?v=79"></script>
+  <script src="cosmetic.js?v=80"></script>
+  <script src="sfx.js?v=80"></script>
+  <script src="loop.js?v=80"></script>
+  <script src="arene-ui.js?v=80"></script>
+  <script src="market-ui.js?v=80"></script>
+  <script src="forge-ui.js?v=80"></script>
+  <script src="talents-data.js?v=80"></script>
+  <script src="talents-ui.js?v=80"></script>
+  <script src="tour-ui.js?v=80"></script>
+  <script src="totem-ui.js?v=80"></script>
+  <script src="relic-assets.js?v=80"></script>
+  <script type="module" src="totem-cine.js?v=80"></script>
+  <script type="module" src="relic-viewer-boot.js?v=80"></script>
+  <script type="module" src="relic-models.js?v=80"></script>
+  <script type="module" src="relic-icons.js?v=80"></script>
 
   <!-- React (Babel) — order matters: components → screens → chat/room → app -->
-  <script type="text/babel" src="components.jsx?v=79"></script>
-  <script type="text/babel" src="cinematique.jsx?v=79"></script>
-  <script type="text/babel" src="fosse.jsx?v=79"></script>
-  <script type="text/babel" src="arene-battle.jsx?v=79"></script>
-  <script type="text/babel" src="arene.jsx?v=79"></script>
-  <script type="text/babel" src="market.jsx?v=79"></script>
-  <script type="text/babel" src="screens.jsx?v=79"></script>
-  <script type="text/babel" src="chat.jsx?v=79"></script>
-  <script type="text/babel" src="roomchat.jsx?v=79"></script>
-  <script type="text/babel" src="leaderboard.jsx?v=79"></script>
-  <script type="text/babel" src="quests.jsx?v=79"></script>
-  <script type="text/babel" src="login.jsx?v=79"></script>
-  <script type="text/babel" src="tutorial.jsx?v=79"></script>
-  <script type="text/babel" src="campaign.jsx?v=79"></script>
-  <script type="text/babel" src="tour.jsx?v=79"></script>
-  <script type="text/babel" src="relic-viewer.jsx?v=79"></script>
-  <script type="text/babel" src="buyback.jsx?v=79"></script>
-  <script type="text/babel" src="link.jsx?v=79"></script>
-  <script type="text/babel" src="app.jsx?v=79"></script>
+  <script type="text/babel" src="components.jsx?v=80"></script>
+  <script type="text/babel" src="cinematique.jsx?v=80"></script>
+  <script type="text/babel" src="fosse.jsx?v=80"></script>
+  <script type="text/babel" src="arene-battle.jsx?v=80"></script>
+  <script type="text/babel" src="arene.jsx?v=80"></script>
+  <script type="text/babel" src="market.jsx?v=80"></script>
+  <script type="text/babel" src="screens.jsx?v=80"></script>
+  <script type="text/babel" src="chat.jsx?v=80"></script>
+  <script type="text/babel" src="roomchat.jsx?v=80"></script>
+  <script type="text/babel" src="leaderboard.jsx?v=80"></script>
+  <script type="text/babel" src="quests.jsx?v=80"></script>
+  <script type="text/babel" src="login.jsx?v=80"></script>
+  <script type="text/babel" src="tutorial.jsx?v=80"></script>
+  <script type="text/babel" src="campaign.jsx?v=80"></script>
+  <script type="text/babel" src="tour.jsx?v=80"></script>
+  <script type="text/babel" src="relic-viewer.jsx?v=80"></script>
+  <script type="text/babel" src="buyback.jsx?v=80"></script>
+  <script type="text/babel" src="link.jsx?v=80"></script>
+  <script type="text/babel" src="app.jsx?v=80"></script>
 
   <script>
-    // hide boot splash once React has mounted
+    // Retire le splash quand React a monté ET après une durée mini (garantit qu'on voie
+    // au moins un cycle d'assemblage même si la compilation est rapide). Fondu de sortie.
     (function () {
-      var tries = 0;
+      var t0 = Date.now(), MIN = 2400, tries = 0;
       var iv = setInterval(function () {
         tries++;
         var root = document.getElementById('root');
-        if (root && root.children.length) { var b = document.getElementById('boot'); if (b) b.remove(); clearInterval(iv); }
-        if (tries > 80) clearInterval(iv);
+        var ready = root && root.children.length;
+        if (ready && (Date.now() - t0) >= MIN) {
+          clearInterval(iv);
+          var b = document.getElementById('boot');
+          if (b) { b.style.transition = 'opacity .45s ease'; b.style.opacity = '0'; setTimeout(function () { if (b) b.remove(); }, 460); }
+        }
+        if (tries > 250) clearInterval(iv); // garde-fou ~20s
       }, 80);
     })();
   </script>
