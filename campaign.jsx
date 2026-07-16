@@ -260,13 +260,16 @@ function CampaignCombat({ worldIndex, floorIndex, onBack, onCleared }) {
     // État (locked/tickets/progression) déjà appliqué par actions.campaignFight.
     setPlaying(false);
     battleRef.current = null;
-    setResult({
+    const summary = {
       win, survivors, stars: r.stars || 0,
       lockedGain: (r.reward && r.reward.lockedGain) || 0,
       silver: (r.reward && r.reward.silver) || 0,
       gold: (r.reward && r.reward.gold) || 0,
       titleUnlocked: r.titleUnlocked || null, legend: !!r.legend,
-    });
+    };
+    // Le finisher précède la modale, et joue le victory/defeat que la Campagne
+    // n'avait jamais eu (elle tombait sur le son 'open' générique).
+    window.FA_FINISHER.play({ win, onDone: () => setResult(summary) });
   }
 
   const worldName = I18N.t("CAMP_W" + (worldIndex + 1) + "_NAME");
@@ -376,7 +379,7 @@ function CampaignCombat({ worldIndex, floorIndex, onBack, onCleared }) {
 function CampResultModal({ data, isBoss, onClose, onNext, onRetry }) {
   const win = data.win;
   return (
-    <Modal onClose={onClose} accent={win ? "var(--success)" : "var(--alert)"}>
+    <Modal onClose={onClose} accent={win ? "var(--success)" : "var(--alert)"} openSound={null}>
       <div style={{ textAlign: "center", marginBottom: 16 }}>
         <div className="h1" style={{ fontSize: 30, color: win ? "var(--success)" : "var(--alert)", margin: "4px 0" }}>
           {win ? I18N.t("CAMP_VICTORY") : I18N.t("CAMP_DEFEAT")}

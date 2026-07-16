@@ -293,7 +293,11 @@ function Fosse() {
       return;
     }
     loopRef.current = false; setLoop(false);
-    if (!isLoopRun) setResult({ win, free, ...summary });
+    if (!isLoopRun) {
+      // Le finisher précède la modale ; le garde !isLoopRun le rend inatteignable
+      // depuis la boucle (invariant verrouillé par test/finisher-hooks.test.js).
+      window.FA_FINISHER.play({ win, onDone: () => setResult({ win, free, ...summary }) });
+    }
   }
 
   function onFight() { if (playing) return; setResult(null); playFight(false); }
@@ -439,7 +443,6 @@ function Fosse() {
 
 function ResultModal({ data, onClose }) {
   const win = data.win;
-  useEffect(() => { if (window.FA_SFX) window.FA_SFX.play(win ? "victory" : "defeat"); }, []);
   return (
     <Modal onClose={onClose} accent={win ? "var(--success)" : "var(--alert)"} openSound={null}>
       <div style={{ textAlign: "center", marginBottom: 18 }}>

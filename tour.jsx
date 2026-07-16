@@ -133,7 +133,6 @@ function TourStartModal({ score, balance, busy, onConfirm, onClose }) {
 /* Modale de résultat post-rejeu : victoire/défaite, paliers payés, run over. */
 function TourResultModal({ result, onClose }) {
   const { won, rewards, runOver, floor } = result;
-  useEffect(() => { if (window.FA_SFX) window.FA_SFX.play(won ? "victory" : "defeat"); }, []);
   return (
     <Modal onClose={onClose} accent={won ? "var(--success)" : "var(--alert)"} openSound={null}>
       <div className="h1" style={{ fontSize: 26, textAlign: "center", color: won ? "var(--success)" : "var(--alert)", margin: "4px 0 12px" }}>

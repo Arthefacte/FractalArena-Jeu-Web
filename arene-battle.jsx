@@ -65,8 +65,11 @@ function AreneBattle({ events, p1Team, p2Team, won, delta, onClose, opponentName
 
   useEffect(() => { if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight; }, [lines]);
 
-  // SFX : victoire/défaite quand le combat est résolu.
-  useEffect(() => { if (done && window.FA_SFX) window.FA_SFX.play(won ? "victory" : "defeat"); }, [done]);
+  // Finisher : cinématique de fin quand le combat est résolu (il joue aussi le son
+  // victory/defeat). Partagé Arène + Tour — tour.jsx rend ce même composant.
+  useEffect(() => {
+    if (done && window.FA_FINISHER) window.FA_FINISHER.play({ win: won });
+  }, [done]);
 
   const liveOf = (team, side) => (i) => {
     const arr = side === "p1" ? p1Live : p2Live;
