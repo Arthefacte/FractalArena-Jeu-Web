@@ -296,7 +296,8 @@ function Fosse() {
     if (!isLoopRun) {
       // Le finisher précède la modale ; le garde !isLoopRun le rend inatteignable
       // depuis la boucle (invariant verrouillé par test/finisher-hooks.test.js).
-      window.FA_FINISHER.play({ win, onDone: () => setResult({ win, free, ...summary }) });
+      const showResult = () => setResult({ win, free, ...summary });
+      if (window.FA_FINISHER) window.FA_FINISHER.play({ win, onDone: showResult }); else showResult();
     }
   }
 

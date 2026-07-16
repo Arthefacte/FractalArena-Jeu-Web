@@ -168,7 +168,7 @@
     if (raf) { stop(); flush(); }
     pending = (o && o.onDone) || null;
 
-    if (window.FA_SFX) window.FA_SFX.play(win ? "victory" : "defeat");
+    if (window.FA_SFX) { try { window.FA_SFX.play(win ? "victory" : "defeat"); } catch (e) {} }
 
     const UI = window.FA_FINISHER_UI;
     if (reduced() || !UI || !window.requestAnimationFrame) { flush(); return; }

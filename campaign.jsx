@@ -269,7 +269,8 @@ function CampaignCombat({ worldIndex, floorIndex, onBack, onCleared }) {
     };
     // Le finisher précède la modale, et joue le victory/defeat que la Campagne
     // n'avait jamais eu (elle tombait sur le son 'open' générique).
-    window.FA_FINISHER.play({ win, onDone: () => setResult(summary) });
+    const showResult = () => setResult(summary);
+    if (window.FA_FINISHER) window.FA_FINISHER.play({ win, onDone: showResult }); else showResult();
   }
 
   const worldName = I18N.t("CAMP_W" + (worldIndex + 1) + "_NAME");

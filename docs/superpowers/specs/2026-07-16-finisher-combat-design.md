@@ -91,29 +91,40 @@ réutilisable). **Aucun flash** : ça s'éteint, ça ne frappe pas.
 
 ## Points d'ancrage
 
-Les quatre modes convergent sur un `setResult`/`setDone` unique portant un booléen
-`win`/`won`. Chacun enveloppe l'appel existant, sans changer sa shape :
+Trois hooks, pas quatre : la Tour n'a pas de point d'ancrage propre, elle rend
+`AreneBattle` (`tour.jsx:398`) et hérite donc du hook de l'Arène. Les trois modes
+convergent sur un `setResult`/`setDone` unique portant un booléen `win`/`won`. Chacun
+enveloppe l'appel existant, sans changer sa shape :
 
 | Mode | Ligne | Hook actuel |
 |---|---|---|
 | Fosse | `fosse.jsx:296` | `setResult({ win, free, ...summary })` |
-| Tour | `tour.jsx:230-231` | `setBattle(...)` + `setResult(...)` |
 | Campagne | `campaign.jsx:263` | `setResult({ win, ... })` |
-| Arène | `arene-battle.jsx:47` | `setDone(true)` |
+| Arène (+ Tour, partagé) | `arene-battle.jsx:47` (`done`) | `setDone(true)` |
 
 Le garde `if (!isLoopRun)` de la Fosse enveloppe déjà le point d'appel, et la Tour en
 auto ne l'atteint jamais : **le finisher est inatteignable depuis une boucle sans une
 ligne de code**. Ce bypass est un invariant à verrouiller par test.
 
-Cas Tour : le `setResult` est posé en même temps que `setBattle`, mais la modale
-n'apparaît qu'à la fermeture du replay (`tour.jsx:398-403`). Le finisher doit donc jouer
-à la **fermeture du replay**, pas à la pose du state — sinon il se déclencherait derrière
-le replay encore à l'écran. Le hook Tour est `onClose` du `AreneBattle`, pas la ligne 230.
+Cas Arène/Tour : l'implémentation branche sur `done` dans `arene-battle.jsx` (pas sur un
+hook Tour dédié qui n'existe pas), et c'est le meilleur geste : le finisher tombe au
+climax du combat plutôt qu'après un clic, et le code est partagé entre l'Arène et la
+Tour. `onClose` déclenche `actions.pvpRefresh()` et **jamais avant** — verrouillé par
+`test/arene-replay-spoiler.test.js:24` (anti-spoiler). Le finisher s'intercale sur
+`setDone(true)`, en amont de ce `onClose` : l'invariant n'est pas touché.
 
-Cas Arène : `onClose` déclenche `actions.pvpRefresh()` et **jamais avant** — verrouillé
-par `test/arene-replay-spoiler.test.js:24` (anti-spoiler). Le finisher s'intercale sur
-`setDone(true)`, en amont de ce `onClose` : l'invariant n'est pas touché, mais le test
-doit rester vert.
+**Correction a posteriori (prémisse fausse dans une version antérieure de ce doc) :**
+cette section affirmait que le hook devait être `onClose` d'`AreneBattle` « sinon il se
+déclencherait derrière le replay encore à l'écran ». C'est faux : le canvas du finisher
+est en `z-index: 9990` (`finisher.js`), donc il passe **par-dessus** le rejeu, pas
+derrière — l'argument qui a motivé un hook `onClose` séparé ne tenait pas.
+Conséquence à consigner pour ne pas « réparer » cette déviation par erreur : à la Tour,
+le finisher ne précède **pas** directement `TourResultModal`. Il joue sur `done` pendant
+que le rejeu (`AreneBattle`) est encore affiché ; il reste ensuite un clic de fermeture
+du rejeu (`onClose` → `setBattle(null)`) avant que `TourResultModal` apparaisse
+(`tour.jsx:402`, `!battle && result`). L'argument « le flash masque la transition vers
+la modale » (section *Le geste*) ne vaut donc qu'à l'Arène et à la Fosse/Campagne, pas à
+la Tour.
 
 ## Deux dettes ramassées
 

@@ -48,3 +48,16 @@ test("les modales de résultat gardent openSound={null}", () => {
   assert.match(fosse, /openSound=\{null\}/, "ResultModal a perdu openSound={null}");
   assert.match(tour, /openSound=\{null\}/, "TourResultModal a perdu openSound={null}");
 });
+
+test("INVARIANT : Fosse et Campagne gardent window.FA_FINISHER et replient sur onDone si absent", () => {
+  // Ces deux call sites portent un onDone qui montre les gains déjà réglés par le
+  // serveur (actions.resolveFight / actions.campaignFight) : si finisher.js est absent
+  // (404 GH Pages) et l'appel n'est pas gardé, TypeError après paiement → modale et
+  // gains perdus pour le joueur. On verrouille la forme exacte du repli : guard +
+  // appel direct de la même fonction dans la branche else (pas juste sa présence).
+  const guardRe = /if\s*\(window\.FA_FINISHER\)\s*window\.FA_FINISHER\.play\(\{[^}]*onDone:\s*(\w+)[^}]*\}\);\s*else\s*\1\(\);/;
+  for (const [name, src] of [["fosse.jsx", fosse], ["campaign.jsx", campaign]]) {
+    const m = src.match(guardRe);
+    assert.ok(m, name + " : window.FA_FINISHER.play doit être gardé par `if (window.FA_FINISHER)` avec un `else` qui appelle la même fonction onDone directement");
+  }
+});
