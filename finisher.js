@@ -47,6 +47,35 @@
     if (cv) cv.style.display = "none";
   }
 
+  // Distance du centre au bord de l'écran le long d'un angle donné (pas le rayon
+  // du cercle circonscrit) : à dist=1 un éclat est pile sur le bord visible,
+  // quel que soit l'angle, au lieu d'être hors-cadre pour la plupart d'entre eux.
+  function edgeRadius(angle, W, H) {
+    const hw = W / 2, hh = H / 2;
+    const c = Math.cos(angle), s = Math.sin(angle);
+    const tx = c !== 0 ? hw / Math.abs(c) : Infinity;
+    const ty = s !== 0 ? hh / Math.abs(s) : Infinity;
+    return Math.min(tx, ty);
+  }
+
+  function hexToRgb(hex) {
+    let h = (hex || "").replace("#", "").trim();
+    if (h.length === 3) h = h.split("").map((c) => c + c).join("");
+    const n = parseInt(h, 16);
+    return Number.isFinite(n) ? [(n >> 16) & 255, (n >> 8) & 255, n & 255] : [0, 240, 255];
+  }
+
+  // Mélange l'accent (frac=1) vers un ton ardoise éteint (frac=0), en rgb() —
+  // pas de dépendance à color-mix() du canvas (support moins sûr que pour le CSS).
+  const SLATE = [58, 68, 96];
+  function mixAccent(acc, frac) {
+    const [ar, ag, ab] = hexToRgb(acc);
+    const r = Math.round(ar * frac + SLATE[0] * (1 - frac));
+    const g = Math.round(ag * frac + SLATE[1] * (1 - frac));
+    const b = Math.round(ab * frac + SLATE[2] * (1 - frac));
+    return "rgb(" + r + "," + g + "," + b + ")";
+  }
+
   function hexLine(scramble, n) {
     // Le hash perd ses caractères à mesure que scramble monte. Déterministe.
     let s = "0x";
@@ -58,7 +87,7 @@
   }
 
   function drawWin(v, W, H, acc) {
-    const ccx = W / 2, ccy = H / 2, R = Math.hypot(W, H) / 2;
+    const ccx = W / 2, ccy = H / 2;
     cx.fillStyle = "rgba(3,5,11," + v.veil.toFixed(3) + ")";
     cx.fillRect(0, 0, W, H);
     cx.lineWidth = 2;
@@ -66,6 +95,7 @@
     cx.shadowColor = acc;
     for (let i = 0; i < v.shards.length; i++) {
       const s = v.shards[i];
+      const R = edgeRadius(s.angle, W, H);
       const x = ccx + Math.cos(s.angle) * s.dist * R;
       const y = ccy + Math.sin(s.angle) * s.dist * R;
       const r = 26 + 54 * s.scale;
@@ -101,10 +131,12 @@
     for (let i = 0; i < v.blocks.length; i++) {
       const b = v.blocks[i];
       const x = b.col * bw + b.dx, y = b.row * bh + b.dy;
-      cx.globalAlpha = b.alpha * 0.5;
-      cx.fillStyle = "#0a0e1a";
+      // Panneau clair (dérivé de l'accent, éteint vers l'ardoise) : lisible sur le
+      // fond navy du jeu, contrairement à un remplissage sombre sur fond sombre.
+      cx.globalAlpha = b.alpha * 0.34;
+      cx.fillStyle = mixAccent(acc, 0.16 + 0.16 * b.sat);
       cx.fillRect(x, y, bw + 1, bh + 1);
-      cx.globalAlpha = b.alpha * b.sat * 0.35;
+      cx.globalAlpha = b.alpha * (0.3 + 0.4 * b.sat);
       cx.strokeStyle = acc;
       cx.lineWidth = 1;
       cx.strokeRect(x, y, bw, bh);

@@ -21,18 +21,38 @@
   // fonction pure (et donc testable). Nombres premiers → pas de motif visible.
   const seedOf = (row, col) => (((row * 7 + col * 13) % 11) / 11);
 
+  // Seed déterministe par éclat (index). 4 flux indépendants (angle, cadence,
+  // taille, rayon de repos) via des multiplicateurs premiers distincts, pour
+  // casser la symétrie parfaite sans jamais toucher à Math.random().
+  const shardSeed = (i, a, b, m) => (((i * a + b) % m) / m);
+
   function winVals(t) {
     const kk = clamp01(t / FIN_IMPACT);
-    const conv = eIn(kk);            // 0 = éclats au bord, 1 = au centre
     const shards = [];
     for (let i = 0; i < SHARDS; i++) {
-      const angle = (i / SHARDS) * Math.PI * 2;
+      const base = (i / SHARDS) * Math.PI * 2;
+      const sAng = shardSeed(i, 7, 3, 11);
+      const sLag = shardSeed(i, 13, 5, 9);
+      const sSize = shardSeed(i, 17, 2, 7);
+      const sRest = shardSeed(i, 23, 11, 13);
+
+      const angle = base + (sAng - 0.5) * 0.9;         // casse la symétrie en roue
+      const lag = sLag * 0.22;                         // chaque éclat démarre à son heure
+      const kl = clamp01((kk - lag) / (1 - lag));       // convergence locale de l'éclat
+      const conv = eIn(kl);
+
+      // Fraction du rayon-jusqu'au-bord (converti en pixels par finisher.js) :
+      // départ dispersé près du bord, repos = petit essaim autour de l'impact
+      // (jamais un point unique, sinon 14 hexagones identiques se confondent).
+      const startFrac = 0.62 + 0.30 * sSize;
+      const restFrac = 0.05 + 0.11 * sRest;
+
       shards.push({
         angle,
-        dist: 1 - conv,                          // fraction du rayon écran
-        rot: angle + conv * 2.2,                 // vrille en convergeant
-        scale: 0.35 + 0.5 * (1 - conv),
-        alpha: kk < 0.08 ? clamp01(kk / 0.08) : clamp01(1 - eIn(kk) * 0.15),
+        dist: startFrac + (restFrac - startFrac) * conv,
+        rot: angle + kl * 2.4 + sAng * 1.1,              // vrille + variété de vitesse
+        scale: (0.42 + 0.5 * (1 - kl)) * (0.75 + 0.5 * sSize),
+        alpha: kk < 0.07 ? clamp01(kk / 0.07) : clamp01(1 - conv * 0.2),
       });
     }
     const ft = (t - FIN_IMPACT) / 0.16;          // le flash dure 160 ms
