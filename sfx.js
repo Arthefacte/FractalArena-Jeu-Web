@@ -59,6 +59,15 @@
     victory: (t) => [523, 659, 784, 1047].forEach((f, i) => tone(t + i * 0.10, { type: "triangle", f, dur: 0.22, peak: 0.5 })),
     // descente mate
     defeat:  (t) => [440, 349, 262].forEach((f, i) => tone(t + i * 0.12, { type: "sine", f, dur: 0.28, peak: 0.45 })),
+    // --- Combat (courts, calés sous le master 0.22 ; cadence ~165 ms) ---
+    hit:     (t) => tone(t, { type: "square", f: 220, f2: 90, dur: 0.06, peak: 0.34 }),
+    crit:    (t) => { tone(t, { type: "square", f: 520, f2: 180, dur: 0.09, peak: 0.5 });
+                      tone(t, { type: "sine", f: 90, f2: 55, dur: 0.12, peak: 0.4 }); },
+    special: (t) => { tone(t, { type: "sawtooth", f: 300, f2: 900, dur: 0.14, peak: 0.34 });
+                      tone(t + 0.02, { type: "sine", f: 700, f2: 1300, dur: 0.12, peak: 0.2 }); },
+    heal:    (t) => tone(t, { type: "sine", f: 500, f2: 760, dur: 0.13, peak: 0.32 }),
+    ko:      (t) => { tone(t, { type: "sawtooth", f: 160, f2: 60, dur: 0.22, peak: 0.44 });
+                      tone(t + 0.04, { type: "sine", f: 80, f2: 45, dur: 0.26, peak: 0.34 }); },
   };
 
   function play(name) {
@@ -88,5 +97,5 @@
     play("click");
   }, true);
 
-  window.FA_SFX = { play, setEnabled };
+  window.FA_SFX = { play, setEnabled, has: (n) => Object.prototype.hasOwnProperty.call(RECIPES, n) };
 })();
