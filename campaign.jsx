@@ -129,6 +129,7 @@ function CampaignCombat({ worldIndex, floorIndex, onBack, onCleared }) {
   const logRef = useRef(null);
   const p1Refs = useRef([]);
   const p2Refs = useRef([]);
+  const boardRef = useRef(null);
 
   // aperçu idle synchronisé avec la sélection
   useEffect(() => {
@@ -145,32 +146,6 @@ function CampaignCombat({ worldIndex, floorIndex, onBack, onCleared }) {
   useEffect(() => { const id = setInterval(() => setTick((t) => t + 1), 1000); return () => clearInterval(id); }, []);
 
   function log(text, cls) { setLogLines((L) => [...L.slice(-120), { text, cls }]); }
-
-  function floatText(cardEl, text, color) {
-    if (!cardEl) return;
-    const art = cardEl.querySelector(".art");
-    if (!art) return;
-    const el = document.createElement("div");
-    el.className = "dmg-float";
-    el.textContent = text; el.style.color = color;
-    el.style.left = (30 + Math.random() * 40) + "%"; el.style.top = "40%";
-    art.appendChild(el);
-    setTimeout(() => el.remove(), 980);
-  }
-  function animHit(side, idx) {
-    const el = (side === "p1" ? p1Refs : p2Refs).current[idx];
-    if (!el) return;
-    el.classList.remove("shake", "flash"); void el.offsetWidth;
-    el.classList.add("shake", "flash");
-    setTimeout(() => el.classList.remove("shake", "flash"), 360);
-  }
-  function animLunge(side, idx) {
-    const el = (side === "p1" ? p1Refs : p2Refs).current[idx];
-    if (!el) return;
-    const cls = side === "p1" ? "lunge-l" : "lunge-r";
-    el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls);
-    setTimeout(() => el.classList.remove(cls), 380);
-  }
 
   async function startFight() {
     if (playing) return;
@@ -215,14 +190,19 @@ function CampaignCombat({ worldIndex, floorIndex, onBack, onCleared }) {
         delay = baseDelay * 0.6 / spd;
         break;
       case "atk": case "sp": case "crit": {
-        animLunge(ev.side, ev.idx);
-        animHit(ev.tside, ev.tidx);
+        const J = window.FA_JUICE;
+        const aEl = (ev.side === "p1" ? p1Refs : p2Refs).current[ev.idx];
         const tEl = (ev.tside === "p1" ? p1Refs : p2Refs).current[ev.tidx];
-        floatText(tEl, "-" + ev.dmg, ev.crit ? "var(--gold)" : ev.t === "sp" ? "var(--forge)" : "var(--alert)");
+        const tLive = (ev.tside === "p1" ? ev.state.p1 : ev.state.p2)[ev.tidx];
+        if (J) {
+          J.lunge(aEl, ev.side);
+          J.hit(tEl, { dmg: ev.dmg, maxHp: tLive ? tLive.maxHp : 0, kind: ev.t === "sp" ? "sp" : "atk", crit: ev.crit, boardEl: boardRef.current });
+        }
         setP1Live(ev.state.p1); setP2Live(ev.state.p2);
         const key = ev.crit ? "L_CRIT" : ev.t === "sp" ? "L_SP" : "L_ATK";
         log(I18N.t(key, ev.name, ev.tname, ev.dmg), ev.crit ? "lc-gold" : ev.t === "sp" ? "lc-purple" : "lc-red");
-        if (ev.down) log(I18N.t("L_DOWN", ev.tname), "lc-yellow");
+        if (ev.down) { if (J) J.ko(tEl); log(I18N.t("L_DOWN", ev.tname), "lc-yellow"); }
+        if (J) delay += J.hitStopMs(ev.crit) / spd;
         break;
       }
       case "miss":
@@ -231,7 +211,7 @@ function CampaignCombat({ worldIndex, floorIndex, onBack, onCleared }) {
         break;
       case "heal": {
         const hEl = (ev.side === "p1" ? p1Refs : p2Refs).current[ev.idx];
-        floatText(hEl, "+" + ev.heal, "var(--success)");
+        if (window.FA_JUICE) window.FA_JUICE.heal(hEl, { amount: ev.heal });
         setP1Live(ev.state.p1); setP2Live(ev.state.p2);
         log(I18N.t("L_HEAL", ev.name, ev.heal), "lc-green");
         delay = baseDelay * 0.5 / spd;
@@ -295,7 +275,7 @@ function CampaignCombat({ worldIndex, floorIndex, onBack, onCleared }) {
       </div>
 
       {/* Plateau */}
-      <div className="panel oct" style={{ position: "relative", overflow: "hidden", border: "1px solid var(--line)", padding: "26px 22px 22px" }}>
+      <div ref={boardRef} className="panel oct" style={{ position: "relative", overflow: "hidden", border: "1px solid var(--line)", padding: "26px 22px 22px" }}>
         <div style={{ position: "absolute", inset: 0, backgroundImage: "var(--filigrane)", backgroundSize: "cover", backgroundPosition: "center", opacity: 0.16, mixBlendMode: "luminosity" }} />
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(6,9,18,0.55), rgba(6,9,18,0.82))" }} />
         <div style={{ position: "relative" }}>

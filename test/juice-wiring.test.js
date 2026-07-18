@@ -22,3 +22,16 @@ test("fosse.jsx utilise FA_JUICE et ne redéfinit plus les helpers dupliqués", 
   assert.ok(!/function animHit\s*\(/.test(src), "animHit dupliqué doit être supprimé");
   assert.ok(!/function animLunge\s*\(/.test(src), "animLunge dupliqué doit être supprimé");
 });
+
+test("campaign.jsx utilise FA_JUICE et ne redéfinit plus les helpers dupliqués", () => {
+  const src = read("campaign.jsx");
+  assert.match(src, /window\.FA_JUICE/, "campaign doit référencer window.FA_JUICE");
+  assert.match(src, /(?:FA_JUICE|\bJ)\.hit\(/, "campaign doit appeler FA_JUICE.hit");
+  assert.match(src, /FA_JUICE\.heal/, "campaign doit appeler FA_JUICE.heal");
+  assert.match(src, /(?:FA_JUICE|\bJ)\.ko\(/, "campaign doit appeler FA_JUICE.ko");
+  assert.match(src, /hitStopMs/, "campaign doit appliquer le hit-stop");
+  assert.match(src, /boardRef/, "campaign doit passer le board pour le screen-shake");
+  assert.ok(!/function floatText\s*\(/.test(src), "floatText dupliqué doit être supprimé");
+  assert.ok(!/function animHit\s*\(/.test(src), "animHit dupliqué doit être supprimé");
+  assert.ok(!/function animLunge\s*\(/.test(src), "animLunge dupliqué doit être supprimé");
+});
