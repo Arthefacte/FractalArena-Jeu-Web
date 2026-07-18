@@ -37,7 +37,7 @@
   }
 
   function flashShake(cardEl) {
-    if (!cardEl) return;
+    if (!cardEl || reduced()) return;
     cardEl.classList.remove("shake", "flash"); void cardEl.offsetWidth;
     cardEl.classList.add("shake", "flash");
     setTimeout(() => cardEl.classList.remove("shake", "flash"), 360);
@@ -74,10 +74,12 @@
 
   // Fente de l'attaquant (remplace l'ancien animLunge dupliqué).
   function lunge(cardEl, side) {
-    if (!cardEl || reduced()) return;
-    const cls = side === "p1" ? "lunge-l" : "lunge-r";
-    cardEl.classList.remove(cls); void cardEl.offsetWidth; cardEl.classList.add(cls);
-    setTimeout(() => cardEl.classList.remove(cls), 380);
+    try {
+      if (!cardEl || reduced()) return;
+      const cls = side === "p1" ? "lunge-l" : "lunge-r";
+      cardEl.classList.remove(cls); void cardEl.offsetWidth; cardEl.classList.add(cls);
+      setTimeout(() => cardEl.classList.remove(cls), 380);
+    } catch (e) {}
   }
 
   function hit(cardEl, o) {
@@ -122,7 +124,7 @@
 
   // ms de hit-stop à ajouter au delay du stepper (0 si reduced-motion / non-crit).
   function hitStopMs(crit) {
-    return (crit && !reduced()) ? 90 : 0;
+    try { return (crit && !reduced()) ? 90 : 0; } catch (e) { return 0; }
   }
 
   window.FA_JUICE = { hit, heal, ko, lunge, hitStopMs };
