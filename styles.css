@@ -469,6 +469,43 @@ input { font-family: var(--font-mono); }
 @keyframes lungeR { 0% { transform: translateX(0); } 40% { transform: translateX(-20px) scale(1.05); } 100% { transform: translateX(0); } }
 .dead { filter: grayscale(1) brightness(0.4); opacity: 0.55; }
 
+/* ---- Juice de combat ---- */
+.dmg-float.crit {
+  font-size: 32px;
+  text-shadow: 0 0 12px rgba(255,230,0,0.9), 0 2px 8px rgba(0,0,0,0.85);
+}
+.jspark {
+  position: absolute; z-index: 19; left: 50%; top: 45%;
+  width: 4px; height: 4px; border-radius: 50%; pointer-events: none;
+  animation: jspark 0.44s ease-out forwards;
+}
+@keyframes jspark {
+  0%   { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  100% { transform: translate(calc(-50% + var(--dx, 0px)), calc(-50% + var(--dy, 0px))) scale(0.2); opacity: 0; }
+}
+.arena-shake { animation: arenaShake 0.3s cubic-bezier(.36,.07,.19,.97); }
+@keyframes arenaShake {
+  10%,90%     { transform: translate(calc(var(--shake, 6px) * -0.2), 0); }
+  20%,80%     { transform: translate(calc(var(--shake, 6px) * 0.3), 0); }
+  30%,50%,70% { transform: translate(calc(var(--shake, 6px) * -0.6), calc(var(--shake, 6px) * 0.2)); }
+  40%,60%     { transform: translate(var(--shake, 6px), calc(var(--shake, 6px) * -0.2)); }
+}
+.heal-glow { animation: healGlow 0.6s ease-out; }
+@keyframes healGlow {
+  0%   { box-shadow: inset 0 0 0 color-mix(in srgb, var(--success) 0%, transparent); }
+  30%  { box-shadow: inset 0 0 30px color-mix(in srgb, var(--success) 55%, transparent); }
+  100% { box-shadow: inset 0 0 0 color-mix(in srgb, var(--success) 0%, transparent); }
+}
+.ko-burst { animation: koBurst 0.5s ease-out; }
+@keyframes koBurst {
+  0%   { filter: brightness(3) saturate(0); }
+  30%  { filter: brightness(2.2) saturate(0.3); }
+  100% { filter: brightness(1) saturate(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .jspark, .arena-shake, .heal-glow, .ko-burst { animation: none; }
+}
+
 /* ---- Embers ---- */
 .embers { position: fixed; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
 .ember {
