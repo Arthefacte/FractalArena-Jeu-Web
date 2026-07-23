@@ -244,11 +244,13 @@ function ForgeFusion() {
     }
     else toast(I18N.t("FG_FUSE_FAIL"), "bad");
     setSel([]);
+    setGoldMode(false);
   }
+  const F = window.FA_FORGE_UI;
   const cost = first ? D.FORGE.FUSION_COST[first.rarity] : 0;
   const rate = first ? D.FORGE.FUSION_RATE[first.rarity] : 0;
   const canFuse = sel.length === 2;
-  const balOk = (g.liquid + g.locked) >= cost;
+  const btn = F.fusionButtonState({ gold: goldMode, cost, balance: g.liquid + g.locked, ticketsGold: g.ticketsGold, busy: fuseBusy });
 
   return (
     <div>
@@ -256,22 +258,32 @@ function ForgeFusion() {
         <div className="mono muted" style={{ fontSize: 13 }}>{first ? I18N.t("FG_PICK_SAME", rarityLabel(first.rarity)) : I18N.t("FG_FUSION_HINT")}</div>
         {canFuse && (
           <div className="flex gap12 center">
-            <span className="pill" style={{ color: "var(--elec)" }}>{I18N.t("FG_SUCCESS_RATE")} {Math.round(rate * 100)}%</span>
+            <span className="pill" style={{ color: "var(--elec)" }}>{I18N.t("FG_SUCCESS_RATE")} {goldMode ? 100 : Math.round(rate * 100)}%</span>
+            <span className="pill" style={{ cursor: "pointer" }} onClick={() => setSel(F.fusionSwap(sel))}>⇄ {I18N.t("FG_SWAP")}</span>
             <span className="pill" style={{ color: "var(--gold)", cursor: "pointer", opacity: g.ticketsGold >= 1 ? 1 : 0.4, border: goldMode ? "1px solid var(--gold)" : undefined }}
               onClick={() => g.ticketsGold >= 1 && setGoldMode(!goldMode)}>
               🎟 {I18N.t("FG_GOLD")} {goldMode ? "✓" : ""}
             </span>
-            <button className={cx("btn", goldMode ? "btn-gold" : "btn-forge")} disabled={!balOk || fuseBusy} onClick={() => doFuse(goldMode)}>{fuseBusy ? "…" : I18N.t("FG_FUSE_BTN", cost)}</button>
+            <button className={cx("btn", goldMode ? "btn-gold" : "btn-forge")} disabled={btn.disabled} onClick={() => doFuse(goldMode)}>{fuseBusy ? "…" : goldMode ? I18N.t("FG_FUSE_BTN_GOLD") : I18N.t("FG_FUSE_BTN", cost)}</button>
           </div>
         )}
       </div>
-      {!balOk && canFuse && <div className="mono" style={{ color: "var(--alert)", fontSize: 12, marginBottom: 10 }}>{I18N.t("INSUFFICIENT", g.liquid + g.locked, cost)}</div>}
+      {btn.showInsufficient && canFuse && <div className="mono" style={{ color: "var(--alert)", fontSize: 12, marginBottom: 10 }}>{I18N.t("INSUFFICIENT", g.liquid + g.locked, cost)}</div>}
       <div className="grid-cards">
-        {sorted.map((b) => (
-          <div key={b.id} style={{ opacity: clickable(b) ? 1 : 0.32, pointerEvents: clickable(b) ? "auto" : "none", transition: "opacity .2s" }}>
-            <CreatureCard beast={b} selectable selected={sel.includes(b.id)} onClick={() => toggle(b)} />
-          </div>
-        ))}
+        {sorted.map((b) => {
+          const role = sel[0] === b.id ? "kept" : sel[1] === b.id ? "sacrificed" : null;
+          const roleColor = role === "kept" ? "var(--success)" : "var(--alert)";
+          const roleBadge = role && (
+            <div className="pill" style={{ position: "absolute", bottom: 8, left: "50%", transform: "translateX(-50%)", whiteSpace: "nowrap", background: "var(--bg)", color: roleColor, border: `1px solid ${roleColor}` }}>
+              {role === "kept" ? I18N.t("FG_KEPT") : I18N.t("FG_SACRIFICED")}
+            </div>
+          );
+          return (
+            <div key={b.id} style={{ opacity: clickable(b) ? 1 : 0.32, pointerEvents: clickable(b) ? "auto" : "none", transition: "opacity .2s" }}>
+              <CreatureCard beast={b} selectable selected={sel.includes(b.id)} onClick={() => toggle(b)} badge={roleBadge} />
+            </div>
+          );
+        })}
       </div>
     </div>
   );
