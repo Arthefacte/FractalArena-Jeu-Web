@@ -75,15 +75,15 @@ function CombatCard({ meta, live, side, cref, oppMeta, scale = 1 }) {
         <div style={{ marginTop: 8 }}>
           <div className="bar-label">
             <span style={{ color: side === "p1" ? "var(--elec)" : "var(--alert)" }}>HP</span>
-            <span style={{ color: "var(--text)" }}>{Math.round((live ? Math.max(0, live.hp) : meta.maxHp) * scale)}/{Math.round((live ? live.maxHp : meta.maxHp) * scale)}</span>
+            <span style={{ color: "var(--text)" }}>{D.fmtStat(Math.round((live ? Math.max(0, live.hp) : meta.maxHp) * scale))}/{D.fmtStat(Math.round((live ? live.maxHp : meta.maxHp) * scale))}</span>
           </div>
           <Bar frac={frac} kind="hp" />
         </div>
         <div className="fighter-stats">
-          <span>ATK {Math.round(meta.atk * scale)}</span>
-          <span>DEF {Math.round(meta.def * scale)}</span>
-          <span>SPD {Math.round(meta.spd * scale)}</span>
-          <span>MAG {Math.round(meta.mag * scale)}</span>
+          <span>ATK {D.fmtStat(Math.round(meta.atk * scale))}</span>
+          <span>DEF {D.fmtStat(Math.round(meta.def * scale))}</span>
+          <span>SPD {D.fmtStat(Math.round(meta.spd * scale))}</span>
+          <span>MAG {D.fmtStat(Math.round(meta.mag * scale))}</span>
         </div>
       </div>
     </div>

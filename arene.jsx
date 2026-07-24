@@ -212,7 +212,7 @@ function Arene() {
                         {D.ART[b.image_key] ? <img src={D.ART[b.image_key]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : null}
                       </div>
                       <div style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{D.displayName(b)}</div>
-                      <div>{I18N.t("LINK_TIER")}{b.level} · {Math.round(D.eff(b, "atk"))}/{Math.round(D.eff(b, "def"))}</div>
+                      <div>{I18N.t("LINK_TIER")}{b.level} · {D.fmtStat(D.eff(b, "atk"))}/{D.fmtStat(D.eff(b, "def"))}</div>
                     </div>
                   ))}
                 </div>

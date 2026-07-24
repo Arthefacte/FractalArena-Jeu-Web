@@ -90,15 +90,15 @@ function CampCombatCard({ meta, live, side, cref }) {
         <div style={{ marginTop: 8 }}>
           <div className="bar-label">
             <span style={{ color: side === "p1" ? "var(--elec)" : "var(--alert)" }}>HP</span>
-            <span style={{ color: "var(--text)" }}>{live ? Math.max(0, Math.ceil(live.hp)) : meta.maxHp}/{live ? live.maxHp : meta.maxHp}</span>
+            <span style={{ color: "var(--text)" }}>{D.fmtStat(live ? Math.max(0, Math.ceil(live.hp)) : meta.maxHp)}/{D.fmtStat(live ? live.maxHp : meta.maxHp)}</span>
           </div>
           <Bar frac={frac} kind="hp" />
         </div>
         <div className="fighter-stats">
-          <span>ATK {meta.atk}</span>
-          <span>DEF {meta.def}</span>
-          <span>SPD {meta.spd}</span>
-          <span>MAG {meta.mag}</span>
+          <span>ATK {D.fmtStat(meta.atk)}</span>
+          <span>DEF {D.fmtStat(meta.def)}</span>
+          <span>SPD {D.fmtStat(meta.spd)}</span>
+          <span>MAG {D.fmtStat(meta.mag)}</span>
         </div>
       </div>
     </div>
