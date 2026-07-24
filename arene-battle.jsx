@@ -24,7 +24,7 @@ function AB_Unit({ beast, live, side, pos }) {
         {beast ? D.displayName(beast) : "—"} · {I18N.t("LINK_TIER")}{beast ? beast.level : 0}
       </div>
       <div style={{ marginTop: 2 }}><Bar frac={frac} kind="hp" /></div>
-      <div style={{ fontSize: 9, color: "var(--text)" }}>{Math.round(hp)}/{Math.round(maxHp)}</div>
+      <div style={{ fontSize: 9, color: "var(--text)" }}>{D.fmtStat(Math.round(hp))}/{D.fmtStat(Math.round(maxHp))}</div>
     </div>
   );
 }
