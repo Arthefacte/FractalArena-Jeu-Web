@@ -97,7 +97,8 @@ function CreatureCard({ beast, selected, onClick, selectable, showXp, badge }) {
       onMouseLeave={onLeave}
     >
       <div className="art">
-        <img src={D.ART[beast.image_key]} alt={beast.name} draggable="false" />
+        <img src={D.artFor(beast)} alt={beast.name} draggable="false"
+          onError={(e) => { const fb = D.ART[beast.image_key]; if (fb && !e.currentTarget.dataset.fb) { e.currentTarget.dataset.fb = "1"; e.currentTarget.src = fb; } }} />
         <div className="rar-tag">{rarityLabel(beast.rarity)}</div>
         <div className="lvl-tag">LV {beast.level}</div>
         {selectable && <div className="sel-check">✓</div>}
