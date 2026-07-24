@@ -210,6 +210,15 @@
   function eff(beast, key) { return Math.floor(beast["base_" + key] * levelMult(beast.level)); }
   function maxHp(b) { return eff(b, "hp"); }
 
+  // Format compact pour les cellules de stats (≤ 4 caractères — elles font ~28px) :
+  // < 10k brut, 10k–999k arrondi en "Nk", au-delà "N.NM". La valeur exacte reste
+  // accessible via l'attribut title posé par les composants.
+  function fmtStat(n) {
+    if (n < 10000) return String(Math.floor(n));
+    if (n < 999500) return Math.round(n / 1000) + "k";
+    return (n / 1e6).toFixed(1).replace(/\.0$/, "") + "M";
+  }
+
   // Make a beast from template
   function mintBeast(templateName, forceRarity, idx, rank) {
     const tpl = TEMPLATES[templateName];
@@ -469,7 +478,7 @@
     TEMPLATES, TEMPLATE_KEYS, TEMPLATES_BY_TYPE,
     ECON, FORGE, BOOSTS,
     rand, pick, levelMult, rarityVariance, rollRarity, newId,
-    eff, maxHp, mintBeast, starterRoster, xpToNext, displayName,
+    eff, maxHp, fmtStat, mintBeast, starterRoster, xpToNext, displayName,
     grantXp, upgradeRarity, avgRarity, avgLevel, generateEnemyTeam,
     walletNameInscriptions,
     // PvE Campaign

@@ -401,7 +401,7 @@ input { font-family: var(--font-mono); }
   background: rgba(255,255,255,0.022); border: 1px solid var(--line-soft);
 }
 .stat .k { font-family: var(--font-mono); font-size: 8.5px; letter-spacing: 1px; color: var(--text-dim); }
-.stat .v { font-family: var(--font-mono); font-size: 13px; font-weight: 700; line-height: 1.15; }
+.stat .v { font-family: var(--font-mono); font-size: 11px; font-weight: 700; line-height: 1.35; }
 
 /* bars */
 .bar { position: relative; height: 7px; background: #0b1120; overflow: hidden; border: 1px solid var(--line-soft); }
