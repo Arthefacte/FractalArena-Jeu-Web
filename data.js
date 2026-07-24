@@ -2,6 +2,14 @@
    FRACTAL ARENA — Game data & beast factory
    (mirrors fractal_arena_source.gd constants)
    ============================================================ */
+// Aiguillage API — une seule source pour toute l'app : stack locale quand la
+// page tourne sur localhost (cf. _dev/ du repo serveur), prod Railway sinon.
+// Garde typeof : les tests node chargent ce fichier sans objet location.
+window.FA_API_URL = (typeof location !== "undefined" &&
+  (location.hostname === "localhost" || location.hostname === "127.0.0.1"))
+  ? "http://localhost:3000"
+  : "https://fractal-arena-server-production.up.railway.app";
+
 (function () {
   "use strict";
 

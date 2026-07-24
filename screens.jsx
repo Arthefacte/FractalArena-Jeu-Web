@@ -4,7 +4,7 @@
 const { useState, useEffect, useMemo } = React;
 const D = window.FA_DATA, I18N = window.FA_I18N;
 const { useFA, cx, fmt, presetLabel, rarityLabel, Bar, StatGrid, CreatureCard, Modal, SectionHead, MiniStats, RelicIcon } = window;
-const API_URL = "https://fractal-arena-server-production.up.railway.app";
+const API_URL = window.FA_API_URL;
 
 /* ---------------- TEAM ---------------- */
 function Team() {
