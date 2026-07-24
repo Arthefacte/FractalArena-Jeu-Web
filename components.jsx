@@ -43,7 +43,7 @@ function StatGrid({ beast, compact }) {
       {show.map(([k, v]) => (
         <div className="stat" key={k}>
           <div className="k">{k}</div>
-          <div className="v" style={{ color: k === "HP" ? "var(--success)" : "var(--text)" }}>{v}</div>
+          <div className="v" title={String(v)} style={{ color: k === "HP" ? "var(--success)" : "var(--text)" }}>{D.fmtStat(v)}</div>
         </div>
       ))}
     </div>
@@ -165,7 +165,7 @@ function MiniStats({ beast }) {
         <div key={k} className="flex center" style={{ gap: 8 }}>
           <span className="mono" style={{ width: 34, fontSize: 11, color: "var(--text-dim)" }}>{k}</span>
           <div className="bar" style={{ flex: 1, height: 6 }}><i style={{ width: Math.min(100, v / 2.2) + "%", background: "linear-gradient(90deg,var(--elec),#7af6ff)" }} /></div>
-          <span className="mono" style={{ width: 34, fontSize: 12, textAlign: "right", fontWeight: 700 }}>{v}</span>
+          <span className="mono" title={String(v)} style={{ width: 34, fontSize: 12, textAlign: "right", fontWeight: 700 }}>{D.fmtStat(v)}</span>
         </div>
       ))}
     </div>
