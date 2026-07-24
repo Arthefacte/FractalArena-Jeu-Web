@@ -13,7 +13,7 @@ const TOKEN_KEY = "fa_auth_token";
 function readToken() { try { return sessionStorage.getItem(TOKEN_KEY) || ""; } catch (e) { return ""; } }
 function writeToken(t) { try { if (t) sessionStorage.setItem(TOKEN_KEY, t); else sessionStorage.removeItem(TOKEN_KEY); } catch (e) {} }
 function clearToken() { try { sessionStorage.removeItem(TOKEN_KEY); } catch (e) {} }
-const API_URL = "https://fractal-arena-server-production.up.railway.app";
+const API_URL = window.FA_API_URL;
 const CLIENT_SECRET = "pastouche";
 const HAS_UNISAT = () => typeof window.unisat !== "undefined";
 const IS_MOBILE = () => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
@@ -1392,6 +1392,8 @@ function Header({ chipPop }) {
         <span className="hdr-title">FRACTAL ARENA</span>
         <span className="hdr-sub">FRACTAL BITCOIN · AUTO-BATTLER</span>
       </div>
+      {window.FA_API_URL && window.FA_API_URL.includes("localhost") &&
+        <span className="pill mono" style={{ background: "rgba(255,59,92,0.14)", border: "1px solid var(--alert)", color: "var(--alert)", fontSize: 10, letterSpacing: 2, padding: "3px 8px" }}>LOCAL</span>}
       <div className="hdr-spacer" />
       <div className="flex gap8 center wrap" style={{ justifyContent: "flex-end" }}>
         <span key={chipPop} className="chip pop"><img src="assets/TOKEN.png" alt="" width="16" height="16" style={{ borderRadius: 3, border: "1px solid var(--line)" }} /> {fmt(g.liquid)}</span>

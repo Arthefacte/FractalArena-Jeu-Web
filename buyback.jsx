@@ -3,7 +3,7 @@
 // Preuve = le pool du DEX (InSwap) où le rachat est exécuté puis la liquidité verrouillée à vie.
 // Auto-suffisant : fait ses propres fetch + polling. Aucune prop. Exposé sur window.
 
-const API_URL = "https://fractal-arena-server-production.up.railway.app";
+const API_URL = window.FA_API_URL;
 
 // Lien « preuve » = page du DEX InSwap (paire FractalArena / sFB) — même cible que la vitrine arthefacte.com.
 const DEX_URL = "https://inswap.net/swap?t0=FractalArena&t1=sFB___000";
