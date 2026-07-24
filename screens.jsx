@@ -411,9 +411,9 @@ function ForgeSummon() {
     setRolling(false);
     if (!r.ok) { toast(r.reason, "bad"); return; }
     setLast(r.beast);
-    toast(I18N.t("FG_SUMMON_OK", D.displayName(r.beast), rarityLabel(r.beast.rarity)), "good");
+    toast(I18N.t("FG_SUMMON_OK", D.displayName(r.beast), I18N.t("FG_RANK") + " " + (r.beast.rank || "C")), "good");
   }
-  const odds = [["Common", 70], ["Rare", 20], ["Epic", 8], ["Legendary", 2]];
+  const odds = [["C", 55], ["B", 28], ["A", 13], ["S", 4]];
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 26, alignItems: "start" }} className="summon-grid">
       <div>
@@ -422,7 +422,7 @@ function ForgeSummon() {
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {odds.map(([r, p]) => (
               <div key={r} className="flex between center">
-                <span className="flex center gap8"><span style={{ width: 10, height: 10, background: D.RARITY_COLORS[r], display: "inline-block", clipPath: "polygon(50% 0,100% 50%,50% 100%,0 50%)" }} /><span style={{ color: D.RARITY_COLORS[r], fontWeight: 600 }}>{rarityLabel(r)}</span></span>
+                <span className="flex center gap8"><span style={{ width: 10, height: 10, background: D.RANK_COLORS[r], display: "inline-block", clipPath: "polygon(50% 0,100% 50%,50% 100%,0 50%)" }} /><span style={{ color: D.RANK_COLORS[r], fontWeight: 600 }}>{I18N.t("FG_RANK")} {r}</span></span>
                 <span className="mono" style={{ color: "var(--text-dim)" }}>{p}%</span>
               </div>
             ))}
@@ -436,7 +436,7 @@ function ForgeSummon() {
           <div className="mono" style={{ color: "var(--fire)", fontSize: 13, letterSpacing: 2 }}>FORGING…</div>
         ) : last ? (
           <div style={{ width: "100%" }}>
-            <div className="eyebrow" style={{ textAlign: "center", marginBottom: 10, color: D.RARITY_COLORS[last.rarity] }}>{I18N.t("MINT_TITLE") || "FORGED"}</div>
+            <div className="eyebrow" style={{ textAlign: "center", marginBottom: 10, color: D.RANK_COLORS[last.rank || "C"] }}>{I18N.t("MINT_TITLE") || "FORGED"}</div>
             <CreatureCard beast={last} />
           </div>
         ) : (
