@@ -413,7 +413,7 @@ function Fosse() {
               <button className={cx("btn sm", betTier === "" && "on")} style={{ flex: 1, "--c": "var(--success)" }} disabled={playing} onClick={() => setBetTier("")}>{I18N.t("AR_FREE")}</button>
               {betTiers.map((t) => (
                 <button key={t.k} className={cx("btn sm", betTier === t.k && "on")} style={{ flex: 1.3, "--c": t.c }} disabled={playing} onClick={() => setBetTier(t.k)}>
-                  {I18N.t("AR_" + t.k.toUpperCase())}<span className="mono" style={{ fontSize: 10, opacity: 0.8, marginLeft: 4 }}><TokenIcon s={11} /> {D.ECON.BET[t.k]}</span>
+                  {I18N.t("AR_" + t.k.toUpperCase())}<span className="mono" style={{ fontSize: 10, opacity: 0.8, marginLeft: 4, display: "inline-flex", alignItems: "center", gap: 3 }}><TokenIcon s={11} /> {D.ECON.BET[t.k]}</span>
                 </button>
               ))}
             </div>
