@@ -16,8 +16,12 @@ restent la source de vérité — la cinématique est un habillage robuste, jama
 - **Fusion créatures** (`ForgeFusion.doFuse`, screens.jsx) : succès **et** échec.
 - **Summon créature** (`ForgeSummon.doSummon`, screens.jsx) : toujours une naissance (gacha
   sans échec) ; l'intensité est pilotée par le **rang C/B/A/S** (`r.beast.rank`, refonte v83).
-- **Hors portée v1** : le summon de reliques (rareté) — le moteur le permettra (`tier`
-  générique) mais on ne le branche pas ; le fond vivant (volet 2).
+  ⚠️ Rang ⊥ rareté : toute créature invoquée naît **Commune** — ne jamais mapper rang→rareté.
+- **Summon relique** (`ForgeReliques.doSummon`, screens.jsx, ajout user 2026-07-25) : les
+  reliques, elles, sont tirées avec une **rareté** (`r.relic.rarity`, odds 70/20/8/2) —
+  teinte `RARITY_COLORS`, mêmes paliers d'intensité, révélation de la relique après la
+  cinématique.
+- **Hors portée** : le fond vivant (volet 2).
 
 ### Décisions actées
 
@@ -72,6 +76,9 @@ Trois recettes procédurales CSP-safe, jouées par `forge-cine.js` (silencieux s
   onDone: () => toast(...) })`.
 - `doSummon` (créatures) : `play({ mode:'summon', success:true, tier:r.beast.rank||'C',
   color:D.RANK_COLORS[...], onDone: () => { setLast(r.beast); toast(...); } })`.
+- `doSummon` (reliques, `ForgeReliques`) : `play({ mode:'summon', success:true,
+  tier:r.relic.rarity, color:D.RARITY_COLORS[...], onDone: () => { setLast(r.relic);
+  toast(...); } })`.
 - Repli : si `window.FA_FORGE_CINE` est absent, comportement actuel inchangé (toast direct).
 - `index.html` : charger `forge-cine-ui.js` puis `forge-cine.js` (scripts classiques),
   bump cache-busting global → **v88**.
