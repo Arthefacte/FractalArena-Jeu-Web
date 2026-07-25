@@ -6,7 +6,7 @@
    ============================================================ */
 const { useState, useEffect, useRef, useMemo } = React;
 const D = window.FA_DATA, I18N = window.FA_I18N;
-const { useFA, cx, fmt, presetLabel, rarityLabel, Bar, Modal, SectionHead, PostureSelect } = window;
+const { useFA, cx, fmt, presetLabel, rarityLabel, Bar, Modal, SectionHead, PostureSelect, TokenIcon } = window;
 
 // ---- helpers progression ----
 function worldStarsArr(g, i) {
@@ -52,7 +52,7 @@ function Stars({ n, max, size }) {
 
 function campMeta(b) {
   return b ? {
-    name: D.displayName(b), rarity: b.rarity, image_key: b.image_key, preset: b.preset,
+    name: D.displayName(b), rarity: b.rarity, image_key: b.image_key, rank: b.rank, preset: b.preset,
     level: b.level, maxHp: D.eff(b, "hp"), atk: D.eff(b, "atk"), def: D.eff(b, "def"),
     spd: D.eff(b, "spd"), mag: D.eff(b, "mag"), boss: !!b.is_boss,
   } : null;
@@ -76,7 +76,8 @@ function CampCombatCard({ meta, live, side, cref }) {
     <div className={cx("card", dead && "dead", meta.boss && "camp-boss-card")} ref={cref}
       style={{ "--rc": meta.boss ? "var(--gold)" : rc, boxShadow: meta.boss ? "0 0 22px rgba(247,147,26,0.5)" : undefined }}>
       <div className="art">
-        <img src={D.ART[meta.image_key]} alt={meta.name} draggable="false"
+        <img src={D.artFor(meta)} alt={meta.name} draggable="false"
+          onError={(e) => { const fb = D.ART[meta.image_key]; if (fb && !e.currentTarget.dataset.fb) { e.currentTarget.dataset.fb = "1"; e.currentTarget.src = fb; } }}
           style={meta.boss ? { transform: "scale(1.08)", filter: "drop-shadow(0 0 10px rgba(247,147,26,0.7))" } : undefined} />
         <div className="rar-tag">{rarityLabel(meta.rarity)}</div>
         <div className="lvl-tag">LV {meta.level}</div>
@@ -94,11 +95,13 @@ function CampCombatCard({ meta, live, side, cref }) {
           </div>
           <Bar frac={frac} kind="hp" />
         </div>
-        <div className="fighter-stats">
-          <span>ATK {D.fmtStat(meta.atk)}</span>
-          <span>DEF {D.fmtStat(meta.def)}</span>
-          <span>SPD {D.fmtStat(meta.spd)}</span>
-          <span>MAG {D.fmtStat(meta.mag)}</span>
+        <div className="stat-row">
+          {[["ATK", meta.atk], ["DEF", meta.def], ["SPD", meta.spd], ["MAG", meta.mag]].map(([k, v]) => (
+            <div className="stat" key={k}>
+              <div className="k">{k}</div>
+              <div className="v" title={String(v)}>{D.fmtStat(v)}</div>
+            </div>
+          ))}
         </div>
       </div>
     </div>
@@ -386,7 +389,7 @@ function CampResultModal({ data, isBoss, onClose, onNext, onRetry }) {
       {win ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
           <CampResRow label={I18N.t("CAMP_STARS_EARNED", data.stars)} value={"★".repeat(data.stars)} color="var(--gold)" />
-          {data.lockedGain > 0 && <CampResRow label="FRACTALARENA 🔒" value={"+" + fmt(data.lockedGain)} color="var(--success)" />}
+          {data.lockedGain > 0 && <CampResRow fa label="FRACTALARENA 🔒" value={"+" + fmt(data.lockedGain)} color="var(--success)" />}
           {data.silver > 0 && <CampResRow label={I18N.t("CAMP_REWARD_SILVER", data.silver)} value="🎟" color="var(--elec)" />}
           {data.gold > 0 && <CampResRow label={I18N.t("CAMP_REWARD_GOLD", data.gold)} value="🎟" color="var(--gold)" />}
           {data.titleUnlocked && (
@@ -411,11 +414,11 @@ function CampResultModal({ data, isBoss, onClose, onNext, onRetry }) {
     </Modal>
   );
 }
-function CampResRow({ label, value, color }) {
+function CampResRow({ label, value, color, fa }) {
   return (
     <div className="flex between center" style={{ padding: "9px 14px", background: "rgba(255,255,255,0.02)", border: "1px solid var(--line-soft)" }}>
       <span className="mono" style={{ fontSize: 13, color: "var(--text-dim)" }}>{label}</span>
-      <span className="mono" style={{ fontSize: 16, fontWeight: 700, color }}>{value}</span>
+      <span className="mono" style={{ fontSize: 16, fontWeight: 700, color }}>{fa && <TokenIcon s={14} />} {value}</span>
     </div>
   );
 }

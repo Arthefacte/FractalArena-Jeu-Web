@@ -328,7 +328,7 @@ input { font-family: var(--font-mono); }
   overflow: hidden;
 }
 .card .art {
-  position: relative; width: 100%; aspect-ratio: 1/1; overflow: hidden;
+  position: relative; width: 100%; aspect-ratio: 4/5; overflow: hidden;
   background: #04060d;
 }
 .card .art img { width: 100%; height: 100%; object-fit: contain; transition: transform .35s cubic-bezier(.2,1,.3,1); display: block; }
@@ -672,12 +672,6 @@ input { font-family: var(--font-mono); }
 .room-input textarea:focus { outline: none; border-color: var(--elec); box-shadow: 0 0 0 2px rgba(0,240,255,.15); }
 
 /* Stats complètes sous la barre HP dans l'arène */
-.fighter-stats {
-  display: flex; justify-content: space-between; gap: 6px; margin-top: 8px;
-  font-family: var(--font-mono); font-size: 11px; color: var(--text-dim);
-}
-.fighter-stats span { white-space: nowrap; }
-
 /* ============ Leaderboard ============ */
 .lb-tabs { display: flex; gap: 8px; margin-bottom: 14px; }
 .lb-tab {

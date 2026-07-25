@@ -3,7 +3,7 @@
    ============================================================ */
 const { useState, useEffect, useRef } = React;
 const D = window.FA_DATA, I18N = window.FA_I18N;
-const { useFA, cx, fmt, presetLabel, rarityLabel, AreneBattle, PostureSelect } = window;
+const { useFA, cx, fmt, presetLabel, rarityLabel, AreneBattle, PostureSelect, FaText } = window;
 const AU = window.FA_ARENE_UI;
 
 function TeamPreview({ team }) {
@@ -12,7 +12,8 @@ function TeamPreview({ team }) {
     <div className="flex gap8" style={{ flexWrap: "nowrap" }}>
       {list.map((b, i) => (
         <div key={i} className="oct-sm" style={{ width: 40, height: 40, overflow: "hidden", border: "1px solid var(--line)" }}>
-          {D.ART[b.image_key] ? <img src={D.ART[b.image_key]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} draggable="false" /> : null}
+          {D.ART[b.image_key] ? <img src={D.artFor(b)} alt="" style={{ width: "100%", height: "100%", objectFit: "contain" }} draggable="false"
+            onError={(e) => { const fb = D.ART[b.image_key]; if (fb && !e.currentTarget.dataset.fb) { e.currentTarget.dataset.fb = "1"; e.currentTarget.src = fb; } }} /> : null}
         </div>
       ))}
     </div>
@@ -148,7 +149,7 @@ function Arene() {
               <span className="mono" style={{ fontSize: 11, color: "var(--text-dim)", alignSelf: "center" }}>{I18N.t("AR2_ENTRY")} :</span>
               {modes.map((m) => (
                 <button key={m.key} className={cx("btn sm", entry === m.key && "on")} disabled={!m.available} onClick={() => setEntry(m.key)}>
-                  {m.key === "free" ? I18N.t("AR2_FREE") : m.key === "fa" ? I18N.t("AR2_FA", pvp.fa_cost || 0) : I18N.t("AR2_TICKET")}
+                  {m.key === "free" ? I18N.t("AR2_FREE") : m.key === "fa" ? <FaText text={I18N.t("AR2_FA", pvp.fa_cost || 0)} s={12} /> : I18N.t("AR2_TICKET")}
                 </button>
               ))}
             </div>
@@ -187,8 +188,8 @@ function Arene() {
               </div>
             ))}
           </div>
-          {pvp.season && <div className="mono" style={{ fontSize: 11, color: "var(--text-dim)", marginTop: 12 }}>{I18N.t("AR2_PRIZE", pvp.season.dotation || 0)}</div>}
-          {pvp.season && <div className="mono" style={{ fontSize: 11, color: "var(--text-dim)", marginTop: 2 }}>{I18N.t("AR2_PRIZE_FLAT")}</div>}
+          {pvp.season && <div className="mono" style={{ fontSize: 11, color: "var(--text-dim)", marginTop: 12 }}><FaText text={I18N.t("AR2_PRIZE", pvp.season.dotation || 0)} s={11} /></div>}
+          {pvp.season && <div className="mono" style={{ fontSize: 11, color: "var(--text-dim)", marginTop: 2 }}><FaText text={I18N.t("AR2_PRIZE_FLAT")} s={11} /></div>}
         </div>
       </div>
       )}
@@ -209,7 +210,8 @@ function Arene() {
                   {(a.team || []).map((b, j) => (
                     <div key={j} style={{ flex: 1, textAlign: "center", fontSize: 10, color: "var(--text-dim)" }}>
                       <div style={{ width: 36, height: 36, margin: "0 auto", borderRadius: 6, overflow: "hidden", background: "#0b1020" }}>
-                        {D.ART[b.image_key] ? <img src={D.ART[b.image_key]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : null}
+                        {D.ART[b.image_key] ? <img src={D.artFor(b)} alt="" style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                          onError={(e) => { const fb = D.ART[b.image_key]; if (fb && !e.currentTarget.dataset.fb) { e.currentTarget.dataset.fb = "1"; e.currentTarget.src = fb; } }} /> : null}
                       </div>
                       <div style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{D.displayName(b)}</div>
                       <div>{I18N.t("LINK_TIER")}{b.level} · {D.fmtStat(D.eff(b, "atk"))}/{D.fmtStat(D.eff(b, "def"))}</div>
@@ -316,15 +318,15 @@ function PrizeModal({ prizes, onClaim }) {
               : <div className="mono" style={{ color: AU.leagueColor(p.league), marginBottom: 6, fontWeight: "bold" }}>
                   {I18N.t("PRIZE_SEASON_RANK", p.season, p.rank, AU.leagueLabel(p.league))}
                 </div>}
-            <div className="mono" style={{ fontSize: 13 }}>{I18N.t("PRIZE_BEFORE", p.balance_before)}</div>
-            <div className="mono" style={{ fontSize: 13, color: "var(--success)" }}>{I18N.t(p.locked ? "PRIZE_REWARD_LOCKED" : "PRIZE_REWARD", p.reward)}</div>
-            <div className="mono" style={{ fontSize: 13 }}>{I18N.t("PRIZE_AFTER", p.balance_after)}</div>
+            <div className="mono" style={{ fontSize: 13 }}><FaText text={I18N.t("PRIZE_BEFORE", p.balance_before)} /></div>
+            <div className="mono" style={{ fontSize: 13, color: "var(--success)" }}><FaText text={I18N.t(p.locked ? "PRIZE_REWARD_LOCKED" : "PRIZE_REWARD", p.reward)} /></div>
+            <div className="mono" style={{ fontSize: 13 }}><FaText text={I18N.t("PRIZE_AFTER", p.balance_after)} /></div>
           </div>
         ))}
       </div>
       {prizes.length > 1 && (
         <div className="mono" style={{ textAlign: "center", marginTop: 12, color: "var(--success)", fontWeight: "bold" }}>
-          {I18N.t("PRIZE_TOTAL", total)}
+          <FaText text={I18N.t("PRIZE_TOTAL", total)} />
         </div>
       )}
       <button className="btn block lg btn-elec" style={{ marginTop: 16 }} onClick={onClaim}>
