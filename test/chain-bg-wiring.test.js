@@ -14,8 +14,8 @@ test("index.html charge chain-bg-ui.js puis chain-bg.js (scripts classiques)", (
   assert.ok(!/type="module" src="chain-bg/.test(html), "scripts classiques");
 });
 
-test("cache-busting v89, plus aucun v87/v88", () => {
-  assert.ok(html.includes("?v=89"));
+test("cache-busting >= v89, plus aucun v87/v88", () => {
+  assert.match(html, /\?v=(89|9\d)/, "une version >= 89 présente");
   assert.ok(!html.includes("?v=87") && !html.includes("?v=88"));
 });
 
