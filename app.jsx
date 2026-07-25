@@ -1355,6 +1355,8 @@ function App() {
 }
 
 function Ambient() {
+  // Fond blockchain vivante (esthétique #5 volet 2) — repli silencieux si module absent
+  useEffect(() => { window.FA_CHAIN_BG?.mount(); }, []);
   const embers = useMemo(() => {
     const arr = [];
     for (let i = 0; i < 26; i++) {
