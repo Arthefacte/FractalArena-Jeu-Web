@@ -3,7 +3,7 @@
    ============================================================ */
 const { useState, useEffect, useRef, useMemo } = React;
 const D = window.FA_DATA, I18N = window.FA_I18N;
-const { useFA, cx, fmt, presetLabel, rarityLabel, Bar, Modal } = window;
+const { useFA, cx, fmt, presetLabel, rarityLabel, Bar, Modal, TokenIcon } = window;
 const { cosmeticEnemyScale } = window.FA_COSMETIC;
 const { loopDecision } = window.FA_LOOP;
 
@@ -413,11 +413,11 @@ function Fosse() {
               <button className={cx("btn sm", betTier === "" && "on")} style={{ flex: 1, "--c": "var(--success)" }} disabled={playing} onClick={() => setBetTier("")}>{I18N.t("AR_FREE")}</button>
               {betTiers.map((t) => (
                 <button key={t.k} className={cx("btn sm", betTier === t.k && "on")} style={{ flex: 1.3, "--c": t.c }} disabled={playing} onClick={() => setBetTier(t.k)}>
-                  {I18N.t("AR_" + t.k.toUpperCase())}<span className="mono" style={{ fontSize: 10, opacity: 0.8, marginLeft: 4 }}>{D.ECON.BET[t.k]}</span>
+                  {I18N.t("AR_" + t.k.toUpperCase())}<span className="mono" style={{ fontSize: 10, opacity: 0.8, marginLeft: 4 }}><TokenIcon s={11} /> {D.ECON.BET[t.k]}</span>
                 </button>
               ))}
             </div>
-            {betTier && <div className="mono" style={{ fontSize: 11, color: "var(--text-dim)", marginTop: 6 }}>+{D.ECON.BET_GAIN[betTier]} {I18N.t("RES_NET")} · ×{D.ECON.PAYOUT_MULT}</div>}
+            {betTier && <div className="mono" style={{ fontSize: 11, color: "var(--text-dim)", marginTop: 6 }}>+<TokenIcon s={11} /> {D.ECON.BET_GAIN[betTier]} {I18N.t("RES_NET")} · ×{D.ECON.PAYOUT_MULT}</div>}
           </div>
 
           <label className="flex between center" style={{ cursor: "pointer", padding: "8px 0", borderTop: "1px solid var(--line-soft)", borderBottom: "1px solid var(--line-soft)" }}>
@@ -452,17 +452,17 @@ function ResultModal({ data, onClose }) {
       <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
         {win ? (
           <>
-            <ResRow label={I18N.t("RES_GAIN")} value={"+" + fmt(data.payout)} color="var(--gold)" />
-            {!data.free && <ResRow label={I18N.t("RES_NET")} value={(data.net >= 0 ? "+" : "") + fmt(data.net)} color={data.net >= 0 ? "var(--success)" : "var(--alert)"} />}
+            <ResRow fa label={I18N.t("RES_GAIN")} value={"+" + fmt(data.payout)} color="var(--gold)" />
+            {!data.free && <ResRow fa label={I18N.t("RES_NET")} value={(data.net >= 0 ? "+" : "") + fmt(data.net)} color={data.net >= 0 ? "var(--success)" : "var(--alert)"} />}
             <ResRow label={I18N.t("RES_XP")} value={"+" + data.xp} color="var(--elec)" />
-            {data.luckyBonus > 0 && <ResRow label="Lucky Strike" value={"+" + fmt(data.luckyBonus)} color="var(--fire)" />}
+            {data.luckyBonus > 0 && <ResRow fa label="Lucky Strike" value={"+" + fmt(data.luckyBonus)} color="var(--fire)" />}
           </>
         ) : (
           <>
             {data.insuranceUsed ? (
-              <ResRow label="Insurance 🛡" value={"+" + fmt(data.betAmount)} color="var(--success)" />
+              <ResRow fa label="Insurance 🛡" value={"+" + fmt(data.betAmount)} color="var(--success)" />
             ) : (
-              <ResRow label={I18N.t("RES_BUYBACK")} value={fmt(data.betAmount)} color="var(--alert)" />
+              <ResRow fa label={I18N.t("RES_BUYBACK")} value={fmt(data.betAmount)} color="var(--alert)" />
             )}
             <ResRow label={I18N.t("RES_XP")} value="+0" color="var(--text-dim)" />
           </>
@@ -478,11 +478,11 @@ function ResultModal({ data, onClose }) {
     </Modal>
   );
 }
-function ResRow({ label, value, color }) {
+function ResRow({ label, value, color, fa }) {
   return (
     <div className="flex between center" style={{ padding: "9px 14px", background: "rgba(255,255,255,0.02)", border: "1px solid var(--line-soft)" }}>
       <span className="mono" style={{ fontSize: 13, color: "var(--text-dim)" }}>{label}</span>
-      <span className="mono" style={{ fontSize: 16, fontWeight: 700, color }}>{value}</span>
+      <span className="mono" style={{ fontSize: 16, fontWeight: 700, color }}>{fa && <TokenIcon s={14} />} {value}</span>
     </div>
   );
 }

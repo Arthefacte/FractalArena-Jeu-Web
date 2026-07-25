@@ -24,6 +24,17 @@ function TokenIcon({ s = 15 }) {
     style={{ borderRadius: 3, verticalAlign: "-2px", display: "inline-block" }} />;
 }
 
+// Convention d'affichage des montants : dans les chaînes i18n, un montant s'écrit
+// « %d FA » ; FaText remplace chaque « <nombre> FA » par le logo du token suivi du
+// nombre — aucune écriture « FA » à l'écran à côté d'un montant.
+function FaText({ text, s = 13 }) {
+  const parts = String(text).split(/(\d[\d\s.,]*)\s*FA\b/);
+  if (parts.length === 1) return text;
+  return parts.map((p, i) => i % 2 === 1
+    ? <span key={i} style={{ whiteSpace: "nowrap" }}><TokenIcon s={s} /> {p.trim()}</span>
+    : (p || null));
+}
+
 function Bar({ frac, kind, className }) {
   const pct = Math.max(0, Math.min(1, frac)) * 100;
   let mod = "";
@@ -217,4 +228,4 @@ function RelicIcon({ type, rarity, size }) {
   return <span style={{ width: Math.round(s * 0.45), height: Math.round(s * 0.45), display: "inline-block", background: col, clipPath: "polygon(50% 0,100% 50%,50% 100%,0 50%)" }} />;
 }
 
-Object.assign(window, { FA_Ctx, useFA, cx, fmt, presetLabel, rarityLabel, Coin, TokenIcon, Bar, StatGrid, CreatureCard, Modal, SectionHead, MiniStats, PostureSelect, RelicIcon });
+Object.assign(window, { FA_Ctx, useFA, cx, fmt, presetLabel, rarityLabel, Coin, TokenIcon, FaText, Bar, StatGrid, CreatureCard, Modal, SectionHead, MiniStats, PostureSelect, RelicIcon });

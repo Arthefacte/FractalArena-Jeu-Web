@@ -6,7 +6,7 @@
    ============================================================ */
 const { useState, useEffect, useRef, useMemo } = React;
 const D = window.FA_DATA, I18N = window.FA_I18N;
-const { useFA, cx, fmt, presetLabel, rarityLabel, Bar, Modal, SectionHead, PostureSelect } = window;
+const { useFA, cx, fmt, presetLabel, rarityLabel, Bar, Modal, SectionHead, PostureSelect, TokenIcon } = window;
 
 // ---- helpers progression ----
 function worldStarsArr(g, i) {
@@ -389,7 +389,7 @@ function CampResultModal({ data, isBoss, onClose, onNext, onRetry }) {
       {win ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
           <CampResRow label={I18N.t("CAMP_STARS_EARNED", data.stars)} value={"★".repeat(data.stars)} color="var(--gold)" />
-          {data.lockedGain > 0 && <CampResRow label="FRACTALARENA 🔒" value={"+" + fmt(data.lockedGain)} color="var(--success)" />}
+          {data.lockedGain > 0 && <CampResRow fa label="FRACTALARENA 🔒" value={"+" + fmt(data.lockedGain)} color="var(--success)" />}
           {data.silver > 0 && <CampResRow label={I18N.t("CAMP_REWARD_SILVER", data.silver)} value="🎟" color="var(--elec)" />}
           {data.gold > 0 && <CampResRow label={I18N.t("CAMP_REWARD_GOLD", data.gold)} value="🎟" color="var(--gold)" />}
           {data.titleUnlocked && (
@@ -414,11 +414,11 @@ function CampResultModal({ data, isBoss, onClose, onNext, onRetry }) {
     </Modal>
   );
 }
-function CampResRow({ label, value, color }) {
+function CampResRow({ label, value, color, fa }) {
   return (
     <div className="flex between center" style={{ padding: "9px 14px", background: "rgba(255,255,255,0.02)", border: "1px solid var(--line-soft)" }}>
       <span className="mono" style={{ fontSize: 13, color: "var(--text-dim)" }}>{label}</span>
-      <span className="mono" style={{ fontSize: 16, fontWeight: 700, color }}>{value}</span>
+      <span className="mono" style={{ fontSize: 16, fontWeight: 700, color }}>{fa && <TokenIcon s={14} />} {value}</span>
     </div>
   );
 }

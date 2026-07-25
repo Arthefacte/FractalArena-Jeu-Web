@@ -3,7 +3,7 @@
    ============================================================ */
 const { useState, useEffect, useMemo } = React;
 const D = window.FA_DATA, I18N = window.FA_I18N;
-const { useFA, cx, fmt, presetLabel, rarityLabel, Bar, StatGrid, CreatureCard, Modal, SectionHead, MiniStats, RelicIcon } = window;
+const { useFA, cx, fmt, presetLabel, rarityLabel, Bar, StatGrid, CreatureCard, Modal, SectionHead, MiniStats, RelicIcon, TokenIcon, FaText } = window;
 const API_URL = window.FA_API_URL;
 
 /* ---------------- TEAM ---------------- */
@@ -162,7 +162,7 @@ function TalentSlot({ beast }) {
                   {unlocked && !chosen && <span className="muted">{I18N.t("TAL_PICK_FREE")}</span>}
                   {unlocked && chosen && (freeRespec
                     ? <span className="muted">{I18N.t("TAL_RESPEC_FREE")}</span>
-                    : <span className="muted">{I18N.t("TAL_RESPEC_COST", cost)}</span>)}
+                    : <span className="muted"><FaText text={I18N.t("TAL_RESPEC_COST", cost)} s={12} /></span>)}
                 </div>
                 {unlocked && (
                   <div className="flex wrap" style={{ gap: 6, marginTop: 6 }}>
@@ -264,7 +264,7 @@ function ForgeFusion() {
               onClick={() => g.ticketsGold >= 1 && setGoldMode(!goldMode)}>
               🎟 {I18N.t("FG_GOLD")} {goldMode ? "✓" : ""}
             </span>
-            <button className={cx("btn", goldMode ? "btn-gold" : "btn-forge")} disabled={btn.disabled} onClick={() => doFuse(goldMode)}>{fuseBusy ? "…" : goldMode ? I18N.t("FG_FUSE_BTN_GOLD") : I18N.t("FG_FUSE_BTN", cost)}</button>
+            <button className={cx("btn", goldMode ? "btn-gold" : "btn-forge")} disabled={btn.disabled} onClick={() => doFuse(goldMode)}>{fuseBusy ? "…" : goldMode ? I18N.t("FG_FUSE_BTN_GOLD") : <FaText text={I18N.t("FG_FUSE_BTN", cost)} />}</button>
           </div>
         )}
       </div>
@@ -311,7 +311,7 @@ function RerollPreviewModal({ preview, busy, onValidate, onAgain, onKeep }) {
       <div className="mono muted" style={{ fontSize: 11, marginBottom: 14 }}>{I18N.t("REROLL_REFUND_HINT")}</div>
       <div className="flex gap8" style={{ flexWrap: "wrap" }}>
         <button className="btn btn-success" disabled={busy} onClick={onValidate}>{I18N.t("REROLL_VALIDATE")}</button>
-        <button className="btn btn-elec" disabled={busy} onClick={onAgain}>{I18N.t("REROLL_AGAIN", F.withLockCost(preview.next_reroll_cost || 0, (preview.locks || []).length))}</button>
+        <button className="btn btn-elec" disabled={busy} onClick={onAgain}><FaText text={I18N.t("REROLL_AGAIN", F.withLockCost(preview.next_reroll_cost || 0, (preview.locks || []).length))} /></button>
         <button className="btn" disabled={busy} onClick={onKeep}>{I18N.t("REROLL_KEEP_OLD")}</button>
       </div>
     </Modal>
@@ -365,7 +365,7 @@ function ForgeReroll() {
         {beast && (
           <div className="flex gap12 center">
             <span className="pill">reroll #{beast.reroll_count + 1}</span>
-            <button className="btn btn-elec" disabled={!balOk || rerollBusy} onClick={doReroll}>{rerollBusy ? "…" : I18N.t("FG_REROLL_BTN", cost)}</button>
+            <button className="btn btn-elec" disabled={!balOk || rerollBusy} onClick={doReroll}>{rerollBusy ? "…" : <FaText text={I18N.t("FG_REROLL_BTN", cost)} />}</button>
           </div>
         )}
       </div>
@@ -428,7 +428,7 @@ function ForgeSummon() {
             ))}
           </div>
           <div className="divider" />
-          <button className="btn btn-fire block lg" disabled={!balOk || rolling} onClick={doSummon}>{rolling ? "…" : I18N.t("FG_SUMMON_BTN", cost)}</button>
+          <button className="btn btn-fire block lg" disabled={!balOk || rolling} onClick={doSummon}>{rolling ? "…" : <FaText text={I18N.t("FG_SUMMON_BTN", cost)} />}</button>
         </div>
       </div>
       <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 18, minHeight: 300, display: "grid", placeItems: "center" }}>
@@ -479,7 +479,7 @@ function ForgeReliques() {
               ))}
             </div>
             <div className="divider" />
-            <button className="btn btn-gold block lg" disabled={!balOk || rolling} onClick={doSummon}>{rolling ? "…" : I18N.t("FG_SUMMON_BTN", cost)}</button>
+            <button className="btn btn-gold block lg" disabled={!balOk || rolling} onClick={doSummon}>{rolling ? "…" : <FaText text={I18N.t("FG_SUMMON_BTN", cost)} />}</button>
           </div>
         </div>
         <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 18, minHeight: 300, display: "grid", placeItems: "center" }}>
@@ -570,7 +570,7 @@ function Boosts() {
               </div>
               <div className="muted" style={{ fontSize: 13, lineHeight: 1.5, minHeight: 56 }}>{it.desc}</div>
               <div className="mono" style={{ fontSize: 11, color: "var(--text-dim)" }}>{it.unit === "fights" ? `${def.fights || def.charges} combats` : `${def.charges} charges`}</div>
-              <button className="btn block" style={{ "--c": it.color, marginTop: "auto" }} disabled={!!buyingKey} onClick={() => buy(it.key)}>{buyingKey === it.key ? "…" : I18N.t("BO_BUY", def.cost)}</button>
+              <button className="btn block" style={{ "--c": it.color, marginTop: "auto" }} disabled={!!buyingKey} onClick={() => buy(it.key)}>{buyingKey === it.key ? "…" : <FaText text={I18N.t("BO_BUY", def.cost)} />}</button>
             </div>
           );
         })}
@@ -724,7 +724,7 @@ function WithdrawModal({ onClose }) {
   return (
     <Modal onClose={onClose} accent="var(--gold)">
       <div className="eyebrow" style={{ color: "var(--gold)" }}>{I18N.t("WL_WITHDRAW")}</div>
-      <div className="h2" style={{ margin: "4px 0 10px" }}>{I18N.t("WL_LIQUID")} : <span className="mono" style={{ color: "var(--gold)" }}>{fmt(g.liquid)}</span></div>
+      <div className="h2" style={{ margin: "4px 0 10px" }}>{I18N.t("WL_LIQUID")} : <span className="mono" style={{ color: "var(--gold)" }}><TokenIcon s={14} /> {fmt(g.liquid)}</span></div>
       <div className="muted mono" style={{ fontSize: 12, lineHeight: 1.5, marginBottom: 16 }}>{I18N.t("WL_WD_INFO")}</div>
       {cdMsg && <div className="mono" style={{ fontSize: 12, lineHeight: 1.4, marginBottom: 12, padding: "8px 10px", borderRadius: 8, background: "rgba(255,90,90,0.12)", color: "var(--alert)" }}>⏳ {cdMsg}</div>}
       <input className="field" value={amt} onChange={(e) => setAmt(e.target.value.replace(/[^0-9]/g, ""))} placeholder="500" />
@@ -769,7 +769,7 @@ function Perso() {
         <div>
           <div className="flex gap12 center wrap" style={{ marginBottom: 16 }}>
             <input className="field" style={{ flex: 1, minWidth: 200 }} maxLength={24} value={name} onChange={(e) => setName(e.target.value)} placeholder={I18N.t("PE_NEW_NAME")} />
-            <button className="btn btn-elec" disabled={!sel || !name.trim() || busy} onClick={doRename}>{busy ? "…" : I18N.t("PE_RENAME_BTN", D.ECON.VANITY_RENAME)}</button>
+            <button className="btn btn-elec" disabled={!sel || !name.trim() || busy} onClick={doRename}>{busy ? "…" : <FaText text={I18N.t("PE_RENAME_BTN", D.ECON.VANITY_RENAME)} />}</button>
           </div>
           {!sel && <div className="mono muted" style={{ fontSize: 12, marginBottom: 12 }}>{I18N.t("PE_PICK")}</div>}
           <div className="grid-cards">
@@ -783,7 +783,7 @@ function Perso() {
           <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 22 }}>
             <div className="mono muted" style={{ fontSize: 12, marginBottom: 10 }}>{I18N.t("PE_NEW_TITLE")}</div>
             <input className="field" maxLength={32} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Whale · Diamond Hands · …" />
-            <button className="btn btn-fire block" style={{ marginTop: 16 }} disabled={!title.trim() || busy} onClick={doTitle}>{busy ? "…" : I18N.t("PE_TITLE_BTN", D.ECON.VANITY_TITLE)}</button>
+            <button className="btn btn-fire block" style={{ marginTop: 16 }} disabled={!title.trim() || busy} onClick={doTitle}>{busy ? "…" : <FaText text={I18N.t("PE_TITLE_BTN", D.ECON.VANITY_TITLE)} />}</button>
           </div>
           <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 20, marginTop: 16 }}>
             <div className="flex between center">

@@ -5,7 +5,7 @@
    ============================================================ */
 const { useState, useEffect } = React;
 const D = window.FA_DATA, I18N = window.FA_I18N;
-const { useFA, cx, fmt, rarityLabel, TokenIcon, Modal, SectionHead, RelicIcon } = window;
+const { useFA, cx, fmt, rarityLabel, TokenIcon, FaText, Modal, SectionHead, RelicIcon } = window;
 const MKT = window.FA_MARKET;
 
 // Message d'erreur : clé serveur connue → traduction dédiée, sinon générique.
@@ -75,8 +75,8 @@ function MarketBrowse() {
           <div className="h2" style={{ fontSize: 14, marginBottom: 10, textAlign: "center" }}>{I18N.t("MKT_CONFIRM_TITLE")}</div>
           <div style={{ textAlign: "center", padding: 8 }}>
             <RelicIcon type={confirm.item.type} rarity={confirm.item.rarity} size={48} />
-            <p className="mono">{I18N.t("MKT_CONFIRM_TEXT", fmt(confirm.price))}</p>
-            <p className="muted mono">{I18N.t("MKT_BALANCE_AFTER", fmt(Math.max(0, (g.liquid || 0) + (g.locked || 0) - confirm.price)))}</p>
+            <p className="mono"><FaText text={I18N.t("MKT_CONFIRM_TEXT", fmt(confirm.price))} /></p>
+            <p className="muted mono"><FaText text={I18N.t("MKT_BALANCE_AFTER", fmt(Math.max(0, (g.liquid || 0) + (g.locked || 0) - confirm.price)))} /></p>
             <button className="btn btn-elec" disabled={busy} onClick={doBuy}>{I18N.t("MKT_BUY")}</button>
           </div>
         </Modal>
@@ -131,8 +131,8 @@ function MarketMine() {
              placeholder={I18N.t("MKT_PRICE_INPUT")} value={price} onChange={(e) => setPrice(e.target.value)} />
       {fees && (
         <div className="muted mono" style={{ fontSize: 12, margin: "6px 0" }}>
-          <div>{I18N.t("MKT_FEE_PREVIEW", fmt(fees.listing_fee))}</div>
-          <div>{I18N.t("MKT_NET_PREVIEW", fmt(fees.net_seller))}</div>
+          <div><FaText text={I18N.t("MKT_FEE_PREVIEW", fmt(fees.listing_fee))} s={12} /></div>
+          <div><FaText text={I18N.t("MKT_NET_PREVIEW", fmt(fees.net_seller))} s={12} /></div>
         </div>
       )}
       <button className="btn btn-elec" style={{ marginTop: 8 }} disabled={!sel || !fees || busy} onClick={doList}>{I18N.t("MKT_LIST_ACTION")}</button>
@@ -141,7 +141,7 @@ function MarketMine() {
       {(mine.active || []).map((l) => (
         <div key={l.id} className="oct-sm" style={{ border: "1px solid var(--line-soft)", display: "flex", alignItems: "center", gap: 8, padding: 8, marginBottom: 6 }}>
           <RelicIcon type={l.item.type} rarity={l.item.rarity} size={24} />
-          <span className="mono" style={{ flex: 1, minWidth: 0 }}>{I18N.t("RELIC_" + l.item.type.toUpperCase())} · {fmt(l.price)} FA</span>
+          <span className="mono" style={{ flex: 1, minWidth: 0 }}>{I18N.t("RELIC_" + l.item.type.toUpperCase())} · <TokenIcon s={13} /> {fmt(l.price)}</span>
           <button className="btn sm" disabled={busy} onClick={() => doCancel(l.id)}>{I18N.t("MKT_CANCEL")}</button>
         </div>
       ))}
@@ -150,7 +150,7 @@ function MarketMine() {
       {(mine.expired || []).map((l) => (
         <div key={l.id} className="oct-sm" style={{ border: "1px solid var(--line-soft)", display: "flex", alignItems: "center", gap: 8, padding: 8, marginBottom: 6 }}>
           <RelicIcon type={l.item.type} rarity={l.item.rarity} size={24} />
-          <span className="mono" style={{ flex: 1, minWidth: 0 }}>{I18N.t("RELIC_" + l.item.type.toUpperCase())} · {fmt(l.price)} FA</span>
+          <span className="mono" style={{ flex: 1, minWidth: 0 }}>{I18N.t("RELIC_" + l.item.type.toUpperCase())} · <TokenIcon s={13} /> {fmt(l.price)}</span>
           <button className="btn sm" disabled={busy} onClick={() => doCancel(l.id)}>{I18N.t("MKT_RECLAIM")}</button>
         </div>
       ))}

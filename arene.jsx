@@ -3,7 +3,7 @@
    ============================================================ */
 const { useState, useEffect, useRef } = React;
 const D = window.FA_DATA, I18N = window.FA_I18N;
-const { useFA, cx, fmt, presetLabel, rarityLabel, AreneBattle, PostureSelect } = window;
+const { useFA, cx, fmt, presetLabel, rarityLabel, AreneBattle, PostureSelect, FaText } = window;
 const AU = window.FA_ARENE_UI;
 
 function TeamPreview({ team }) {
@@ -149,7 +149,7 @@ function Arene() {
               <span className="mono" style={{ fontSize: 11, color: "var(--text-dim)", alignSelf: "center" }}>{I18N.t("AR2_ENTRY")} :</span>
               {modes.map((m) => (
                 <button key={m.key} className={cx("btn sm", entry === m.key && "on")} disabled={!m.available} onClick={() => setEntry(m.key)}>
-                  {m.key === "free" ? I18N.t("AR2_FREE") : m.key === "fa" ? I18N.t("AR2_FA", pvp.fa_cost || 0) : I18N.t("AR2_TICKET")}
+                  {m.key === "free" ? I18N.t("AR2_FREE") : m.key === "fa" ? <FaText text={I18N.t("AR2_FA", pvp.fa_cost || 0)} s={12} /> : I18N.t("AR2_TICKET")}
                 </button>
               ))}
             </div>
@@ -188,8 +188,8 @@ function Arene() {
               </div>
             ))}
           </div>
-          {pvp.season && <div className="mono" style={{ fontSize: 11, color: "var(--text-dim)", marginTop: 12 }}>{I18N.t("AR2_PRIZE", pvp.season.dotation || 0)}</div>}
-          {pvp.season && <div className="mono" style={{ fontSize: 11, color: "var(--text-dim)", marginTop: 2 }}>{I18N.t("AR2_PRIZE_FLAT")}</div>}
+          {pvp.season && <div className="mono" style={{ fontSize: 11, color: "var(--text-dim)", marginTop: 12 }}><FaText text={I18N.t("AR2_PRIZE", pvp.season.dotation || 0)} s={11} /></div>}
+          {pvp.season && <div className="mono" style={{ fontSize: 11, color: "var(--text-dim)", marginTop: 2 }}><FaText text={I18N.t("AR2_PRIZE_FLAT")} s={11} /></div>}
         </div>
       </div>
       )}
@@ -318,15 +318,15 @@ function PrizeModal({ prizes, onClaim }) {
               : <div className="mono" style={{ color: AU.leagueColor(p.league), marginBottom: 6, fontWeight: "bold" }}>
                   {I18N.t("PRIZE_SEASON_RANK", p.season, p.rank, AU.leagueLabel(p.league))}
                 </div>}
-            <div className="mono" style={{ fontSize: 13 }}>{I18N.t("PRIZE_BEFORE", p.balance_before)}</div>
-            <div className="mono" style={{ fontSize: 13, color: "var(--success)" }}>{I18N.t(p.locked ? "PRIZE_REWARD_LOCKED" : "PRIZE_REWARD", p.reward)}</div>
-            <div className="mono" style={{ fontSize: 13 }}>{I18N.t("PRIZE_AFTER", p.balance_after)}</div>
+            <div className="mono" style={{ fontSize: 13 }}><FaText text={I18N.t("PRIZE_BEFORE", p.balance_before)} /></div>
+            <div className="mono" style={{ fontSize: 13, color: "var(--success)" }}><FaText text={I18N.t(p.locked ? "PRIZE_REWARD_LOCKED" : "PRIZE_REWARD", p.reward)} /></div>
+            <div className="mono" style={{ fontSize: 13 }}><FaText text={I18N.t("PRIZE_AFTER", p.balance_after)} /></div>
           </div>
         ))}
       </div>
       {prizes.length > 1 && (
         <div className="mono" style={{ textAlign: "center", marginTop: 12, color: "var(--success)", fontWeight: "bold" }}>
-          {I18N.t("PRIZE_TOTAL", total)}
+          <FaText text={I18N.t("PRIZE_TOTAL", total)} />
         </div>
       )}
       <button className="btn block lg btn-elec" style={{ marginTop: 16 }} onClick={onClaim}>
