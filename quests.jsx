@@ -2,7 +2,7 @@
    FRACTAL ARENA — Écran Quêtes quotidiennes
    ============================================================ */
 const { useState, useEffect } = React;
-const { useFA, cx, SectionHead } = window;
+const { useFA, cx, SectionHead, TokenIcon } = window;
 const I18N = window.FA_I18N;
 
 const Q_LABEL = { wins: "Q_WINS", paid: "Q_PAID", chat: "Q_CHAT" };
@@ -80,7 +80,7 @@ function Quests() {
                 <div key={q.id} className={cx("q-row", q.claimed && "done")}>
                   <div className="q-info">
                     <span className="q-name">{I18N.t(Q_LABEL[q.id], q.target)}</span>
-                    <span className="q-reward">+{q.reward} 🔒</span>
+                    <span className="q-reward">+<TokenIcon s={12} /> {q.reward} 🔒</span>
                   </div>
                   <div className="q-bar"><div className="q-fill" style={{ width: pct + "%" }} /></div>
                   <div className="q-foot">
@@ -106,7 +106,7 @@ function Quests() {
                     <div key={q.id} className={cx("q-row", q.claimed && "done")}>
                       <div className="q-info">
                         <span className="q-name">{I18N.t(QW_LABEL[q.id], q.target)}</span>
-                        <span className="q-reward">+{q.reward} 🔒</span>
+                        <span className="q-reward">+<TokenIcon s={12} /> {q.reward} 🔒</span>
                       </div>
                       <div className="q-bar"><div className="q-fill" style={{ width: pct + "%" }} /></div>
                       <div className="q-foot">

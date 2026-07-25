@@ -6,7 +6,7 @@
    ============================================================ */
 const { useState, useEffect } = React;
 const D = window.FA_DATA, I18N = window.FA_I18N;
-const { useFA, cx, fmt, rarityLabel, Bar, Modal, SectionHead, PostureSelect, AreneBattle } = window;
+const { useFA, cx, fmt, rarityLabel, Bar, Modal, SectionHead, PostureSelect, AreneBattle, TokenIcon, FaText } = window;
 const TU = window.FA_TOUR_UI, TAU = window.FA_ARENE_UI;
 
 const TOUR_ERRK = {
@@ -32,7 +32,8 @@ function TourBeastTile({ beast, hpFrac, dead, selIdx, onToggle }) {
         </span>
       )}
       <div style={{ position: "relative", width: 56, height: 56, margin: "0 auto", borderRadius: 8, overflow: "hidden", background: "#0b1020", border: "1px solid " + rc }}>
-        {D.ART[beast.image_key] && <img src={D.ART[beast.image_key]} alt="" draggable="false" style={{ width: "100%", height: "100%", objectFit: "cover", filter: dead ? "grayscale(1)" : "none" }} />}
+        {D.ART[beast.image_key] && <img src={D.artFor(beast)} alt="" draggable="false" style={{ width: "100%", height: "100%", objectFit: "contain", filter: dead ? "grayscale(1)" : "none" }}
+          onError={(e) => { const fb = D.ART[beast.image_key]; if (fb && !e.currentTarget.dataset.fb) { e.currentTarget.dataset.fb = "1"; e.currentTarget.src = fb; } }} />}
         {dead && <span style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", fontSize: 22 }}>☠</span>}
       </div>
       <div className="mono" style={{ fontSize: 10, marginTop: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: "var(--text-dim)" }}>
@@ -61,7 +62,7 @@ function TourTierBand({ score }) {
             opacity: t.claimed ? 1 : t.reached ? 0.9 : 0.55,
           }}>
             <div className="mono" style={{ fontSize: 10, color: "var(--text-dim)" }}>{I18N.t("TOUR_FLOOR", t.floor)}</div>
-            <div className="mono" style={{ fontSize: 12, fontWeight: 700, color: t.claimed ? "var(--success)" : "var(--text)" }}>{fmt(t.fa)} FA</div>
+            <div className="mono" style={{ fontSize: 12, fontWeight: 700, color: t.claimed ? "var(--success)" : "var(--text)" }}><TokenIcon s={11} /> {fmt(t.fa)}</div>
             <div style={{ fontSize: 10, minHeight: 14 }}>
               {t.silver > 0 && <span style={{ color: "var(--elec)" }}>🎟×{t.silver}</span>}
               {t.gold > 0 && <span style={{ color: "var(--gold)" }}>🎟×{t.gold}</span>}
@@ -91,7 +92,7 @@ function TourLeaderboard() {
   return (
     <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 12 }}>
       <div className="h2" style={{ fontSize: 13, color: "var(--elec)", marginBottom: 8 }}>🗼 {I18N.t("TOUR_LB_TITLE")}</div>
-      <div className="mono" style={{ fontSize: 11, color: "var(--text-dim)", marginBottom: 8 }}>{I18N.t("TOUR_LB_DOTATION")}</div>
+      <div className="mono" style={{ fontSize: 11, color: "var(--text-dim)", marginBottom: 8 }}><FaText text={I18N.t("TOUR_LB_DOTATION")} s={11} /></div>
       {st.loading && <div className="muted mono" style={{ fontSize: 12, padding: 8 }}>{I18N.t("TOUR_LOADING")}</div>}
       {st.error && <div className="muted mono" style={{ fontSize: 12, padding: 8, color: "var(--alert)" }}>{I18N.t("TOUR_ERROR")}</div>}
       {!st.loading && !st.error && (
@@ -119,7 +120,7 @@ function TourStartModal({ score, balance, busy, onConfirm, onClose }) {
     <Modal onClose={onClose} accent="var(--elec)">
       <div className="h1" style={{ fontSize: 22, textAlign: "center", margin: "4px 0 12px" }}>{I18N.t("TOUR_START_TITLE")}</div>
       <div className="mono" style={{ fontSize: 13, textAlign: "center", color: free ? "var(--success)" : "var(--text-dim)", marginBottom: 16 }}>
-        {free ? I18N.t("TOUR_START_FREE_LINE") : I18N.t("TOUR_START_COST_LINE", fmt(cost))}
+        {free ? I18N.t("TOUR_START_FREE_LINE") : <FaText text={I18N.t("TOUR_START_COST_LINE", fmt(cost))} />}
       </div>
       {!free && !canPay && <div className="mono" style={{ fontSize: 12, textAlign: "center", color: "var(--alert)", marginBottom: 12 }}>{I18N.t("TOUR_ERR_BALANCE")}</div>}
       <div className="flex gap8">
@@ -145,7 +146,7 @@ function TourResultModal({ result, onClose }) {
             <div key={f} className="flex between center" style={{ padding: "8px 12px", background: "rgba(255,255,255,0.02)", border: "1px solid var(--line-soft)" }}>
               <span className="mono" style={{ fontSize: 12, color: "var(--text-dim)" }}>{I18N.t("TOUR_TIER_REACHED", f)}</span>
               <span className="mono" style={{ fontSize: 14, fontWeight: 700, color: "var(--success)" }}>
-                +{fmt((TU.TIERS.find((t) => t.floor === f) || { fa: 0 }).fa)} FA
+                +<TokenIcon s={11} /> {fmt((TU.TIERS.find((t) => t.floor === f) || { fa: 0 }).fa)}
               </span>
             </div>
           ))}
@@ -327,7 +328,7 @@ function Tour() {
         <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 24, textAlign: "center", marginBottom: 14 }}>
           <div className="mono" style={{ fontSize: 13, color: "var(--text-dim)", marginBottom: 14 }}>{I18N.t("TOUR_NO_RUN")}</div>
           <button className="btn btn-fire lg" onClick={() => setShowStart(true)} disabled={busy}>
-            {!st.score.free_run_used ? I18N.t("TOUR_START_FREE") : I18N.t("TOUR_START_PAID", fmt(TU.ENTRY_COST))}
+            {!st.score.free_run_used ? I18N.t("TOUR_START_FREE") : <FaText text={I18N.t("TOUR_START_PAID", fmt(TU.ENTRY_COST))} />}
           </button>
         </div>
       ) : (

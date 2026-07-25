@@ -34,5 +34,21 @@
     });
   }
 
-  window.FA_FORGE_UI = { rerollDiff, toggleLock, withLockCost, MAX_REROLL_LOCKS, REROLL_LOCK_MULT, LOCKABLE: KEYS };
+  // Fusion : sel[0] = conservée (primary serveur), sel[1] = sacrifiée. Inverse les rôles (immutable).
+  function fusionSwap(sel) {
+    const S = Array.isArray(sel) ? sel : [];
+    if (S.length !== 2) return S;
+    return [S[1], S[0]];
+  }
+
+  // État du bouton Fusionner. Mode Or : seul le ticket compte, le solde FA est ignoré
+  // (la fusion premium coûte 0 FA côté serveur). Mode FA : solde requis.
+  function fusionButtonState({ gold, cost, balance, ticketsGold, busy }) {
+    if (busy) return { disabled: true, showInsufficient: false };
+    if (gold) return { disabled: (ticketsGold || 0) < 1, showInsufficient: false };
+    const insufficient = (balance || 0) < cost;
+    return { disabled: insufficient, showInsufficient: insufficient };
+  }
+
+  window.FA_FORGE_UI = { rerollDiff, toggleLock, withLockCost, fusionSwap, fusionButtonState, MAX_REROLL_LOCKS, REROLL_LOCK_MULT, LOCKABLE: KEYS };
 })();

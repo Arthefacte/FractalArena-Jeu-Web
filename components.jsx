@@ -18,6 +18,23 @@ function Coin({ c }) {
   return <span style={{ color: c || "var(--gold)", fontWeight: 700 }}>◎</span>;
 }
 
+// Logo du token FRACTALARENA (assets/TOKEN.png), inline à côté d'un montant.
+function TokenIcon({ s = 15 }) {
+  return <img src="assets/TOKEN.png" alt="FA" width={s} height={s} draggable="false"
+    style={{ borderRadius: 3, verticalAlign: "-2px", display: "inline-block" }} />;
+}
+
+// Convention d'affichage des montants : dans les chaînes i18n, un montant s'écrit
+// « %d FA » ; FaText remplace chaque « <nombre> FA » par le logo du token suivi du
+// nombre — aucune écriture « FA » à l'écran à côté d'un montant.
+function FaText({ text, s = 13 }) {
+  const parts = String(text).split(/(\d[\d\s.,]*)\s*FA\b/);
+  if (parts.length === 1) return text;
+  return parts.map((p, i) => i % 2 === 1
+    ? <span key={i} style={{ whiteSpace: "nowrap" }}><TokenIcon s={s} /> {p.trim()}</span>
+    : (p || null));
+}
+
 function Bar({ frac, kind, className }) {
   const pct = Math.max(0, Math.min(1, frac)) * 100;
   let mod = "";
@@ -43,7 +60,7 @@ function StatGrid({ beast, compact }) {
       {show.map(([k, v]) => (
         <div className="stat" key={k}>
           <div className="k">{k}</div>
-          <div className="v" style={{ color: k === "HP" ? "var(--success)" : "var(--text)" }}>{v}</div>
+          <div className="v" title={String(v)} style={{ color: k === "HP" ? "var(--success)" : "var(--text)" }}>{D.fmtStat(v)}</div>
         </div>
       ))}
     </div>
@@ -97,7 +114,8 @@ function CreatureCard({ beast, selected, onClick, selectable, showXp, badge }) {
       onMouseLeave={onLeave}
     >
       <div className="art">
-        <img src={D.ART[beast.image_key]} alt={beast.name} draggable="false" />
+        <img src={D.artFor(beast)} alt={beast.name} draggable="false"
+          onError={(e) => { const fb = D.ART[beast.image_key]; if (fb && !e.currentTarget.dataset.fb) { e.currentTarget.dataset.fb = "1"; e.currentTarget.src = fb; } }} />
         <div className="rar-tag">{rarityLabel(beast.rarity)}</div>
         <div className="lvl-tag">LV {beast.level}</div>
         {selectable && <div className="sel-check">✓</div>}
@@ -164,7 +182,7 @@ function MiniStats({ beast }) {
         <div key={k} className="flex center" style={{ gap: 8 }}>
           <span className="mono" style={{ width: 34, fontSize: 11, color: "var(--text-dim)" }}>{k}</span>
           <div className="bar" style={{ flex: 1, height: 6 }}><i style={{ width: Math.min(100, v / 2.2) + "%", background: "linear-gradient(90deg,var(--elec),#7af6ff)" }} /></div>
-          <span className="mono" style={{ width: 34, fontSize: 12, textAlign: "right", fontWeight: 700 }}>{v}</span>
+          <span className="mono" title={String(v)} style={{ width: 34, fontSize: 12, textAlign: "right", fontWeight: 700 }}>{D.fmtStat(v)}</span>
         </div>
       ))}
     </div>
@@ -210,4 +228,4 @@ function RelicIcon({ type, rarity, size }) {
   return <span style={{ width: Math.round(s * 0.45), height: Math.round(s * 0.45), display: "inline-block", background: col, clipPath: "polygon(50% 0,100% 50%,50% 100%,0 50%)" }} />;
 }
 
-Object.assign(window, { FA_Ctx, useFA, cx, fmt, presetLabel, rarityLabel, Coin, Bar, StatGrid, CreatureCard, Modal, SectionHead, MiniStats, PostureSelect, RelicIcon });
+Object.assign(window, { FA_Ctx, useFA, cx, fmt, presetLabel, rarityLabel, Coin, TokenIcon, FaText, Bar, StatGrid, CreatureCard, Modal, SectionHead, MiniStats, PostureSelect, RelicIcon });

@@ -2,6 +2,14 @@
    FRACTAL ARENA — Game data & beast factory
    (mirrors fractal_arena_source.gd constants)
    ============================================================ */
+// Aiguillage API — une seule source pour toute l'app : stack locale quand la
+// page tourne sur localhost (cf. _dev/ du repo serveur), prod Railway sinon.
+// Garde typeof : les tests node chargent ce fichier sans objet location.
+window.FA_API_URL = (typeof location !== "undefined" &&
+  (location.hostname === "localhost" || location.hostname === "127.0.0.1"))
+  ? "http://localhost:3000"
+  : "https://fractal-arena-server-production.up.railway.app";
+
 (function () {
   "use strict";
 
@@ -71,6 +79,26 @@
     HASH: "HashByte", MINING: "Miner", LEDGER: "Ledger",
     NETWORK: "Network", BLOCK: "Block", GENESIS: "Genesis",
   };
+
+  // ---- Rangs (qualité des stats de base ; fixé à l'invocation, à vie) ----
+  // PARITÉ STRICTE avec data.node.js (serveur) — ne jamais diverger.
+  const RANK_LIST = ["C", "B", "A", "S"];
+  const RANK_FACTOR = { C: 1.0, B: 1.25, A: 1.6, S: 2.0 };
+  const RANK_ODDS = [ ["C", 0.55], ["B", 0.28], ["A", 0.13], ["S", 0.04] ];
+  const RANK_COLORS = { C: "#9CA3AF", B: "#38BDF8", A: "#FB923C", S: "#FACC15" };
+
+  // Art par rang : cartes complètes bakées type × rang (assets/{TYPE}_{RANG}.webp).
+  // image_key (clé ART) → préfixe de fichier.
+  const ART_FILE_KEY = {
+    HashByte: "HASHBYTE", Miner: "MINER", LEDGER: "LEDGER",
+    NETWORK: "NETWORK", BLOCK: "BLOCK", GENESIS: "GENESIS",
+  };
+  function artFor(b) {
+    const fk = b && ART_FILE_KEY[b.image_key];
+    if (!fk) return ART[b && b.image_key]; // repli : art de base du type
+    const rk = b.rank && RANK_FACTOR[b.rank] ? b.rank : "C"; // défaut paresseux legacy
+    return "assets/" + fk + "_" + rk + ".webp";
+  }
 
   // ---- Affinités entre types (cf. specs/GAMEPLAY_DEPTH_PACK.md §1) ----
   // Cycle fermé : HASH > MINING > LEDGER > NETWORK > BLOCK > GENESIS > HASH
@@ -176,6 +204,12 @@
     for (const [name, p] of MINT_ODDS) { acc += p; if (r < acc) return name; }
     return "Common";
   }
+  function rollRank() {
+    const r = Math.random();
+    let acc = 0;
+    for (const [name, p] of RANK_ODDS) { acc += p; if (r < acc) return name; }
+    return "C";
+  }
 
   let _idc = 0;
   function newId() { return "beast_" + (_idc++) + "_" + ((Math.random() * 1e6) | 0); }
@@ -184,11 +218,21 @@
   function eff(beast, key) { return Math.floor(beast["base_" + key] * levelMult(beast.level)); }
   function maxHp(b) { return eff(b, "hp"); }
 
+  // Format compact pour les cellules de stats (≤ 4 caractères — elles font ~28px) :
+  // < 10k brut, 10k–999k arrondi en "Nk", au-delà "N.NM". La valeur exacte reste
+  // accessible via l'attribut title posé par les composants.
+  function fmtStat(n) {
+    if (n < 10000) return String(Math.floor(n));
+    if (n < 999500) return Math.round(n / 1000) + "k";
+    return (n / 1e6).toFixed(1).replace(/\.0$/, "") + "M";
+  }
+
   // Make a beast from template
-  function mintBeast(templateName, forceRarity, idx) {
+  function mintBeast(templateName, forceRarity, idx, rank) {
     const tpl = TEMPLATES[templateName];
     const rarity = forceRarity || rollRarity();
-    const v = rarityVariance(rarity);
+    const rk = RANK_FACTOR[rank] ? rank : "C";
+    const v = rarityVariance(rarity) * RANK_FACTOR[rk];
     const b = {
       id: newId(),
       template_name: templateName,
@@ -196,6 +240,7 @@
       image_key: tpl.img,
       preset: TYPE_TO_PRESET[tpl.type],
       rarity,
+      rank: rk,
       base_hp: Math.floor(tpl.hp * v),
       base_atk: Math.floor(tpl.atk * v),
       base_def: Math.floor(tpl.def * v),
@@ -213,9 +258,9 @@
 
   function starterRoster() {
     return [
-      mintBeast("HashByte-1", "Common", 1),
-      mintBeast("Block-1", "Common", 2),
-      mintBeast("Ledger-1", "Common", 3),
+      mintBeast("HashByte-1", "Common", 1, "C"),
+      mintBeast("Block-1", "Common", 2, "C"),
+      mintBeast("Ledger-1", "Common", 3, "C"),
     ];
   }
 
@@ -434,13 +479,14 @@
 
   window.FA_DATA = {
     RARITY_ORDER, RARITY_LIST, RARITY_COLORS, RARITY_UPGRADE, MINT_ODDS,
+    RANK_LIST, RANK_FACTOR, RANK_ODDS, RANK_COLORS, rollRank, artFor,
     RELICS, RELIC_KEYS, RELIC_RARITY_MULT, relicEffect, relicStatDelta,
     PRESET_COLORS, TYPE_TO_PRESET, TYPE_LABEL, ART,
     TYPE_ADVANTAGE, getTypeMultiplier,
     TEMPLATES, TEMPLATE_KEYS, TEMPLATES_BY_TYPE,
     ECON, FORGE, BOOSTS,
     rand, pick, levelMult, rarityVariance, rollRarity, newId,
-    eff, maxHp, mintBeast, starterRoster, xpToNext, displayName,
+    eff, maxHp, fmtStat, mintBeast, starterRoster, xpToNext, displayName,
     grantXp, upgradeRarity, avgRarity, avgLevel, generateEnemyTeam,
     walletNameInscriptions,
     // PvE Campaign

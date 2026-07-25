@@ -17,14 +17,15 @@ function AB_Unit({ beast, live, side, pos }) {
   return (
     <div className={"ab-unit" + (dead ? " ab-dead" : "")} style={{ opacity: dead ? 0.4 : 1, textAlign: "center", flex: 1, minWidth: 0 }}>
       <div style={{ position: "relative", width: 48, height: 48, margin: "0 auto", borderRadius: 8, overflow: "hidden", background: "#0b1020" }}>
-        {beast && D.ART[beast.image_key] ? <img src={D.ART[beast.image_key]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} draggable="false" /> : null}
+        {beast && D.ART[beast.image_key] ? <img src={D.artFor(beast)} alt="" style={{ width: "100%", height: "100%", objectFit: "contain" }} draggable="false"
+          onError={(e) => { const fb = D.ART[beast.image_key]; if (fb && !e.currentTarget.dataset.fb) { e.currentTarget.dataset.fb = "1"; e.currentTarget.src = fb; } }} /> : null}
         {AB_POS_LABEL[pos] && <span className="mono" style={{ position: "absolute", top: 1, left: 1, fontSize: 8, lineHeight: "10px", padding: "0 3px", borderRadius: 4, background: "rgba(0,0,0,0.6)", color: "var(--text-dim)" }}>{AB_POS_LABEL[pos]}</span>}
       </div>
       <div style={{ fontSize: 10, marginTop: 2, color: "var(--text-dim)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
         {beast ? D.displayName(beast) : "—"} · {I18N.t("LINK_TIER")}{beast ? beast.level : 0}
       </div>
       <div style={{ marginTop: 2 }}><Bar frac={frac} kind="hp" /></div>
-      <div style={{ fontSize: 9, color: "var(--text)" }}>{Math.round(hp)}/{Math.round(maxHp)}</div>
+      <div style={{ fontSize: 9, color: "var(--text)" }}>{D.fmtStat(Math.round(hp))}/{D.fmtStat(Math.round(maxHp))}</div>
     </div>
   );
 }

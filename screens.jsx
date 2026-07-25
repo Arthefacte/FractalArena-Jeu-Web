@@ -3,8 +3,8 @@
    ============================================================ */
 const { useState, useEffect, useMemo } = React;
 const D = window.FA_DATA, I18N = window.FA_I18N;
-const { useFA, cx, fmt, presetLabel, rarityLabel, Bar, StatGrid, CreatureCard, Modal, SectionHead, MiniStats, RelicIcon } = window;
-const API_URL = "https://fractal-arena-server-production.up.railway.app";
+const { useFA, cx, fmt, presetLabel, rarityLabel, Bar, StatGrid, CreatureCard, Modal, SectionHead, MiniStats, RelicIcon, TokenIcon, FaText } = window;
+const API_URL = window.FA_API_URL;
 
 /* ---------------- TEAM ---------------- */
 function Team() {
@@ -162,7 +162,7 @@ function TalentSlot({ beast }) {
                   {unlocked && !chosen && <span className="muted">{I18N.t("TAL_PICK_FREE")}</span>}
                   {unlocked && chosen && (freeRespec
                     ? <span className="muted">{I18N.t("TAL_RESPEC_FREE")}</span>
-                    : <span className="muted">{I18N.t("TAL_RESPEC_COST", cost)}</span>)}
+                    : <span className="muted"><FaText text={I18N.t("TAL_RESPEC_COST", cost)} s={12} /></span>)}
                 </div>
                 {unlocked && (
                   <div className="flex wrap" style={{ gap: 6, marginTop: 6 }}>
@@ -238,17 +238,28 @@ function ForgeFusion() {
     const r = await actions.fuse(sel[0], sel[1], gold);
     setFuseBusy(false);
     if (!r.ok) { toast(r.reason, "bad"); return; }
-    if (r.success) {
-      if (r.result?.premium) toast(I18N.t("FG_FUSE_PREMIUM", rarityLabel(r.result?.rarity)), "good");
-      else toast(I18N.t("FG_FUSE_OK", rarityLabel(r.result?.rarity)), "good");
-    }
-    else toast(I18N.t("FG_FUSE_FAIL"), "bad");
+    const showFuseResult = () => {
+      if (r.success) {
+        if (r.result?.premium) toast(I18N.t("FG_FUSE_PREMIUM", rarityLabel(r.result?.rarity)), "good");
+        else toast(I18N.t("FG_FUSE_OK", rarityLabel(r.result?.rarity)), "good");
+      }
+      else toast(I18N.t("FG_FUSE_FAIL"), "bad");
+    };
+    if (window.FA_FORGE_CINE) {
+      window.FA_FORGE_CINE.play({
+        mode: "fuse", success: r.success, tier: r.result?.rarity,
+        color: D.RARITY_COLORS[r.result?.rarity] || "#46e6ff",
+        premium: r.result?.premium, onDone: showFuseResult,
+      });
+    } else showFuseResult();
     setSel([]);
+    setGoldMode(false);
   }
+  const F = window.FA_FORGE_UI;
   const cost = first ? D.FORGE.FUSION_COST[first.rarity] : 0;
   const rate = first ? D.FORGE.FUSION_RATE[first.rarity] : 0;
   const canFuse = sel.length === 2;
-  const balOk = (g.liquid + g.locked) >= cost;
+  const btn = F.fusionButtonState({ gold: goldMode, cost, balance: g.liquid + g.locked, ticketsGold: g.ticketsGold, busy: fuseBusy });
 
   return (
     <div>
@@ -256,22 +267,32 @@ function ForgeFusion() {
         <div className="mono muted" style={{ fontSize: 13 }}>{first ? I18N.t("FG_PICK_SAME", rarityLabel(first.rarity)) : I18N.t("FG_FUSION_HINT")}</div>
         {canFuse && (
           <div className="flex gap12 center">
-            <span className="pill" style={{ color: "var(--elec)" }}>{I18N.t("FG_SUCCESS_RATE")} {Math.round(rate * 100)}%</span>
+            <span className="pill" style={{ color: "var(--elec)" }}>{I18N.t("FG_SUCCESS_RATE")} {goldMode ? 100 : Math.round(rate * 100)}%</span>
+            <span className="pill" style={{ cursor: "pointer" }} onClick={() => setSel(F.fusionSwap(sel))}>⇄ {I18N.t("FG_SWAP")}</span>
             <span className="pill" style={{ color: "var(--gold)", cursor: "pointer", opacity: g.ticketsGold >= 1 ? 1 : 0.4, border: goldMode ? "1px solid var(--gold)" : undefined }}
               onClick={() => g.ticketsGold >= 1 && setGoldMode(!goldMode)}>
               🎟 {I18N.t("FG_GOLD")} {goldMode ? "✓" : ""}
             </span>
-            <button className={cx("btn", goldMode ? "btn-gold" : "btn-forge")} disabled={!balOk || fuseBusy} onClick={() => doFuse(goldMode)}>{fuseBusy ? "…" : I18N.t("FG_FUSE_BTN", cost)}</button>
+            <button className={cx("btn", goldMode ? "btn-gold" : "btn-forge")} disabled={btn.disabled} onClick={() => doFuse(goldMode)}>{fuseBusy ? "…" : goldMode ? I18N.t("FG_FUSE_BTN_GOLD") : <FaText text={I18N.t("FG_FUSE_BTN", cost)} />}</button>
           </div>
         )}
       </div>
-      {!balOk && canFuse && <div className="mono" style={{ color: "var(--alert)", fontSize: 12, marginBottom: 10 }}>{I18N.t("INSUFFICIENT", g.liquid + g.locked, cost)}</div>}
+      {btn.showInsufficient && canFuse && <div className="mono" style={{ color: "var(--alert)", fontSize: 12, marginBottom: 10 }}>{I18N.t("INSUFFICIENT", g.liquid + g.locked, cost)}</div>}
       <div className="grid-cards">
-        {sorted.map((b) => (
-          <div key={b.id} style={{ opacity: clickable(b) ? 1 : 0.32, pointerEvents: clickable(b) ? "auto" : "none", transition: "opacity .2s" }}>
-            <CreatureCard beast={b} selectable selected={sel.includes(b.id)} onClick={() => toggle(b)} />
-          </div>
-        ))}
+        {sorted.map((b) => {
+          const role = sel[0] === b.id ? "kept" : sel[1] === b.id ? "sacrificed" : null;
+          const roleColor = role === "kept" ? "var(--success)" : "var(--alert)";
+          const roleBadge = role && (
+            <div className="pill" style={{ position: "absolute", bottom: 8, left: "50%", transform: "translateX(-50%)", whiteSpace: "nowrap", background: "var(--bg)", color: roleColor, border: `1px solid ${roleColor}` }}>
+              {role === "kept" ? I18N.t("FG_KEPT") : I18N.t("FG_SACRIFICED")}
+            </div>
+          );
+          return (
+            <div key={b.id} style={{ opacity: clickable(b) ? 1 : 0.32, pointerEvents: clickable(b) ? "auto" : "none", transition: "opacity .2s" }}>
+              <CreatureCard beast={b} selectable selected={sel.includes(b.id)} onClick={() => toggle(b)} badge={roleBadge} />
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -299,7 +320,7 @@ function RerollPreviewModal({ preview, busy, onValidate, onAgain, onKeep }) {
       <div className="mono muted" style={{ fontSize: 11, marginBottom: 14 }}>{I18N.t("REROLL_REFUND_HINT")}</div>
       <div className="flex gap8" style={{ flexWrap: "wrap" }}>
         <button className="btn btn-success" disabled={busy} onClick={onValidate}>{I18N.t("REROLL_VALIDATE")}</button>
-        <button className="btn btn-elec" disabled={busy} onClick={onAgain}>{I18N.t("REROLL_AGAIN", F.withLockCost(preview.next_reroll_cost || 0, (preview.locks || []).length))}</button>
+        <button className="btn btn-elec" disabled={busy} onClick={onAgain}><FaText text={I18N.t("REROLL_AGAIN", F.withLockCost(preview.next_reroll_cost || 0, (preview.locks || []).length))} /></button>
         <button className="btn" disabled={busy} onClick={onKeep}>{I18N.t("REROLL_KEEP_OLD")}</button>
       </div>
     </Modal>
@@ -353,7 +374,7 @@ function ForgeReroll() {
         {beast && (
           <div className="flex gap12 center">
             <span className="pill">reroll #{beast.reroll_count + 1}</span>
-            <button className="btn btn-elec" disabled={!balOk || rerollBusy} onClick={doReroll}>{rerollBusy ? "…" : I18N.t("FG_REROLL_BTN", cost)}</button>
+            <button className="btn btn-elec" disabled={!balOk || rerollBusy} onClick={doReroll}>{rerollBusy ? "…" : <FaText text={I18N.t("FG_REROLL_BTN", cost)} />}</button>
           </div>
         )}
       </div>
@@ -398,10 +419,19 @@ function ForgeSummon() {
     const r = await actions.summon();
     setRolling(false);
     if (!r.ok) { toast(r.reason, "bad"); return; }
-    setLast(r.beast);
-    toast(I18N.t("FG_SUMMON_OK", D.displayName(r.beast), rarityLabel(r.beast.rarity)), "good");
+    const reveal = () => {
+      setLast(r.beast);
+      toast(I18N.t("FG_SUMMON_OK", D.displayName(r.beast), I18N.t("FG_RANK") + " " + (r.beast.rank || "C")), "good");
+    };
+    if (window.FA_FORGE_CINE) {
+      window.FA_FORGE_CINE.play({
+        mode: "summon", success: true, tier: r.beast.rank || "C",
+        color: D.RANK_COLORS[r.beast.rank || "C"] || "#46e6ff",
+        onDone: reveal,
+      });
+    } else reveal();
   }
-  const odds = [["Common", 70], ["Rare", 20], ["Epic", 8], ["Legendary", 2]];
+  const odds = [["C", 55], ["B", 28], ["A", 13], ["S", 4]];
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 26, alignItems: "start" }} className="summon-grid">
       <div>
@@ -410,13 +440,13 @@ function ForgeSummon() {
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {odds.map(([r, p]) => (
               <div key={r} className="flex between center">
-                <span className="flex center gap8"><span style={{ width: 10, height: 10, background: D.RARITY_COLORS[r], display: "inline-block", clipPath: "polygon(50% 0,100% 50%,50% 100%,0 50%)" }} /><span style={{ color: D.RARITY_COLORS[r], fontWeight: 600 }}>{rarityLabel(r)}</span></span>
+                <span className="flex center gap8"><span style={{ width: 10, height: 10, background: D.RANK_COLORS[r], display: "inline-block", clipPath: "polygon(50% 0,100% 50%,50% 100%,0 50%)" }} /><span style={{ color: D.RANK_COLORS[r], fontWeight: 600 }}>{I18N.t("FG_RANK")} {r}</span></span>
                 <span className="mono" style={{ color: "var(--text-dim)" }}>{p}%</span>
               </div>
             ))}
           </div>
           <div className="divider" />
-          <button className="btn btn-fire block lg" disabled={!balOk || rolling} onClick={doSummon}>{rolling ? "…" : I18N.t("FG_SUMMON_BTN", cost)}</button>
+          <button className="btn btn-fire block lg" disabled={!balOk || rolling} onClick={doSummon}>{rolling ? "…" : <FaText text={I18N.t("FG_SUMMON_BTN", cost)} />}</button>
         </div>
       </div>
       <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 18, minHeight: 300, display: "grid", placeItems: "center" }}>
@@ -424,7 +454,7 @@ function ForgeSummon() {
           <div className="mono" style={{ color: "var(--fire)", fontSize: 13, letterSpacing: 2 }}>FORGING…</div>
         ) : last ? (
           <div style={{ width: "100%" }}>
-            <div className="eyebrow" style={{ textAlign: "center", marginBottom: 10, color: D.RARITY_COLORS[last.rarity] }}>{I18N.t("MINT_TITLE") || "FORGED"}</div>
+            <div className="eyebrow" style={{ textAlign: "center", marginBottom: 10, color: D.RANK_COLORS[last.rank || "C"] }}>{I18N.t("MINT_TITLE") || "FORGED"}</div>
             <CreatureCard beast={last} />
           </div>
         ) : (
@@ -449,8 +479,17 @@ function ForgeReliques() {
     const r = await actions.relicSummon();
     setRolling(false);
     if (!r.ok) { toast(r.reason, "bad"); return; }
-    setLast(r.relic);
-    toast(I18N.t("FG_SUMMON_OK", I18N.t("RELIC_" + r.relic.type.toUpperCase()), rarityLabel(r.relic.rarity)), "good");
+    const revealRelic = () => {
+      setLast(r.relic);
+      toast(I18N.t("FG_SUMMON_OK", I18N.t("RELIC_" + r.relic.type.toUpperCase()), rarityLabel(r.relic.rarity)), "good");
+    };
+    if (window.FA_FORGE_CINE) {
+      window.FA_FORGE_CINE.play({
+        mode: "summon", success: true, tier: r.relic.rarity,
+        color: D.RARITY_COLORS[r.relic.rarity] || "#46e6ff",
+        onDone: revealRelic,
+      });
+    } else revealRelic();
   }
   const odds = [["Common", 70], ["Rare", 20], ["Epic", 8], ["Legendary", 2]];
   return (
@@ -467,7 +506,7 @@ function ForgeReliques() {
               ))}
             </div>
             <div className="divider" />
-            <button className="btn btn-gold block lg" disabled={!balOk || rolling} onClick={doSummon}>{rolling ? "…" : I18N.t("FG_SUMMON_BTN", cost)}</button>
+            <button className="btn btn-gold block lg" disabled={!balOk || rolling} onClick={doSummon}>{rolling ? "…" : <FaText text={I18N.t("FG_SUMMON_BTN", cost)} />}</button>
           </div>
         </div>
         <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 18, minHeight: 300, display: "grid", placeItems: "center" }}>
@@ -558,7 +597,7 @@ function Boosts() {
               </div>
               <div className="muted" style={{ fontSize: 13, lineHeight: 1.5, minHeight: 56 }}>{it.desc}</div>
               <div className="mono" style={{ fontSize: 11, color: "var(--text-dim)" }}>{it.unit === "fights" ? `${def.fights || def.charges} combats` : `${def.charges} charges`}</div>
-              <button className="btn block" style={{ "--c": it.color, marginTop: "auto" }} disabled={!!buyingKey} onClick={() => buy(it.key)}>{buyingKey === it.key ? "…" : I18N.t("BO_BUY", def.cost)}</button>
+              <button className="btn block" style={{ "--c": it.color, marginTop: "auto" }} disabled={!!buyingKey} onClick={() => buy(it.key)}>{buyingKey === it.key ? "…" : <FaText text={I18N.t("BO_BUY", def.cost)} />}</button>
             </div>
           );
         })}
@@ -712,7 +751,7 @@ function WithdrawModal({ onClose }) {
   return (
     <Modal onClose={onClose} accent="var(--gold)">
       <div className="eyebrow" style={{ color: "var(--gold)" }}>{I18N.t("WL_WITHDRAW")}</div>
-      <div className="h2" style={{ margin: "4px 0 10px" }}>{I18N.t("WL_LIQUID")} : <span className="mono" style={{ color: "var(--gold)" }}>{fmt(g.liquid)}</span></div>
+      <div className="h2" style={{ margin: "4px 0 10px" }}>{I18N.t("WL_LIQUID")} : <span className="mono" style={{ color: "var(--gold)" }}><TokenIcon s={14} /> {fmt(g.liquid)}</span></div>
       <div className="muted mono" style={{ fontSize: 12, lineHeight: 1.5, marginBottom: 16 }}>{I18N.t("WL_WD_INFO")}</div>
       {cdMsg && <div className="mono" style={{ fontSize: 12, lineHeight: 1.4, marginBottom: 12, padding: "8px 10px", borderRadius: 8, background: "rgba(255,90,90,0.12)", color: "var(--alert)" }}>⏳ {cdMsg}</div>}
       <input className="field" value={amt} onChange={(e) => setAmt(e.target.value.replace(/[^0-9]/g, ""))} placeholder="500" />
@@ -757,7 +796,7 @@ function Perso() {
         <div>
           <div className="flex gap12 center wrap" style={{ marginBottom: 16 }}>
             <input className="field" style={{ flex: 1, minWidth: 200 }} maxLength={24} value={name} onChange={(e) => setName(e.target.value)} placeholder={I18N.t("PE_NEW_NAME")} />
-            <button className="btn btn-elec" disabled={!sel || !name.trim() || busy} onClick={doRename}>{busy ? "…" : I18N.t("PE_RENAME_BTN", D.ECON.VANITY_RENAME)}</button>
+            <button className="btn btn-elec" disabled={!sel || !name.trim() || busy} onClick={doRename}>{busy ? "…" : <FaText text={I18N.t("PE_RENAME_BTN", D.ECON.VANITY_RENAME)} />}</button>
           </div>
           {!sel && <div className="mono muted" style={{ fontSize: 12, marginBottom: 12 }}>{I18N.t("PE_PICK")}</div>}
           <div className="grid-cards">
@@ -771,7 +810,7 @@ function Perso() {
           <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 22 }}>
             <div className="mono muted" style={{ fontSize: 12, marginBottom: 10 }}>{I18N.t("PE_NEW_TITLE")}</div>
             <input className="field" maxLength={32} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Whale · Diamond Hands · …" />
-            <button className="btn btn-fire block" style={{ marginTop: 16 }} disabled={!title.trim() || busy} onClick={doTitle}>{busy ? "…" : I18N.t("PE_TITLE_BTN", D.ECON.VANITY_TITLE)}</button>
+            <button className="btn btn-fire block" style={{ marginTop: 16 }} disabled={!title.trim() || busy} onClick={doTitle}>{busy ? "…" : <FaText text={I18N.t("PE_TITLE_BTN", D.ECON.VANITY_TITLE)} />}</button>
           </div>
           <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 20, marginTop: 16 }}>
             <div className="flex between center">

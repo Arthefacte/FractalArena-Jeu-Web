@@ -328,13 +328,13 @@ input { font-family: var(--font-mono); }
   overflow: hidden;
 }
 .card .art {
-  position: relative; width: 100%; aspect-ratio: 1/1; overflow: hidden;
+  position: relative; width: 100%; aspect-ratio: 4/5; overflow: hidden;
   background: #04060d;
 }
-.card .art img { width: 100%; height: 100%; object-fit: cover; transition: transform .35s cubic-bezier(.2,1,.3,1); display: block; }
+.card .art img { width: 100%; height: 100%; object-fit: contain; transition: transform .35s cubic-bezier(.2,1,.3,1); display: block; }
 .card .art::after {
   content: ""; position: absolute; inset: 0;
-  background: linear-gradient(180deg, transparent 45%, rgba(5,7,15,0.55) 78%, var(--bg-panel-2));
+  background: linear-gradient(180deg, transparent 78%, rgba(5,7,15,0.38));
 }
 .card .rar-tag {
   position: absolute; top: 8px; left: 8px; z-index: 2;
@@ -350,7 +350,7 @@ input { font-family: var(--font-mono); }
   border: 1px solid rgba(255,230,0,0.4);
 }
 .card.selectable:hover { --lift: -5px; --scl: 1.015; box-shadow: 0 14px 34px rgba(0,0,0,0.5), 0 0 22px color-mix(in srgb, var(--rc) 28%, transparent); }
-.card.selectable:hover .art img { transform: scale(1.07); }
+.card.selectable:hover .art img { transform: scale(1.03); }
 
 /* Foil holographique : reflet prismatique + glare qui suit le curseur (#3).
    Intensité = var --foil (par rareté). Desktop uniquement. */
@@ -401,7 +401,7 @@ input { font-family: var(--font-mono); }
   background: rgba(255,255,255,0.022); border: 1px solid var(--line-soft);
 }
 .stat .k { font-family: var(--font-mono); font-size: 8.5px; letter-spacing: 1px; color: var(--text-dim); }
-.stat .v { font-family: var(--font-mono); font-size: 13px; font-weight: 700; line-height: 1.15; }
+.stat .v { font-family: var(--font-mono); font-size: 11px; font-weight: 700; line-height: 1.35; }
 
 /* bars */
 .bar { position: relative; height: 7px; background: #0b1120; overflow: hidden; border: 1px solid var(--line-soft); }
@@ -709,12 +709,6 @@ input { font-family: var(--font-mono); }
 .room-input textarea:focus { outline: none; border-color: var(--elec); box-shadow: 0 0 0 2px rgba(0,240,255,.15); }
 
 /* Stats complètes sous la barre HP dans l'arène */
-.fighter-stats {
-  display: flex; justify-content: space-between; gap: 6px; margin-top: 8px;
-  font-family: var(--font-mono); font-size: 11px; color: var(--text-dim);
-}
-.fighter-stats span { white-space: nowrap; }
-
 /* ============ Leaderboard ============ */
 .lb-tabs { display: flex; gap: 8px; margin-bottom: 14px; }
 .lb-tab {
