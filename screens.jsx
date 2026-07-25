@@ -238,11 +238,20 @@ function ForgeFusion() {
     const r = await actions.fuse(sel[0], sel[1], gold);
     setFuseBusy(false);
     if (!r.ok) { toast(r.reason, "bad"); return; }
-    if (r.success) {
-      if (r.result?.premium) toast(I18N.t("FG_FUSE_PREMIUM", rarityLabel(r.result?.rarity)), "good");
-      else toast(I18N.t("FG_FUSE_OK", rarityLabel(r.result?.rarity)), "good");
-    }
-    else toast(I18N.t("FG_FUSE_FAIL"), "bad");
+    const showFuseResult = () => {
+      if (r.success) {
+        if (r.result?.premium) toast(I18N.t("FG_FUSE_PREMIUM", rarityLabel(r.result?.rarity)), "good");
+        else toast(I18N.t("FG_FUSE_OK", rarityLabel(r.result?.rarity)), "good");
+      }
+      else toast(I18N.t("FG_FUSE_FAIL"), "bad");
+    };
+    if (window.FA_FORGE_CINE) {
+      window.FA_FORGE_CINE.play({
+        mode: "fuse", success: r.success, tier: r.result?.rarity,
+        color: D.RARITY_COLORS[r.result?.rarity] || "#46e6ff",
+        premium: r.result?.premium, onDone: showFuseResult,
+      });
+    } else showFuseResult();
     setSel([]);
     setGoldMode(false);
   }
@@ -410,8 +419,17 @@ function ForgeSummon() {
     const r = await actions.summon();
     setRolling(false);
     if (!r.ok) { toast(r.reason, "bad"); return; }
-    setLast(r.beast);
-    toast(I18N.t("FG_SUMMON_OK", D.displayName(r.beast), I18N.t("FG_RANK") + " " + (r.beast.rank || "C")), "good");
+    const reveal = () => {
+      setLast(r.beast);
+      toast(I18N.t("FG_SUMMON_OK", D.displayName(r.beast), I18N.t("FG_RANK") + " " + (r.beast.rank || "C")), "good");
+    };
+    if (window.FA_FORGE_CINE) {
+      window.FA_FORGE_CINE.play({
+        mode: "summon", success: true, tier: r.beast.rank || "C",
+        color: D.RANK_COLORS[r.beast.rank || "C"] || "#46e6ff",
+        onDone: reveal,
+      });
+    } else reveal();
   }
   const odds = [["C", 55], ["B", 28], ["A", 13], ["S", 4]];
   return (
@@ -461,8 +479,17 @@ function ForgeReliques() {
     const r = await actions.relicSummon();
     setRolling(false);
     if (!r.ok) { toast(r.reason, "bad"); return; }
-    setLast(r.relic);
-    toast(I18N.t("FG_SUMMON_OK", I18N.t("RELIC_" + r.relic.type.toUpperCase()), rarityLabel(r.relic.rarity)), "good");
+    const revealRelic = () => {
+      setLast(r.relic);
+      toast(I18N.t("FG_SUMMON_OK", I18N.t("RELIC_" + r.relic.type.toUpperCase()), rarityLabel(r.relic.rarity)), "good");
+    };
+    if (window.FA_FORGE_CINE) {
+      window.FA_FORGE_CINE.play({
+        mode: "summon", success: true, tier: r.relic.rarity,
+        color: D.RARITY_COLORS[r.relic.rarity] || "#46e6ff",
+        onDone: revealRelic,
+      });
+    } else revealRelic();
   }
   const odds = [["Common", 70], ["Rare", 20], ["Epic", 8], ["Legendary", 2]];
   return (
