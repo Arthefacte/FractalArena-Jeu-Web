@@ -4,7 +4,6 @@
 // Auto-suffisant : fait ses propres fetch + polling. Aucune prop. Exposé sur window.
 
 const API_URL = window.FA_API_URL;
-const { FaText } = window;
 
 // Lien « preuve » = page du DEX InSwap (paire FractalArena / sFB) — même cible que la vitrine arthefacte.com.
 const DEX_URL = "https://inswap.net/swap?t0=FractalArena&t1=sFB___000";
@@ -34,7 +33,7 @@ function TickerRow({ kind, icon, label, total, threshold, wallet, proofLabel, su
           <a className="bb-tx" href={DEX_URL} target="_blank" rel="noreferrer">{proofLabel} ↗</a>
         )}
       </div>
-      {sub && <div className="bb-sub"><FaText text={sub} s={10} /></div>}
+      {sub && <div className="bb-sub">{sub}</div>}
     </div>
   );
 }
