@@ -5,7 +5,7 @@
    ============================================================ */
 const { useState, useEffect } = React;
 const D = window.FA_DATA, I18N = window.FA_I18N;
-const { useFA, cx, fmt, rarityLabel, Coin, Modal, SectionHead, RelicIcon } = window;
+const { useFA, cx, fmt, rarityLabel, TokenIcon, Modal, SectionHead, RelicIcon } = window;
 const MKT = window.FA_MARKET;
 
 // Message d'erreur : clé serveur connue → traduction dédiée, sinon générique.
@@ -30,7 +30,7 @@ function MarketListingCard({ l, onBuy, own }) {
         </div>
       </div>
       <div style={{ textAlign: "right" }}>
-        <div className="mono"><Coin /> {fmt(l.price)}</div>
+        <div className="mono"><TokenIcon /> {fmt(l.price)}</div>
         {!own && <button className="btn sm" onClick={() => onBuy(l)}>{I18N.t("MKT_BUY")}</button>}
       </div>
     </div>

@@ -18,6 +18,12 @@ function Coin({ c }) {
   return <span style={{ color: c || "var(--gold)", fontWeight: 700 }}>◎</span>;
 }
 
+// Logo du token FRACTALARENA (assets/TOKEN.png), inline à côté d'un montant.
+function TokenIcon({ s = 15 }) {
+  return <img src="assets/TOKEN.png" alt="FA" width={s} height={s} draggable="false"
+    style={{ borderRadius: 3, verticalAlign: "-2px", display: "inline-block" }} />;
+}
+
 function Bar({ frac, kind, className }) {
   const pct = Math.max(0, Math.min(1, frac)) * 100;
   let mod = "";
@@ -211,4 +217,4 @@ function RelicIcon({ type, rarity, size }) {
   return <span style={{ width: Math.round(s * 0.45), height: Math.round(s * 0.45), display: "inline-block", background: col, clipPath: "polygon(50% 0,100% 50%,50% 100%,0 50%)" }} />;
 }
 
-Object.assign(window, { FA_Ctx, useFA, cx, fmt, presetLabel, rarityLabel, Coin, Bar, StatGrid, CreatureCard, Modal, SectionHead, MiniStats, PostureSelect, RelicIcon });
+Object.assign(window, { FA_Ctx, useFA, cx, fmt, presetLabel, rarityLabel, Coin, TokenIcon, Bar, StatGrid, CreatureCard, Modal, SectionHead, MiniStats, PostureSelect, RelicIcon });
