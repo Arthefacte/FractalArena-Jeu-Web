@@ -41,3 +41,8 @@ test("déterminisme : pas de Math.random, angle d'or", () => {
   assert.ok(!/Math\.random/.test(src));
   assert.match(src, /2\.399963|GOLD/);
 });
+
+test("chaîne pré-remplie au montage (pas d'écran vide les 2 premières minutes)", () => {
+  assert.match(src, /cycles = PREFILL/);
+  assert.match(src, /const OPACITY = 0\.1, CYCLE_MS = 8000, BLOCK_START = 841200, PREFILL = 40/);
+});

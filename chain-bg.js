@@ -6,7 +6,7 @@
   "use strict";
   if (typeof window === "undefined") return;
 
-  const OPACITY = 0.1, CYCLE_MS = 8000, BLOCK_START = 841200;
+  const OPACITY = 0.1, CYCLE_MS = 8000, BLOCK_START = 841200, PREFILL = 40;
   let mounted = false, cv = null, g2 = null, raf = 0;
   let phase = 0, cycles = 0, last = 0, lastDraw = -1e9;
   let accent = "0,240,255"; // rgb du flash — relu à chaque nouveau cycle
@@ -161,6 +161,7 @@
       cv.style.cssText = "position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;opacity:" + OPACITY + ";";
       document.body.appendChild(cv);
       g2 = cv.getContext("2d");
+      cycles = PREFILL; // chaîne pleine dès l'arrivée — le minage « tournait depuis toujours »
       const reduced = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
       if (reduced) { phase = 0.3; try { draw(); } catch (e) { teardown(); } return; } // une frame statique
       last = performance.now();
