@@ -52,7 +52,7 @@ function Stars({ n, max, size }) {
 
 function campMeta(b) {
   return b ? {
-    name: D.displayName(b), rarity: b.rarity, image_key: b.image_key, preset: b.preset,
+    name: D.displayName(b), rarity: b.rarity, image_key: b.image_key, rank: b.rank, preset: b.preset,
     level: b.level, maxHp: D.eff(b, "hp"), atk: D.eff(b, "atk"), def: D.eff(b, "def"),
     spd: D.eff(b, "spd"), mag: D.eff(b, "mag"), boss: !!b.is_boss,
   } : null;
@@ -76,7 +76,8 @@ function CampCombatCard({ meta, live, side, cref }) {
     <div className={cx("card", dead && "dead", meta.boss && "camp-boss-card")} ref={cref}
       style={{ "--rc": meta.boss ? "var(--gold)" : rc, boxShadow: meta.boss ? "0 0 22px rgba(247,147,26,0.5)" : undefined }}>
       <div className="art">
-        <img src={D.ART[meta.image_key]} alt={meta.name} draggable="false"
+        <img src={D.artFor(meta)} alt={meta.name} draggable="false"
+          onError={(e) => { const fb = D.ART[meta.image_key]; if (fb && !e.currentTarget.dataset.fb) { e.currentTarget.dataset.fb = "1"; e.currentTarget.src = fb; } }}
           style={meta.boss ? { transform: "scale(1.08)", filter: "drop-shadow(0 0 10px rgba(247,147,26,0.7))" } : undefined} />
         <div className="rar-tag">{rarityLabel(meta.rarity)}</div>
         <div className="lvl-tag">LV {meta.level}</div>
@@ -94,11 +95,13 @@ function CampCombatCard({ meta, live, side, cref }) {
           </div>
           <Bar frac={frac} kind="hp" />
         </div>
-        <div className="fighter-stats">
-          <span>ATK {D.fmtStat(meta.atk)}</span>
-          <span>DEF {D.fmtStat(meta.def)}</span>
-          <span>SPD {D.fmtStat(meta.spd)}</span>
-          <span>MAG {D.fmtStat(meta.mag)}</span>
+        <div className="stat-row">
+          {[["ATK", meta.atk], ["DEF", meta.def], ["SPD", meta.spd], ["MAG", meta.mag]].map(([k, v]) => (
+            <div className="stat" key={k}>
+              <div className="k">{k}</div>
+              <div className="v" title={String(v)}>{D.fmtStat(v)}</div>
+            </div>
+          ))}
         </div>
       </div>
     </div>

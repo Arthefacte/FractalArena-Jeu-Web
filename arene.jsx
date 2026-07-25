@@ -12,7 +12,8 @@ function TeamPreview({ team }) {
     <div className="flex gap8" style={{ flexWrap: "nowrap" }}>
       {list.map((b, i) => (
         <div key={i} className="oct-sm" style={{ width: 40, height: 40, overflow: "hidden", border: "1px solid var(--line)" }}>
-          {D.ART[b.image_key] ? <img src={D.ART[b.image_key]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} draggable="false" /> : null}
+          {D.ART[b.image_key] ? <img src={D.artFor(b)} alt="" style={{ width: "100%", height: "100%", objectFit: "contain" }} draggable="false"
+            onError={(e) => { const fb = D.ART[b.image_key]; if (fb && !e.currentTarget.dataset.fb) { e.currentTarget.dataset.fb = "1"; e.currentTarget.src = fb; } }} /> : null}
         </div>
       ))}
     </div>
@@ -209,7 +210,8 @@ function Arene() {
                   {(a.team || []).map((b, j) => (
                     <div key={j} style={{ flex: 1, textAlign: "center", fontSize: 10, color: "var(--text-dim)" }}>
                       <div style={{ width: 36, height: 36, margin: "0 auto", borderRadius: 6, overflow: "hidden", background: "#0b1020" }}>
-                        {D.ART[b.image_key] ? <img src={D.ART[b.image_key]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : null}
+                        {D.ART[b.image_key] ? <img src={D.artFor(b)} alt="" style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                          onError={(e) => { const fb = D.ART[b.image_key]; if (fb && !e.currentTarget.dataset.fb) { e.currentTarget.dataset.fb = "1"; e.currentTarget.src = fb; } }} /> : null}
                       </div>
                       <div style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{D.displayName(b)}</div>
                       <div>{I18N.t("LINK_TIER")}{b.level} · {D.fmtStat(D.eff(b, "atk"))}/{D.fmtStat(D.eff(b, "def"))}</div>

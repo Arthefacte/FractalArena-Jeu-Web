@@ -54,7 +54,8 @@ function CombatCard({ meta, live, side, cref, oppMeta, scale = 1 }) {
   return (
     <div className={cx("card", dead && "dead")} ref={cref} style={{ "--rc": rc }}>
       <div className="art">
-        <img src={D.ART[meta.image_key]} alt={meta.name} draggable="false" />
+        <img src={D.artFor(meta)} alt={meta.name} draggable="false"
+          onError={(e) => { const fb = D.ART[meta.image_key]; if (fb && !e.currentTarget.dataset.fb) { e.currentTarget.dataset.fb = "1"; e.currentTarget.src = fb; } }} />
         <div className="rar-tag">{rarityLabel(meta.rarity)}</div>
         <div className="lvl-tag">LV {meta.level}</div>
       </div>
@@ -79,11 +80,13 @@ function CombatCard({ meta, live, side, cref, oppMeta, scale = 1 }) {
           </div>
           <Bar frac={frac} kind="hp" />
         </div>
-        <div className="fighter-stats">
-          <span>ATK {D.fmtStat(Math.round(meta.atk * scale))}</span>
-          <span>DEF {D.fmtStat(Math.round(meta.def * scale))}</span>
-          <span>SPD {D.fmtStat(Math.round(meta.spd * scale))}</span>
-          <span>MAG {D.fmtStat(Math.round(meta.mag * scale))}</span>
+        <div className="stat-row">
+          {[["ATK", meta.atk], ["DEF", meta.def], ["SPD", meta.spd], ["MAG", meta.mag]].map(([k, v]) => (
+            <div className="stat" key={k}>
+              <div className="k">{k}</div>
+              <div className="v" title={String(Math.round(v * scale))}>{D.fmtStat(Math.round(v * scale))}</div>
+            </div>
+          ))}
         </div>
       </div>
     </div>
@@ -120,7 +123,7 @@ function Fosse() {
   const p2Refs = useRef([]);
 
   function beastMeta(b) {
-    return b ? { name: D.displayName(b), type: b.type, rarity: b.rarity, image_key: b.image_key, preset: b.preset, level: b.level, maxHp: D.eff(b, "hp"), atk: D.eff(b, "atk"), def: D.eff(b, "def"), spd: D.eff(b, "spd"), mag: D.eff(b, "mag") } : null;
+    return b ? { name: D.displayName(b), type: b.type, rarity: b.rarity, image_key: b.image_key, rank: b.rank, preset: b.preset, level: b.level, maxHp: D.eff(b, "hp"), atk: D.eff(b, "atk"), def: D.eff(b, "def"), spd: D.eff(b, "spd"), mag: D.eff(b, "mag") } : null;
   }
 
   // keep idle preview synced with selection

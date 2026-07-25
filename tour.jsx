@@ -32,7 +32,8 @@ function TourBeastTile({ beast, hpFrac, dead, selIdx, onToggle }) {
         </span>
       )}
       <div style={{ position: "relative", width: 56, height: 56, margin: "0 auto", borderRadius: 8, overflow: "hidden", background: "#0b1020", border: "1px solid " + rc }}>
-        {D.ART[beast.image_key] && <img src={D.ART[beast.image_key]} alt="" draggable="false" style={{ width: "100%", height: "100%", objectFit: "cover", filter: dead ? "grayscale(1)" : "none" }} />}
+        {D.ART[beast.image_key] && <img src={D.artFor(beast)} alt="" draggable="false" style={{ width: "100%", height: "100%", objectFit: "contain", filter: dead ? "grayscale(1)" : "none" }}
+          onError={(e) => { const fb = D.ART[beast.image_key]; if (fb && !e.currentTarget.dataset.fb) { e.currentTarget.dataset.fb = "1"; e.currentTarget.src = fb; } }} />}
         {dead && <span style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", fontSize: 22 }}>☠</span>}
       </div>
       <div className="mono" style={{ fontSize: 10, marginTop: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: "var(--text-dim)" }}>
