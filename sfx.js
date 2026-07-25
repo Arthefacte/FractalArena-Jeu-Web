@@ -59,15 +59,24 @@
     victory: (t) => [523, 659, 784, 1047].forEach((f, i) => tone(t + i * 0.10, { type: "triangle", f, dur: 0.22, peak: 0.5 })),
     // descente mate
     defeat:  (t) => [440, 349, 262].forEach((f, i) => tone(t + i * 0.12, { type: "sine", f, dur: 0.28, peak: 0.45 })),
+    // frappe de forge : impact grave + claquement métallique bref
+    forge_strike: (t) => { tone(t, { type: "sine", f: 90, f2: 55, dur: 0.30, peak: 0.8 });
+                           tone(t + 0.01, { type: "square", f: 1400, f2: 700, dur: 0.06, peak: 0.2 }); },
+    // carillon de naissance : arpège dont la richesse monte avec lvl (0..3)
+    forge_born: (t, lvl) => { const notes = [523, 659, 784, 1047, 1319].slice(0, 2 + (Number(lvl) || 0));
+                              notes.forEach((f, i) => tone(t + i * 0.09, { type: "triangle", f, dur: 0.20, peak: 0.5 })); },
+    // échec de fusion : retombée mate, deux chutes graves
+    forge_fizzle: (t) => { tone(t, { type: "sawtooth", f: 220, f2: 70, dur: 0.35, peak: 0.38 });
+                           tone(t + 0.12, { type: "sine", f: 160, f2: 60, dur: 0.30, peak: 0.3 }); },
   };
 
-  function play(name) {
+  function play(name, arg) {
     if (!enabled) return;
     const c = ensureCtx();
     if (!c) return;
     if (c.state === "suspended") c.resume();
     const fn = RECIPES[name];
-    if (fn) try { fn(c.currentTime + 0.001); } catch (e) {}
+    if (fn) try { fn(c.currentTime + 0.001, arg); } catch (e) {}
   }
 
   function setEnabled(v) { enabled = !!v; }
