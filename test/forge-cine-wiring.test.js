@@ -14,9 +14,9 @@ test("index.html charge forge-cine-ui.js puis forge-cine.js (scripts classiques)
   assert.ok(!/type="module" src="forge-cine/.test(html), "scripts classiques, pas ESM");
 });
 
-test("cache-busting bumpé en v88, plus aucun v87", () => {
-  assert.ok(html.includes("?v=88"), "v88 présent");
+test("cache-busting bumpé au-delà de v87 (version courante vérifiée par chain-bg-wiring)", () => {
   assert.ok(!html.includes("?v=87"), "aucun ?v=87 restant");
+  assert.match(html, /\?v=8[89]|\?v=9\d/, "une version >= 88 présente");
 });
 
 test("doFuse branche la cinématique avec repli", () => {
