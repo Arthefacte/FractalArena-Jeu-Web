@@ -1080,7 +1080,7 @@ function App() {
         const resp = await fetch(`${API_URL}/tower/state`, { headers: { "Authorization": `Bearer ${s.authToken}` } });
         const data = await resp.json();
         if (!resp.ok) return { ok: false, reason: data.error || "Erreur serveur" };
-        return { ok: true, weekKey: data.week_key, weekEndsAt: data.week_ends_at, run: data.run, score: data.score };
+        return { ok: true, weekKey: data.week_key, weekEndsAt: data.week_ends_at, run: data.run, score: data.score, mutators: data.mutators || [] };
       } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
     },
 

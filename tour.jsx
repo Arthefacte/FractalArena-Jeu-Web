@@ -47,6 +47,49 @@ function TourBeastTile({ beast, hpFrac, dead, selIdx, onToggle }) {
   );
 }
 
+/* Bandeau des mutateurs de la semaine. Les VALEURS viennent du serveur
+   (/tower/state) et ne sont jamais redéclarées ici — seuls les noms sont
+   localisés. Absent/vide → rien affiché : c'est ce qui permet de déployer
+   ce client AVANT le serveur sans rien casser. */
+function TourMutatorBand({ mutators }) {
+  const list = TU.formatMutators(mutators);
+  if (!list.length) return null;
+  return (
+    <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 12 }}>
+      <div className="h2" style={{ fontSize: 13, color: "var(--elec)", marginBottom: 4 }}>
+        ⚡ {I18N.t("MUT_TITLE")}
+      </div>
+      <div className="mono" style={{ fontSize: 10, color: "var(--text-dim)", marginBottom: 8 }}>
+        {I18N.t("MUT_HINT")}
+      </div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+        {list.map((m) => (
+          <div key={m.id} style={{ flex: "1 1 160px", minWidth: 0, padding: 8, borderRadius: 6, background: "rgba(255,255,255,0.03)" }}>
+            <div className="mono" style={{ fontSize: 12, color: "var(--gold)", marginBottom: 4 }}>
+              {I18N.t("MUT_NAME_" + String(m.id).toUpperCase())}
+            </div>
+            {m.types && (
+              <div className="mono" style={{ fontSize: 10, color: "var(--text-dim)", marginBottom: 2 }}>
+                {I18N.t("MUT_AFFINITY_LINE",
+                  I18N.t("MUT_TYPE_" + m.types.favored),
+                  I18N.t("MUT_TYPE_" + m.types.penalized))}
+              </div>
+            )}
+            <div className="mono" style={{ fontSize: 11 }}>
+              {m.parts.map((p, i) => (
+                <span key={p.stat} style={{ color: p.text.startsWith("+") ? "var(--elec)" : "var(--alert)" }}>
+                  {i > 0 && <span style={{ color: "var(--text-dim)" }}>{" · "}</span>}
+                  {I18N.t("MUT_STAT_" + p.stat.toUpperCase())} {p.text}
+                </span>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /* Bandeau des 10 paliers de la semaine (✓ = payé). */
 function TourTierBand({ score }) {
   const tiers = TU.tiersView(score.best_floor, score.claimed_tiers);
@@ -166,7 +209,7 @@ function TourResultModal({ result, onClose }) {
 
 function Tour() {
   const { g, actions, toast } = useFA();
-  const [st, setSt] = useState({ loading: true, error: false, weekKey: "", weekEndsAt: 0, run: null, score: null });
+  const [st, setSt] = useState({ loading: true, error: false, weekKey: "", weekEndsAt: 0, run: null, score: null, mutators: [] });
   const [busy, setBusy] = useState(false);
   const [posture, setPosture] = useState("equilibre");
   const [showStart, setShowStart] = useState(false);
@@ -182,7 +225,7 @@ function Tour() {
 
   async function refresh() {
     const r = await actions.towerState();
-    if (r.ok) setSt({ loading: false, error: false, weekKey: r.weekKey, weekEndsAt: r.weekEndsAt, run: r.run, score: r.score });
+    if (r.ok) setSt({ loading: false, error: false, weekKey: r.weekKey, weekEndsAt: r.weekEndsAt, run: r.run, score: r.score, mutators: r.mutators || [] });
     else if (r.reason !== "auth") setSt((s) => ({ ...s, loading: false, error: true }));
     else setSt((s) => ({ ...s, loading: false }));
   }
@@ -321,6 +364,7 @@ function Tour() {
       </div>
 
       <div style={{ display: "grid", gap: 14, marginBottom: 14 }}>
+        <TourMutatorBand mutators={st.mutators} />
         <TourTierBand score={st.score} />
       </div>
 

@@ -76,5 +76,46 @@
     return sorted.slice(0, 3).map((b) => b.id);
   }
 
-  window.FA_TOUR_UI = { ENTRY_COST, TIERS, tiersView, hpFracOf, isDeadInRun, rosterRunView, aliveCount, validateEngage, nextTier, pickFittest3 };
+  /* Mutateurs de la Tour — formatage seul. Les VALEURS viennent du serveur
+     (/tower/state), jamais d'un miroir local : c'est délibéré, le miroir
+     TIERS/ENTRY_COST ci-dessus a déjà créé une classe de bug par dérive. */
+  const MUT_STAT_KEYS = ["hp", "atk", "def", "spd", "mag"];
+
+  function pct(mult) {
+    // Arrondi obligatoire : 1.35 - 1 = 0.35000000000000009 en flottant.
+    const p = Math.round((mult - 1) * 1000) / 10;
+    if (p === 0) return null;
+    return (p > 0 ? "+" : "−") + Math.abs(p) + " %"; // U+2212 pour le moins
+  }
+
+  function formatMutator(m) {
+    if (!m || !m.id) return { id: (m && m.id) || null, parts: [] };
+    const e = m.effects;
+    if (!e) return { id: m.id, parts: [] };
+    const parts = [];
+    for (const k of Object.keys(e)) {
+      if (k === "crit") {
+        const pts = Math.round(e.crit * 100);
+        if (pts !== 0) parts.push({ stat: "crit", text: (pts > 0 ? "+" : "−") + Math.abs(pts) + " pts" });
+        continue;
+      }
+      if (k === "typeBonus" || k === "typeMalus") {
+        const t = pct(e[k]);
+        if (t) parts.push({ stat: k, text: t });
+        continue;
+      }
+      if (MUT_STAT_KEYS.indexOf(k) === -1) continue;
+      const t = pct(e[k]);
+      if (t) parts.push({ stat: k, text: t });
+    }
+    const out = { id: m.id, parts };
+    if (m.params && m.params.favored) out.types = { favored: m.params.favored, penalized: m.params.penalized };
+    return out;
+  }
+
+  function formatMutators(list) {
+    return Array.isArray(list) ? list.map(formatMutator) : [];
+  }
+
+  window.FA_TOUR_UI = { ENTRY_COST, TIERS, tiersView, hpFracOf, isDeadInRun, rosterRunView, aliveCount, validateEngage, nextTier, pickFittest3, formatMutator, formatMutators };
 })();
