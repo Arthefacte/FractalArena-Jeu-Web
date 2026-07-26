@@ -55,7 +55,7 @@ function TourMutatorBand({ mutators }) {
   const list = TU.formatMutators(mutators);
   if (!list.length) return null;
   return (
-    <div className="card" style={{ padding: 12, marginBottom: 12 }}>
+    <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 12 }}>
       <div className="h2" style={{ fontSize: 13, color: "var(--elec)", marginBottom: 4 }}>
         ⚡ {I18N.t("MUT_TITLE")}
       </div>
