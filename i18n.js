@@ -590,6 +590,32 @@
     TOUR_ERR_BEASTS: { FR: "Sélection invalide : 3 bêtes vivantes distinctes requises.", EN: "Invalid selection: 3 distinct living beasts required.", ZH: "选择无效：需要3只不同的存活战兽。" },
     TOUR_ERR_GENERIC: { FR: "Erreur serveur.", EN: "Server error.", ZH: "服务器错误。" },
 
+    // ===== Mutateurs de la Tour =====
+    MUT_TITLE: { FR: "Mutateurs de la semaine", EN: "Weekly mutators", ZH: "本周变异" },
+    MUT_HINT: { FR: "Actifs pour tous, sur les deux camps. Changent chaque lundi.", EN: "Active for everyone, on both sides. Rotates every Monday.", ZH: "对所有人生效，双方均受影响。每周一轮换。" },
+    MUT_NAME_SURCHARGE: { FR: "Surcharge réseau", EN: "Network Overload", ZH: "网络过载" },
+    MUT_NAME_BLOCS_LOURDS: { FR: "Blocs lourds", EN: "Heavy Blocks", ZH: "沉重区块" },
+    MUT_NAME_FRAIS_GAZ: { FR: "Frais de gaz", EN: "Gas Fees", ZH: "燃料费" },
+    MUT_NAME_CHIFFREMENT: { FR: "Chiffrement fort", EN: "Strong Encryption", ZH: "强加密" },
+    MUT_NAME_RESONANCE: { FR: "Résonance fractale", EN: "Fractal Resonance", ZH: "分形共振" },
+    MUT_NAME_FORK: { FR: "Fork instable", EN: "Unstable Fork", ZH: "不稳定分叉" },
+    MUT_NAME_AFFINITE: { FR: "Semaine de type", EN: "Type Week", ZH: "属性周" },
+    MUT_STAT_HP: { FR: "PV", EN: "HP", ZH: "生命" },
+    MUT_STAT_ATK: { FR: "ATQ", EN: "ATK", ZH: "攻击" },
+    MUT_STAT_DEF: { FR: "DÉF", EN: "DEF", ZH: "防御" },
+    MUT_STAT_SPD: { FR: "VIT", EN: "SPD", ZH: "速度" },
+    MUT_STAT_MAG: { FR: "MAG", EN: "MAG", ZH: "魔力" },
+    MUT_STAT_CRIT: { FR: "Critique", EN: "Crit", ZH: "暴击" },
+    MUT_STAT_TYPEBONUS: { FR: "Favorisé", EN: "Favored", ZH: "增益" },
+    MUT_STAT_TYPEMALUS: { FR: "Pénalisé", EN: "Weakened", ZH: "削弱" },
+    MUT_TYPE_HASH: { FR: "Hash", EN: "Hash", ZH: "哈希" },
+    MUT_TYPE_MINING: { FR: "Mining", EN: "Mining", ZH: "挖矿" },
+    MUT_TYPE_LEDGER: { FR: "Ledger", EN: "Ledger", ZH: "账本" },
+    MUT_TYPE_NETWORK: { FR: "Network", EN: "Network", ZH: "网络" },
+    MUT_TYPE_BLOCK: { FR: "Block", EN: "Block", ZH: "区块" },
+    MUT_TYPE_GENESIS: { FR: "Genesis", EN: "Genesis", ZH: "创世" },
+    MUT_AFFINITY_LINE: { FR: "%s renforcé, %s affaibli", EN: "%s empowered, %s weakened", ZH: "%s 增强，%s 削弱" },
+
     // ===== Chatbot support =====
     CHAT_TITLE: { FR: "Support", EN: "Support", ZH: "客服支持" },
     CHAT_SUB: {
