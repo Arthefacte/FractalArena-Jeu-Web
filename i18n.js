@@ -148,6 +148,12 @@
     ACC_VERIFY_OK: { FR: "Compte vérifié ✓ Tes prochains gains arrivent en liquide.", EN: "Account verified ✓ Your next earnings will be liquid.", ZH: "账号已验证 ✓ 后续收益将为可用余额。" },
     ACC_VERIFY_NONE: { FR: "Aucune activité on-chain détectée sur ton adresse pour l'instant.", EN: "No on-chain activity detected on your address yet.", ZH: "暂未检测到你的地址有链上活动。" },
     ACC_VERIFY_ERR: { FR: "La vérification n'a pas abouti. Réessaie dans un moment.", EN: "The check could not be completed. Try again shortly.", ZH: "验证未能完成，请稍后再试。" },
+
+    ACC_DISCONNECT_CONFIRM_TITLE: { FR: "Déconnecter ce compte ?", EN: "Disconnect this account?", ZH: "断开此账号？" },
+    ACC_DISCONNECT_CONFIRM_BODY: { FR: "Ce compte n'a pas de wallet installé. Une fois déconnecté, seul ton code de récupération pourra te permettre d'y revenir — s'il est perdu, le compte l'est aussi.", EN: "This account has no installed wallet. Once disconnected, only your recovery code can get you back in — lose it and the account is gone too.", ZH: "此账号未安装钱包。断开后，只有恢复码能让你重新登录——如果恢复码丢失，账号也将无法找回。" },
+    ACC_DISCONNECT_CONFIRM_BTN: { FR: "Déconnecter quand même", EN: "Disconnect anyway", ZH: "仍然断开连接" },
+    ACC_DISCONNECT_CANCEL: { FR: "Annuler", EN: "Cancel", ZH: "取消" },
+    ACC_RECOVER_ERROR: { FR: "Réseau ou serveur indisponible. Ton code n'a pas été rejeté — réessaie dans un moment.", EN: "Network or server unavailable. Your code was not rejected — try again shortly.", ZH: "网络或服务器不可用。你的恢复码并未被拒绝——请稍后再试。" },
     OB_INSTALL_EXT_TITLE: { FR: "Installe l'extension UniSat", EN: "Install the UniSat extension", ZH: "安装 UniSat 扩展" },
     OB_INSTALL_EXT_SUB: { FR: "Sur ordinateur, le jeu a besoin de l'extension de navigateur UniSat pour connecter ton wallet.", EN: "On desktop, the game needs the UniSat browser extension to connect your wallet.", ZH: "在电脑上，游戏需要 UniSat 浏览器扩展来连接你的钱包。" },
     OB_INSTALL_EXT_BTN: { FR: "Télécharger UniSat", EN: "Download UniSat", ZH: "下载 UniSat" },

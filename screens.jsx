@@ -833,7 +833,17 @@ function Options() {
   const [scanState, setScanState] = useState("idle"); // idle | scanning | done
   const [found, setFound] = useState([]);
   const [query, setQuery] = useState("");
+  // Un compte genere n'a AUCUN wallet a re-signer : se deconnecter sans avoir note son
+  // code de recuperation est une perte de compte definitive. Un compte UniSat, lui, peut
+  // re-signer a tout moment -> aucune confirmation necessaire (comportement inchange).
+  const [confirmDisconnect, setConfirmDisconnect] = useState(false);
+  const isGenerated = g.accountKind === window.FA_ACCOUNT.KIND_GENERATED;
   const langs = [["FR", "Français"], ["EN", "English"], ["ZH", "中文"]];
+
+  function onDisconnectClick() {
+    if (isGenerated) setConfirmDisconnect(true);
+    else actions.disconnect();
+  }
 
   function scan() {
     setScanState("scanning");
@@ -952,8 +962,19 @@ function Options() {
         </Row>
       </div>
       <div className="flex gap12" style={{ marginTop: 18 }}>
-        <button className="btn ghost" style={{ flex: 1 }} onClick={() => { actions.disconnect(); }}>{I18N.t("OP_DISCONNECT")}</button>
+        <button className="btn ghost" style={{ flex: 1 }} onClick={onDisconnectClick}>{I18N.t("OP_DISCONNECT")}</button>
       </div>
+
+      {confirmDisconnect && (
+        <Modal onClose={() => setConfirmDisconnect(false)} accent="var(--alert)">
+          <div className="h1" style={{ fontSize: 20, color: "var(--alert)", marginBottom: 12 }}>{I18N.t("ACC_DISCONNECT_CONFIRM_TITLE")}</div>
+          <div className="mono" style={{ fontSize: 13, lineHeight: 1.6, color: "var(--text-dim)", marginBottom: 20 }}>{I18N.t("ACC_DISCONNECT_CONFIRM_BODY")}</div>
+          <div className="flex gap8" style={{ flexWrap: "wrap" }}>
+            <button className="btn btn-alert" onClick={() => { setConfirmDisconnect(false); actions.disconnect(); }}>{I18N.t("ACC_DISCONNECT_CONFIRM_BTN")}</button>
+            <button className="btn ghost" onClick={() => setConfirmDisconnect(false)}>{I18N.t("ACC_DISCONNECT_CANCEL")}</button>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }
