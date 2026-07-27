@@ -355,6 +355,12 @@ function App() {
             options: s.options,
             wallet: addr,
             accountKind: s.accountKind,
+            // Preserve le jeton deja pose en state avant cet appel (createAccount/
+            // recoverAccount le fixent en un seul setG juste avant d'appeler connectWallet,
+            // cf. IMPORTANT 4b) : sans ce champ, freshState() le remettrait a "" ici meme
+            // pour un compte tout juste cree, et la persistance suivante l'effacerait du
+            // storage (writeToken("", ...) => clearToken()).
+            authToken: s.authToken,
             onchainVerified: false,
             view: "team",
             playerName: addr.slice(0, 6) + "…" + addr.slice(-4),
@@ -395,6 +401,14 @@ function App() {
             return {
               ...freshState(),
               lang: s.lang, options: s.options,
+              // Contrairement à la branche 404 (réponse serveur normale), ce fallback ne
+              // s'exécute QUE si le réseau a lâché — fréquent sur mobile. Sans reinjecter
+              // accountKind/onchainVerified/authToken depuis s, freshState() les remet à
+              // ""/true/"" : un compte généré perdrait sa nature (son jeton part alors en
+              // sessionStorage, effacé à la fermeture d'onglet, et disparaît carrément du
+              // state ici) et le bandeau gains-verrouillés disparaîtrait pour de bon
+              // (audit IMPORTANT 4a, 2026-07-27).
+              accountKind: s.accountKind, onchainVerified: s.onchainVerified, authToken: s.authToken,
               wallet: addr, view: "team",
               playerName: addr.slice(0, 6) + "…" + addr.slice(-4),
               roster: D.starterRoster(),
@@ -473,10 +487,14 @@ function App() {
         if (!r.ok) return { ok: false, reason: "server" };
         const d = await r.json();
         if (!d.wallet || !d.token) return { ok: false, reason: "server" };
-        setG((s) => ({ ...s, accountKind: ACC.KIND_GENERATED, onchainVerified: false }));
+        // accountKind + authToken en UN SEUL setG : entre deux setG separes par un await,
+        // l'effet de persistance (qui depend de [g]) peut s'executer avec authToken encore
+        // vide et appeler clearToken(), effacant le jeton tout juste ecrit. Un onglet ferme
+        // dans cette fenetre laisse un blob avec wallet mais zero jeton -> meme impasse que
+        // 4(a) (audit IMPORTANT 4b, 2026-07-27).
         writeToken(d.token, ACC.KIND_GENERATED);
+        setG((s) => ({ ...s, accountKind: ACC.KIND_GENERATED, onchainVerified: false, authToken: d.token }));
         await actions.connectWallet(d.wallet, d.token);
-        setG((s) => ({ ...s, authToken: d.token }));
         return { ok: true, wallet: d.wallet, seed: d.seed, recovery_code: d.recovery_code };
       } catch (e) {
         return { ok: false, reason: "network" };
@@ -497,10 +515,12 @@ function App() {
         if (!r.ok) return { ok: false, reason: "invalid" };
         const d = await r.json();
         if (!d.wallet || !d.token) return { ok: false, reason: "invalid" };
-        setG((s) => ({ ...s, accountKind: ACC.KIND_GENERATED }));
+        // accountKind + authToken en UN SEUL setG (meme raison qu'en 4b/createAccount) :
+        // deux setG separes par un await laissent l'effet de persistance s'executer avec
+        // authToken encore vide -> clearToken() efface le jeton tout juste ecrit.
         writeToken(d.token, ACC.KIND_GENERATED);
+        setG((s) => ({ ...s, accountKind: ACC.KIND_GENERATED, authToken: d.token }));
         await actions.connectWallet(d.wallet, d.token);
-        setG((s) => ({ ...s, authToken: d.token }));
         return { ok: true };
       } catch (e) {
         return { ok: false, reason: "network" };
