@@ -113,3 +113,29 @@ test("SecretsGate est monte au niveau du shell (App), pas seulement dans Onboard
   assert.ok(!/window\.SecretsGate/.test(onboardingBloc),
     "SecretsGate ne doit pas etre rendu depuis Onboarding : il serait demonte des que g.wallet se remplit");
 });
+
+const HTML = read("index.html");
+
+test("les deux nouveaux fichiers sont declares", () => {
+  assert.match(HTML, /account-ui\.js\?v=/, "account-ui.js n'est pas charge");
+  assert.match(HTML, /account\.jsx\?v=/, "account.jsx n'est pas charge");
+});
+
+test("account-ui.js est charge avant app.jsx (lu au niveau module)", () => {
+  assert.ok(HTML.indexOf("account-ui.js") < HTML.indexOf("app.jsx"),
+    "app.jsx lit window.FA_ACCOUNT a l'evaluation : le helper doit exister avant");
+});
+
+test("account.jsx est charge apres components.jsx et avant app.jsx", () => {
+  const iComp = HTML.indexOf("components.jsx");
+  const iAcc = HTML.indexOf("account.jsx");
+  const iApp = HTML.indexOf("app.jsx");
+  assert.ok(iComp < iAcc && iAcc < iApp, "account.jsx utilise Modal/SectionHead de components.jsx");
+});
+
+test("cache-bust homogene : aucune balise ne reste sur l'ancienne version", () => {
+  const versions = [...HTML.matchAll(/\?v=(\d+)/g)].map((m) => m[1]).filter((v) => v !== "1");
+  const uniques = [...new Set(versions)];
+  assert.deepStrictEqual(uniques, ["92"],
+    `versions heterogenes trouvees : ${uniques.join(", ")} — une seule balise oubliee sert du code perime`);
+});
