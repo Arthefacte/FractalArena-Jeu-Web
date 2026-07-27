@@ -83,6 +83,7 @@ function RecoverScreen({ onClose }) {
       <SectionHead eyebrow="🔑 RECOVERY" title={I18N.t("ACC_RECOVER_TITLE")} />
       <div className="muted mono" style={{ fontSize: 13, marginBottom: 14 }}>{I18N.t("ACC_RECOVER_SUB")}</div>
       <input className="field" style={{ marginBottom: 10 }} value={code} autoComplete="off" spellCheck={false}
+             autoCapitalize="off" autoCorrect="off"
              onChange={(e) => setCode(e.target.value)}
              placeholder={I18N.t("ACC_RECOVER_PLACEHOLDER")}
              onKeyDown={(e) => e.key === "Enter" && submit()} />
