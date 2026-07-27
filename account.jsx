@@ -70,6 +70,11 @@ function RecoverScreen({ onClose }) {
     if (r.ok) { onClose && onClose(); return; }
     if (r.reason === "seed") { toast(I18N.t("ACC_RECOVER_SEED_REFUSED"), "bad"); setCode(""); return; }
     if (r.reason === "rate") { toast(I18N.t("ACC_RECOVER_RATE"), "bad"); return; }
+    // Panne réseau ou serveur (5xx / exception fetch) : le code n'a PAS été jugé faux,
+    // on n'a simplement pas pu le vérifier. Même soin que pour verifyOnchain (98082b1) —
+    // sinon un joueur avec un code correct mais du réseau instable s'entend dire que son
+    // compte est perdu (IMPORTANT 7).
+    if (r.reason === "network" || r.reason === "server") { toast(I18N.t("ACC_RECOVER_ERROR"), "bad"); return; }
     toast(I18N.t("ACC_RECOVER_FAIL"), "bad");
   };
 

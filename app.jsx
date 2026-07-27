@@ -512,9 +512,16 @@ function App() {
           body: JSON.stringify({ recovery_code: String(code).trim() }),
         });
         if (r.status === 429) return { ok: false, reason: "rate" };
-        if (!r.ok) return { ok: false, reason: "invalid" };
+        if (!r.ok) {
+          // 4xx (hors 429) = le serveur a explicitement rejeté le code : invalide.
+          // 5xx/autre = panne côté serveur, PAS un verdict sur le code — même soin
+          // que pour verifyOnchain (98082b1) : sans distinguer les deux, un code
+          // CORRECT frappé par un 500 passager s'affichait comme « Code invalide »,
+          // et le joueur pouvait en conclure que son compte était perdu (IMPORTANT 7).
+          return { ok: false, reason: r.status >= 500 ? "server" : "invalid" };
+        }
         const d = await r.json();
-        if (!d.wallet || !d.token) return { ok: false, reason: "invalid" };
+        if (!d.wallet || !d.token) return { ok: false, reason: "server" };
         // accountKind + authToken en UN SEUL setG (meme raison qu'en 4b/createAccount) :
         // deux setG separes par un await laissent l'effet de persistance s'executer avec
         // authToken encore vide -> clearToken() efface le jeton tout juste ecrit.
