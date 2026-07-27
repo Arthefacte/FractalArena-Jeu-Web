@@ -88,4 +88,57 @@ function RecoverScreen({ onClose }) {
   );
 }
 
-Object.assign(window, { SecretsGate, RecoverScreen });
+const DISMISS_KEY = "fa_locked_banner_dismissed";
+function readDismissed() { try { return parseInt(localStorage.getItem(DISMISS_KEY) || "0", 10) || 0; } catch (e) { return 0; } }
+function writeDismissed(ts) { try { localStorage.setItem(DISMISS_KEY, String(ts)); } catch (e) {} }
+
+function LockedBanner() {
+  const { g, actions, toast } = useFA();
+  const [dismissedAt, setDismissedAt] = useState(readDismissed);
+  const [howto, setHowto] = useState(false);
+  const [checking, setChecking] = useState(false);
+
+  const show = ACC.shouldShowLockedBanner({
+    kind: g.accountKind, onchainVerified: g.onchainVerified,
+    dismissedAt, now: Date.now(),
+  });
+  if (!show && !howto) return null;
+
+  const close = () => { const t = Date.now(); writeDismissed(t); setDismissedAt(t); };
+  const check = async () => {
+    setChecking(true);
+    let r;
+    try { r = await actions.verifyOnchain(); } finally { setChecking(false); }
+    if (r.ok && r.verified) { toast(I18N.t("ACC_VERIFY_OK"), "good"); setHowto(false); return; }
+    toast(I18N.t("ACC_VERIFY_NONE"), "bad");
+  };
+
+  return (
+    <>
+      {show && (
+        <div className="acc-banner">
+          <span className="grow">🔒 {I18N.t("ACC_LOCKED_BANNER")}</span>
+          <button className="btn sm" onClick={() => setHowto(true)}>{I18N.t("ACC_LOCKED_HOW")}</button>
+          <button className="btn-link" style={{ background: "none", border: "none", color: "var(--text-dim)", fontSize: 11, cursor: "pointer", textDecoration: "underline" }}
+                  onClick={close}>{I18N.t("ACC_LOCKED_CLOSE")}</button>
+        </div>
+      )}
+      {howto && (
+        <Modal onClose={() => setHowto(false)} accent="var(--gold)">
+          <SectionHead eyebrow="🔓 UNLOCK" title={I18N.t("ACC_HOWTO_TITLE")} />
+          <div className="mono" style={{ fontSize: 13, lineHeight: 2 }}>
+            <div>{I18N.t("ACC_HOWTO_1")}</div>
+            <div>{I18N.t("ACC_HOWTO_2")}</div>
+            <div>{I18N.t("ACC_HOWTO_3")}</div>
+          </div>
+          <div className="muted" style={{ fontSize: 12, marginTop: 12, lineHeight: 1.6 }}>{I18N.t("ACC_HOWTO_CAP")}</div>
+          <button className="btn block" style={{ marginTop: 14 }} disabled={checking} onClick={check}>
+            {I18N.t("ACC_VERIFY_BTN")}
+          </button>
+        </Modal>
+      )}
+    </>
+  );
+}
+
+Object.assign(window, { SecretsGate, RecoverScreen, LockedBanner });
