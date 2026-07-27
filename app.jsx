@@ -138,8 +138,9 @@ function loadState() {
     const s = JSON.parse(raw);
     return Object.assign(freshState(), s, {
       view: "team",
-      // Token restauré depuis sessionStorage (survit au rechargement de l'onglet, effacé à
-      // sa fermeture — bien moins exposé que localStorage). JAMAIS dans le blob localStorage.
+      // Token restauré depuis le stockage adapté au type de compte (cf. ACC en tête de
+      // fichier) : sessionStorage pour UniSat, localStorage pour un compte généré.
+      // JAMAIS dans le blob localStorage (ce blob-ci).
       authToken: readToken(),
       accountKind: ACC.readKind(),
       selected: [],     // ids orphelins d'une session précédente → vidés, réconciliés à la connexion
@@ -194,7 +195,7 @@ function App() {
   // persist
   useEffect(() => {
     // authToken EXCLU du blob localStorage (sinon volable trivialement par une XSS) ; il est
-    // stocké à part en sessionStorage (effacé à la fermeture de l'onglet, survit au F5).
+    // stocké à part via ACC, dans le storage adapté au type de compte (accountKind).
     try { localStorage.setItem(SAVE_KEY, JSON.stringify({ ...g, authToken: "" })); } catch (e) { }
     writeToken(g.authToken, g.accountKind);
   }, [g]);
