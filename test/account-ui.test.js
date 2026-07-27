@@ -1,0 +1,116 @@
+// test/account-ui.test.js
+"use strict";
+const test = require("node:test");
+const assert = require("node:assert");
+const fs = require("node:fs");
+const path = require("node:path");
+
+// Le module est une IIFE qui écrit sur `window` : on lui fournit un window et des
+// stockages factices, puis on l'évalue. Même approche que test/tour-ui.test.js.
+function load() {
+  const src = fs.readFileSync(path.join(__dirname, "..", "account-ui.js"), "utf8");
+  function mkStore() {
+    const m = new Map();
+    return {
+      getItem: (k) => (m.has(k) ? m.get(k) : null),
+      setItem: (k, v) => m.set(k, String(v)),
+      removeItem: (k) => m.delete(k),
+      _map: m,
+    };
+  }
+  const win = { localStorage: mkStore(), sessionStorage: mkStore() };
+  const fn = new Function("window", "localStorage", "sessionStorage", src);
+  fn(win, win.localStorage, win.sessionStorage);
+  return { A: win.FA_ACCOUNT, win };
+}
+
+test("un compte UniSat garde sessionStorage (comportement d'avant inchange)", () => {
+  const { A, win } = load();
+  A.writeToken("tok-unisat", A.KIND_UNISAT);
+  assert.strictEqual(win.sessionStorage.getItem("fa_auth_token"), "tok-unisat");
+  assert.strictEqual(win.localStorage.getItem("fa_auth_token"), null,
+    "un token UniSat ne doit JAMAIS atterrir en localStorage (audit 2026-06-24)");
+  assert.strictEqual(A.readToken(), "tok-unisat");
+});
+
+test("un compte genere persiste en localStorage", () => {
+  const { A, win } = load();
+  A.writeToken("tok-gen", A.KIND_GENERATED);
+  assert.strictEqual(win.localStorage.getItem("fa_auth_token"), "tok-gen");
+  assert.strictEqual(A.readToken(), "tok-gen");
+  assert.strictEqual(A.readKind(), A.KIND_GENERATED);
+});
+
+test("changer de type purge l'autre stockage (jamais deux tokens en vie)", () => {
+  const { A, win } = load();
+  A.writeToken("tok-gen", A.KIND_GENERATED);
+  A.writeToken("tok-unisat", A.KIND_UNISAT);
+  assert.strictEqual(win.localStorage.getItem("fa_auth_token"), null);
+  assert.strictEqual(A.readToken(), "tok-unisat");
+});
+
+test("clearToken efface les deux stockages et le type", () => {
+  const { A, win } = load();
+  A.writeToken("tok-gen", A.KIND_GENERATED);
+  A.clearToken();
+  assert.strictEqual(A.readToken(), "");
+  assert.strictEqual(A.readKind(), "");
+  assert.strictEqual(win.localStorage.getItem("fa_auth_token"), null);
+  assert.strictEqual(win.sessionStorage.getItem("fa_auth_token"), null);
+});
+
+test("writeToken('') efface sans rien laisser", () => {
+  const { A } = load();
+  A.writeToken("tok-gen", A.KIND_GENERATED);
+  A.writeToken("", A.KIND_GENERATED);
+  assert.strictEqual(A.readToken(), "");
+});
+
+test("un stockage indisponible (mode prive) ne fait jamais planter", () => {
+  const src = fs.readFileSync(path.join(__dirname, "..", "account-ui.js"), "utf8");
+  const boom = { getItem() { throw new Error("denied"); }, setItem() { throw new Error("denied"); }, removeItem() { throw new Error("denied"); } };
+  const win = { localStorage: boom, sessionStorage: boom };
+  new Function("window", "localStorage", "sessionStorage", src)(win, boom, boom);
+  assert.doesNotThrow(() => win.FA_ACCOUNT.writeToken("t", "generated"));
+  assert.strictEqual(win.FA_ACCOUNT.readToken(), "");
+});
+
+test("code de recuperation : accepte le format du serveur, refuse le reste", () => {
+  const { A } = load();
+  // makeRecoveryCode() serveur = randomBytes(24).toString("base64url") → 32 caracteres URL-safe.
+  assert.ok(A.isValidRecoveryCode("abcdefghij_klmnopqrst-uvwxyz01234"));
+  assert.ok(A.isValidRecoveryCode("  abcdefghij_klmnopqrst-uvwxyz012  "), "les espaces autour sont tolerés");
+  assert.ok(!A.isValidRecoveryCode("court"));
+  assert.ok(!A.isValidRecoveryCode(""));
+  assert.ok(!A.isValidRecoveryCode(null));
+  assert.ok(!A.isValidRecoveryCode("a".repeat(300)), "borne haute : pas d'envoi demesure");
+  assert.ok(!A.isValidRecoveryCode("abc def ghi jkl mno pqr stu vwx yza bcd efg hij"), "espaces internes = ce n'est pas un code");
+});
+
+test("looksLikeSeed detecte une phrase mnemonique (garde anti-phishing)", () => {
+  const { A } = load();
+  const seed12 = "abandon ability able about above absent absorb abstract absurd abuse access accident";
+  assert.ok(A.looksLikeSeed(seed12), "12 mots = seed");
+  assert.ok(A.looksLikeSeed("  " + seed12 + "  "));
+  assert.ok(!A.looksLikeSeed("abcdefghij_klmnopqrst-uvwxyz01234"), "un code de recuperation n'est pas une seed");
+  assert.ok(!A.looksLikeSeed("deux mots"));
+  assert.ok(!A.looksLikeSeed(""));
+});
+
+test("bandeau : visible seulement pour un compte genere non verifie", () => {
+  const { A } = load();
+  const now = 1_000_000_000_000;
+  assert.ok(A.shouldShowLockedBanner({ kind: "generated", onchainVerified: false, dismissedAt: 0, now }));
+  assert.ok(!A.shouldShowLockedBanner({ kind: "generated", onchainVerified: true, dismissedAt: 0, now }),
+    "compte verifie : plus rien a rappeler");
+  assert.ok(!A.shouldShowLockedBanner({ kind: "unisat", onchainVerified: false, dismissedAt: 0, now }),
+    "un joueur venu avec son wallet n'est jamais concerne");
+});
+
+test("bandeau : ferme, il se tait 24 h puis revient", () => {
+  const { A } = load();
+  const now = 1_000_000_000_000;
+  const base = { kind: "generated", onchainVerified: false, now };
+  assert.ok(!A.shouldShowLockedBanner({ ...base, dismissedAt: now - 3600_000 }), "1 h après : silencieux");
+  assert.ok(A.shouldShowLockedBanner({ ...base, dismissedAt: now - 25 * 3600_000 }), "25 h après : revient");
+});
