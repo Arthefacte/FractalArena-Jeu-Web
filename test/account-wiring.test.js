@@ -46,3 +46,16 @@ test("recoverAccount refuse une seed avant tout appel reseau", () => {
   assert.ok(iSeed > 0, "la garde anti-phishing est absente");
   assert.ok(iSeed < iFetch, "la seed doit etre refusee AVANT de partir sur le reseau");
 });
+
+test("connectWallet (branche 404, compte tout juste cree) preserve accountKind", () => {
+  // createAccount() met accountKind a jour AVANT d'appeler connectWallet(), qui pour un
+  // compte tout juste cree tombe dans la branche 404 (aucune save serveur encore). Cette
+  // branche part de {...freshState(), ...} : freshState() remet accountKind a "" si la
+  // branche ne le reinjecte pas explicitement depuis l'etat courant -> accountKind resterait
+  // "" en memoire pendant toute la session live qui suit une creation de compte.
+  const i = APP.indexOf("saveResp.status === 404");
+  assert.ok(i > 0, "branche 404 de connectWallet introuvable");
+  const bloc = APP.slice(i, i + 700);
+  assert.match(bloc, /accountKind:\s*s\.accountKind/,
+    "la branche 404 doit reinjecter accountKind depuis l'etat courant (s), sinon freshState() l'ecrase a \"\"");
+});

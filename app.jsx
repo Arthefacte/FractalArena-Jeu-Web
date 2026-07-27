@@ -348,6 +348,7 @@ function App() {
             lang: s.lang,
             options: s.options,
             wallet: addr,
+            accountKind: s.accountKind,
             onchainVerified: false,
             view: "team",
             playerName: addr.slice(0, 6) + "…" + addr.slice(-4),
