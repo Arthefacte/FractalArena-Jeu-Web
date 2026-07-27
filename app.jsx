@@ -158,6 +158,12 @@ function App() {
   const [chipPop, setChipPop] = useState(0);
   const [, setNow] = useState(Date.now()); // tic 1s pour le compte à rebours combats gratuits
   const [cineDone, setCineDone] = useState(false); // cinématique d'ouverture : jouée à chaque visite déconnecté
+  // Secrets d'un compte tout juste créé (seed + code de récupération). Vit ICI, au niveau du
+  // shell, et pas dans Onboarding : createAccount() pose g.wallet AVANT que playNow() ait fini,
+  // donc App bascule hors d'Onboarding au rendu suivant et démonterait tout état local qui y
+  // vivrait. SecretsGate doit rester monté malgré cette bascule → il est rendu ici, dans les
+  // deux branches du if (!g.wallet) ci-dessous, jamais à l'intérieur d'Onboarding.
+  const [accSecrets, setAccSecrets] = useState(null);
   const gRef = useRef(g);
   gRef.current = g;
   // Options fetch pour les lectures /save : joint le Bearer du joueur connecté (preuve de
@@ -1388,14 +1394,16 @@ function App() {
       return (
         <FA_Ctx.Provider value={ctx}>
           <Cinematique onEnter={() => setCineDone(true)} />
+          {accSecrets && <window.SecretsGate secrets={accSecrets} onDone={() => setAccSecrets(null)} />}
         </FA_Ctx.Provider>
       );
     }
     return (
       <FA_Ctx.Provider value={ctx}>
         <Ambient />
-        <Onboarding />
+        <Onboarding onAccountCreated={(s) => setAccSecrets(s)} />
         <Toasts toasts={toasts} />
+        {accSecrets && <window.SecretsGate secrets={accSecrets} onDone={() => setAccSecrets(null)} />}
       </FA_Ctx.Provider>
     );
   }
@@ -1419,6 +1427,7 @@ function App() {
       {g.wallet && <TutorialGate />}
       {g.wallet && <LoginGate />}
       {g.wallet && <LockedBanner />}
+      {accSecrets && <window.SecretsGate secrets={accSecrets} onDone={() => setAccSecrets(null)} />}
       {(() => {
         const pz = [
           ...(Array.isArray(g.pvpPrizes) ? g.pvpPrizes.map((p) => ({ ...p, kind: "pvp" })) : []),
@@ -1518,11 +1527,12 @@ function Nav() {
   );
 }
 
-function Onboarding() {
+function Onboarding({ onAccountCreated }) {
   const { actions, toast } = useFA();
   const [addr, setAddr] = useState("");
   const [checking, setChecking] = useState(false);
   const [manual, setManual] = useState(false);
+  const [recovering, setRecovering] = useState(false);
   const hasWallet = HAS_UNISAT();
   const mobile = IS_MOBILE();
 
@@ -1544,6 +1554,16 @@ function Onboarding() {
       setChecking(false);
     }
   }
+  // Entrée sans friction : on crée le compte, puis on remonte les secrets vers App —
+  // createAccount() pose déjà g.wallet, donc Onboarding peut être démonté au rendu
+  // suivant. L'écran des secrets vit au niveau du shell (App), pas ici, pour lui survivre.
+  async function playNow() {
+    setChecking(true);
+    let r;
+    try { r = await actions.createAccount(); } finally { setChecking(false); }
+    if (!r.ok) { toast(I18N.t("ACC_CREATE_FAIL"), "bad"); return; }
+    onAccountCreated && onAccountCreated({ seed: r.seed, recovery_code: r.recovery_code });
+  }
 
   return (
     <div className="app-shell" style={{ minHeight: "100vh", display: "grid", placeItems: "center", position: "relative", zIndex: 1 }}>
@@ -1556,25 +1576,32 @@ function Onboarding() {
         <div className="eyebrow">{I18N.t("OB_TAG")}</div>
         <div className="hdr-title" style={{ fontSize: 40, letterSpacing: 6, display: "block", margin: "8px 0 18px" }}>FRACTAL ARENA</div>
 
+        <div className="h2" style={{ fontSize: 18, marginBottom: 8 }}>{I18N.t("ACC_PLAY_NOW")}</div>
+        <div className="muted mono" style={{ fontSize: 13, lineHeight: 1.6, marginBottom: 18 }}>{I18N.t("ACC_PLAY_NOW_SUB")}</div>
+        <button className="btn btn-fire block lg" disabled={checking} onClick={playNow}>
+          {checking ? I18N.t("ACC_CREATING") : I18N.t("ACC_PLAY_NOW")}
+        </button>
+        <div className="pill" style={{ marginTop: 14, color: "var(--gold)", borderColor: "rgba(255,230,0,0.3)" }}>🎁 {I18N.t("OB_GIFT")}</div>
+
+        {/* Action secondaire : le joueur qui a deja un wallet garde son flux d'avant. Sur
+            mobile, UniSat n'existe pas en extension : pas de lien mort, on n'affiche rien —
+            « Jouer maintenant » ci-dessus est deja l'action complete, plus de cul-de-sac. */}
         {hasWallet ? (
-          <>
-            <div className="h2" style={{ fontSize: 18, marginBottom: 8 }}>{I18N.t("OB_CONNECT")}</div>
-            <div className="muted mono" style={{ fontSize: 13, lineHeight: 1.6, marginBottom: 22 }}>{I18N.t("OB_SUB")}</div>
-            <button className="btn btn-fire block lg" disabled={checking} onClick={connectUnisat}>{checking ? I18N.t("OB_CHECKING") : I18N.t("OB_BTN")}</button>
-            <div className="pill" style={{ marginTop: 18, color: "var(--gold)", borderColor: "rgba(255,230,0,0.3)" }}>🎁 {I18N.t("OB_GIFT")}</div>
-          </>
-        ) : mobile ? (
-          <>
-            <div className="h2" style={{ fontSize: 18, marginBottom: 8 }}>{I18N.t("OB_MOBILE_TITLE")}</div>
-            <div className="muted mono" style={{ fontSize: 13, lineHeight: 1.7, marginBottom: 18 }}>{I18N.t("OB_MOBILE_MSG")}</div>
-          </>
+          <button className="btn block" style={{ marginTop: 12 }} disabled={checking} onClick={connectUnisat}>
+            {I18N.t("ACC_HAVE_WALLET")}
+          </button>
         ) : (
-          <>
-            <div className="h2" style={{ fontSize: 18, marginBottom: 8 }}>{I18N.t("OB_INSTALL_EXT_TITLE")}</div>
-            <div className="muted mono" style={{ fontSize: 13, lineHeight: 1.7, marginBottom: 18 }}>{I18N.t("OB_INSTALL_EXT_SUB")}</div>
-            <a className="btn btn-fire block lg" href="https://unisat.io/download" target="_blank" rel="noopener noreferrer">{I18N.t("OB_INSTALL_EXT_BTN")}</a>
-          </>
+          !mobile && (
+            <a className="btn block" style={{ marginTop: 12 }} href="https://unisat.io/download" target="_blank" rel="noopener noreferrer">
+              {I18N.t("OB_INSTALL_EXT_BTN")}
+            </a>
+          )
         )}
+
+        <div style={{ marginTop: 14 }}>
+          <button className="btn-link" style={{ background: "none", border: "none", color: "var(--text-dim)", fontSize: 11, cursor: "pointer", textDecoration: "underline" }}
+                  onClick={() => setRecovering(true)}>{I18N.t("ACC_RECOVER_LINK")}</button>
+        </div>
 
         <div style={{ marginTop: 16 }}>
           <button className="btn-link" style={{ background: "none", border: "none", color: "var(--text-dim)", fontSize: 11, cursor: "pointer", textDecoration: "underline" }} onClick={() => setManual(!manual)}>{I18N.t("OB_MANUAL_TOGGLE")}</button>
@@ -1592,6 +1619,8 @@ function Onboarding() {
           ))}
         </div>
       </div>
+
+      {recovering && <window.RecoverScreen onClose={() => setRecovering(false)} />}
     </div>
   );
 }

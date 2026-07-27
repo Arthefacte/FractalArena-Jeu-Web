@@ -77,3 +77,39 @@ test("l'ecran de recuperation traite le refus de seed", () => {
   assert.match(bloc, /ACC_RECOVER_SEED_REFUSED/,
     "coller une seed doit produire un avertissement explicite, pas un 'code invalide' muet");
 });
+
+test("l'onboarding propose de jouer sans wallet dans tous les cas", () => {
+  const i = APP.indexOf("function Onboarding");
+  assert.ok(i > 0, "Onboarding introuvable");
+  const bloc = APP.slice(i, APP.indexOf("function Toasts"));
+  assert.match(bloc, /ACC_PLAY_NOW/, "l'action principale « Jouer maintenant » est absente");
+  assert.match(bloc, /createAccount/, "le bouton doit appeler createAccount");
+  assert.match(bloc, /ACC_RECOVER_LINK/, "l'acces a la recuperation est absent de l'accueil");
+});
+
+test("le mobile n'est plus un cul-de-sac", () => {
+  const i = APP.indexOf("function Onboarding");
+  const bloc = APP.slice(i, APP.indexOf("function Toasts"));
+  const iMobile = bloc.indexOf("mobile ?");
+  if (iMobile === -1) return; // branche mobile supprimee : encore mieux
+  const branche = bloc.slice(iMobile, iMobile + 700);
+  assert.match(branche, /ACC_PLAY_NOW|onPlayNow/,
+    "la branche mobile doit offrir de jouer, pas seulement afficher un message");
+});
+
+test("SecretsGate est monte au niveau du shell (App), pas seulement dans Onboarding", () => {
+  // Piege central de la tache : createAccount() pose g.wallet AVANT que playNow() ait fini,
+  // donc App bascule hors d'Onboarding au rendu suivant. Si SecretsGate n'est monte qu'a
+  // l'interieur d'Onboarding, l'ecran des secrets ne s'affiche jamais et le joueur perd son
+  // compte au premier vidage de cache, sans recours.
+  const iApp = APP.indexOf("function App(");
+  const iOnboarding = APP.indexOf("function Onboarding");
+  assert.ok(iApp > 0 && iOnboarding > iApp, "structure App/Onboarding introuvable");
+  const appBloc = APP.slice(iApp, iOnboarding);
+  assert.match(appBloc, /window\.SecretsGate/,
+    "SecretsGate doit etre rendu par App (avant la definition d'Onboarding), pas seulement par Onboarding");
+
+  const onboardingBloc = APP.slice(iOnboarding, APP.indexOf("function Toasts"));
+  assert.ok(!/window\.SecretsGate/.test(onboardingBloc),
+    "SecretsGate ne doit pas etre rendu depuis Onboarding : il serait demonte des que g.wallet se remplit");
+});
