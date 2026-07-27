@@ -97,14 +97,23 @@ test("looksLikeSeed detecte une phrase mnemonique (garde anti-phishing)", () => 
   assert.ok(!A.looksLikeSeed(""));
 });
 
-test("bandeau : visible seulement pour un compte genere non verifie", () => {
+test("bandeau : visible pour tout compte non verifie on-chain, quel que soit son type", () => {
   const { A } = load();
   const now = 1_000_000_000_000;
   assert.ok(A.shouldShowLockedBanner({ kind: "generated", onchainVerified: false, dismissedAt: 0, now }));
   assert.ok(!A.shouldShowLockedBanner({ kind: "generated", onchainVerified: true, dismissedAt: 0, now }),
     "compte verifie : plus rien a rappeler");
-  assert.ok(!A.shouldShowLockedBanner({ kind: "unisat", onchainVerified: false, dismissedAt: 0, now }),
-    "un joueur venu avec son wallet n'est jamais concerne");
+  // Le serveur verrouille l'economie sur onchain_verified (colonne NOT NULL DEFAULT
+  // FALSE, jamais renseignee a l'insertion d'un nouveau joueur) — PAS sur le type de
+  // compte. Un joueur UniSat tout neuf a donc, lui aussi, ses gains verrouilles cote
+  // serveur : sans le bandeau, il n'a ni explication ni acces au bouton "Verifier mon
+  // activite on-chain" (qui vit dans sa modale). C'est un CHANGEMENT de comportement
+  // assume (audit IMPORTANT 6, 2026-07-27) : les comptes deja existants ont ete
+  // backfilles a onchain_verified=TRUE cote serveur, donc ne sont pas affectes.
+  assert.ok(A.shouldShowLockedBanner({ kind: "unisat", onchainVerified: false, dismissedAt: 0, now }),
+    "un joueur UniSat tout neuf, non encore verifie on-chain cote serveur, doit aussi voir le bandeau");
+  assert.ok(!A.shouldShowLockedBanner({ kind: "unisat", onchainVerified: true, dismissedAt: 0, now }),
+    "un joueur UniSat deja verifie (ou backfille) n'est pas concerne");
 });
 
 test("bandeau : ferme, il se tait 24 h puis revient", () => {

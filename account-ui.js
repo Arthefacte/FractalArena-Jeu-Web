@@ -61,10 +61,15 @@
   }
 
   const BANNER_SNOOZE_MS = 24 * 3600 * 1000;
+  // Le serveur verrouille l'economie sur onchain_verified (colonne NOT NULL DEFAULT
+  // FALSE, jamais renseignee a l'insertion d'un nouveau joueur) — PAS sur le type de
+  // compte. Un joueur UniSat tout neuf a donc, lui aussi, ses gains verrouilles cote
+  // serveur ; sans ce bandeau il n'a ni explication ni acces au bouton de verification
+  // on-chain (qui vit dans sa modale). Les comptes deja existants ont ete backfilles a
+  // TRUE cote serveur : ce changement ne les affecte pas (audit IMPORTANT 6, 2026-07-27).
   function shouldShowLockedBanner(o) {
     const s = o || {};
-    if (s.kind !== KIND_GENERATED) return false;
-    if (s.onchainVerified) return false;
+    if (s.onchainVerified !== false) return false;
     const now = s.now || 0;
     const dismissed = s.dismissedAt || 0;
     return now - dismissed >= BANNER_SNOOZE_MS;
