@@ -9,7 +9,6 @@ const I18N = window.FA_I18N;
 const ACC = window.FA_ACCOUNT;
 
 function SecretsGate({ secrets, onDone }) {
-  const [revealed, setRevealed] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -32,17 +31,12 @@ function SecretsGate({ secrets, onDone }) {
         <div className="muted" style={{ fontSize: 11, marginTop: 6 }}>{I18N.t("ACC_CODE_HINT")}</div>
       </div>
 
-      <div className="acc-secret">
-        <div className="acc-secret-label">{I18N.t("ACC_SEED_LABEL")}</div>
-        <div className={cx("acc-seed mono", !revealed && "masked")}>
-          {revealed ? secrets.seed : "•••• •••• •••• •••• •••• •••• •••• •••• •••• •••• •••• ••••"}
-        </div>
-        <button className="btn sm" onClick={() => setRevealed(!revealed)}>
-          {revealed ? I18N.t("ACC_SEED_HIDE") : I18N.t("ACC_SEED_REVEAL")}
-        </button>
-        <div className="muted" style={{ fontSize: 11, marginTop: 6 }}>{I18N.t("ACC_SEED_HINT")}</div>
-      </div>
-
+      {/* La phrase de 12 mots n'est PLUS montree (decision du user, 2026-07-27) :
+          elle ne donne acces a rien — les FA sont un solde en base, aucun jeton
+          n'est envoye a l'adresse du compte, et les retraits partiront vers le
+          portefeuille que le joueur liera lui-meme. L'afficher ne ferait que lui
+          confier un secret anxiogene et l'entrainer au geste qui le fera phisher,
+          en contradiction avec l'avertissement ci-dessous. */}
       <div className="acc-warn">{I18N.t("ACC_PHISHING_WARN")}</div>
 
       <label className="acc-confirm">
@@ -110,6 +104,12 @@ function LockedBanner() {
   });
   if (!show && !howto) return null;
 
+  // Compte cree sans wallet : il lie SON propre portefeuille, qui devient sa
+  // destination de retrait. Compte venu d'UniSat mais pas encore verifie : il
+  // prouve simplement l'activite de l'adresse avec laquelle il est deja connecte —
+  // rien a lier, elle est deja la sienne.
+  const genere = g.accountKind === ACC.KIND_GENERATED;
+
   const close = () => { const t = Date.now(); writeDismissed(t); setDismissedAt(t); };
   const check = async () => {
     setChecking(true);
@@ -118,6 +118,20 @@ function LockedBanner() {
     if (r.ok && r.verified) { toast(I18N.t("ACC_VERIFY_OK"), "good"); setHowto(false); return; }
     if (r.ok && !r.verified) { toast(I18N.t("ACC_VERIFY_NONE"), "bad"); return; }
     toast(I18N.t("ACC_VERIFY_ERR"), "bad");
+  };
+  const link = async () => {
+    setChecking(true);
+    let r;
+    try { r = await actions.linkWallet(); } finally { setChecking(false); }
+    if (r.ok) { toast(I18N.t("ACC_LINK_OK"), "good"); setHowto(false); return; }
+    const messages = {
+      "no-unisat": "ACC_LINK_NO_UNISAT",
+      "taken": "ACC_LINK_TAKEN",
+      "no-activity": "ACC_LINK_NO_ACTIVITY",
+      "same": "ACC_LINK_SAME",
+      "rejected": "ACC_LINK_REJECTED",
+    };
+    toast(I18N.t(messages[r.reason] || "ACC_LINK_FAIL"), "bad");
   };
 
   return (
@@ -138,9 +152,11 @@ function LockedBanner() {
             <div>{I18N.t("ACC_HOWTO_2")}</div>
             <div>{I18N.t("ACC_HOWTO_3")}</div>
           </div>
+          <div className="acc-warn" style={{ marginTop: 12 }}>{I18N.t("ACC_PHISHING_WARN")}</div>
           <div className="muted" style={{ fontSize: 12, marginTop: 12, lineHeight: 1.6 }}>{I18N.t("ACC_HOWTO_CAP")}</div>
-          <button className="btn block" style={{ marginTop: 14 }} disabled={checking} onClick={check}>
-            {I18N.t("ACC_VERIFY_BTN")}
+          <button className="btn block" style={{ marginTop: 14 }} disabled={checking}
+                  onClick={genere ? link : check}>
+            {I18N.t(genere ? "ACC_LINK_BTN" : "ACC_VERIFY_BTN")}
           </button>
         </Modal>
       )}

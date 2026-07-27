@@ -495,7 +495,7 @@ function App() {
         writeToken(d.token, ACC.KIND_GENERATED);
         setG((s) => ({ ...s, accountKind: ACC.KIND_GENERATED, onchainVerified: false, authToken: d.token }));
         await actions.connectWallet(d.wallet, d.token);
-        return { ok: true, wallet: d.wallet, seed: d.seed, recovery_code: d.recovery_code };
+        return { ok: true, wallet: d.wallet, recovery_code: d.recovery_code };
       } catch (e) {
         return { ok: false, reason: "network" };
       }
@@ -550,6 +550,50 @@ function App() {
         return { ok: true, verified: !!d.verified };
       } catch (e) {
         return { ok: false, reason: "network" };
+      }
+    },
+    // Lie au compte de jeu le portefeuille UniSat que le joueur a créé LUI-MÊME, et
+    // vers lequel partiront ses retraits. On ne lui demande JAMAIS d'importer la seed
+    // du compte : elle ne lui donne accès à rien, et lui faire saisir 12 mots quelque
+    // part contredirait notre propre avertissement anti-phishing.
+    //
+    // Le serveur exige une double preuve : le Bearer prouve la possession du compte,
+    // la signature prouve la possession du portefeuille. Scope « withdraw » — lier
+    // un portefeuille EST l'autorisation d'y envoyer des fonds.
+    async linkWallet() {
+      const s = gRef.current;
+      if (!s.authToken) return { ok: false, reason: "auth" };
+      if (typeof window.unisat === "undefined") return { ok: false, reason: "no-unisat" };
+      try {
+        const accounts = await window.unisat.requestAccounts();
+        const addr = (accounts && accounts[0]) || "";
+        if (!/^bc1/i.test(addr)) return { ok: false, reason: "bad-address" };
+        if (addr === s.wallet) return { ok: false, reason: "same" };
+        const cr = await fetch(`${API_URL}/auth/challenge?wallet=${encodeURIComponent(addr)}&scope=withdraw`);
+        if (!cr.ok) return { ok: false, reason: "server" };
+        const ch = await cr.json();
+        const signature = await window.unisat.signMessage(ch.message || ch.nonce);
+        const r = await fetch(`${API_URL}/account/link-wallet`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
+          body: JSON.stringify({ wallet: addr, signature }),
+        });
+        if (r.status === 409) return { ok: false, reason: "taken" };
+        if (!r.ok) {
+          const j = await r.json().catch(() => ({}));
+          if (j.error === "aucune_activite") return { ok: false, reason: "no-activity" };
+          if (j.error === "portefeuille_identique") return { ok: false, reason: "same" };
+          return { ok: false, reason: r.status >= 500 ? "server" : "refused" };
+        }
+        const d = await r.json();
+        // Le portefeuille est lié : le compte est vérifié et les gains mis en attente
+        // viennent d'être libérés côté serveur. On reflète les deux immédiatement.
+        setG((st) => ({ ...st, onchainVerified: true, linkedWallet: d.wallet,
+                        liquid: Number(d.liquid), locked: Number(d.locked) }));
+        return { ok: true, wallet: d.wallet };
+      } catch (e) {
+        // Rejet de la popup UniSat compris : le joueur a simplement annulé.
+        return { ok: false, reason: "rejected" };
       }
     },
     async authForWithdraw() {
@@ -1609,7 +1653,7 @@ function Onboarding({ onAccountCreated }) {
     let r;
     try { r = await actions.createAccount(); } finally { setChecking(false); }
     if (!r.ok) { toast(I18N.t("ACC_CREATE_FAIL"), "bad"); return; }
-    onAccountCreated && onAccountCreated({ seed: r.seed, recovery_code: r.recovery_code });
+    onAccountCreated && onAccountCreated({ recovery_code: r.recovery_code });
   }
 
   return (

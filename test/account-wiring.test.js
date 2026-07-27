@@ -149,3 +149,37 @@ test("cache-bust homogene : aucune balise ne reste sur l'ancienne version", () =
   assert.deepStrictEqual(uniques, ["92"],
     `versions heterogenes trouvees : ${uniques.join(", ")} — une seule balise oubliee sert du code perime`);
 });
+
+// --- Liaison d'un portefeuille UniSat (decision du user, 2026-07-27) ---
+// On ne demande plus au joueur d'importer la seed de son compte : il lie SON
+// portefeuille, dont lui seul detient la cle, et les retraits partent la-bas.
+
+test("l'action de liaison existe et appelle la bonne route", () => {
+  assert.match(APP, /async linkWallet/, "action linkWallet absente");
+  assert.match(APP, /\/account\/link-wallet/, "route de liaison jamais appelee");
+});
+
+test("la liaison signe en scope withdraw, pas session", () => {
+  const i = APP.indexOf("async linkWallet");
+  const bloc = APP.slice(i, i + 2200);
+  assert.match(bloc, /scope=withdraw/,
+    "lier un portefeuille EST l'autorisation d'y envoyer des fonds : le message signe doit l'engager");
+  assert.match(bloc, /signMessage/, "la possession du portefeuille doit etre prouvee par signature");
+});
+
+test("la liaison refuse l'adresse du compte de jeu lui-meme", () => {
+  const i = APP.indexOf("async linkWallet");
+  const bloc = APP.slice(i, i + 2200);
+  assert.match(bloc, /addr === s\.wallet/,
+    "lier sa propre adresse generee ne prouve rien : le serveur detient cette seed");
+});
+
+test("la seed n'est plus jamais affichee au joueur", () => {
+  const ACCJSX2 = read("account.jsx");
+  assert.ok(!/secrets\.seed/.test(ACCJSX2),
+    "l'ecran de depart ne doit plus montrer de phrase de 12 mots");
+  assert.ok(!/ACC_SEED_(LABEL|HINT|REVEAL|HIDE)/.test(ACCJSX2),
+    "les libelles d'affichage de la seed doivent avoir disparu avec elle");
+  assert.ok(!/seed:\s*r\.seed|seed:\s*d\.seed/.test(APP),
+    "le client ne doit plus transporter de seed");
+});
