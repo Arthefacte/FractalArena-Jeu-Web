@@ -6,13 +6,15 @@ const D = window.FA_DATA, I18N = window.FA_I18N;
 const { FA_Ctx, useFA, cx, fmt, Coin, Bar } = window;
 const { Team, Fosse, Arene, Forge, Wallet, Boosts, Perso, Options, ChatFab, RoomFab, Leaderboard, Quests, Campaign, Tour, LoginGate, TutorialGate, Link, Cinematique, Market } = window;
 const SAVE_KEY = "fractal_arena_v1";
-// Le bearer authToken vit en sessionStorage (et JAMAIS dans le blob localStorage) : il survit
-// au rechargement de l'onglet (pas de re-signature à chaque F5) mais est effacé à la fermeture
-// de l'onglet → bien moins exposé qu'un token persisté en localStorage (audit 2026-06-24).
-const TOKEN_KEY = "fa_auth_token";
-function readToken() { try { return sessionStorage.getItem(TOKEN_KEY) || ""; } catch (e) { return ""; } }
-function writeToken(t) { try { if (t) sessionStorage.setItem(TOKEN_KEY, t); else sessionStorage.removeItem(TOKEN_KEY); } catch (e) {} }
-function clearToken() { try { sessionStorage.removeItem(TOKEN_KEY); } catch (e) {} }
+// Stockage du bearer : delegue a FA_ACCOUNT (account-ui.js), qui applique la regle
+// decidee le 2026-07-27 — sessionStorage pour un compte UniSat (efface a la fermeture
+// de l'onglet, il peut re-signer a tout moment ; audit 2026-06-24), localStorage pour
+// un compte genere (il n'a rien a re-signer, sinon il faudrait ressaisir le code de
+// recuperation a chaque fermeture d'onglet). JAMAIS dans le blob localStorage.
+const ACC = window.FA_ACCOUNT;
+const readToken = () => ACC.readToken();
+const writeToken = (t, kind) => ACC.writeToken(t, kind);
+const clearToken = () => ACC.clearToken();
 const API_URL = window.FA_API_URL;
 const CLIENT_SECRET = "pastouche";
 const HAS_UNISAT = () => typeof window.unisat !== "undefined";
@@ -118,6 +120,8 @@ function freshState() {
     options: { sound: true, speed: 1 },
     view: "team",
     authToken: "",
+    accountKind: "",      // "generated" | "unisat" | "" — decide ou vit le jeton
+    onchainVerified: true, // optimiste : un compte UniSat l'est ; /save le corrige
     serverFight: null,
     totem: null,   // { type, tier, active, loyaltyDays, worldsCompleted, paidWins, aura }
     pvp: {},
@@ -137,6 +141,7 @@ function loadState() {
       // Token restauré depuis sessionStorage (survit au rechargement de l'onglet, effacé à
       // sa fermeture — bien moins exposé que localStorage). JAMAIS dans le blob localStorage.
       authToken: readToken(),
+      accountKind: ACC.readKind(),
       selected: [],     // ids orphelins d'une session précédente → vidés, réconciliés à la connexion
       ordinalName: "",  // sera écrasé par le nom serveur à la connexion (branche 200)
       options: Object.assign(freshState().options, s.options || {}, { speed: 1 }),
@@ -174,8 +179,13 @@ function App() {
     const w = gRef.current.wallet;
     if (w) {
       (async () => {
-        let token = gRef.current.authToken;        // restauré depuis sessionStorage
-        if (!token) token = await actions.authenticate(w);
+        let token = gRef.current.authToken;        // restauré depuis le stockage adapté
+        // Un compte généré n'a aucune clé dans le navigateur : authenticate() ouvrirait
+        // une popup UniSat inexistante et rendrait "". Son jeton persiste en
+        // localStorage ; s'il a expiré, l'UI le renverra vers l'écran de récupération.
+        const generated = gRef.current.accountKind === ACC.KIND_GENERATED;
+        if (!token && !generated) token = await actions.authenticate(w);
+        if (!token && generated) { clearToken(); setG((s) => ({ ...s, wallet: "", accountKind: "" })); return; }
         await actions.connectWallet(w, token);
       })();
     }
@@ -186,7 +196,7 @@ function App() {
     // authToken EXCLU du blob localStorage (sinon volable trivialement par une XSS) ; il est
     // stocké à part en sessionStorage (effacé à la fermeture de l'onglet, survit au F5).
     try { localStorage.setItem(SAVE_KEY, JSON.stringify({ ...g, authToken: "" })); } catch (e) { }
-    writeToken(g.authToken);
+    writeToken(g.authToken, g.accountKind);
   }, [g]);
 
   // Fetch non-vu des prix PvP dès que le token est établi
@@ -327,6 +337,7 @@ function App() {
             if (boostsData) next.boosts = { xp_boost: boostsData.xp_boost?.charges ?? 0, insurance: boostsData.insurance?.charges ?? 0, lucky_strike: boostsData.lucky_strike?.charges ?? 0 };
             next.ordinalName = save.ordinal_name || ""; // nom ordinal du serveur, vide si absent
             next.totem = totem;
+            next.onchainVerified = save.onchain_verified !== false;
             return next;
           });
           return false; // joueur existant
@@ -336,6 +347,7 @@ function App() {
             lang: s.lang,
             options: s.options,
             wallet: addr,
+            onchainVerified: false,
             view: "team",
             playerName: addr.slice(0, 6) + "…" + addr.slice(-4),
             roster: D.starterRoster(),
@@ -423,6 +435,70 @@ function App() {
         return token ? { ok: true } : { ok: false, reason: "auth" };
       } catch (e) {
         return { ok: false, reason: "rejected" };
+      }
+    },
+    // Crée un compte + wallet côté serveur. Les deux secrets rendus ici ne sont
+    // JAMAIS persistés : ils vivent dans l'état de l'écran des secrets, puis
+    // disparaissent. Aucune autre route ne les relit.
+    async createAccount() {
+      try {
+        const r = await fetch(`${API_URL}/account/create`, {
+          method: "POST", headers: { "Content-Type": "application/json" }, body: "{}",
+        });
+        if (r.status === 429) return { ok: false, reason: "rate" };
+        if (!r.ok) return { ok: false, reason: "server" };
+        const d = await r.json();
+        if (!d.wallet || !d.token) return { ok: false, reason: "server" };
+        setG((s) => ({ ...s, accountKind: ACC.KIND_GENERATED, onchainVerified: false }));
+        writeToken(d.token, ACC.KIND_GENERATED);
+        await actions.connectWallet(d.wallet, d.token);
+        setG((s) => ({ ...s, authToken: d.token }));
+        return { ok: true, wallet: d.wallet, seed: d.seed, recovery_code: d.recovery_code };
+      } catch (e) {
+        return { ok: false, reason: "network" };
+      }
+    },
+    // Retour sur un compte généré depuis un autre appareil ou après vidage du cache.
+    async recoverAccount(code) {
+      // Garde anti-phishing AVANT tout appel réseau : une seed ne doit jamais
+      // quitter la machine du joueur, y compris vers nous.
+      if (ACC.looksLikeSeed(code)) return { ok: false, reason: "seed" };
+      if (!ACC.isValidRecoveryCode(code)) return { ok: false, reason: "invalid" };
+      try {
+        const r = await fetch(`${API_URL}/auth/recover`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ recovery_code: String(code).trim() }),
+        });
+        if (r.status === 429) return { ok: false, reason: "rate" };
+        if (!r.ok) return { ok: false, reason: "invalid" };
+        const d = await r.json();
+        if (!d.wallet || !d.token) return { ok: false, reason: "invalid" };
+        setG((s) => ({ ...s, accountKind: ACC.KIND_GENERATED }));
+        writeToken(d.token, ACC.KIND_GENERATED);
+        await actions.connectWallet(d.wallet, d.token);
+        setG((s) => ({ ...s, authToken: d.token }));
+        return { ok: true };
+      } catch (e) {
+        return { ok: false, reason: "network" };
+      }
+    },
+    // Demande au serveur de constater une activité on-chain (solde FB > 0). Le
+    // client ne décide jamais : il ne fait que déclencher la vérification.
+    async verifyOnchain() {
+      const s = gRef.current;
+      if (!s.authToken) return { ok: false, reason: "auth" };
+      try {
+        const r = await fetch(`${API_URL}/account/verify-onchain`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
+          body: "{}",
+        });
+        if (!r.ok) return { ok: false, reason: "server" };
+        const d = await r.json();
+        if (d.verified) setG((st) => ({ ...st, onchainVerified: true }));
+        return { ok: true, verified: !!d.verified };
+      } catch (e) {
+        return { ok: false, reason: "network" };
       }
     },
     async authForWithdraw() {
