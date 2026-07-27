@@ -1453,6 +1453,11 @@ function App() {
       <Ambient />
       <div className="app-shell">
         <Header chipPop={chipPop} />
+        {/* Contrepartie économique du compte sans wallet : doit être vue, pas juste exister.
+            Rendu ICI (dans .app-shell, sous le Header) plutôt qu'en frère du shell — sinon
+            elle atterrit tout en bas du document (.app-shell fait min-height: 100vh) et,
+            sur mobile, sous la barre de nav fixe (audit IMPORTANT 5, 2026-07-27). */}
+        {g.wallet && <LockedBanner />}
         <BuybackTicker />
         <Nav />
         <div className="view-anim" key={g.view}><View /></div>
@@ -1462,7 +1467,6 @@ function App() {
       <Toasts toasts={toasts} />
       {g.wallet && <TutorialGate />}
       {g.wallet && <LoginGate />}
-      {g.wallet && <LockedBanner />}
       {accSecrets && <window.SecretsGate secrets={accSecrets} onDone={() => setAccSecrets(null)} />}
       {(() => {
         const pz = [
