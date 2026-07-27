@@ -57,11 +57,18 @@ test("l'avertissement anti-phishing nomme le jeu (une consigne vague ne protege 
 });
 
 test("le message du bandeau ne promet pas de deverrouillage total", () => {
-  // Le deverrouillage est plafonne au montant depose (serveur §8.4) : le libelle
-  // ne doit pas laisser croire qu'un depot symbolique debloque tout.
+  // Le deverrouillage est plafonne au montant depose (serveur §8.4) : le libelle doit
+  // porter cette information dans les 3 langues, pas juste exister (la presence seule
+  // est deja verifiee par le premier test du fichier). Un depot symbolique ne doit
+  // jamais laisser croire qu'il debloque tout.
   const b = bloc("ACC_HOWTO_CAP");
   assert.ok(b, "ACC_HOWTO_CAP absente");
-  for (const lang of ["FR", "EN", "ZH"]) assert.match(b, new RegExp(lang + ":"));
+  const capWord = { FR: /plafonné/i, EN: /capped/i, ZH: /上限/ };
+  for (const lang of ["FR", "EN", "ZH"]) {
+    const m = b.match(new RegExp(lang + ':\\s*"([^"]*)"'));
+    assert.ok(m, `${lang} absente de ACC_HOWTO_CAP`);
+    assert.match(m[1], capWord[lang], `${lang} ne mentionne pas le plafond -> laisse croire a un deverrouillage total`);
+  }
 });
 
 test("le mobile n'est plus annonce comme bloque", () => {

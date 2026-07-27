@@ -87,14 +87,24 @@ test("l'onboarding propose de jouer sans wallet dans tous les cas", () => {
   assert.match(bloc, /ACC_RECOVER_LINK/, "l'acces a la recuperation est absent de l'accueil");
 });
 
-test("le mobile n'est plus un cul-de-sac", () => {
+test("le mobile n'est plus un cul-de-sac : le CTA jouer-maintenant n'est jamais cache derriere `mobile`", () => {
+  // Avant #45/v68, un joueur mobile (pas d'extension UniSat possible) tombait sur un
+  // message "arrive bientot" sans aucune action possible. Depuis, playNow()/createAccount()
+  // est l'action principale de l'ecran, offerte a TOUT joueur, mobile ou non — seul le lien
+  // d'installation de l'extension UniSat (inutile sur mobile) reste conditionne par `mobile`.
   const i = APP.indexOf("function Onboarding");
+  assert.ok(i > 0, "Onboarding introuvable");
   const bloc = APP.slice(i, APP.indexOf("function Toasts"));
-  const iMobile = bloc.indexOf("mobile ?");
-  if (iMobile === -1) return; // branche mobile supprimee : encore mieux
-  const branche = bloc.slice(iMobile, iMobile + 700);
-  assert.match(branche, /ACC_PLAY_NOW|onPlayNow/,
-    "la branche mobile doit offrir de jouer, pas seulement afficher un message");
+  const iMobileVar = bloc.indexOf("const mobile = IS_MOBILE()");
+  assert.ok(iMobileVar > 0, "detection mobile introuvable");
+  const playBtnIdx = bloc.indexOf("onClick={playNow}");
+  assert.ok(playBtnIdx > 0, "le bouton « jouer maintenant » est introuvable");
+  assert.ok(playBtnIdx > iMobileVar, "mobile doit etre determine avant le rendu du CTA");
+  // Le CTA ne doit pas etre a l'interieur d'un bloc conditionne par `!mobile` / `mobile &&` :
+  // on verifie qu'aucun garde de ce type n'apparait entre la definition de `mobile` et le bouton.
+  const between = bloc.slice(iMobileVar, playBtnIdx);
+  assert.ok(!/!mobile|mobile\s*&&|mobile\s*\?/.test(between),
+    "le CTA jouer-maintenant est conditionne par `mobile` : un joueur mobile pourrait ne pas le voir");
 });
 
 test("SecretsGate est monte au niveau du shell (App), pas seulement dans Onboarding", () => {
