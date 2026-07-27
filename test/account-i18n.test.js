@@ -57,17 +57,21 @@ test("l'avertissement anti-phishing nomme le jeu (une consigne vague ne protege 
 });
 
 test("le message du bandeau ne promet pas de deverrouillage total", () => {
-  // Le deverrouillage est plafonne au montant depose (serveur §8.4) : le libelle doit
-  // porter cette information dans les 3 langues, pas juste exister (la presence seule
-  // est deja verifiee par le premier test du fichier). Un depot symbolique ne doit
-  // jamais laisser croire qu'il debloque tout.
+  // Depuis le 2026-07-27 il n'y a plus ni depot obligatoire ni plafond : la preuve
+  // d'activite on-chain libere d'un coup les gains mis en attente. Mais elle ne
+  // libere QUE ceux-la — le verrouille normal du jeu (quetes, campagne, connexion,
+  // combats gratuits) reste verrouille, y compris pour un compte verifie. Le libelle
+  // doit porter cette limite dans les 3 langues, sinon le joueur croit que tout son
+  // solde verrouille va se debloquer et se sent floue. La presence seule de la cle
+  // est deja verifiee par le premier test du fichier.
   const b = bloc("ACC_HOWTO_CAP");
   assert.ok(b, "ACC_HOWTO_CAP absente");
-  const capWord = { FR: /plafonné/i, EN: /capped/i, ZH: /上限/ };
+  const limite = { FR: /reste verrouillé/i, EN: /stays locked/i, ZH: /保持锁定/ };
   for (const lang of ["FR", "EN", "ZH"]) {
     const m = b.match(new RegExp(lang + ':\\s*"([^"]*)"'));
     assert.ok(m, `${lang} absente de ACC_HOWTO_CAP`);
-    assert.match(m[1], capWord[lang], `${lang} ne mentionne pas le plafond -> laisse croire a un deverrouillage total`);
+    assert.match(m[1], limite[lang],
+      `${lang} ne dit pas que le verrouille de jeu reste verrouille -> laisse croire a un deverrouillage total`);
   }
 });
 
