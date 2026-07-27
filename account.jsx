@@ -58,4 +58,34 @@ function SecretsGate({ secrets, onDone }) {
   );
 }
 
-Object.assign(window, { SecretsGate });
+function RecoverScreen({ onClose }) {
+  const { actions, toast } = useFA();
+  const [code, setCode] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const submit = async () => {
+    setBusy(true);
+    let r;
+    try { r = await actions.recoverAccount(code); } finally { setBusy(false); }
+    if (r.ok) { onClose && onClose(); return; }
+    if (r.reason === "seed") { toast(I18N.t("ACC_RECOVER_SEED_REFUSED"), "bad"); setCode(""); return; }
+    if (r.reason === "rate") { toast(I18N.t("ACC_RECOVER_RATE"), "bad"); return; }
+    toast(I18N.t("ACC_RECOVER_FAIL"), "bad");
+  };
+
+  return (
+    <Modal onClose={onClose} accent="var(--gold)">
+      <SectionHead eyebrow="🔑 RECOVERY" title={I18N.t("ACC_RECOVER_TITLE")} />
+      <div className="muted mono" style={{ fontSize: 13, marginBottom: 14 }}>{I18N.t("ACC_RECOVER_SUB")}</div>
+      <input className="field" style={{ marginBottom: 10 }} value={code} autoComplete="off" spellCheck={false}
+             onChange={(e) => setCode(e.target.value)}
+             placeholder={I18N.t("ACC_RECOVER_PLACEHOLDER")}
+             onKeyDown={(e) => e.key === "Enter" && submit()} />
+      <button className="btn btn-gold block lg" disabled={busy || !code.trim()} onClick={submit}>
+        {I18N.t("ACC_RECOVER_BTN")}
+      </button>
+    </Modal>
+  );
+}
+
+Object.assign(window, { SecretsGate, RecoverScreen });

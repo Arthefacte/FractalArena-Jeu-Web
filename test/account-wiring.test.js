@@ -59,3 +59,21 @@ test("connectWallet (branche 404, compte tout juste cree) preserve accountKind",
   assert.match(bloc, /accountKind:\s*s\.accountKind/,
     "la branche 404 doit reinjecter accountKind depuis l'etat courant (s), sinon freshState() l'ecrase a \"\"");
 });
+
+const ACCJSX = read("account.jsx");
+
+test("l'ecran de recuperation ne suggere jamais la seed", () => {
+  const i = ACCJSX.indexOf("function RecoverScreen");
+  assert.ok(i > 0, "RecoverScreen introuvable");
+  const bloc = ACCJSX.slice(i, i + 1800);
+  assert.match(bloc, /ACC_RECOVER_PLACEHOLDER/, "le champ doit annoncer un CODE");
+  assert.ok(!/ACC_SEED_LABEL|12 mots|mnemonic/i.test(bloc),
+    "l'ecran de recuperation ne doit ni demander ni evoquer une saisie de seed");
+});
+
+test("l'ecran de recuperation traite le refus de seed", () => {
+  const i = ACCJSX.indexOf("function RecoverScreen");
+  const bloc = ACCJSX.slice(i, i + 1800);
+  assert.match(bloc, /ACC_RECOVER_SEED_REFUSED/,
+    "coller une seed doit produire un avertissement explicite, pas un 'code invalide' muet");
+});
