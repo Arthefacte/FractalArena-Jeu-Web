@@ -368,6 +368,22 @@ function App() {
             totem,
           }));
           return true; // nouveau joueur → l'airdrop est réclamé APRÈS authentification (token requis)
+        } else if (saveResp.status === 401 || saveResp.status === 403) {
+          // Jeton présent mais invalide/expiré (sessions serveur = 30 jours, rien ne les
+          // renouvelle pour un compte généré). Un compte généré n'a aucune clé à re-signer :
+          // sans ce garde-fou, le code tombait dans le catch générique ci-dessous, qui
+          // CONSERVAIT wallet+jeton mort → joueur "connecté" en apparence, autosave muette
+          // en 401, et écran de récupération inatteignable (audit CRITICAL 2, 2026-07-27).
+          const generated = gRef.current.accountKind === ACC.KIND_GENERATED;
+          if (generated) {
+            clearToken();
+            setG((s) => ({ ...s, wallet: "", accountKind: "", authToken: "" }));
+            return false;
+          }
+          // Compte UniSat : re-signature, comme déjà fait pour /totem/invoke et /totem/display.
+          const fresh = await actions.authenticate(addr);
+          if (fresh) return await actions.connectWallet(addr, fresh);
+          throw new Error("server " + saveResp.status);
         } else {
           throw new Error("server " + saveResp.status);
         }
