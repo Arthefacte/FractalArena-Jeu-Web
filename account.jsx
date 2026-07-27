@@ -110,7 +110,8 @@ function LockedBanner() {
     let r;
     try { r = await actions.verifyOnchain(); } finally { setChecking(false); }
     if (r.ok && r.verified) { toast(I18N.t("ACC_VERIFY_OK"), "good"); setHowto(false); return; }
-    toast(I18N.t("ACC_VERIFY_NONE"), "bad");
+    if (r.ok && !r.verified) { toast(I18N.t("ACC_VERIFY_NONE"), "bad"); return; }
+    toast(I18N.t("ACC_VERIFY_ERR"), "bad");
   };
 
   return (
