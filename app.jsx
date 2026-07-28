@@ -4,15 +4,17 @@
 const { useState, useEffect, useRef, useMemo } = React;
 const D = window.FA_DATA, I18N = window.FA_I18N;
 const { FA_Ctx, useFA, cx, fmt, Coin, Bar } = window;
-const { Team, Fosse, Arene, Forge, Wallet, Boosts, Perso, Options, ChatFab, RoomFab, Leaderboard, Quests, Campaign, Tour, LoginGate, TutorialGate, Link, Cinematique, Market } = window;
+const { Team, Fosse, Arene, Forge, Wallet, Boosts, Perso, Options, ChatFab, RoomFab, Leaderboard, Quests, Campaign, Tour, LoginGate, TutorialGate, Link, Cinematique, Market, LockedBanner } = window;
 const SAVE_KEY = "fractal_arena_v1";
-// Le bearer authToken vit en sessionStorage (et JAMAIS dans le blob localStorage) : il survit
-// au rechargement de l'onglet (pas de re-signature à chaque F5) mais est effacé à la fermeture
-// de l'onglet → bien moins exposé qu'un token persisté en localStorage (audit 2026-06-24).
-const TOKEN_KEY = "fa_auth_token";
-function readToken() { try { return sessionStorage.getItem(TOKEN_KEY) || ""; } catch (e) { return ""; } }
-function writeToken(t) { try { if (t) sessionStorage.setItem(TOKEN_KEY, t); else sessionStorage.removeItem(TOKEN_KEY); } catch (e) {} }
-function clearToken() { try { sessionStorage.removeItem(TOKEN_KEY); } catch (e) {} }
+// Stockage du bearer : delegue a FA_ACCOUNT (account-ui.js), qui applique la regle
+// decidee le 2026-07-27 — sessionStorage pour un compte UniSat (efface a la fermeture
+// de l'onglet, il peut re-signer a tout moment ; audit 2026-06-24), localStorage pour
+// un compte genere (il n'a rien a re-signer, sinon il faudrait ressaisir le code de
+// recuperation a chaque fermeture d'onglet). JAMAIS dans le blob localStorage.
+const ACC = window.FA_ACCOUNT;
+const readToken = () => ACC.readToken();
+const writeToken = (t, kind) => ACC.writeToken(t, kind);
+const clearToken = () => ACC.clearToken();
 const API_URL = window.FA_API_URL;
 const CLIENT_SECRET = "pastouche";
 const HAS_UNISAT = () => typeof window.unisat !== "undefined";
@@ -118,6 +120,8 @@ function freshState() {
     options: { sound: true, speed: 1 },
     view: "team",
     authToken: "",
+    accountKind: "",      // "generated" | "unisat" | "" — decide ou vit le jeton
+    onchainVerified: true, // optimiste : un compte UniSat l'est ; /save le corrige
     serverFight: null,
     totem: null,   // { type, tier, active, loyaltyDays, worldsCompleted, paidWins, aura }
     pvp: {},
@@ -134,9 +138,11 @@ function loadState() {
     const s = JSON.parse(raw);
     return Object.assign(freshState(), s, {
       view: "team",
-      // Token restauré depuis sessionStorage (survit au rechargement de l'onglet, effacé à
-      // sa fermeture — bien moins exposé que localStorage). JAMAIS dans le blob localStorage.
+      // Token restauré depuis le stockage adapté au type de compte (cf. ACC en tête de
+      // fichier) : sessionStorage pour UniSat, localStorage pour un compte généré.
+      // JAMAIS dans le blob localStorage (ce blob-ci).
       authToken: readToken(),
+      accountKind: ACC.readKind(),
       selected: [],     // ids orphelins d'une session précédente → vidés, réconciliés à la connexion
       ordinalName: "",  // sera écrasé par le nom serveur à la connexion (branche 200)
       options: Object.assign(freshState().options, s.options || {}, { speed: 1 }),
@@ -152,6 +158,12 @@ function App() {
   const [chipPop, setChipPop] = useState(0);
   const [, setNow] = useState(Date.now()); // tic 1s pour le compte à rebours combats gratuits
   const [cineDone, setCineDone] = useState(false); // cinématique d'ouverture : jouée à chaque visite déconnecté
+  // Secrets d'un compte tout juste créé (seed + code de récupération). Vit ICI, au niveau du
+  // shell, et pas dans Onboarding : createAccount() pose g.wallet AVANT que playNow() ait fini,
+  // donc App bascule hors d'Onboarding au rendu suivant et démonterait tout état local qui y
+  // vivrait. SecretsGate doit rester monté malgré cette bascule → il est rendu ici, dans les
+  // deux branches du if (!g.wallet) ci-dessous, jamais à l'intérieur d'Onboarding.
+  const [accSecrets, setAccSecrets] = useState(null);
   const gRef = useRef(g);
   gRef.current = g;
   // Options fetch pour les lectures /save : joint le Bearer du joueur connecté (preuve de
@@ -174,8 +186,13 @@ function App() {
     const w = gRef.current.wallet;
     if (w) {
       (async () => {
-        let token = gRef.current.authToken;        // restauré depuis sessionStorage
-        if (!token) token = await actions.authenticate(w);
+        let token = gRef.current.authToken;        // restauré depuis le stockage adapté
+        // Un compte généré n'a aucune clé dans le navigateur : authenticate() ouvrirait
+        // une popup UniSat inexistante et rendrait "". Son jeton persiste en
+        // localStorage ; s'il a expiré, l'UI le renverra vers l'écran de récupération.
+        const generated = gRef.current.accountKind === ACC.KIND_GENERATED;
+        if (!token && !generated) token = await actions.authenticate(w);
+        if (!token && generated) { clearToken(); setG((s) => ({ ...s, wallet: "", accountKind: "" })); return; }
         await actions.connectWallet(w, token);
       })();
     }
@@ -184,9 +201,9 @@ function App() {
   // persist
   useEffect(() => {
     // authToken EXCLU du blob localStorage (sinon volable trivialement par une XSS) ; il est
-    // stocké à part en sessionStorage (effacé à la fermeture de l'onglet, survit au F5).
+    // stocké à part via ACC, dans le storage adapté au type de compte (accountKind).
     try { localStorage.setItem(SAVE_KEY, JSON.stringify({ ...g, authToken: "" })); } catch (e) { }
-    writeToken(g.authToken);
+    writeToken(g.authToken, g.accountKind);
   }, [g]);
 
   // Fetch non-vu des prix PvP dès que le token est établi
@@ -327,6 +344,7 @@ function App() {
             if (boostsData) next.boosts = { xp_boost: boostsData.xp_boost?.charges ?? 0, insurance: boostsData.insurance?.charges ?? 0, lucky_strike: boostsData.lucky_strike?.charges ?? 0 };
             next.ordinalName = save.ordinal_name || ""; // nom ordinal du serveur, vide si absent
             next.totem = totem;
+            next.onchainVerified = save.onchain_verified !== false;
             return next;
           });
           return false; // joueur existant
@@ -336,6 +354,14 @@ function App() {
             lang: s.lang,
             options: s.options,
             wallet: addr,
+            accountKind: s.accountKind,
+            // Preserve le jeton deja pose en state avant cet appel (createAccount/
+            // recoverAccount le fixent en un seul setG juste avant d'appeler connectWallet,
+            // cf. IMPORTANT 4b) : sans ce champ, freshState() le remettrait a "" ici meme
+            // pour un compte tout juste cree, et la persistance suivante l'effacerait du
+            // storage (writeToken("", ...) => clearToken()).
+            authToken: s.authToken,
+            onchainVerified: false,
             view: "team",
             playerName: addr.slice(0, 6) + "…" + addr.slice(-4),
             roster: D.starterRoster(),
@@ -348,6 +374,22 @@ function App() {
             totem,
           }));
           return true; // nouveau joueur → l'airdrop est réclamé APRÈS authentification (token requis)
+        } else if (saveResp.status === 401 || saveResp.status === 403) {
+          // Jeton présent mais invalide/expiré (sessions serveur = 30 jours, rien ne les
+          // renouvelle pour un compte généré). Un compte généré n'a aucune clé à re-signer :
+          // sans ce garde-fou, le code tombait dans le catch générique ci-dessous, qui
+          // CONSERVAIT wallet+jeton mort → joueur "connecté" en apparence, autosave muette
+          // en 401, et écran de récupération inatteignable (audit CRITICAL 2, 2026-07-27).
+          const generated = gRef.current.accountKind === ACC.KIND_GENERATED;
+          if (generated) {
+            clearToken();
+            setG((s) => ({ ...s, wallet: "", accountKind: "", authToken: "" }));
+            return false;
+          }
+          // Compte UniSat : re-signature, comme déjà fait pour /totem/invoke et /totem/display.
+          const fresh = await actions.authenticate(addr);
+          if (fresh) return await actions.connectWallet(addr, fresh);
+          throw new Error("server " + saveResp.status);
         } else {
           throw new Error("server " + saveResp.status);
         }
@@ -359,6 +401,14 @@ function App() {
             return {
               ...freshState(),
               lang: s.lang, options: s.options,
+              // Contrairement à la branche 404 (réponse serveur normale), ce fallback ne
+              // s'exécute QUE si le réseau a lâché — fréquent sur mobile. Sans reinjecter
+              // accountKind/onchainVerified/authToken depuis s, freshState() les remet à
+              // ""/true/"" : un compte généré perdrait sa nature (son jeton part alors en
+              // sessionStorage, effacé à la fermeture d'onglet, et disparaît carrément du
+              // state ici) et le bandeau gains-verrouillés disparaîtrait pour de bon
+              // (audit IMPORTANT 4a, 2026-07-27).
+              accountKind: s.accountKind, onchainVerified: s.onchainVerified, authToken: s.authToken,
               wallet: addr, view: "team",
               playerName: addr.slice(0, 6) + "…" + addr.slice(-4),
               roster: D.starterRoster(),
@@ -422,6 +472,127 @@ function App() {
         await actions.claimAirdropIfNew(addr, token, isNew);
         return token ? { ok: true } : { ok: false, reason: "auth" };
       } catch (e) {
+        return { ok: false, reason: "rejected" };
+      }
+    },
+    // Crée un compte + wallet côté serveur. Les deux secrets rendus ici ne sont
+    // JAMAIS persistés : ils vivent dans l'état de l'écran des secrets, puis
+    // disparaissent. Aucune autre route ne les relit.
+    async createAccount() {
+      try {
+        const r = await fetch(`${API_URL}/account/create`, {
+          method: "POST", headers: { "Content-Type": "application/json" }, body: "{}",
+        });
+        if (r.status === 429) return { ok: false, reason: "rate" };
+        if (!r.ok) return { ok: false, reason: "server" };
+        const d = await r.json();
+        if (!d.wallet || !d.token) return { ok: false, reason: "server" };
+        // accountKind + authToken en UN SEUL setG : entre deux setG separes par un await,
+        // l'effet de persistance (qui depend de [g]) peut s'executer avec authToken encore
+        // vide et appeler clearToken(), effacant le jeton tout juste ecrit. Un onglet ferme
+        // dans cette fenetre laisse un blob avec wallet mais zero jeton -> meme impasse que
+        // 4(a) (audit IMPORTANT 4b, 2026-07-27).
+        writeToken(d.token, ACC.KIND_GENERATED);
+        setG((s) => ({ ...s, accountKind: ACC.KIND_GENERATED, onchainVerified: false, authToken: d.token }));
+        await actions.connectWallet(d.wallet, d.token);
+        return { ok: true, wallet: d.wallet, recovery_code: d.recovery_code };
+      } catch (e) {
+        return { ok: false, reason: "network" };
+      }
+    },
+    // Retour sur un compte généré depuis un autre appareil ou après vidage du cache.
+    async recoverAccount(code) {
+      // Garde anti-phishing AVANT tout appel réseau : une seed ne doit jamais
+      // quitter la machine du joueur, y compris vers nous.
+      if (ACC.looksLikeSeed(code)) return { ok: false, reason: "seed" };
+      if (!ACC.isValidRecoveryCode(code)) return { ok: false, reason: "invalid" };
+      try {
+        const r = await fetch(`${API_URL}/auth/recover`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ recovery_code: String(code).trim() }),
+        });
+        if (r.status === 429) return { ok: false, reason: "rate" };
+        if (!r.ok) {
+          // 4xx (hors 429) = le serveur a explicitement rejeté le code : invalide.
+          // 5xx/autre = panne côté serveur, PAS un verdict sur le code — même soin
+          // que pour verifyOnchain (98082b1) : sans distinguer les deux, un code
+          // CORRECT frappé par un 500 passager s'affichait comme « Code invalide »,
+          // et le joueur pouvait en conclure que son compte était perdu (IMPORTANT 7).
+          return { ok: false, reason: r.status >= 500 ? "server" : "invalid" };
+        }
+        const d = await r.json();
+        if (!d.wallet || !d.token) return { ok: false, reason: "server" };
+        // accountKind + authToken en UN SEUL setG (meme raison qu'en 4b/createAccount) :
+        // deux setG separes par un await laissent l'effet de persistance s'executer avec
+        // authToken encore vide -> clearToken() efface le jeton tout juste ecrit.
+        writeToken(d.token, ACC.KIND_GENERATED);
+        setG((s) => ({ ...s, accountKind: ACC.KIND_GENERATED, authToken: d.token }));
+        await actions.connectWallet(d.wallet, d.token);
+        return { ok: true };
+      } catch (e) {
+        return { ok: false, reason: "network" };
+      }
+    },
+    // Demande au serveur de constater une activité on-chain (solde FB > 0). Le
+    // client ne décide jamais : il ne fait que déclencher la vérification.
+    async verifyOnchain() {
+      const s = gRef.current;
+      if (!s.authToken) return { ok: false, reason: "auth" };
+      try {
+        const r = await fetch(`${API_URL}/account/verify-onchain`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
+          body: "{}",
+        });
+        if (!r.ok) return { ok: false, reason: "server" };
+        const d = await r.json();
+        if (d.verified) setG((st) => ({ ...st, onchainVerified: true }));
+        return { ok: true, verified: !!d.verified };
+      } catch (e) {
+        return { ok: false, reason: "network" };
+      }
+    },
+    // Lie au compte de jeu le portefeuille UniSat que le joueur a créé LUI-MÊME, et
+    // vers lequel partiront ses retraits. On ne lui demande JAMAIS d'importer la seed
+    // du compte : elle ne lui donne accès à rien, et lui faire saisir 12 mots quelque
+    // part contredirait notre propre avertissement anti-phishing.
+    //
+    // Le serveur exige une double preuve : le Bearer prouve la possession du compte,
+    // la signature prouve la possession du portefeuille. Scope « withdraw » — lier
+    // un portefeuille EST l'autorisation d'y envoyer des fonds.
+    async linkWallet() {
+      const s = gRef.current;
+      if (!s.authToken) return { ok: false, reason: "auth" };
+      if (typeof window.unisat === "undefined") return { ok: false, reason: "no-unisat" };
+      try {
+        const accounts = await window.unisat.requestAccounts();
+        const addr = (accounts && accounts[0]) || "";
+        if (!/^bc1/i.test(addr)) return { ok: false, reason: "bad-address" };
+        if (addr === s.wallet) return { ok: false, reason: "same" };
+        const cr = await fetch(`${API_URL}/auth/challenge?wallet=${encodeURIComponent(addr)}&scope=withdraw`);
+        if (!cr.ok) return { ok: false, reason: "server" };
+        const ch = await cr.json();
+        const signature = await window.unisat.signMessage(ch.message || ch.nonce);
+        const r = await fetch(`${API_URL}/account/link-wallet`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
+          body: JSON.stringify({ wallet: addr, signature }),
+        });
+        if (r.status === 409) return { ok: false, reason: "taken" };
+        if (!r.ok) {
+          const j = await r.json().catch(() => ({}));
+          if (j.error === "aucune_activite") return { ok: false, reason: "no-activity" };
+          if (j.error === "portefeuille_identique") return { ok: false, reason: "same" };
+          return { ok: false, reason: r.status >= 500 ? "server" : "refused" };
+        }
+        const d = await r.json();
+        // Le portefeuille est lié : le compte est vérifié et les gains mis en attente
+        // viennent d'être libérés côté serveur. On reflète les deux immédiatement.
+        setG((st) => ({ ...st, onchainVerified: true, linkedWallet: d.wallet,
+                        liquid: Number(d.liquid), locked: Number(d.locked) }));
+        return { ok: true, wallet: d.wallet };
+      } catch (e) {
+        // Rejet de la popup UniSat compris : le joueur a simplement annulé.
         return { ok: false, reason: "rejected" };
       }
     },
@@ -1310,14 +1481,16 @@ function App() {
       return (
         <FA_Ctx.Provider value={ctx}>
           <Cinematique onEnter={() => setCineDone(true)} />
+          {accSecrets && <window.SecretsGate secrets={accSecrets} onDone={() => setAccSecrets(null)} />}
         </FA_Ctx.Provider>
       );
     }
     return (
       <FA_Ctx.Provider value={ctx}>
         <Ambient />
-        <Onboarding />
+        <Onboarding onAccountCreated={(s) => setAccSecrets(s)} />
         <Toasts toasts={toasts} />
+        {accSecrets && <window.SecretsGate secrets={accSecrets} onDone={() => setAccSecrets(null)} />}
       </FA_Ctx.Provider>
     );
   }
@@ -1331,6 +1504,11 @@ function App() {
       <Ambient />
       <div className="app-shell">
         <Header chipPop={chipPop} />
+        {/* Contrepartie économique du compte sans wallet : doit être vue, pas juste exister.
+            Rendu ICI (dans .app-shell, sous le Header) plutôt qu'en frère du shell — sinon
+            elle atterrit tout en bas du document (.app-shell fait min-height: 100vh) et,
+            sur mobile, sous la barre de nav fixe (audit IMPORTANT 5, 2026-07-27). */}
+        {g.wallet && <LockedBanner />}
         <BuybackTicker />
         <Nav />
         <div className="view-anim" key={g.view}><View /></div>
@@ -1340,6 +1518,7 @@ function App() {
       <Toasts toasts={toasts} />
       {g.wallet && <TutorialGate />}
       {g.wallet && <LoginGate />}
+      {accSecrets && <window.SecretsGate secrets={accSecrets} onDone={() => setAccSecrets(null)} />}
       {(() => {
         const pz = [
           ...(Array.isArray(g.pvpPrizes) ? g.pvpPrizes.map((p) => ({ ...p, kind: "pvp" })) : []),
@@ -1439,11 +1618,12 @@ function Nav() {
   );
 }
 
-function Onboarding() {
+function Onboarding({ onAccountCreated }) {
   const { actions, toast } = useFA();
   const [addr, setAddr] = useState("");
   const [checking, setChecking] = useState(false);
   const [manual, setManual] = useState(false);
+  const [recovering, setRecovering] = useState(false);
   const hasWallet = HAS_UNISAT();
   const mobile = IS_MOBILE();
 
@@ -1465,6 +1645,16 @@ function Onboarding() {
       setChecking(false);
     }
   }
+  // Entrée sans friction : on crée le compte, puis on remonte les secrets vers App —
+  // createAccount() pose déjà g.wallet, donc Onboarding peut être démonté au rendu
+  // suivant. L'écran des secrets vit au niveau du shell (App), pas ici, pour lui survivre.
+  async function playNow() {
+    setChecking(true);
+    let r;
+    try { r = await actions.createAccount(); } finally { setChecking(false); }
+    if (!r.ok) { toast(I18N.t("ACC_CREATE_FAIL"), "bad"); return; }
+    onAccountCreated && onAccountCreated({ recovery_code: r.recovery_code });
+  }
 
   return (
     <div className="app-shell" style={{ minHeight: "100vh", display: "grid", placeItems: "center", position: "relative", zIndex: 1 }}>
@@ -1477,25 +1667,32 @@ function Onboarding() {
         <div className="eyebrow">{I18N.t("OB_TAG")}</div>
         <div className="hdr-title" style={{ fontSize: 40, letterSpacing: 6, display: "block", margin: "8px 0 18px" }}>FRACTAL ARENA</div>
 
+        <div className="h2" style={{ fontSize: 18, marginBottom: 8 }}>{I18N.t("ACC_PLAY_NOW")}</div>
+        <div className="muted mono" style={{ fontSize: 13, lineHeight: 1.6, marginBottom: 18 }}>{I18N.t("ACC_PLAY_NOW_SUB")}</div>
+        <button className="btn btn-fire block lg" disabled={checking} onClick={playNow}>
+          {checking ? I18N.t("ACC_CREATING") : I18N.t("ACC_PLAY_NOW")}
+        </button>
+        <div className="pill" style={{ marginTop: 14, color: "var(--gold)", borderColor: "rgba(255,230,0,0.3)" }}>🎁 {I18N.t("OB_GIFT")}</div>
+
+        {/* Action secondaire : le joueur qui a deja un wallet garde son flux d'avant. Sur
+            mobile, UniSat n'existe pas en extension : pas de lien mort, on n'affiche rien —
+            « Jouer maintenant » ci-dessus est deja l'action complete, plus de cul-de-sac. */}
         {hasWallet ? (
-          <>
-            <div className="h2" style={{ fontSize: 18, marginBottom: 8 }}>{I18N.t("OB_CONNECT")}</div>
-            <div className="muted mono" style={{ fontSize: 13, lineHeight: 1.6, marginBottom: 22 }}>{I18N.t("OB_SUB")}</div>
-            <button className="btn btn-fire block lg" disabled={checking} onClick={connectUnisat}>{checking ? I18N.t("OB_CHECKING") : I18N.t("OB_BTN")}</button>
-            <div className="pill" style={{ marginTop: 18, color: "var(--gold)", borderColor: "rgba(255,230,0,0.3)" }}>🎁 {I18N.t("OB_GIFT")}</div>
-          </>
-        ) : mobile ? (
-          <>
-            <div className="h2" style={{ fontSize: 18, marginBottom: 8 }}>{I18N.t("OB_MOBILE_TITLE")}</div>
-            <div className="muted mono" style={{ fontSize: 13, lineHeight: 1.7, marginBottom: 18 }}>{I18N.t("OB_MOBILE_MSG")}</div>
-          </>
+          <button className="btn block" style={{ marginTop: 12 }} disabled={checking} onClick={connectUnisat}>
+            {I18N.t("ACC_HAVE_WALLET")}
+          </button>
         ) : (
-          <>
-            <div className="h2" style={{ fontSize: 18, marginBottom: 8 }}>{I18N.t("OB_INSTALL_EXT_TITLE")}</div>
-            <div className="muted mono" style={{ fontSize: 13, lineHeight: 1.7, marginBottom: 18 }}>{I18N.t("OB_INSTALL_EXT_SUB")}</div>
-            <a className="btn btn-fire block lg" href="https://unisat.io/download" target="_blank" rel="noopener noreferrer">{I18N.t("OB_INSTALL_EXT_BTN")}</a>
-          </>
+          !mobile && (
+            <a className="btn block" style={{ marginTop: 12 }} href="https://unisat.io/download" target="_blank" rel="noopener noreferrer">
+              {I18N.t("OB_INSTALL_EXT_BTN")}
+            </a>
+          )
         )}
+
+        <div style={{ marginTop: 14 }}>
+          <button className="btn-link" style={{ background: "none", border: "none", color: "var(--text-dim)", fontSize: 11, cursor: "pointer", textDecoration: "underline" }}
+                  onClick={() => setRecovering(true)}>{I18N.t("ACC_RECOVER_LINK")}</button>
+        </div>
 
         <div style={{ marginTop: 16 }}>
           <button className="btn-link" style={{ background: "none", border: "none", color: "var(--text-dim)", fontSize: 11, cursor: "pointer", textDecoration: "underline" }} onClick={() => setManual(!manual)}>{I18N.t("OB_MANUAL_TOGGLE")}</button>
@@ -1513,6 +1710,8 @@ function Onboarding() {
           ))}
         </div>
       </div>
+
+      {recovering && <window.RecoverScreen onClose={() => setRecovering(false)} />}
     </div>
   );
 }
