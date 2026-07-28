@@ -1084,6 +1084,76 @@ function App() {
         return { ok: false, reason: "network" };
       }
     },
+    // --- Parcours de découverte ---
+    // État du parcours. Le serveur recompte la progression à chaque appel : le
+    // client n'en garde aucune trace et n'en calcule jamais. `eligible: false`
+    // (compte venu avec UniSat) est une réponse normale, pas une erreur.
+    async discoveryState() {
+      const s = gRef.current;
+      if (!s.authToken) return { ok: false };
+      try {
+        const r = await fetch(`${API_URL}/discovery/state`, {
+          headers: { "Authorization": `Bearer ${s.authToken}` },
+        });
+        if (!r.ok) return { ok: false };
+        return { ok: true, data: await r.json() };
+      } catch (e) {
+        return { ok: false };
+      }
+    },
+    // Réclame une étape. On n'envoie QUE son identifiant : c'est le serveur qui
+    // décide si elle est accomplie, et qui connaît le montant.
+    async claimDiscovery(stepId) {
+      const s = gRef.current;
+      if (!s.authToken) return { ok: false, reason: "auth" };
+      try {
+        const r = await fetch(`${API_URL}/discovery/claim`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
+          body: JSON.stringify({ step: stepId }),
+        });
+        if (r.status === 409) return { ok: false, reason: "deja" };
+        if (!r.ok) return { ok: false, reason: r.status >= 500 ? "server" : "refuse" };
+        const d = await r.json();
+        // Le solde verrouillé bouge côté serveur ; on remonte le montant pour
+        // l'afficher immédiatement, le prochain /save fera foi.
+        return { ok: true, reward: Number(d.reward) || 0 };
+      } catch (e) {
+        return { ok: false, reason: "network" };
+      }
+    },
+    // Soumet le txid de la poussière reçue. Le serveur connaît la valeur attendue.
+    async submitDustTxid(txid) {
+      const s = gRef.current;
+      if (!s.authToken) return { ok: false, reason: "auth" };
+      try {
+        const r = await fetch(`${API_URL}/discovery/txid`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
+          body: JSON.stringify({ txid: String(txid || "").trim() }),
+        });
+        if (!r.ok) {
+          const j = await r.json().catch(() => ({}));
+          if (j.error === "poussiere_non_envoyee") return { ok: false, reason: "dust" };
+          if (j.error === "txid_invalide") return { ok: false, reason: "bad" };
+          return { ok: false, reason: r.status >= 500 ? "server" : "refuse" };
+        }
+        const d = await r.json();
+        setG((st) => ({ ...st, onchainVerified: true }));
+        // Le serveur ne déclenche PAS l'envoi de l'airdrop lui-même (discovery.js
+        // ne peut pas requérir server.js — cycle — et le chemin d'envoi d'argent
+        // réel ne doit pas être dupliqué). C'est à nous d'enchaîner, sinon le
+        // message « ton airdrop est en route » serait un mensonge.
+        //
+        // On poste `s.wallet`, l'adresse du compte : /claim-airdrop exige que le
+        // wallet du corps soit celui du jeton, et c'est LUI qui redirige ensuite
+        // l'envoi vers le portefeuille lié. Poster `d.wallet` donnerait un 403.
+        if (d.airdrop_pending) await actions.claimAirdropIfNew(s.wallet, s.authToken, true);
+        return { ok: true, airdrop_pending: !!d.airdrop_pending };
+      } catch (e) {
+        return { ok: false, reason: "network" };
+      }
+    },
     async fetchLoginReward() {
       const s = gRef.current;
       if (!s.wallet) return { ok: false };
