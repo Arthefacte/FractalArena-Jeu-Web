@@ -176,7 +176,9 @@
     DISC_CLAIM_FAIL: { FR: "Impossible de réclamer pour l'instant. Réessaie dans un moment.", EN: "Cannot claim right now. Try again shortly.", ZH: "暂时无法领取，请稍后再试。" },
 
     DISC_CRYPTO_TITLE: { FR: "Débloquer tes gains", EN: "Unlock your earnings", ZH: "解锁你的收益" },
-    DISC_CRYPTO_LOCKED: { FR: "Termine les six étapes ci-dessus pour ouvrir cette partie.", EN: "Complete the six steps above to open this part.", ZH: "完成以上六个步骤即可开启此部分。" },
+    // « Ci-dessus » supposait que le joueur soit sur l'onglet Quêtes — or ce
+    // bandeau est global et la fenêtre s'ouvre depuis n'importe quel écran.
+    DISC_CRYPTO_LOCKED: { FR: "Termine les six étapes de « Tes premiers pas », dans l'onglet Quêtes, pour ouvrir cette partie.", EN: "Complete the six steps of “Your first steps”, in the Quests tab, to open this part.", ZH: "在「任务」标签中完成「你的第一步」的六个步骤，即可开启此部分。" },
     DISC_DUST_WAIT: { FR: "Portefeuille lié ✓ On t'envoie un peu de Fractal Bitcoin. Compte quelques minutes.", EN: "Wallet linked ✓ We're sending you a little Fractal Bitcoin. Give it a few minutes.", ZH: "钱包已绑定 ✓ 我们正在向你发送少量 Fractal Bitcoin，请稍候几分钟。" },
     DISC_DUST_ARRIVED: { FR: "Ouvre UniSat, retrouve la transaction reçue, et colle son identifiant ci-dessous.", EN: "Open UniSat, find the transaction you received, and paste its ID below.", ZH: "打开 UniSat，找到收到的交易，并在下方粘贴其 ID。" },
     DISC_TXID_LABEL: { FR: "Identifiant de transaction (txid)", EN: "Transaction ID (txid)", ZH: "交易 ID（txid）" },
