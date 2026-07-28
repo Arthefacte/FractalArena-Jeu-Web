@@ -1694,37 +1694,43 @@ function Nav() {
 function Onboarding({ onAccountCreated }) {
   const { actions, toast } = useFA();
   const [addr, setAddr] = useState("");
-  const [checking, setChecking] = useState(false);
+  // Quelle action est en cours : null | "create" | "connect" | "manual".
+  // Un booléen partagé ne suffit pas — il bloque bien les trois boutons, mais il
+  // ne dit pas LAQUELLE tourne, et « Création… » s'affichait alors sur « Jouer
+  // maintenant » quand le joueur cliquait « J'ai déjà un wallet » (constaté en
+  // prod le 28/07). Voir aussi que tout bouton reste gardé par `busy`, sinon un
+  // double-clic créerait deux comptes dont un orphelin.
+  const [busy, setBusy] = useState(null);
   const [manual, setManual] = useState(false);
   const [recovering, setRecovering] = useState(false);
   const hasWallet = HAS_UNISAT();
   const mobile = IS_MOBILE();
 
   async function connectUnisat() {
-    setChecking(true);
-    const r = await actions.connectUnisat();
-    setChecking(false);
+    setBusy("connect");
+    let r;
+    try { r = await actions.connectUnisat(); } finally { setBusy(null); }
     if (!r.ok) toast(I18N.t("OB_CONNECT_FAIL"), "bad");
   }
   async function connectManual() {
     const a = addr.trim();
     if (a.length < 20 || !/^bc1/i.test(a)) { toast(I18N.t("OB_INVALID"), "bad"); return; }
-    setChecking(true);
+    setBusy("manual");
     try {
       const token = await actions.authenticate(a);
       const isNew = await actions.connectWallet(a, token);
       await actions.claimAirdropIfNew(a, token, isNew);
     } finally {
-      setChecking(false);
+      setBusy(null);
     }
   }
   // Entrée sans friction : on crée le compte, puis on remonte les secrets vers App —
   // createAccount() pose déjà g.wallet, donc Onboarding peut être démonté au rendu
   // suivant. L'écran des secrets vit au niveau du shell (App), pas ici, pour lui survivre.
   async function playNow() {
-    setChecking(true);
+    setBusy("create");
     let r;
-    try { r = await actions.createAccount(); } finally { setChecking(false); }
+    try { r = await actions.createAccount(); } finally { setBusy(null); }
     if (!r.ok) { toast(I18N.t("ACC_CREATE_FAIL"), "bad"); return; }
     onAccountCreated && onAccountCreated({ recovery_code: r.recovery_code });
   }
@@ -1742,8 +1748,8 @@ function Onboarding({ onAccountCreated }) {
 
         <div className="h2" style={{ fontSize: 18, marginBottom: 8 }}>{I18N.t("ACC_PLAY_NOW")}</div>
         <div className="muted mono" style={{ fontSize: 13, lineHeight: 1.6, marginBottom: 18 }}>{I18N.t("ACC_PLAY_NOW_SUB")}</div>
-        <button className="btn btn-fire block lg" disabled={checking} onClick={playNow}>
-          {checking ? I18N.t("ACC_CREATING") : I18N.t("ACC_PLAY_NOW")}
+        <button className="btn btn-fire block lg" disabled={!!busy} onClick={playNow}>
+          {busy === "create" ? I18N.t("ACC_CREATING") : I18N.t("ACC_PLAY_NOW")}
         </button>
         <div className="pill" style={{ marginTop: 14, color: "var(--gold)", borderColor: "rgba(255,230,0,0.3)" }}>🎁 {I18N.t("OB_GIFT")}</div>
 
@@ -1751,7 +1757,7 @@ function Onboarding({ onAccountCreated }) {
             mobile, UniSat n'existe pas en extension : pas de lien mort, on n'affiche rien —
             « Jouer maintenant » ci-dessus est deja l'action complete, plus de cul-de-sac. */}
         {hasWallet ? (
-          <button className="btn block" style={{ marginTop: 12 }} disabled={checking} onClick={connectUnisat}>
+          <button className="btn block" style={{ marginTop: 12 }} disabled={!!busy} onClick={connectUnisat}>
             {I18N.t("ACC_HAVE_WALLET")}
           </button>
         ) : (
@@ -1773,7 +1779,7 @@ function Onboarding({ onAccountCreated }) {
         {manual && (
           <div style={{ marginTop: 10 }}>
             <input className="field" style={{ textAlign: "center", marginBottom: 10 }} value={addr} onChange={(e) => setAddr(e.target.value)} placeholder={I18N.t("OB_PLACEHOLDER")} onKeyDown={(e) => e.key === "Enter" && connectManual()} />
-            <button className="btn block" disabled={checking} onClick={connectManual}>{checking ? I18N.t("OB_CHECKING") : I18N.t("OB_BTN")}</button>
+            <button className="btn block" disabled={!!busy} onClick={connectManual}>{busy === "manual" ? I18N.t("OB_CHECKING") : I18N.t("OB_BTN")}</button>
           </div>
         )}
 
