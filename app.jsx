@@ -1124,8 +1124,16 @@ function App() {
         if (r.status === 409) return { ok: false, reason: "deja" };
         if (!r.ok) return { ok: false, reason: r.status >= 500 ? "server" : "refuse" };
         const d = await r.json();
-        // Le solde verrouillé bouge côté serveur ; on remonte le montant pour
-        // l'afficher immédiatement, le prochain /save fera foi.
+        // Appliquer le solde RENVOYÉ par le serveur, jamais locked + reward : le
+        // gain part en liquide ou en verrouillé selon que le compte est vérifié, et
+        // d'autres sources créditent en parallèle. Sans cette mise à jour l'écran
+        // gardait l'ancien chiffre et le joueur croyait sa récompense perdue —
+        // « Réclamé ✓ » sans rien voir arriver (signalé en parcours le 28/07).
+        setG((st) => ({
+          ...st,
+          liquid: d.new_liquid != null ? Number(d.new_liquid) : st.liquid,
+          locked: d.new_locked != null ? Number(d.new_locked) : st.locked,
+        }));
         return { ok: true, reward: Number(d.reward) || 0 };
       } catch (e) {
         return { ok: false, reason: "network" };
