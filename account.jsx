@@ -97,6 +97,12 @@ function LockedBanner() {
   const [dismissedAt, setDismissedAt] = useState(readDismissed);
   const [howto, setHowto] = useState(false);
   const [checking, setChecking] = useState(false);
+  // Parcours de découverte. Chargé à l'ouverture de la fenêtre seulement : le
+  // bandeau est monté en permanence, un appel au montage serait tiré à chaque
+  // session pour des joueurs qui n'ouvriront jamais ce panneau.
+  const [disc, setDisc] = useState(null);
+  const [txid, setTxid] = useState("");
+  const [sending, setSending] = useState(false);
 
   const show = ACC.shouldShowLockedBanner({
     kind: g.accountKind, onchainVerified: g.onchainVerified,
@@ -109,6 +115,31 @@ function LockedBanner() {
   // prouve simplement l'activite de l'adresse avec laquelle il est deja connecte —
   // rien a lier, elle est deja la sienne.
   const genere = g.accountKind === ACC.KIND_GENERATED;
+
+  const loadDisc = () => {
+    actions.discoveryState().then((r) => { if (r.ok) setDisc(r.data); }).catch(() => {});
+  };
+  const openHowto = () => { setHowto(true); loadDisc(); };
+
+  // Le parcours ne concerne que les comptes créés sans wallet ; le serveur en
+  // décide (`eligible`). Un joueur venu avec UniSat voit ce même bandeau tant
+  // qu'il n'est pas vérifié, mais n'a pas de parcours : il garde l'écran d'origine.
+  const parcours = !!(disc && disc.eligible);
+  const lie = !!g.linkedWallet;
+
+  const submitTxid = async () => {
+    setSending(true);
+    let r;
+    try { r = await actions.submitDustTxid(txid); } finally { setSending(false); }
+    if (r.ok) {
+      toast(I18N.t("DISC_TXID_OK"), "good");
+      setTxid("");
+      loadDisc(); // relire l'état plutôt que de le patcher : une seule source de vérité
+      return;
+    }
+    const messages = { dust: "DISC_TXID_NONE", bad: "DISC_TXID_BAD" };
+    toast(I18N.t(messages[r.reason] || "ACC_VERIFY_ERR"), "bad");
+  };
 
   const close = () => { const t = Date.now(); writeDismissed(t); setDismissedAt(t); };
   const check = async () => {
@@ -123,7 +154,14 @@ function LockedBanner() {
     setChecking(true);
     let r;
     try { r = await actions.linkWallet(); } finally { setChecking(false); }
-    if (r.ok) { toast(I18N.t("ACC_LINK_OK"), "good"); setHowto(false); return; }
+    if (r.ok) {
+      toast(I18N.t("ACC_LINK_OK"), "good");
+      // Dans le parcours, lier n'est pas la fin : la poussière part ensuite et le
+      // joueur doit voir la suite. Fermer ici l'obligerait à rouvrir sans savoir
+      // qu'il reste une étape. Hors parcours, lier conclut — on ferme comme avant.
+      if (parcours) { loadDisc(); return; }
+      setHowto(false); return;
+    }
     const messages = {
       "no-unisat": "ACC_LINK_NO_UNISAT",
       "taken": "ACC_LINK_TAKEN",
@@ -139,7 +177,7 @@ function LockedBanner() {
       {show && (
         <div className="acc-banner">
           <span className="grow">🔒 {I18N.t("ACC_LOCKED_BANNER")}</span>
-          <button className="btn sm" onClick={() => setHowto(true)}>{I18N.t("ACC_LOCKED_HOW")}</button>
+          <button className="btn sm" onClick={openHowto}>{I18N.t("ACC_LOCKED_HOW")}</button>
           <button className="btn-link" style={{ background: "none", border: "none", color: "var(--text-dim)", fontSize: 11, cursor: "pointer", textDecoration: "underline" }}
                   onClick={close}>{I18N.t("ACC_LOCKED_CLOSE")}</button>
         </div>
@@ -154,10 +192,58 @@ function LockedBanner() {
           </div>
           <div className="acc-warn" style={{ marginTop: 12 }}>{I18N.t("ACC_PHISHING_WARN")}</div>
           <div className="muted" style={{ fontSize: 12, marginTop: 12, lineHeight: 1.6 }}>{I18N.t("ACC_HOWTO_CAP")}</div>
-          <button className="btn block" style={{ marginTop: 14 }} disabled={checking}
-                  onClick={genere ? link : check}>
-            {I18N.t(genere ? "ACC_LINK_BTN" : "ACC_VERIFY_BTN")}
-          </button>
+
+          {/* Parcours de découverte : le volet crypto en cinq états, tous dictés
+              par le serveur. Un compte non éligible garde l'écran d'origine. */}
+          {parcours ? (
+            <div style={{ marginTop: 16, borderTop: "1px solid var(--line)", paddingTop: 14 }}>
+              <div className="mono" style={{ fontSize: 13, marginBottom: 8 }}>{I18N.t("DISC_CRYPTO_TITLE")}</div>
+
+              {!disc.game_done && (
+                <div className="muted" style={{ fontSize: 12, lineHeight: 1.6, opacity: 0.65 }}>
+                  {I18N.t("DISC_CRYPTO_LOCKED")}
+                </div>
+              )}
+
+              {disc.game_done && !lie && (
+                <button className="btn block" disabled={checking} onClick={link}>
+                  {I18N.t("ACC_LINK_BTN")}
+                </button>
+              )}
+
+              {disc.game_done && lie && !disc.dust_sent && (
+                <div className="muted" style={{ fontSize: 12, lineHeight: 1.6 }}>{I18N.t("DISC_DUST_WAIT")}</div>
+              )}
+
+              {disc.game_done && lie && disc.dust_sent && !disc.txid_verified && (
+                <>
+                  <div className="muted" style={{ fontSize: 12, lineHeight: 1.6 }}>{I18N.t("DISC_DUST_ARRIVED")}</div>
+                  <label className="mono" style={{ fontSize: 12, display: "block", margin: "10px 0 4px" }}>
+                    {I18N.t("DISC_TXID_LABEL")}
+                  </label>
+                  <input className="field" value={txid} onChange={(e) => setTxid(e.target.value)}
+                         placeholder={I18N.t("DISC_TXID_PLACEHOLDER")}
+                         autoComplete="off" autoCapitalize="off" autoCorrect="off" spellCheck={false} />
+                  <div className="muted" style={{ fontSize: 11, marginTop: 4 }}>{I18N.t("DISC_TXID_HINT")}</div>
+                  <button className="btn block" style={{ marginTop: 10 }}
+                          disabled={sending || !txid.trim()} onClick={submitTxid}>
+                    {I18N.t("DISC_TXID_BTN")}
+                  </button>
+                </>
+              )}
+
+              {disc.txid_verified && (
+                <div className="mono" style={{ fontSize: 12, lineHeight: 1.6, color: "var(--success)" }}>
+                  {I18N.t("DISC_TXID_OK")}
+                </div>
+              )}
+            </div>
+          ) : (
+            <button className="btn block" style={{ marginTop: 14 }} disabled={checking}
+                    onClick={genere ? link : check}>
+              {I18N.t(genere ? "ACC_LINK_BTN" : "ACC_VERIFY_BTN")}
+            </button>
+          )}
         </Modal>
       )}
     </>

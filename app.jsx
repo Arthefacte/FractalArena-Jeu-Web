@@ -345,6 +345,9 @@ function App() {
             next.ordinalName = save.ordinal_name || ""; // nom ordinal du serveur, vide si absent
             next.totem = totem;
             next.onchainVerified = save.onchain_verified !== false;
+            // Le portefeuille lié n'était écrit qu'au moment de la liaison : au
+            // rechargement, l'état le perdait. Le serveur l'expose désormais.
+            next.linkedWallet = save.linked_wallet || "";
             return next;
           });
           return false; // joueur existant
