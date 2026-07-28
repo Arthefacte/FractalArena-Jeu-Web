@@ -32,7 +32,13 @@ function nestProgress(flat) {
 }
 
 function serverToState(save, addr, s) {
-  const roster = Array.isArray(save.creatures) && save.creatures.length > 0 ? save.creatures : D.starterRoster();
+  // Le roster vient du serveur, toujours : il le génère à la création du compte
+  // (accounts.js et server.js, « creatures SERVER-OWNED ») et le client ne doit pas
+  // pouvoir s'en forger un. Pas de repli fabriqué ici : il a masqué pendant tout le
+  // lot « compte sans wallet » un compte qui n'avait aucune créature en base, et
+  // auquel le serveur refusait donc tous les combats — l'écran paraissait normal.
+  // Une collection vide est un symptôme lisible ; une équipe fantôme ne l'est pas.
+  const roster = Array.isArray(save.creatures) ? save.creatures : [];
   const rosterIds = new Set(roster.map((b) => b.id));
   return {
     ...s,
