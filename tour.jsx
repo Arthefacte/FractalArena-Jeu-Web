@@ -154,10 +154,12 @@ function TourLeaderboard() {
   );
 }
 
-/* Modale de départ (gratuit ou 2000 FA). */
-function TourStartModal({ score, balance, busy, onConfirm, onClose }) {
+/* Modale de départ (gratuit, ou le prix du prochain run annoncé par le serveur). */
+function TourStartModal({ state, score, balance, busy, onConfirm, onClose }) {
   const free = !score.free_run_used;
-  const cost = free ? 0 : TU.ENTRY_COST;
+  // Le montant vient du serveur (`next_cost`) : depuis que le prix monte avec les runs
+  // déjà payés dans la semaine, une constante figée afficherait 2 000 là où on débite 500.
+  const cost = TU.nextCost(state, score);
   const canPay = balance >= cost;
   return (
     <Modal onClose={onClose} accent="var(--elec)">
@@ -257,10 +259,16 @@ function Tour() {
     setBusy(false);
     setShowStart(false);
     if (!r.ok) { toast(tourErr(r.reason), "bad"); refresh(); return; }
-    setSt((s) => ({
-      ...s, run: r.run,
-      score: { ...s.score, free_run_used: true, runs_paid: s.score.runs_paid + (r.cost > 0 ? 1 : 0) },
-    }));
+    setSt((s) => {
+      const runsPaid = s.score.runs_paid + (r.cost > 0 ? 1 : 0);
+      return {
+        ...s, run: r.run,
+        score: { ...s.score, free_run_used: true, runs_paid: runsPaid },
+        // `next_cost` vient d'être invalidé par ce run : le recalculer localement, sinon
+        // l'écran continue d'annoncer le prix précédent jusqu'au prochain /tower/state.
+        next_cost: TU.entryCost(runsPaid),
+      };
+    });
   }
 
   async function onFight() {
@@ -372,7 +380,7 @@ function Tour() {
         <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 24, textAlign: "center", marginBottom: 14 }}>
           <div className="mono" style={{ fontSize: 13, color: "var(--text-dim)", marginBottom: 14 }}>{I18N.t("TOUR_NO_RUN")}</div>
           <button className="btn btn-fire lg" onClick={() => setShowStart(true)} disabled={busy}>
-            {!st.score.free_run_used ? I18N.t("TOUR_START_FREE") : <FaText text={I18N.t("TOUR_START_PAID", fmt(TU.ENTRY_COST))} />}
+            {!st.score.free_run_used ? I18N.t("TOUR_START_FREE") : <FaText text={I18N.t("TOUR_START_PAID", fmt(TU.nextCost(st, st.score)))} />}
           </button>
         </div>
       ) : (
@@ -426,7 +434,7 @@ function Tour() {
       <TourLeaderboard />
 
       {showStart && (
-        <TourStartModal score={st.score} balance={g.liquid + g.locked} busy={busy}
+        <TourStartModal state={st} score={st.score} balance={g.liquid + g.locked} busy={busy}
           onConfirm={onStart} onClose={() => setShowStart(false)} />
       )}
       {showAbandon && (
