@@ -610,6 +610,12 @@ function Boosts() {
 function Wallet() {
   const { g, actions, toast } = useFA();
   const [modal, setModal] = useState(null);
+  // Où partiront réellement les jetons. Un compte créé sans wallet retire vers le
+  // portefeuille qu'il a lié, jamais vers son adresse de compte (le serveur en détient
+  // la seed). Cette adresse n'était affichée nulle part : le joueur devait faire
+  // confiance sans pouvoir vérifier.
+  const dest = window.FA_ACCOUNT.withdrawDestination(g);
+  const peutRetirer = !!window.FA_ACCOUNT.withdrawSigner(g);
   return (
     <div className="container">
       <SectionHead eyebrow="FRACTALARENA" title={I18N.t("WL_TITLE")} />
@@ -634,6 +640,15 @@ function Wallet() {
       <div className="flex gap16" style={{ marginTop: 18 }}>
         <button className="btn btn-elec lg" style={{ flex: 1 }} onClick={() => setModal("deposit")}>↓ {I18N.t("WL_DEPOSIT")}</button>
         <button className="btn btn-gold lg" style={{ flex: 1 }} onClick={() => setModal("withdraw")}>↑ {I18N.t("WL_WITHDRAW")}</button>
+      </div>
+
+      <div className="panel oct" style={{ border: "1px solid var(--line)", padding: "12px 14px", marginTop: 16 }}>
+        <div className="flex between center" style={{ gap: 10, flexWrap: "wrap" }}>
+          <span className="mono muted" style={{ fontSize: 12 }}>↑ {I18N.t("WL_WD_DEST")}</span>
+          {peutRetirer
+            ? <CopyAddr addr={dest} />
+            : <span className="mono" style={{ fontSize: 12, color: "var(--fire)" }}>{I18N.t("WL_WD_DEST_NONE")}</span>}
+        </div>
       </div>
 
       {modal === "deposit" && <DepositModal onClose={() => setModal(null)} />}
@@ -719,7 +734,14 @@ function WithdrawModal({ onClose }) {
       // Step-up : signature UniSat fraîche → token retrait
       toast(I18N.t("WL_WD_SIGN"), "info");
       const a = await actions.authForWithdraw();
-      if (!a.ok) { actions.deposit(n); toast(I18N.t("WL_WD_SIGN_NEEDED"), "bad"); return; }
+      if (!a.ok) {
+        actions.deposit(n);
+        // Un compte créé sans wallet qui n'a rien lié n'a AUCUNE signature à produire :
+        // lui réclamer une signature ne lui dit pas quoi faire. Il doit lier son
+        // portefeuille — c'est là que partiraient ses jetons.
+        toast(I18N.t(a.reason === "not-linked" ? "WL_WD_NOT_LINKED" : "WL_WD_SIGN_NEEDED"), "bad");
+        return;
+      }
 
       const resp = await fetch(`${API_URL}/withdraw`, {
         method: "POST",
