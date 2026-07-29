@@ -75,9 +75,40 @@
     return now - dismissed >= BANNER_SNOOZE_MS;
   }
 
+  // Qui signe une demande de retrait, et pour quel compte.
+  //
+  // Un compte genere ne peut PAS signer sous sa propre adresse : elle est produite
+  // par le serveur, qui seul en detient la seed. UniSat, lui, ne sait signer que le
+  // portefeuille du joueur. Le joueur signe donc avec son PORTEFEUILLE LIE, et le
+  // serveur emet le jeton pour son COMPTE (parametre `account`, serveur PR #72).
+  //
+  // Renvoie null quand aucun retrait n'est possible — un compte genere qui n'a lie
+  // aucun portefeuille. L'appelant doit alors dire quoi faire (lier son
+  // portefeuille), pas laisser partir une signature vouee au refus.
+  function withdrawSigner(state) {
+    const s = state || {};
+    const wallet = s.wallet || "";
+    const linked = s.linkedWallet || "";
+    if (!wallet) return null;
+    if (s.accountKind !== KIND_GENERATED) return { signer: wallet, account: null };
+    if (!linked) return null;
+    // linked === wallet : le serveur refuse deja (« portefeuille identique »), et
+    // viser un compte egal au signataire ne changerait rien au message signe.
+    return linked === wallet ? { signer: wallet, account: null } : { signer: linked, account: wallet };
+  }
+
+  // Adresse vers laquelle partiront reellement les jetons. Meme regle que le
+  // serveur (`destination = linked_wallet || wallet`) : le joueur doit pouvoir la
+  // verifier avant de retirer, elle n'etait affichee nulle part.
+  function withdrawDestination(state) {
+    const s = state || {};
+    return s.linkedWallet || s.wallet || "";
+  }
+
   window.FA_ACCOUNT = {
     KIND_GENERATED, KIND_UNISAT, TOKEN_KEY, KIND_KEY, BANNER_SNOOZE_MS,
     readToken, writeToken, clearToken, readKind,
     isValidRecoveryCode, looksLikeSeed, shouldShowLockedBanner,
+    withdrawSigner, withdrawDestination,
   };
 })();

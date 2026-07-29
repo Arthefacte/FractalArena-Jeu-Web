@@ -423,6 +423,13 @@
     WL_WD_INSUFF: { FR: "Solde Liquide insuffisant", EN: "Insufficient Liquid balance", ZH: "可用余额不足" },
     WL_WD_SIGN: { FR: "Signe le retrait dans ton wallet…", EN: "Sign the withdrawal in your wallet…", ZH: "在钱包中签名以确认提现…" },
     WL_WD_SIGN_NEEDED: { FR: "Signature requise pour retirer (wallet UniSat).", EN: "Signature required to withdraw (UniSat wallet).", ZH: "提现需要签名（UniSat 钱包）。" },
+    // Compte créé sans wallet : le retrait exige d'avoir lié son portefeuille — c'est
+    // là que partiront les jetons, et c'est avec lui qu'on signe. « Signature requise »
+    // ne disait rien à ce joueur : il n'a aucune signature à produire tant qu'il n'a
+    // rien lié.
+    WL_WD_NOT_LINKED: { FR: "Lie d'abord ton portefeuille : c'est là que partiront tes retraits. Rendez-vous dans « Comment débloquer mes gains ».", EN: "Link your wallet first — that's where your withdrawals will go. See “How to unlock my earnings”.", ZH: "请先绑定你的钱包：提现将发往该地址。详见“如何解锁我的收益”。" },
+    WL_WD_DEST: { FR: "Destination des retraits", EN: "Withdrawals go to", ZH: "提现发往" },
+    WL_WD_DEST_NONE: { FR: "Aucun portefeuille lié — retrait indisponible", EN: "No wallet linked — withdrawal unavailable", ZH: "未绑定钱包，暂不可提现" },
     AUTH_EXPIRED: { FR: "Session expirée — reconnecte-toi.", EN: "Session expired — please reconnect.", ZH: "会话已过期，请重新连接。" },
     WL_REWARD_POOL: { FR: "Reward Pool", EN: "Reward Pool", ZH: "奖励池" },
     WL_COPY: { FR: "Copier", EN: "Copy", ZH: "复制" },
