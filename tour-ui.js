@@ -2,11 +2,35 @@
    FRACTAL ARENA — Tour infinie : helpers purs (testables Node)
    Miroir d'affichage du serveur (tower.js) — le serveur fait foi
    pour toute décision (validation, paliers, PV). PIÈGE : garder
-   TIERS/ENTRY_COST identiques au serveur (test anti-dérive Task 5).
+   TIERS/RERUN_COSTS identiques au serveur (test anti-dérive Task 5).
    ============================================================ */
 (function () {
-  const ENTRY_COST = 2000; // re-run payant, 100 % → Buyback Reserve
+  // Prix du re-run, progressif dans la semaine (2026-07-29) : 100 pour le premier,
+  // puis 125, puis 150. Miroir de tower.js — le montant réellement débité est celui
+  // du serveur, qui l'annonce dans /tower/state (`next_cost`).
+  const RERUN_COSTS = [100, 125, 150];
+  function entryCost(runsPaid) {
+    const n = Number(runsPaid);
+    const i = Number.isFinite(n) && n > 0 ? Math.min(Math.floor(n), RERUN_COSTS.length - 1) : 0;
+    return RERUN_COSTS[i];
+  }
+
+  // Coût du prochain run. Le montant du serveur l'emporte toujours : afficher un prix
+  // plus bas que celui qui sera débité passerait pour une arnaque, et le serait de
+  // notre fait. Le calcul local ne sert que de repli — pendant la fenêtre où ce client
+  // est déployé et le serveur pas encore, `next_cost` est absent.
+  function nextCost(state, score) {
+    const s = state || {};
+    const sc = score || {};
+    const annonce = Number(s.next_cost);
+    if (Number.isFinite(annonce) && annonce >= 0 && typeof s.next_cost !== "object") return annonce;
+    return sc.free_run_used ? entryCost(sc.runs_paid) : 0;
+  }
+
   const TIERS = [
+    // Palier d'entrée (2026-07-29) : sans lui, un débutant — mort attendue vers
+    // l'étage 2-3 avec le roster de départ — ne touchait jamais rien à la Tour.
+    { floor: 3,  fa: 50,   silver: 0, gold: 0 },
     { floor: 5,  fa: 100,  silver: 0, gold: 0 },
     { floor: 10, fa: 150,  silver: 1, gold: 0 },
     { floor: 15, fa: 250,  silver: 0, gold: 0 },
@@ -117,5 +141,5 @@
     return Array.isArray(list) ? list.map(formatMutator) : [];
   }
 
-  window.FA_TOUR_UI = { ENTRY_COST, TIERS, tiersView, hpFracOf, isDeadInRun, rosterRunView, aliveCount, validateEngage, nextTier, pickFittest3, formatMutator, formatMutators };
+  window.FA_TOUR_UI = { RERUN_COSTS, entryCost, nextCost, TIERS, tiersView, hpFracOf, isDeadInRun, rosterRunView, aliveCount, validateEngage, nextTier, pickFittest3, formatMutator, formatMutators };
 })();
