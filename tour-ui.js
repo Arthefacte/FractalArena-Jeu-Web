@@ -5,10 +5,10 @@
    TIERS/RERUN_COSTS identiques au serveur (test anti-dérive Task 5).
    ============================================================ */
 (function () {
-  // Prix du re-run, progressif dans la semaine (2026-07-29) : 500 pour le premier,
-  // puis 1 000, puis 2 000. Miroir de tower.js — le montant réellement débité est
-  // celui du serveur, qui l'annonce dans /tower/state (`next_cost`).
-  const RERUN_COSTS = [500, 1000, 2000];
+  // Prix du re-run, progressif dans la semaine (2026-07-29) : 100 pour le premier,
+  // puis 125, puis 150. Miroir de tower.js — le montant réellement débité est celui
+  // du serveur, qui l'annonce dans /tower/state (`next_cost`).
+  const RERUN_COSTS = [100, 125, 150];
   function entryCost(runsPaid) {
     const n = Number(runsPaid);
     const i = Number.isFinite(n) && n > 0 ? Math.min(Math.floor(n), RERUN_COSTS.length - 1) : 0;
