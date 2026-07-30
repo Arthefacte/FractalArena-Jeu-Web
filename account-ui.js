@@ -105,10 +105,26 @@
     return s.linkedWallet || s.wallet || "";
   }
 
+  // Ce qu'il reste a faire du volet crypto, ou null s'il n'y a rien a demander.
+  // Tout vient du serveur (/discovery/state) : le client ne decide jamais si un
+  // parcours est fini, il le lit.
+  //
+  // Sert deux affichages : la fenetre « Bien joue » qui s'ouvre d'elle-meme quand
+  // la sixieme etape vient d'etre reclamee, et la porte permanente du panneau du
+  // parcours. Avant, la seule porte etait un bandeau fermable qui se taisait
+  // ensuite 24 h : un joueur qui l'avait ferme finissait ses six etapes sans
+  // qu'aucun ecran ne lui propose de lier son portefeuille.
+  function discoveryNextAction(disc, linkedWallet) {
+    if (!disc || !disc.eligible || !disc.game_done) return null;
+    if (disc.txid_verified) return null;
+    if (!linkedWallet) return "link";
+    return disc.dust_sent ? "txid" : "dust";
+  }
+
   window.FA_ACCOUNT = {
     KIND_GENERATED, KIND_UNISAT, TOKEN_KEY, KIND_KEY, BANNER_SNOOZE_MS,
     readToken, writeToken, clearToken, readKind,
-    isValidRecoveryCode, looksLikeSeed, shouldShowLockedBanner,
+    isValidRecoveryCode, looksLikeSeed, shouldShowLockedBanner, discoveryNextAction,
     withdrawSigner, withdrawDestination,
   };
 })();

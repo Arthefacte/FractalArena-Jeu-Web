@@ -2,8 +2,9 @@
    FRACTAL ARENA — Écran Quêtes quotidiennes
    ============================================================ */
 const { useState, useEffect } = React;
-const { useFA, cx, SectionHead, TokenIcon } = window;
+const { useFA, cx, SectionHead, TokenIcon, DiscoveryFinish } = window;
 const I18N = window.FA_I18N;
+const ACC = window.FA_ACCOUNT;
 
 const Q_LABEL = { wins: "Q_WINS", paid: "Q_PAID", chat: "Q_CHAT" };
 
@@ -74,10 +75,12 @@ function Quests() {
   // décide (discovery.js). On ne le déduit jamais de l'état client.
   const [disc, setDisc] = useState(null);
   const [claimingDisc, setClaimingDisc] = useState(null);
+  const [finish, setFinish] = useState(false);
 
-  const loadDisc = () => {
-    actions.discoveryState().then((r) => { if (r.ok) setDisc(r.data); }).catch(() => {});
-  };
+  const loadDisc = () =>
+    actions.discoveryState()
+      .then((r) => { if (r.ok) setDisc(r.data); return r.ok ? r.data : null; })
+      .catch(() => null);
   useEffect(() => { loadDisc(); }, []);
 
   const onClaimDisc = async (id) => {
@@ -87,13 +90,22 @@ function Quests() {
     if (!r.ok) return;
     // Recharger depuis le serveur plutôt que de patcher localement : une seule
     // source de vérité, et la progression des autres étapes a pu bouger.
-    loadDisc();
+    const apres = await loadDisc();
+    // La sixième étape vient d'être réclamée : le volet crypto s'ouvre de
+    // lui-même. C'est le seul moment où le joueur est là, et jusqu'ici la seule
+    // porte était un bandeau qu'il pouvait avoir fermé pour 24 h.
+    if (ACC.discoveryNextAction(apres, g.linkedWallet)) setFinish(true);
   };
 
-  // Visible seulement si le compte est éligible ET qu'il reste une étape à
-  // réclamer : un tutoriel terminé ne doit plus occuper l'écran.
+  // Ce qu'il reste à faire du volet crypto, décidé par le serveur (null = rien).
+  const etapeCrypto = ACC.discoveryNextAction(disc, g.linkedWallet);
+
+  // Visible tant qu'il reste une étape à réclamer, OU une étape crypto à faire :
+  // un tutoriel terminé ne doit plus occuper l'écran, mais un parcours fini dont
+  // le portefeuille n'est pas lié doit garder sa porte — sans elle, le joueur
+  // n'avait plus que le bandeau fermable pour y accéder.
   const showDisc = !!(disc && disc.eligible && disc.steps.length > 0
-                      && !disc.steps.every((s) => s.claimed));
+                      && (!disc.steps.every((s) => s.claimed) || etapeCrypto));
 
   const d = st.data;
   return (
@@ -122,8 +134,14 @@ function Quests() {
               );
             })}
           </div>
+          {etapeCrypto && (
+            <button className="btn btn-gold block" style={{ marginTop: 12 }} onClick={() => setFinish(true)}>
+              {I18N.t("DISC_FINISH_OPEN")}
+            </button>
+          )}
         </div>
       )}
+      {finish && <DiscoveryFinish disc={disc} reload={loadDisc} onClose={() => setFinish(false)} />}
       <SectionHead eyebrow="🎯 DAILY" title={I18N.t("Q_TITLE")} />
       {st.loading && <div className="muted" style={{ textAlign: "center", padding: 24 }}>{I18N.t("Q_LOADING")}</div>}
       {st.error && <div className="muted" style={{ textAlign: "center", padding: 24, color: "var(--alert)" }}>{I18N.t("Q_ERROR")}</div>}

@@ -123,3 +123,45 @@ test("bandeau : ferme, il se tait 24 h puis revient", () => {
   assert.ok(!A.shouldShowLockedBanner({ ...base, dismissedAt: now - 3600_000 }), "1 h après : silencieux");
   assert.ok(A.shouldShowLockedBanner({ ...base, dismissedAt: now - 25 * 3600_000 }), "25 h après : revient");
 });
+
+// ============================================================
+// La fenêtre « Bien joué » (decision du user, 2026-07-29)
+//
+// Le volet crypto n'avait qu'une seule porte : un bandeau que le joueur peut
+// fermer, et qui se tait alors 24 h. Un joueur qui l'avait ferme finissait ses
+// six etapes sans qu'aucun ecran ne lui propose de lier son portefeuille — il ne
+// lui restait plus que la console du navigateur. Cette fonction dit ce qu'il
+// reste a faire, pour que la fenetre s'ouvre d'elle-meme au bon moment et que le
+// panneau du parcours garde une porte permanente.
+// ============================================================
+
+test("l'etape crypto restante se deduit de l'etat serveur", () => {
+  const { A } = load();
+  const fini = { eligible: true, game_done: true, dust_sent: false, txid_verified: false };
+
+  assert.strictEqual(A.discoveryNextAction(fini, ""), "link",
+    "six etapes finies, aucun portefeuille lie : c'est le moment de le lier");
+  assert.strictEqual(A.discoveryNextAction(fini, "bc1qjoueur"), "dust",
+    "lie mais poussiere pas encore partie : on attend, il n'y a rien a coller");
+  assert.strictEqual(A.discoveryNextAction({ ...fini, dust_sent: true }, "bc1qjoueur"), "txid",
+    "la poussiere est arrivee : le joueur peut aller chercher son txid");
+  assert.strictEqual(A.discoveryNextAction({ ...fini, dust_sent: true, txid_verified: true }, "bc1qjoueur"), null,
+    "parcours termine : plus rien a demander, la fenetre ne doit plus surgir");
+});
+
+test("rien n'est propose tant que le volet jeu n'est pas fini", () => {
+  const { A } = load();
+  assert.strictEqual(
+    A.discoveryNextAction({ eligible: true, game_done: false, dust_sent: false, txid_verified: false }, ""),
+    null,
+    "la barriere reste les six etapes : aucune fenetre ne doit les court-circuiter");
+});
+
+test("un compte hors parcours n'a jamais d'etape crypto", () => {
+  const { A } = load();
+  // Un joueur venu avec UniSat : le serveur rend {eligible:false}. Lui ouvrir
+  // « Bien joue, lie ton portefeuille » l'enverrait vers un ecran qui refuse
+  // (403 parcours_non_applicable) et redirigerait ses retraits s'il aboutissait.
+  assert.strictEqual(A.discoveryNextAction({ eligible: false, steps: [] }, ""), null);
+  assert.strictEqual(A.discoveryNextAction(null, ""), null, "etat pas encore charge : ne rien supposer");
+});

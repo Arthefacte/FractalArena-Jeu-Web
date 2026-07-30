@@ -590,7 +590,6 @@ function App() {
         if (r.status === 409) return { ok: false, reason: "taken" };
         if (!r.ok) {
           const j = await r.json().catch(() => ({}));
-          if (j.error === "aucune_activite") return { ok: false, reason: "no-activity" };
           if (j.error === "portefeuille_identique") return { ok: false, reason: "same" };
           return { ok: false, reason: r.status >= 500 ? "server" : "refused" };
         }
