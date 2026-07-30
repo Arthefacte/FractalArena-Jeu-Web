@@ -265,7 +265,7 @@ function Arene() {
                 );
               })}
               {/* Roster : cocher 3 bêtes */}
-              <div className="mono" style={{ fontSize: 11, color: "var(--text-dim)", margin: "8px 0 2px" }}>{I18N.t("AR2_DEFENDER_EDGE_HINT") || "Le défenseur bénéficie d'un avantage terrain (+PV/DEF)."}</div>
+              <div className="mono" style={{ fontSize: 11, color: "var(--text-dim)", margin: "8px 0 2px" }}>{I18N.t("AR2_DEFENDER_EDGE_HINT")}</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
                 {(g.roster || []).map((b) => {
                   const on = pick.ids.includes(b.id);
@@ -277,7 +277,7 @@ function Arene() {
                 })}
               </div>
               <div className="flex gap8" style={{ marginTop: 12, justifyContent: "flex-end" }}>
-                <button className="btn sm" onClick={() => setPick(null)}>{I18N.t("CANCEL") || "Annuler"}</button>
+                <button className="btn sm" onClick={() => setPick(null)}>{I18N.t("CANCEL")}</button>
                 <button className="btn btn-elec sm" disabled={!ready || busy} onClick={() => { const ids = [...pick.ids]; const t = pick.target, rv = pick.revanche, myPosture = pick.posture || "equilibre", oppPosture = pick.oppPosture || "equilibre"; setPick(null); onAttack(t, rv, ids, myPosture, oppPosture); }}>{I18N.t("AR2_ATTACK")}</button>
               </div>
             </div>
