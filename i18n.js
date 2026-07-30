@@ -178,7 +178,7 @@
     DISC_D_LEVEL: { FR: "Monter une bête au niveau 5", EN: "Raise a beast to level 5", ZH: "将一只野兽提升至 5 级" },
     DISC_D_CAMP: { FR: "Terminer 3 étages de la Campagne", EN: "Clear 3 Campaign floors", ZH: "通关 3 层战役" },
     DISC_D_TOWER: { FR: "Gagner ton premier combat dans la Tour", EN: "Win your first Tower fight", ZH: "赢得高塔首场战斗" },
-    DISC_D_PVP: { FR: "Gagner un combat en Arène", EN: "Win an Arena fight", ZH: "赢得一场竞技场战斗" },
+    DISC_D_PVP: { FR: "Disputer un combat en Arène", EN: "Fight a battle in the Arena", ZH: "在竞技场进行一场战斗" },
 
     DISC_CLAIM: { FR: "Réclamer", EN: "Claim", ZH: "领取" },
     DISC_CLAIMED: { FR: "Réclamé ✓", EN: "Claimed ✓", ZH: "已领取 ✓" },
