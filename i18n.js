@@ -137,14 +137,16 @@
     ACC_LOCKED_CLOSE: { FR: "Plus tard", EN: "Later", ZH: "稍后" },
     ACC_HOWTO_TITLE: { FR: "Débloquer tes gains", EN: "Unlock your earnings", ZH: "解锁你的收益" },
     ACC_HOWTO_1: { FR: "1. Installe UniSat et crée-toi un portefeuille (le tien, pas celui du jeu).", EN: "1. Install UniSat and create yourself a wallet (your own, not the game's).", ZH: "1. 安装 UniSat 并创建一个属于你自己的钱包（不是游戏的钱包）。" },
-    ACC_HOWTO_2: { FR: "2. Assure-toi d'avoir un peu de Fractal Bitcoin sur cette adresse.", EN: "2. Make sure you hold a little Fractal Bitcoin on that address.", ZH: "2. 确保该地址上持有少量 Fractal Bitcoin。" },
+    // Ne demande plus de solde : le serveur ne l'exige plus (2026-07-29), et le
+    // réclamer renvoyait le joueur chercher du Fractal Bitcoin ailleurs alors que
+    // le jeu lui en envoie justement pour amorcer ce portefeuille.
+    ACC_HOWTO_2: { FR: "2. Rien à y déposer : un portefeuille tout neuf et vide convient.", EN: "2. Nothing to deposit: a brand-new, empty wallet is fine.", ZH: "2. 无需充值：全新的空钱包即可。" },
     ACC_HOWTO_3: { FR: "3. Reviens ici et lie-le à ton compte : tes gains en attente sont libérés d'un coup, et tes retraits partiront vers ce portefeuille.", EN: "3. Come back here and link it to your account: your pending earnings are released at once, and your withdrawals will go to that wallet.", ZH: "3. 回到此处将其绑定到账号：待解锁收益一次性释放，此后提现将发往该钱包。" },
     ACC_HOWTO_CAP: { FR: "Aucun dépôt obligatoire, aucun plafond. Le solde verrouillé normal du jeu (quêtes, campagne, connexion, combats gratuits) reste verrouillé, comme pour tout le monde.", EN: "No deposit required, no cap. The game's normal locked balance (quests, campaign, daily login, free fights) stays locked, as it does for everyone.", ZH: "无需充值，也无上限。游戏本身的锁定余额（任务、战役、每日登录、免费战斗）仍保持锁定，对所有玩家一视同仁。" },
     ACC_LINK_BTN: { FR: "Lier mon portefeuille UniSat", EN: "Link my UniSat wallet", ZH: "绑定我的 UniSat 钱包" },
     ACC_LINK_OK: { FR: "Portefeuille lié ✓ Tes gains sont libérés et tes retraits partiront là-bas.", EN: "Wallet linked ✓ Your earnings are released and withdrawals will go there.", ZH: "钱包已绑定 ✓ 收益已释放，提现将发往该地址。" },
     ACC_LINK_NO_UNISAT: { FR: "Installe l'extension UniSat sur ordinateur pour lier un portefeuille.", EN: "Install the UniSat extension on desktop to link a wallet.", ZH: "请在电脑上安装 UniSat 扩展以绑定钱包。" },
     ACC_LINK_TAKEN: { FR: "Ce portefeuille est déjà lié à un autre compte. Utilises-en un autre.", EN: "That wallet is already linked to another account. Use a different one.", ZH: "该钱包已绑定至其他账号，请更换一个。" },
-    ACC_LINK_NO_ACTIVITY: { FR: "Ce portefeuille n'a aucune activité on-chain. Envoie-lui d'abord un peu de Fractal Bitcoin.", EN: "That wallet has no on-chain activity. Send it a little Fractal Bitcoin first.", ZH: "该钱包没有链上活动，请先向其转入少量 Fractal Bitcoin。" },
     ACC_LINK_SAME: { FR: "C'est l'adresse de ton compte de jeu. Crée un portefeuille séparé dans UniSat.", EN: "That's your game account address. Create a separate wallet in UniSat.", ZH: "这是你的游戏账号地址，请在 UniSat 中另建一个钱包。" },
     ACC_LINK_REJECTED: { FR: "Liaison annulée.", EN: "Linking cancelled.", ZH: "绑定已取消。" },
     ACC_LINK_FAIL: { FR: "La liaison n'a pas abouti. Réessaie dans un moment.", EN: "Linking could not be completed. Try again shortly.", ZH: "绑定未能完成，请稍后再试。" },
@@ -188,6 +190,12 @@
     DISC_TXID_BAD: { FR: "Ce n'est pas le bon identifiant. Vérifie dans UniSat la transaction que tu viens de recevoir.", EN: "That's not the right ID. Check in UniSat the transaction you just received.", ZH: "ID 不正确。请在 UniSat 中核对你刚收到的交易。" },
     DISC_TXID_NONE: { FR: "La transaction n'est pas encore partie. Réessaie dans quelques minutes.", EN: "The transaction hasn't been sent yet. Try again in a few minutes.", ZH: "交易尚未发出，请几分钟后再试。" },
     DISC_TXID_OK: { FR: "Parfait ✓ Tes gains sont débloqués et ton airdrop est en route.", EN: "Perfect ✓ Your earnings are unlocked and your airdrop is on its way.", ZH: "完成 ✓ 收益已解锁，空投正在发放。" },
+    // Fin du parcours : la fenêtre s'ouvre d'elle-même à la sixième étape, et le
+    // bouton la rappelle en permanence (le bandeau, lui, est fermable 24 h).
+    DISC_FINISH_TITLE: { FR: "Bien joué — le jeu, tu l'as en main", EN: "Well played — you've got the game down", ZH: "干得漂亮——游戏你已经上手了" },
+    DISC_FINISH_SUB: { FR: "Il te reste à relier un portefeuille à toi : c'est là que partiront tes retraits. Un portefeuille tout neuf suffit, il n'y a rien à y déposer — on t'envoie nous-mêmes de quoi l'amorcer.", EN: "One thing left: link a wallet of your own — that's where your withdrawals will go. A brand-new wallet is enough, nothing to deposit — we send you the first coins ourselves.", ZH: "还剩一步：绑定一个你自己的钱包，提现将发往该地址。全新的空钱包即可，无需充值——首笔资金由我们发送。" },
+    DISC_FINISH_OPEN: { FR: "Terminer mon parcours", EN: "Finish my journey", ZH: "完成我的旅程" },
+    DISC_TXID_REWARD: { FR: "Valider ce txid te rapporte %d FA.", EN: "Submitting this txid earns you %d FA.", ZH: "提交此 txid 可获得 %d FA。" },
     OB_INSTALL_EXT_TITLE: { FR: "Installe l'extension UniSat", EN: "Install the UniSat extension", ZH: "安装 UniSat 扩展" },
     OB_INSTALL_EXT_SUB: { FR: "Sur ordinateur, le jeu a besoin de l'extension de navigateur UniSat pour connecter ton wallet.", EN: "On desktop, the game needs the UniSat browser extension to connect your wallet.", ZH: "在电脑上，游戏需要 UniSat 浏览器扩展来连接你的钱包。" },
     OB_INSTALL_EXT_BTN: { FR: "Télécharger UniSat", EN: "Download UniSat", ZH: "下载 UniSat" },
