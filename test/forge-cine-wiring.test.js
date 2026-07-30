@@ -16,7 +16,9 @@ test("index.html charge forge-cine-ui.js puis forge-cine.js (scripts classiques)
 
 test("cache-busting bumpé au-delà de v87 (version courante vérifiée par chain-bg-wiring)", () => {
   assert.ok(!html.includes("?v=87"), "aucun ?v=87 restant");
-  assert.match(html, /\?v=8[89]|\?v=9\d/, "une version >= 88 présente");
+  // Numérique, pas de forme : `8[89]|9\d` excluait les versions à trois chiffres.
+  const versions = [...html.matchAll(/\?v=(\d+)/g)].map((m) => Number(m[1])).filter((v) => v !== 1);
+  assert.ok(versions.length && Math.max(...versions) >= 88, "une version >= 88 présente");
 });
 
 test("doFuse branche la cinématique avec repli", () => {

@@ -146,7 +146,7 @@ test("account.jsx est charge apres components.jsx et avant app.jsx", () => {
 test("cache-bust homogene : aucune balise ne reste sur l'ancienne version", () => {
   const versions = [...HTML.matchAll(/\?v=(\d+)/g)].map((m) => m[1]).filter((v) => v !== "1");
   const uniques = [...new Set(versions)];
-  assert.deepStrictEqual(uniques, ["99"],
+  assert.deepStrictEqual(uniques, ["100"],
     `versions heterogenes trouvees : ${uniques.join(", ")} — une seule balise oubliee sert du code perime`);
 });
 

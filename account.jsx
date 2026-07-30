@@ -88,6 +88,76 @@ function RecoverScreen({ onClose }) {
   );
 }
 
+/* Le geste de liaison, en deux temps : on demande son adresse à UniSat, on la
+   MONTRE, et rien ne part avant un second clic.
+
+   Pourquoi (incident du 2026-07-30) : le bouton liait directement le compte actif
+   de l'extension, sans jamais afficher l'adresse. Le user a lié son compte de
+   test à l'adresse de son compte de jeu principal — sans l'avoir voulu, sans
+   l'avoir vue. Or lier redirige tous les retraits futurs, déclenche un envoi
+   on-chain de 1 000 sats, et le jeu refuse ensuite tout relink (« un compte = un
+   portefeuille ») : seul un accès direct à la base a pu le défaire.
+
+   Composant unique, monté partout où l'on peut lier : deux implémentations
+   divergeraient, et c'est celle sans confirmation qui ferait le dégât. */
+function LinkWalletButton({ onLinked, disabled }) {
+  const { actions, toast } = useFA();
+  const [pending, setPending] = useState("");   // adresse en attente de confirmation
+  const [busy, setBusy] = useState(false);
+
+  const REFUS = {
+    "no-unisat": "ACC_LINK_NO_UNISAT",
+    "taken": "ACC_LINK_TAKEN",
+    "same": "ACC_LINK_SAME",
+    "rejected": "ACC_LINK_REJECTED",
+    "bad-address": "ACC_LINK_FAIL",
+  };
+
+  const demander = async () => {
+    setBusy(true);
+    let r;
+    try { r = await actions.requestWalletAddress(); } finally { setBusy(false); }
+    if (r.ok) { setPending(r.wallet); return; }
+    toast(I18N.t(REFUS[r.reason] || "ACC_LINK_FAIL"), "bad");
+  };
+
+  // C'est `pending` qui part — la valeur affichée, pas une relecture d'UniSat.
+  const confirmer = async () => {
+    setBusy(true);
+    let r;
+    try { r = await actions.linkWallet(pending); } finally { setBusy(false); }
+    if (r.ok) {
+      setPending("");
+      toast(I18N.t("ACC_LINK_OK"), "good");
+      onLinked && onLinked();
+      return;
+    }
+    setPending("");
+    toast(I18N.t(REFUS[r.reason] || "ACC_LINK_FAIL"), "bad");
+  };
+
+  if (!pending) {
+    return (
+      <button className="btn block" disabled={busy || disabled} onClick={demander}>
+        {I18N.t("ACC_LINK_BTN")}
+      </button>
+    );
+  }
+  return (
+    <div className="acc-warn" style={{ marginTop: 4 }}>
+      <div style={{ marginBottom: 8 }}>{I18N.t("ACC_LINK_CONFIRM")}</div>
+      <div className="mono" style={{ fontSize: 12, wordBreak: "break-all", marginBottom: 10 }}>{pending}</div>
+      <button className="btn btn-gold block" disabled={busy} onClick={confirmer}>
+        {I18N.t("ACC_LINK_CONFIRM_BTN")}
+      </button>
+      <button className="btn block sm" style={{ marginTop: 6 }} disabled={busy}
+              onClick={() => setPending("")}>
+        {I18N.t("ACC_LINK_CANCEL")}
+      </button>
+    </div>
+  );
+}
+
 /* Le volet crypto du parcours, en cinq états tous dictés par le serveur.
    Extrait de LockedBanner (2026-07-29) pour être monté aussi par la fenêtre
    « Bien joué » : deux copies auraient divergé, et le joueur aurait vu un écran
@@ -98,7 +168,6 @@ function CryptoVolet({ disc, reload, onLinked }) {
   const { g, actions, toast } = useFA();
   const [txid, setTxid] = useState("");
   const [sending, setSending] = useState(false);
-  const [busy, setBusy] = useState(false);
   const lie = !!g.linkedWallet;
 
   const submitTxid = async () => {
@@ -115,25 +184,6 @@ function CryptoVolet({ disc, reload, onLinked }) {
     toast(I18N.t(messages[r.reason] || "ACC_VERIFY_ERR"), "bad");
   };
 
-  const link = async () => {
-    setBusy(true);
-    let r;
-    try { r = await actions.linkWallet(); } finally { setBusy(false); }
-    if (r.ok) {
-      toast(I18N.t("ACC_LINK_OK"), "good");
-      reload && reload();
-      onLinked && onLinked();
-      return;
-    }
-    const messages = {
-      "no-unisat": "ACC_LINK_NO_UNISAT",
-      "taken": "ACC_LINK_TAKEN",
-      "same": "ACC_LINK_SAME",
-      "rejected": "ACC_LINK_REJECTED",
-    };
-    toast(I18N.t(messages[r.reason] || "ACC_LINK_FAIL"), "bad");
-  };
-
   return (
     <>
       {!disc.game_done && (
@@ -143,9 +193,7 @@ function CryptoVolet({ disc, reload, onLinked }) {
       )}
 
       {disc.game_done && !lie && (
-        <button className="btn block" disabled={busy} onClick={link}>
-          {I18N.t("ACC_LINK_BTN")}
-        </button>
+        <LinkWalletButton onLinked={() => { reload && reload(); onLinked && onLinked(); }} />
       )}
 
       {disc.game_done && lie && !disc.dust_sent && (
@@ -191,13 +239,21 @@ function CryptoVolet({ disc, reload, onLinked }) {
    Celle-ci s'ouvre d'elle-même quand la sixième étape vient d'être réclamée, et
    ne se laisse pas condamner : la refermer ne l'empêche pas de revenir. */
 function DiscoveryFinish({ disc, reload, onClose }) {
+  const { g } = useFA();
   if (!disc) return null;
+  // Le sous-titre annonce ce qu'il reste à FAIRE. Il parlait de « relier un
+  // portefeuille » même une fois le portefeuille lié (constaté en prod le
+  // 2026-07-30, à l'étape txid) : un écran qui décrit une étape déjà franchie
+  // fait douter le joueur de ce qu'il vient de faire.
+  const etape = ACC.discoveryNextAction(disc, g.linkedWallet);
   return (
     <Modal onClose={onClose} accent="var(--gold)">
       <SectionHead eyebrow="🎉 BIEN JOUÉ" title={I18N.t("DISC_FINISH_TITLE")} />
-      <div className="muted" style={{ fontSize: 13, lineHeight: 1.7, marginBottom: 14 }}>
-        {I18N.t("DISC_FINISH_SUB")}
-      </div>
+      {etape === "link" && (
+        <div className="muted" style={{ fontSize: 13, lineHeight: 1.7, marginBottom: 14 }}>
+          {I18N.t("DISC_FINISH_SUB")}
+        </div>
+      )}
       <CryptoVolet disc={disc} reload={reload} />
       <div className="acc-warn" style={{ marginTop: 14 }}>{I18N.t("ACC_PHISHING_WARN")}</div>
     </Modal>
@@ -249,23 +305,6 @@ function LockedBanner() {
     if (r.ok && !r.verified) { toast(I18N.t("ACC_VERIFY_NONE"), "bad"); return; }
     toast(I18N.t("ACC_VERIFY_ERR"), "bad");
   };
-  // Liaison hors parcours (compte généré venu sans UniSat mais non éligible au
-  // parcours) : lier conclut, on ferme. Dans le parcours, c'est CryptoVolet qui
-  // s'en charge — lier n'y est pas la fin, la poussière part ensuite.
-  const link = async () => {
-    setChecking(true);
-    let r;
-    try { r = await actions.linkWallet(); } finally { setChecking(false); }
-    if (r.ok) { toast(I18N.t("ACC_LINK_OK"), "good"); setHowto(false); return; }
-    const messages = {
-      "no-unisat": "ACC_LINK_NO_UNISAT",
-      "taken": "ACC_LINK_TAKEN",
-      "same": "ACC_LINK_SAME",
-      "rejected": "ACC_LINK_REJECTED",
-    };
-    toast(I18N.t(messages[r.reason] || "ACC_LINK_FAIL"), "bad");
-  };
-
   return (
     <>
       {show && (
@@ -294,10 +333,15 @@ function LockedBanner() {
               <div className="mono" style={{ fontSize: 13, marginBottom: 8 }}>{I18N.t("DISC_CRYPTO_TITLE")}</div>
               <CryptoVolet disc={disc} reload={loadDisc} />
             </div>
+          ) : genere ? (
+            // Compte généré hors parcours : lier conclut, on ferme. Même bouton
+            // confirmé que dans le parcours — c'est le même geste irréversible.
+            <div style={{ marginTop: 14 }}>
+              <LinkWalletButton onLinked={() => setHowto(false)} />
+            </div>
           ) : (
-            <button className="btn block" style={{ marginTop: 14 }} disabled={checking}
-                    onClick={genere ? link : check}>
-              {I18N.t(genere ? "ACC_LINK_BTN" : "ACC_VERIFY_BTN")}
+            <button className="btn block" style={{ marginTop: 14 }} disabled={checking} onClick={check}>
+              {I18N.t("ACC_VERIFY_BTN")}
             </button>
           )}
         </Modal>
@@ -306,4 +350,4 @@ function LockedBanner() {
   );
 }
 
-Object.assign(window, { SecretsGate, RecoverScreen, LockedBanner, CryptoVolet, DiscoveryFinish });
+Object.assign(window, { SecretsGate, RecoverScreen, LockedBanner, CryptoVolet, DiscoveryFinish, LinkWalletButton });
