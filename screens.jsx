@@ -454,7 +454,7 @@ function ForgeSummon() {
           <div className="mono" style={{ color: "var(--fire)", fontSize: 13, letterSpacing: 2 }}>FORGING…</div>
         ) : last ? (
           <div style={{ width: "100%" }}>
-            <div className="eyebrow" style={{ textAlign: "center", marginBottom: 10, color: D.RANK_COLORS[last.rank || "C"] }}>{I18N.t("MINT_TITLE") || "FORGED"}</div>
+            <div className="eyebrow" style={{ textAlign: "center", marginBottom: 10, color: D.RANK_COLORS[last.rank || "C"] }}>{I18N.t("MINT_TITLE")}</div>
             <CreatureCard beast={last} />
           </div>
         ) : (

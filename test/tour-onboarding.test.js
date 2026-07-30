@@ -98,12 +98,27 @@ test("le bouton de lancement affiche le meme prix que la modale", () => {
 
 // ---- Libelles ----
 
-test("l'etape Tour du parcours annonce 3 etages", () => {
+test("l'etape Tour du parcours annonce 2 etages", () => {
+  // 3 -> 2 le 2026-07-30, apres avoir joue le parcours en production : l'attrition
+  // (PV non regeneres entre etages, roster de depart a 3 betes) laisse les betes a
+  // 34 % / 95 % / 13 % de PV apres UN seul etage. Le troisieme etait hors de portee.
+  // Le libelle doit suivre le serveur : un joueur qui lit « etage 3 » alors que
+  // l'etape se valide a 2 croit son parcours bloque.
   const m = I18N.match(/\bDISC_D_TOWER:\s*\{[^}]*\}/);
   assert.ok(m, "DISC_D_TOWER absente");
-  assert.match(m[0], /étage 3/, "FR : la cible affichee doit suivre le serveur (3 etages)");
-  assert.match(m[0], /floor 3/, "EN");
-  assert.match(m[0], /第 3 层/, "ZH");
+  assert.match(m[0], /étage 2/, "FR : la cible affichee doit suivre le serveur (2 etages)");
+  assert.match(m[0], /floor 2/, "EN");
+  assert.match(m[0], /第 2 层/, "ZH");
+});
+
+test("l'etape Campagne du parcours annonce 3 etages", () => {
+  // 5 -> 3 : l'etage 5 est le premier vrai pic (Epiques/Rares a vol de vie,
+  // DEF 15, 284 PV), trois defaites d'affilee au niveau 8-9 en verification.
+  const m = I18N.match(/\bDISC_D_CAMP:\s*\{[^}]*\}/);
+  assert.ok(m, "DISC_D_CAMP absente");
+  assert.match(m[0], /3 étages/, "FR");
+  assert.match(m[0], /3 Campaign floors/, "EN");
+  assert.match(m[0], /3 层战役/, "ZH");
 });
 
 test("le cache-busting est incremente", () => {

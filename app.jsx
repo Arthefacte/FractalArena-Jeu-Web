@@ -1331,7 +1331,7 @@ function App() {
         const data = await resp.json();
         if (!resp.ok) {
           const reason = data.error === "no_entry" ? I18N.t("CAMP_NO_TICKET")
-            : data.error === "étage verrouillé" ? I18N.t("CAMP_LOCKED") || "Étage verrouillé"
+            : data.error === "étage verrouillé" ? I18N.t("CAMP_LOCKED")
             : data.error || "Erreur serveur";
           return { ok: false, reason };
         }

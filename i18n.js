@@ -176,8 +176,8 @@
     DISC_D_WIN: { FR: "Gagner un combat à la Fosse", EN: "Win a fight in the Pit", ZH: "在深坑赢得一场战斗" },
     DISC_D_PAID: { FR: "Gagner un combat avec mise", EN: "Win a fight with a stake", ZH: "赢得一场下注战斗" },
     DISC_D_LEVEL: { FR: "Monter une bête au niveau 5", EN: "Raise a beast to level 5", ZH: "将一只野兽提升至 5 级" },
-    DISC_D_CAMP: { FR: "Terminer 5 étages de la Campagne", EN: "Clear 5 Campaign floors", ZH: "通关 5 层战役" },
-    DISC_D_TOWER: { FR: "Atteindre l'étage 3 de la Tour", EN: "Reach floor 3 of the Tower", ZH: "到达高塔第 3 层" },
+    DISC_D_CAMP: { FR: "Terminer 3 étages de la Campagne", EN: "Clear 3 Campaign floors", ZH: "通关 3 层战役" },
+    DISC_D_TOWER: { FR: "Atteindre l'étage 2 de la Tour", EN: "Reach floor 2 of the Tower", ZH: "到达高塔第 2 层" },
     DISC_D_PVP: { FR: "Gagner un combat en Arène", EN: "Win an Arena fight", ZH: "赢得一场竞技场战斗" },
 
     DISC_CLAIM: { FR: "Réclamer", EN: "Claim", ZH: "领取" },
@@ -270,6 +270,11 @@
     AR2_OPPONENTS: { FR: "Adversaires", EN: "Opponents", ZH: "对手" },
     AR2_LADDER: { FR: "Classement", EN: "Ladder", ZH: "排行榜" },
     AR2_ATTACK: { FR: "Attaquer", EN: "Attack", ZH: "进攻" },
+    // Manquante jusqu'au 2026-07-30 : la modale d'attaque affichait la clé brute
+    // « AR2_DEFENDER_EDGE_HINT » au joueur (vu en jouant, en production).
+    AR2_DEFENDER_EDGE_HINT: { FR: "Le défenseur bénéficie d'un avantage de terrain (+PV/DEF).", EN: "The defender gets a home-field advantage (+HP/DEF).", ZH: "防守方享有主场优势（+HP/DEF）。" },
+    // Idem : l'écran de fin d'invocation affichait « MINT_TITLE ».
+    MINT_TITLE: { FR: "FORGÉ", EN: "FORGED", ZH: "已铸造" },
     AR2_REVANCHE: { FR: "Revanche", EN: "Revenge", ZH: "复仇" },
     AR2_ENTRY: { FR: "Entrée", EN: "Entry", ZH: "入场" },
     AR2_FREE: { FR: "Gratuit", EN: "Free", ZH: "免费" },
