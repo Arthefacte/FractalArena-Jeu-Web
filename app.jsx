@@ -569,7 +569,18 @@ function App() {
     // Le serveur exige une double preuve : le Bearer prouve la possession du compte,
     // la signature prouve la possession du portefeuille. Scope « withdraw » — lier
     // un portefeuille EST l'autorisation d'y envoyer des fonds.
-    async linkWallet() {
+    // Étape 1 — demander à UniSat quelle adresse est active, et RIEN d'autre :
+    // aucune signature, aucun appel serveur. C'est ce qui permet de la montrer au
+    // joueur avant d'engager quoi que ce soit.
+    //
+    // Pourquoi ce découpage (incident du 2026-07-30) : `linkWallet` prenait
+    // `accounts[0]` — le compte actif de l'extension — et enchaînait signature +
+    // POST sans jamais afficher l'adresse. Le user a ainsi lié son compte de test
+    // à l'adresse de son compte de jeu principal, sans l'avoir voulu ni vue. Lier
+    // est irréversible côté jeu (« un compte = un portefeuille »), redirige les
+    // retraits futurs et déclenche un envoi on-chain : il a fallu un accès direct
+    // à la base pour le défaire.
+    async requestWalletAddress() {
       const s = gRef.current;
       if (!s.authToken) return { ok: false, reason: "auth" };
       if (typeof window.unisat === "undefined") return { ok: false, reason: "no-unisat" };
@@ -578,6 +589,22 @@ function App() {
         const addr = (accounts && accounts[0]) || "";
         if (!/^bc1/i.test(addr)) return { ok: false, reason: "bad-address" };
         if (addr === s.wallet) return { ok: false, reason: "same" };
+        return { ok: true, wallet: addr };
+      } catch (e) {
+        return { ok: false, reason: "rejected" };
+      }
+    },
+    // Étape 2 — lier l'adresse CONFIRMÉE. Elle est passée en paramètre et n'est
+    // jamais redemandée à UniSat : entre la confirmation et l'envoi, le compte
+    // actif de l'extension a pu changer, et on lierait alors une adresse que le
+    // joueur n'a jamais vue — en pire, puisqu'il croirait avoir confirmé.
+    async linkWallet(addr) {
+      const s = gRef.current;
+      if (!s.authToken) return { ok: false, reason: "auth" };
+      if (typeof window.unisat === "undefined") return { ok: false, reason: "no-unisat" };
+      if (!/^bc1/i.test(addr || "")) return { ok: false, reason: "bad-address" };
+      if (addr === s.wallet) return { ok: false, reason: "same" };
+      try {
         const cr = await fetch(`${API_URL}/auth/challenge?wallet=${encodeURIComponent(addr)}&scope=withdraw`);
         if (!cr.ok) return { ok: false, reason: "server" };
         const ch = await cr.json();

@@ -144,6 +144,13 @@
     ACC_HOWTO_3: { FR: "3. Reviens ici et lie-le à ton compte : tes gains en attente sont libérés d'un coup, et tes retraits partiront vers ce portefeuille.", EN: "3. Come back here and link it to your account: your pending earnings are released at once, and your withdrawals will go to that wallet.", ZH: "3. 回到此处将其绑定到账号：待解锁收益一次性释放，此后提现将发往该钱包。" },
     ACC_HOWTO_CAP: { FR: "Aucun dépôt obligatoire, aucun plafond. Le solde verrouillé normal du jeu (quêtes, campagne, connexion, combats gratuits) reste verrouillé, comme pour tout le monde.", EN: "No deposit required, no cap. The game's normal locked balance (quests, campaign, daily login, free fights) stays locked, as it does for everyone.", ZH: "无需充值，也无上限。游戏本身的锁定余额（任务、战役、每日登录、免费战斗）仍保持锁定，对所有玩家一视同仁。" },
     ACC_LINK_BTN: { FR: "Lier mon portefeuille UniSat", EN: "Link my UniSat wallet", ZH: "绑定我的 UniSat 钱包" },
+    // Confirmation avant liaison. Le joueur doit LIRE l'adresse : le jeu prend le
+    // compte actif d'UniSat, qui n'est pas toujours celui qu'il croit (incident
+    // du 2026-07-30 : compte de jeu principal lié par erreur, irrécupérable sans
+    // accès à la base).
+    ACC_LINK_CONFIRM: { FR: "Vérifie l'adresse avant de lier. C'est définitif : un compte ne peut lier qu'un seul portefeuille, et tous tes retraits partiront là-bas.", EN: "Check the address before linking. This is permanent: an account can link only one wallet, and all your withdrawals will go there.", ZH: "绑定前请核对地址。此操作不可撤销：一个账号只能绑定一个钱包，你的所有提现都将发往该地址。" },
+    ACC_LINK_CONFIRM_BTN: { FR: "Oui, lier cette adresse", EN: "Yes, link this address", ZH: "确认绑定该地址" },
+    ACC_LINK_CANCEL: { FR: "Annuler", EN: "Cancel", ZH: "取消" },
     ACC_LINK_OK: { FR: "Portefeuille lié ✓ Tes gains sont libérés et tes retraits partiront là-bas.", EN: "Wallet linked ✓ Your earnings are released and withdrawals will go there.", ZH: "钱包已绑定 ✓ 收益已释放，提现将发往该地址。" },
     ACC_LINK_NO_UNISAT: { FR: "Installe l'extension UniSat sur ordinateur pour lier un portefeuille.", EN: "Install the UniSat extension on desktop to link a wallet.", ZH: "请在电脑上安装 UniSat 扩展以绑定钱包。" },
     ACC_LINK_TAKEN: { FR: "Ce portefeuille est déjà lié à un autre compte. Utilises-en un autre.", EN: "That wallet is already linked to another account. Use a different one.", ZH: "该钱包已绑定至其他账号，请更换一个。" },

@@ -15,7 +15,11 @@ test("index.html charge chain-bg-ui.js puis chain-bg.js (scripts classiques)", (
 });
 
 test("cache-busting >= v89, plus aucun v87/v88", () => {
-  assert.match(html, /\?v=(89|9\d)/, "une version >= 89 présente");
+  // Comparaison numérique et non de forme : la regex d'origine (`89|9\d`) ne
+  // reconnaissait que deux chiffres et déclarait la v100 « inférieure à 89 ».
+  const versions = [...html.matchAll(/\?v=(\d+)/g)].map((m) => Number(m[1])).filter((v) => v !== 1);
+  assert.ok(versions.length, "aucune balise versionnée");
+  assert.ok(Math.max(...versions) >= 89, "une version >= 89 présente");
   assert.ok(!html.includes("?v=87") && !html.includes("?v=88"));
 });
 
