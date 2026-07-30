@@ -98,17 +98,21 @@ test("le bouton de lancement affiche le meme prix que la modale", () => {
 
 // ---- Libelles ----
 
-test("l'etape Tour du parcours annonce 2 etages", () => {
-  // 3 -> 2 le 2026-07-30, apres avoir joue le parcours en production : l'attrition
-  // (PV non regeneres entre etages, roster de depart a 3 betes) laisse les betes a
-  // 34 % / 95 % / 13 % de PV apres UN seul etage. Le troisieme etait hors de portee.
-  // Le libelle doit suivre le serveur : un joueur qui lit « etage 3 » alors que
-  // l'etape se valide a 2 croit son parcours bloque.
+test("l'etape Tour du parcours annonce un premier combat, pas un etage a atteindre", () => {
+  // Cible ramenee a 1 le 2026-07-30, run joue jusqu'au bout en production :
+  //   etage 1, PV pleins      -> victoire, roster a 35 % / 95 % / 13 %
+  //   etage 2, dans la foulee -> defaite, les trois betes a terre (meme en Rempart)
+  //
+  // Formule en termes de GESTE (« gagner ton premier combat ») et non de numero
+  // d'etage : « atteindre l'etage 1 » se lit comme deja acquis — on y est des le
+  // lancement du run — alors qu'il faut precisement gagner ce combat-la.
   const m = I18N.match(/\bDISC_D_TOWER:\s*\{[^}]*\}/);
   assert.ok(m, "DISC_D_TOWER absente");
-  assert.match(m[0], /étage 2/, "FR : la cible affichee doit suivre le serveur (2 etages)");
-  assert.match(m[0], /floor 2/, "EN");
-  assert.match(m[0], /第 2 层/, "ZH");
+  assert.match(m[0], /premier combat/, "FR");
+  assert.match(m[0], /first Tower fight/, "EN");
+  assert.match(m[0], /首场战斗/, "ZH");
+  assert.doesNotMatch(m[0], /étage \d|floor \d/,
+    "ne plus annoncer de numero d'etage : la cible est un combat gagne");
 });
 
 test("l'etape Campagne du parcours annonce 3 etages", () => {
