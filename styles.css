@@ -372,7 +372,72 @@ input { font-family: var(--font-mono); }
 @media (prefers-reduced-motion: reduce) {
   .card { transform: none !important; }
   .card .foil { display: none; }
+  /* L'or en fusion se fige comme le reste des animations du jeu. */
+  .card.r-legendary { animation: none; }
+  .card.r-legendary .art::after { animation: none; background-position: 50% 0; }
 }
+
+/* ============================================================
+   RARETÉ COMME MATIÈRE (roadmap esthétique #2)
+   La rareté ne se lisait qu'à une couleur, un tag et le reflet `.foil` — lequel
+   n'apparaît qu'au SURVOL, donc jamais sur mobile. Chaque rareté a maintenant sa
+   matière, visible en permanence : métal brut / verre / cristal / or en fusion.
+   Le voile ne couvre QUE l'illustration (posé sur toute la carte, il laiteusait le
+   nom et les stats) et se fond en `screen` : il ajoute de la lumière, il ne pose
+   pas un calque blanc. Les cartes encadrées par rang (v87) sont déjà chargées en
+   matière, donc l'essentiel se joue sur le CADRE, pas sur l'art.
+   Prototypé dans _rarete-proto.html avant intégration.
+   ============================================================ */
+.card.r-common, .card.r-rare, .card.r-epic, .card.r-legendary { position: relative; }
+.card.r-common .art::after, .card.r-rare .art::after,
+.card.r-epic .art::after, .card.r-legendary .art::after {
+  content: ""; position: absolute; inset: 0; z-index: 3; pointer-events: none;
+  mix-blend-mode: screen;
+}
+/* Commune — métal brut : grain mat, aucun reflet. La matière « pauvre ». */
+.card.r-common { border-color: color-mix(in srgb, var(--rc) 30%, var(--line)); }
+.card.r-common .art::after {
+  background-image: repeating-linear-gradient(115deg, rgba(255,255,255,0.03) 0 1px, rgba(0,0,0,0) 1px 3px);
+  opacity: .55;
+}
+/* Rare — verre : liseré interne et une bande de lumière figée. */
+.card.r-rare {
+  border-color: color-mix(in srgb, var(--rc) 60%, var(--line));
+  box-shadow: inset 0 0 0 1px rgba(59,130,246,0.16);
+}
+.card.r-rare .art::after {
+  background-image: linear-gradient(114deg, rgba(255,255,255,0) 36%, rgba(180,215,255,0.16) 47%, rgba(255,255,255,0) 58%);
+}
+/* Épique — cristal : facettes croisées et halo froid. Statique. */
+.card.r-epic {
+  border-color: color-mix(in srgb, var(--rc) 75%, var(--line));
+  box-shadow: inset 0 0 0 1px rgba(176,38,255,0.22), 0 0 18px -6px rgba(176,38,255,0.5);
+}
+.card.r-epic .art::after {
+  background-image:
+    linear-gradient(128deg, rgba(176,38,255,0) 32%, rgba(199,120,255,0.15) 43%, rgba(176,38,255,0) 53%),
+    linear-gradient(-142deg, rgba(120,80,255,0) 46%, rgba(160,120,255,0.10) 57%, rgba(120,80,255,0) 67%);
+}
+/* Légendaire — or en fusion : la SEULE rareté qui bouge, lentement (7 s). */
+.card.r-legendary {
+  border-color: color-mix(in srgb, var(--rc) 92%, var(--line));
+  animation: fa-fusion-bord 7s ease-in-out infinite;
+}
+.card.r-legendary .art::after {
+  background-image: linear-gradient(100deg,
+    rgba(247,147,26,0) 30%, rgba(255,205,110,0.15) 45%,
+    rgba(255,240,200,0.22) 50%, rgba(255,205,110,0.15) 55%, rgba(247,147,26,0) 70%);
+  background-size: 300% 100%;
+  animation: fa-fusion 7s linear infinite;
+}
+@keyframes fa-fusion { from { background-position: 140% 0; } to { background-position: -40% 0; } }
+@keyframes fa-fusion-bord {
+  0%, 100% { box-shadow: inset 0 0 0 1px rgba(247,147,26,0.30), 0 0 22px -9px rgba(247,147,26,0.65); }
+  50%      { box-shadow: inset 0 0 0 1px rgba(255,214,120,0.55), 0 0 30px -7px rgba(247,147,26,0.95); }
+}
+.card.r-legendary .rar-tag { box-shadow: 0 0 12px -3px rgba(247,147,26,0.9); }
+.card.r-epic .rar-tag { box-shadow: 0 0 10px -3px rgba(176,38,255,0.8); }
+
 .card.sel { border-color: var(--rc); box-shadow: 0 0 0 1px var(--rc), 0 0 28px color-mix(in srgb, var(--rc) 40%, transparent); }
 .card.sel::before {
   content: ""; position: absolute; inset: 0; z-index: 3; pointer-events: none;
