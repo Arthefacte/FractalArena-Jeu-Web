@@ -28,9 +28,11 @@
   }
 
   const TIERS = [
-    // Palier d'entrée (2026-07-29) : sans lui, un débutant — mort attendue vers
-    // l'étage 2-3 avec le roster de départ — ne touchait jamais rien à la Tour.
-    { floor: 3,  fa: 50,   silver: 0, gold: 0 },
+    // Palier d'entrée : étage 5 → 3 (2026-07-29), puis 3 → 1 (2026-07-31), une fois
+    // le roster de départ réel simulé (3 Common niveau 1) : il s'arrête à l'étage 1
+    // dans 100 % des runs, le palier 3 n'était jamais atteint. Miroir de tower.js,
+    // qui porte le détail de la mesure.
+    { floor: 1,  fa: 50,   silver: 0, gold: 0 },
     { floor: 5,  fa: 100,  silver: 0, gold: 0 },
     { floor: 10, fa: 150,  silver: 1, gold: 0 },
     { floor: 15, fa: 250,  silver: 0, gold: 0 },

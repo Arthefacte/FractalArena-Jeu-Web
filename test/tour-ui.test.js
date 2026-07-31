@@ -8,10 +8,10 @@ const TU = globalThis.window.FA_TOUR_UI;
 
 // Palier d'entrée de l'étage 3 ajouté le 2026-07-29 (somme 6 500 → 6 550) et prix de
 // re-run devenu progressif : les deux suivent le serveur, cette table est un miroir.
-test("TIERS : miroir serveur — somme 6550 FA, 2 silver, 2 gold, étages 3..50", () => {
+test("TIERS : miroir serveur — somme 6550 FA, 2 silver, 2 gold, étages 1..50", () => {
   assert.deepStrictEqual(TU.RERUN_COSTS, [100, 125, 150]);
   assert.strictEqual(TU.TIERS.length, 11);
-  assert.deepStrictEqual(TU.TIERS.map((t) => t.floor), [3, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50]);
+  assert.deepStrictEqual(TU.TIERS.map((t) => t.floor), [1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50]);
   assert.strictEqual(TU.TIERS.reduce((s, t) => s + t.fa, 0), 6550);
   assert.strictEqual(TU.TIERS.reduce((s, t) => s + t.silver, 0), 2);
   assert.strictEqual(TU.TIERS.reduce((s, t) => s + t.gold, 0), 2);
@@ -21,10 +21,10 @@ test("TIERS : miroir serveur — somme 6550 FA, 2 silver, 2 gold, étages 3..50"
 });
 
 test("tiersView : reached/claimed dérivés", () => {
-  const v = TU.tiersView(23, [3, 5, 10]);
+  const v = TU.tiersView(23, [1, 5, 10]);
   assert.strictEqual(v.length, 11);
-  assert.deepStrictEqual(v.filter((t) => t.reached).map((t) => t.floor), [3, 5, 10, 15, 20]);
-  assert.deepStrictEqual(v.filter((t) => t.claimed).map((t) => t.floor), [3, 5, 10]);
+  assert.deepStrictEqual(v.filter((t) => t.reached).map((t) => t.floor), [1, 5, 10, 15, 20]);
+  assert.deepStrictEqual(v.filter((t) => t.claimed).map((t) => t.floor), [1, 5, 10]);
   // claimed_tiers null/undefined toléré (score vierge serveur)
   assert.strictEqual(TU.tiersView(0, null).filter((t) => t.reached).length, 0);
 });
@@ -65,7 +65,8 @@ test("validateEngage : 3 distinctes, existantes, vivantes", () => {
 });
 
 test("nextTier : premier palier au-dessus du meilleur étage", () => {
-  assert.strictEqual(TU.nextTier(0).floor, 3, "le premier objectif visible est le palier d'entrée");
+  assert.strictEqual(TU.nextTier(0).floor, 1, "le premier objectif visible est le palier d'entrée");
+  assert.strictEqual(TU.nextTier(1).floor, 5);
   assert.strictEqual(TU.nextTier(3).floor, 5);
   assert.strictEqual(TU.nextTier(5).floor, 10);
   assert.strictEqual(TU.nextTier(23).floor, 25);

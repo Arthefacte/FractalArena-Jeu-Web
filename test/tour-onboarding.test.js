@@ -29,10 +29,10 @@ const TU = chargerTU();
 
 // ---- Miroir du serveur ----
 
-test("le palier d'entree de l'etage 3 existe aussi cote client", () => {
+test("le palier d'entree de l'etage 1 existe aussi cote client", () => {
   // La table est dupliquee (miroir d'affichage) : une derive et le joueur voit une
   // recompense qui n'existe pas, ou rate celle qui existe.
-  const t = TU.TIERS.find((x) => x.floor === 3);
+  const t = TU.TIERS.find((x) => x.floor === 1);
   assert.ok(t, "palier d'entree absent du miroir client");
   assert.strictEqual(t.fa, 50);
   assert.strictEqual(t.silver, 0);
@@ -41,7 +41,7 @@ test("le palier d'entree de l'etage 3 existe aussi cote client", () => {
 
 test("la table des paliers reste identique au serveur", () => {
   assert.strictEqual(TU.TIERS.length, 11);
-  assert.deepStrictEqual(TU.TIERS.map((t) => t.floor), [3, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50]);
+  assert.deepStrictEqual(TU.TIERS.map((t) => t.floor), [1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50]);
   assert.strictEqual(TU.TIERS.reduce((s, t) => s + t.fa, 0), 6550);
   assert.strictEqual(TU.TIERS.reduce((s, t) => s + t.silver, 0), 2);
   assert.strictEqual(TU.TIERS.reduce((s, t) => s + t.gold, 0), 2);
