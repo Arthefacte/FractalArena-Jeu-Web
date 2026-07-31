@@ -1,0 +1,16 @@
+{
+  "projectId": "c34fdcb6-0a0a-4e3e-9212-8802f3206ca4",
+  "projectName": "Fractal Arena Design System",
+  "pkg": "fractal-arena-web",
+  "shape": "package",
+  "offScript": true,
+  "globalName": "FractalArenaDS",
+  "componentsSrc": "components.jsx",
+  "stylesSrc": "styles.css",
+  "readmeHeader": ".design-sync/conventions.md",
+  "outDir": "ds-bundle",
+  "groups": ["Primitives", "Layout", "Stats", "Cards"],
+  "tools": ".design-sync/_tools",
+  "noRemoteAnchor": true,
+  "notes": "In-browser Babel app (React UMD, no bundler/dist/Storybook). Bundle built off-script with esbuild from components.jsx + runtime shims (FA_DATA/FA_I18N sample data). See .design-sync/NOTES.md."
+}
