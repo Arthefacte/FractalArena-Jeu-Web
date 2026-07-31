@@ -149,7 +149,7 @@ window.FA_API_URL = (typeof location !== "undefined" &&
 
   // ---- Economy ----
   const ECON = {
-    MINT_COST: 20000,
+    MINT_COST: 10000,
     FREE_FIGHTS_PER_DAY: 5,
     BET: { bronze: 10, silver: 25, gold: 50 },
     BET_GAIN: { bronze: 7, silver: 17, gold: 35 }, // net win
