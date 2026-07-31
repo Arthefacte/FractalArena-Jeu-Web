@@ -153,6 +153,7 @@
     ACC_LINK_CANCEL: { FR: "Annuler", EN: "Cancel", ZH: "取消" },
     ACC_LINK_OK: { FR: "Portefeuille lié ✓ Tes gains sont libérés et tes retraits partiront là-bas.", EN: "Wallet linked ✓ Your earnings are released and withdrawals will go there.", ZH: "钱包已绑定 ✓ 收益已释放，提现将发往该地址。" },
     ACC_LINK_NO_UNISAT: { FR: "Installe l'extension UniSat sur ordinateur pour lier un portefeuille.", EN: "Install the UniSat extension on desktop to link a wallet.", ZH: "请在电脑上安装 UniSat 扩展以绑定钱包。" },
+    ACC_LINK_DESKTOP_ONLY: { FR: "À faire sur ordinateur : lier demande une signature dans l'extension UniSat, impossible depuis un navigateur mobile. Ton compte et tes gains t'attendent, connecte-toi depuis un ordinateur avec l'extension installée.", EN: "Do this on a computer: linking requires a signature in the UniSat extension, which a mobile browser cannot do. Your account and earnings will keep — sign in from a computer with the extension installed.", ZH: "请在电脑上操作：绑定需要在 UniSat 扩展中签名，手机浏览器无法完成。你的账号和收益不会丢失，请在已安装扩展的电脑上登录。" },
     ACC_LINK_TAKEN: { FR: "Ce portefeuille est déjà lié à un autre compte. Utilises-en un autre.", EN: "That wallet is already linked to another account. Use a different one.", ZH: "该钱包已绑定至其他账号，请更换一个。" },
     ACC_LINK_SAME: { FR: "C'est l'adresse de ton compte de jeu. Crée un portefeuille séparé dans UniSat.", EN: "That's your game account address. Create a separate wallet in UniSat.", ZH: "这是你的游戏账号地址，请在 UniSat 中另建一个钱包。" },
     ACC_LINK_REJECTED: { FR: "Liaison annulée.", EN: "Linking cancelled.", ZH: "绑定已取消。" },

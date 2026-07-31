@@ -137,10 +137,19 @@ function LinkWalletButton({ onLinked, disabled }) {
   };
 
   if (!pending) {
+    // Sur mobile, l'extension UniSat n'est jamais injectée et rien n'est signable :
+    // le dire ICI, pas après un clic qui échoue. Le bouton reste actif — l'extension
+    // peut s'injecter tardivement, et un bouton mort n'explique rien.
+    const hint = ACC.linkHintKey(typeof window.unisat !== "undefined");
     return (
-      <button className="btn block" disabled={busy || disabled} onClick={demander}>
-        {I18N.t("ACC_LINK_BTN")}
-      </button>
+      <>
+        <button className="btn block" disabled={busy || disabled} onClick={demander}>
+          {I18N.t("ACC_LINK_BTN")}
+        </button>
+        {hint && (
+          <div className="acc-warn" style={{ marginTop: 8, fontSize: 12 }}>{I18N.t(hint)}</div>
+        )}
+      </>
     );
   }
   return (
