@@ -75,5 +75,21 @@
     return out;
   }
 
-  window.FA_ARENE_UI = { leagueLabel, leagueColor, fmtCountdown, fmtCountdownSec, eventLogLines, entryModes, seasonCountdown, computeSynergiesLabels };
+  // Écart de puissance à un adversaire, en % de la mienne. Le serveur apparie
+  // désormais sur la puissance (±25 %) : c'est ce chiffre, pas l'ELO, qui dit si
+  // le combat est jouable. 0 si ma puissance est inconnue — jamais d'Infinity.
+  function powerGapPct(mine, theirs) {
+    const m = Number(mine), t = Number(theirs);
+    if (!(m > 0) || !Number.isFinite(t)) return 0;
+    return Math.round((t / m - 1) * 100);
+  }
+  // Trois paliers de lecture, alignés sur la fenêtre d'appariement du serveur.
+  function powerGapTone(pct) {
+    const a = Math.abs(Number(pct) || 0);
+    if (a <= 10) return "even";
+    if (a <= 25) return "edge";
+    return "hard";
+  }
+
+  window.FA_ARENE_UI = { leagueLabel, leagueColor, fmtCountdown, fmtCountdownSec, eventLogLines, entryModes, seasonCountdown, computeSynergiesLabels, powerGapPct, powerGapTone };
 })();

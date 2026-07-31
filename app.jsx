@@ -1470,7 +1470,7 @@ function App() {
           rating: myRow ? myRow.rating : undefined,
           free_remaining: cad.free_remaining, fa_cost: cad.fa_cost, revanches: cad.revanches || [],
           season: season && season.ok ? season : undefined,
-          opponents: opp.opponents || [], ladder: ladder.ladder || [],
+          opponents: opp.opponents || [], power: opp.power || 0, ladder: ladder.ladder || [],
           attacks: atk.attacks || [], attacksUnseen: atk.unseen || 0,
         } }));
       } catch (e) { /* silencieux */ }
