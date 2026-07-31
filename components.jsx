@@ -107,7 +107,7 @@ function CreatureCard({ beast, selected, onClick, selectable, showXp, badge }) {
   return (
     <div
       ref={ref}
-      className={cx("card", selectable && "selectable", selected && "sel")}
+      className={cx("card", "r-" + String(beast.rarity || "Common").toLowerCase(), selectable && "selectable", selected && "sel")}
       style={{ "--rc": rc, "--foil": FOIL_BY_RARITY[beast.rarity] || 0.4 }}
       onClick={onClick}
       onMouseMove={onMove}
