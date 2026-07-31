@@ -165,3 +165,12 @@ test("un compte hors parcours n'a jamais d'etape crypto", () => {
   assert.strictEqual(A.discoveryNextAction({ eligible: false, steps: [] }, ""), null);
   assert.strictEqual(A.discoveryNextAction(null, ""), null, "etat pas encore charge : ne rien supposer");
 });
+
+// Liaison impossible depuis un mobile : l'extension UniSat n'y est pas injectée, donc
+// aucune signature n'est possible. Le message d'échec « no-unisat » n'arrivait qu'APRÈS
+// le clic ; on le dit avant, là où le joueur décide.
+test("linkHintKey : prévient qu'il faut un ordinateur tant qu'UniSat n'est pas là", () => {
+  const { A } = load();
+  assert.strictEqual(A.linkHintKey(false), "ACC_LINK_DESKTOP_ONLY");
+  assert.strictEqual(A.linkHintKey(true), null, "extension présente : aucune note à afficher");
+});

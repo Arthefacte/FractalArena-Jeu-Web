@@ -121,10 +121,18 @@
     return disc.dust_sent ? "txid" : "dust";
   }
 
+  // Note à afficher sous le bouton de liaison. Sans extension UniSat injectée, lier
+  // est impossible — c'est TOUJOURS le cas dans un navigateur mobile, qui ne sait pas
+  // signer. Le joueur ne l'apprenait qu'après avoir cliqué (échec « no-unisat ») ;
+  // autant le dire au moment où il décide, avec la marche à suivre.
+  function linkHintKey(hasUnisat) {
+    return hasUnisat ? null : "ACC_LINK_DESKTOP_ONLY";
+  }
+
   window.FA_ACCOUNT = {
     KIND_GENERATED, KIND_UNISAT, TOKEN_KEY, KIND_KEY, BANNER_SNOOZE_MS,
     readToken, writeToken, clearToken, readKind,
     isValidRecoveryCode, looksLikeSeed, shouldShowLockedBanner, discoveryNextAction,
-    withdrawSigner, withdrawDestination,
+    withdrawSigner, withdrawDestination, linkHintKey,
   };
 })();
