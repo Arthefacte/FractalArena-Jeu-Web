@@ -158,12 +158,22 @@ function Arene() {
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {(pvp.opponents || []).map((o) => {
               const canRevanche = Array.isArray(pvp.revanches) && pvp.revanches.includes(o.wallet);
+              // L'appariement se fait sur la puissance : c'est l'écart qui dit si le
+              // combat est jouable, pas l'ELO (tout le monde y démarre à 1000).
+              const gap = AU.powerGapPct(pvp.power, o.power);
+              const tone = AU.powerGapTone(gap);
+              const gapColor = tone === "even" ? "var(--success)" : tone === "edge" ? "var(--gold)" : "var(--alert)";
               return (
                 <div key={o.wallet} className="oct-sm" style={{ border: "1px solid var(--line-soft)", padding: 10, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
                   <div style={{ minWidth: 0 }}>
                     <div className="flex gap8 center">
                       <span className="mono" style={{ fontSize: 12, color: AU.leagueColor(o.league) }}>{AU.leagueLabel(o.league)}</span>
-                      <span className="mono" style={{ fontSize: 12, color: "var(--elec)" }}>ELO {o.rating}</span>
+                      {o.implicit
+                        ? <span className="mono" style={{ fontSize: 12, color: "var(--text-dim)" }}>{I18N.t("AR2_UNRANKED")}</span>
+                        : <span className="mono" style={{ fontSize: 12, color: "var(--elec)" }}>ELO {o.rating}</span>}
+                      <span className="mono" style={{ fontSize: 12, color: gapColor }}>
+                        {I18N.t("AR2_POWER", o.power || 0)}{gap !== 0 && ` (${gap > 0 ? "+" : "−"}${Math.abs(gap)} %)`}
+                      </span>
                       {canRevanche && <span className="mono" style={{ fontSize: 11, color: "var(--success)" }}>🔥 {I18N.t("AR2_REVANCHE")}</span>}
                     </div>
                     <div style={{ marginTop: 6 }}><TeamPreview team={o.team} /></div>

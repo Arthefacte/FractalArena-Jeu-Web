@@ -292,6 +292,7 @@
     AR2_ELO_DELTA: { FR: "ELO %s → %d", EN: "ELO %s → %d", ZH: "ELO %s → %d" },
     AR2_NO_OPPONENTS: { FR: "Aucun adversaire pour l'instant — reviens bientôt.", EN: "No opponents yet — check back soon.", ZH: "暂无对手 — 请稍后再来。" },
     AR2_POWER: { FR: "puissance %d", EN: "power %d", ZH: "战力 %d" },
+    AR2_UNRANKED: { FR: "non classé", EN: "unranked", ZH: "未排名" },
     AR2_RANK: { FR: "Rang", EN: "Rank", ZH: "排名" },
     AR2_REFRESH: { FR: "Rafraîchir", EN: "Refresh", ZH: "刷新" },
     AR2_BATTLE: { FR: "Combat", EN: "Battle", ZH: "战斗" },
