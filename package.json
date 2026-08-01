@@ -7,6 +7,7 @@
     "test": "test"
   },
   "scripts": {
+    "build": "node tools/precompile.mjs",
     "test": "node --test --test-force-exit test/*.test.js"
   },
   "repository": {

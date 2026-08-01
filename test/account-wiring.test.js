@@ -128,18 +128,20 @@ const HTML = read("index.html");
 
 test("les deux nouveaux fichiers sont declares", () => {
   assert.match(HTML, /account-ui\.js\?v=/, "account-ui.js n'est pas charge");
-  assert.match(HTML, /account\.jsx\?v=/, "account.jsx n'est pas charge");
+  // Les .jsx sont pre-transpiles en build/*.js (tools/precompile.mjs) : c'est
+  // ce chemin-la qu'index.html charge desormais.
+  assert.match(HTML, /build\/account\.js\?v=/, "account.jsx n'est pas charge");
 });
 
 test("account-ui.js est charge avant app.jsx (lu au niveau module)", () => {
-  assert.ok(HTML.indexOf("account-ui.js") < HTML.indexOf("app.jsx"),
+  assert.ok(HTML.indexOf("account-ui.js") < HTML.indexOf("build/app.js"),
     "app.jsx lit window.FA_ACCOUNT a l'evaluation : le helper doit exister avant");
 });
 
 test("account.jsx est charge apres components.jsx et avant app.jsx", () => {
-  const iComp = HTML.indexOf("components.jsx");
-  const iAcc = HTML.indexOf("account.jsx");
-  const iApp = HTML.indexOf("app.jsx");
+  const iComp = HTML.indexOf("build/components.js");
+  const iAcc = HTML.indexOf("build/account.js");
+  const iApp = HTML.indexOf("build/app.js");
   assert.ok(iComp < iAcc && iAcc < iApp, "account.jsx utilise Modal/SectionHead de components.jsx");
 });
 
