@@ -1,0 +1,35 @@
+; ============================================================
+; fractalarena.com — enregistrements DNS à importer dans Cloudflare
+;
+; Relevé le 2026-08-01 sur les nameservers Namecheap actuels
+; (dns1/dns2.registrar-servers.com), AVANT toute migration.
+;
+; À importer via : Cloudflare → DNS → Records → Import and Export
+;                  → Import DNS records → ce fichier
+;
+; POURQUOI CE FICHIER : le scan automatique de Cloudflare rate régulièrement
+; des enregistrements. Ici, ce sont les 5 MX et le SPF qui portent la
+; REDIRECTION D'E-MAILS du domaine : les perdre au basculement ferait
+; disparaître les mails sans que rien ne le signale.
+;
+; APRÈS L'IMPORT, dans l'interface :
+;   - les 4 A et le CNAME www  -> Proxied (nuage ORANGE) : c'est ce qui donne
+;     les en-têtes de sécurité et HTTPS forcé
+;   - les 5 MX et le TXT       -> DNS only (nuage GRIS) : un MX proxifié casse
+;     la remise du courrier
+; ============================================================
+
+; --- Site (GitHub Pages) — à passer en Proxied ---
+fractalarena.com.	3600	IN	A	185.199.108.153
+fractalarena.com.	3600	IN	A	185.199.109.153
+fractalarena.com.	3600	IN	A	185.199.110.153
+fractalarena.com.	3600	IN	A	185.199.111.153
+www.fractalarena.com.	3600	IN	CNAME	arthefacte.github.io.
+
+; --- Redirection d'e-mails Namecheap — à laisser en DNS only ---
+fractalarena.com.	3600	IN	MX	10 eforward1.registrar-servers.com.
+fractalarena.com.	3600	IN	MX	10 eforward2.registrar-servers.com.
+fractalarena.com.	3600	IN	MX	10 eforward3.registrar-servers.com.
+fractalarena.com.	3600	IN	MX	15 eforward4.registrar-servers.com.
+fractalarena.com.	3600	IN	MX	20 eforward5.registrar-servers.com.
+fractalarena.com.	3600	IN	TXT	"v=spf1 include:spf.efwd.registrar-servers.com ~all"
