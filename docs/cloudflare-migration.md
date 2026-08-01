@@ -1,7 +1,30 @@
-# Passer fractalarena.com derrière Cloudflare
+# fractalarena.com derrière Cloudflare — FAIT le 2026-08-01
 
-**Objectif : de vrais en-têtes HTTP.** GitHub Pages n'en laisse poser aucun, ce
-qui bloque aujourd'hui deux protections :
+> ✅ **Migration effectuée et vérifiée.** Zone Cloudflare créée (plan Free), les
+> 11 enregistrements DNS importés depuis le relevé, nameservers Namecheap
+> remplacés par `andy.ns.cloudflare.com` / `deb.ns.cloudflare.com`. DNSSEC était
+> déjà désactivé (vérifié dans l'interface ET par l'absence d'enregistrement DS)
+> — c'était le point qui aurait rendu le domaine irrésolvable.
+>
+> Réglages posés : **SSL Full (Strict)**, **Always Use HTTPS**, **HSTS 6 mois**
+> (sans `includeSubDomains`, sans `preload`), et une règle *Response Header
+> Transform* « En-tetes de securite ».
+>
+> En-têtes constatés en production :
+> ```
+> Strict-Transport-Security: max-age=15552000
+> X-Frame-Options: DENY
+> X-Content-Type-Options: nosniff
+> Referrer-Policy: strict-origin-when-cross-origin
+> ```
+> Vérifié après bascule : jeu monté, 3D et reliques meshopt chargées, service
+> worker actif, `http://` → 301, **les 5 MX intacts**.
+>
+> Ce qui suit est la recette d'origine, conservée pour mémoire.
+
+## Pourquoi c'était nécessaire
+
+GitHub Pages ne laisse poser aucun en-tête, ce qui bloquait deux protections :
 
 - **HSTS** — sans lui, la toute première visite en `http://` d'un navigateur qui
   n'a jamais vu la redirection reste interceptable.
