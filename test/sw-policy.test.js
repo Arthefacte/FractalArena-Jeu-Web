@@ -98,11 +98,14 @@ test("sw.js purge les caches obsolètes à l'activation", () => {
   assert.match(SW, /obsolete/, "sans purge, chaque version laisserait son cache sur le téléphone");
 });
 
-test("index.html enregistre le service worker, sous garde", () => {
-  assert.match(HTML, /serviceWorker/, "aucun enregistrement : le jeu reste non installable");
-  assert.match(HTML, /"serviceWorker" in navigator|'serviceWorker' in navigator/,
+test("le service worker est enregistré, sous garde", () => {
+  // L'enregistrement a quitté index.html pour sw-register.js : la CSP n'admet
+  // plus de script en ligne ('unsafe-inline' retiré de script-src).
+  assert.match(HTML, /src="sw-register\.js\?v=/, "sw-register.js n'est pas chargé : le jeu reste non installable");
+  const REG = fs.readFileSync(path.join(ROOT, "sw-register.js"), "utf8");
+  assert.match(REG, /"serviceWorker" in navigator|'serviceWorker' in navigator/,
     "l'enregistrement doit être gardé (navigateurs anciens, contextes non sécurisés)");
-  assert.match(HTML, /register\(\s*["']sw\.js/, "chemin d'enregistrement inattendu");
+  assert.match(REG, /register\(\s*["']sw\.js/, "chemin d'enregistrement inattendu");
 });
 
 test("une réponse partielle ou opaque n'entre jamais en cache", () => {
