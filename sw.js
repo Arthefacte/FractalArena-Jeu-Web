@@ -13,6 +13,11 @@
 importScripts("sw-policy.js");
 const P = self.FA_SW_POLICY;
 
+/* Une seule ouverture pour toute la vie du worker : caches.open() était appelé
+   à chaque requête, soit une cinquantaine de fois par lancement. */
+let _cache = null;
+const cache = () => (_cache || (_cache = caches.open(P.CACHE)));
+
 self.addEventListener("install", () => {
   /* Aucun pré-chargement : la coquille du jeu pèse plusieurs dizaines de Mo
      (modèles 3D, illustrations). Les tout télécharger à l'installation ferait
@@ -24,16 +29,29 @@ self.addEventListener("activate", (e) => {
   e.waitUntil((async () => {
     const noms = await caches.keys();
     await Promise.all(noms.filter(P.obsolete).map((n) => caches.delete(n)));
+    /* Sans ceci, intercepter la navigation SÉRIALISE le démarrage du worker et
+       le téléchargement du document : rien ne part tant que le worker n'est pas
+       prêt. Mesuré sur téléphone simulé, c'est ce qui rendait le lancement
+       suivant le démarrage du worker très lent. La préconnexion laisse Chrome
+       lancer la requête du document EN MÊME TEMPS que le worker. */
+    if (self.registration.navigationPreload) {
+      try { await self.registration.navigationPreload.enable(); } catch (err) {}
+    }
     await self.clients.claim();
   })());
 });
 
-async function metsEnCache(req, res) {
-  /* Uniquement des réponses complètes et exploitables : une 206 (Range, audio)
-     ou une réponse opaque en cache produirait des lectures cassées. */
-  if (!res || res.status !== 200 || res.type === "opaque") return res;
-  const cache = await caches.open(P.CACHE);
-  cache.put(req, res.clone());
+/* Met en cache SANS retarder la réponse : attendre caches.open() avant de
+   rendre la ressource ajoutait une attente à chaque requête, pour rien. La
+   copie part en tâche de fond, tenue en vie par waitUntil ; le clone doit être
+   pris tout de suite, avant que le corps soit consommé par la page. Ce qui
+   mérite d'être copié est décidé par la politique (P.copiable). */
+function metsEnCache(e, req, res) {
+  if (!P.copiable(res)) return res;
+  const copie = res.clone();
+  e.waitUntil((async () => {
+    try { (await cache()).put(req, copie); } catch (err) { /* quota, mode privé */ }
+  })());
   return res;
 }
 
@@ -44,13 +62,17 @@ self.addEventListener("fetch", (e) => {
   if (route === "reseau-d-abord") {
     e.respondWith((async () => {
       try {
-        return await metsEnCache(e.request, await fetch(e.request));
+        /* La réponse préchargée quand elle existe : Chrome l'a lancée en
+           parallèle du démarrage du worker, l'ignorer reviendrait à refaire la
+           requête et à perdre tout le bénéfice. */
+        const precharge = e.preloadResponse ? await e.preloadResponse : null;
+        return metsEnCache(e, e.request, precharge || await fetch(e.request));
       } catch (err) {
         /* Hors ligne : on rend le dernier document connu s'il existe, sinon on
            laisse le navigateur afficher SA page d'erreur — mentir avec une
            page « tout va bien » serait pire que l'absence de réseau. */
-        const cache = await caches.open(P.CACHE);
-        const vieux = await cache.match(e.request) || await cache.match("index.html");
+        const c = await cache();
+        const vieux = await c.match(e.request) || await c.match("index.html");
         if (vieux) return vieux;
         throw err;
       }
@@ -58,11 +80,7 @@ self.addEventListener("fetch", (e) => {
     return;
   }
 
-  // cache-d-abord : l'adresse porte ?v=N, son contenu ne change pas.
-  e.respondWith((async () => {
-    const cache = await caches.open(P.CACHE);
-    const hit = await cache.match(e.request);
-    if (hit) return hit;
-    return metsEnCache(e.request, await fetch(e.request));
-  })());
+  /* Il n'y a pas de troisième route : les assets sont laissés au cache HTTP du
+     navigateur, qui les garde déjà (ils portent ?v=N) et le fait mieux — mesuré
+     dans sw-policy.js. */
 });

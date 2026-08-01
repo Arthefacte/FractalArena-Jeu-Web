@@ -38,11 +38,15 @@ test("le document passe par le réseau D'ABORD", () => {
   assert.equal(P.routeFor({ url: ORIGIN + "/index.html", method: "GET", mode: "navigate" }, ORIGIN), "reseau-d-abord");
 });
 
-test("les assets versionnés passent par le cache D'ABORD", () => {
-  // Ils portent ?v=N : une adresse donnée désigne toujours le même contenu.
-  for (const u of ["/styles.css?v=109", "/app.jsx?v=109", "/assets/HASHBYTE_S.webp",
+test("les assets sont laissés au cache HTTP du navigateur", () => {
+  /* Ce n'est pas de la prudence, c'est le résultat d'une mesure. Une première
+     version les mettait en cache dans le service worker : aucun gain constaté
+     sur téléphone simulé (le lancement à froid tient en 1,2 s avec comme sans,
+     puisque les fichiers portent ?v=N et que le cache HTTP les garde déjà),
+     mais 94 Mo d'assets recopiés en double sur le téléphone du joueur. */
+  for (const u of ["/styles.css?v=109", "/build/app.js?v=109", "/assets/HASHBYTE_S.webp",
                    "/vendor/three-0.160.0/three.module.js", "/assets/Emblem_optimise_12Mo.glb"]) {
-    assert.equal(P.routeFor({ url: ORIGIN + u, method: "GET", mode: "no-cors" }, ORIGIN), "cache-d-abord", u);
+    assert.equal(P.routeFor({ url: ORIGIN + u, method: "GET", mode: "no-cors" }, ORIGIN), "reseau-seul", u);
   }
 });
 
@@ -74,10 +78,19 @@ test("sw.js s'appuie sur la politique testée, il ne la réécrit pas", () => {
   assert.match(SW, /routeFor/, "sw.js n'utilise pas la politique");
 });
 
-test("sw.js ne met en cache que des réponses réussies et non partielles", () => {
-  // Une 206 (Range) ou une réponse opaque en cache casse la lecture audio/vidéo.
-  assert.match(SW, /status !== 200|status === 200/, "sw.js doit filtrer sur le statut avant de mettre en cache");
-  assert.match(SW, /type === "opaque"/, "une réponse opaque en cache est illisible et occupe la place");
+test("sw.js délègue à la politique ce qui est copiable, il ne re-décide pas", () => {
+  // Le filtrage (statut, réponse opaque, poids) vit dans sw-policy.js, où il
+  // est éprouvé ; le dupliquer ici serait deux règles à maintenir en accord.
+  assert.match(SW, /P\.copiable\(/, "sw.js doit demander à la politique avant de copier");
+  assert.ok(!/status !== 200/.test(SW), "règle dupliquée dans sw.js");
+});
+
+test("sw.js ne fait pas ATTENDRE la réponse pour remplir le cache", () => {
+  // La copie était awaitée avant de rendre la ressource : chaque réponse
+  // attendait l'ouverture du cache. Elle part désormais en tâche de fond,
+  // tenue par waitUntil, et ne retarde plus rien.
+  assert.match(SW, /waitUntil\(/, "la copie doit être détachée de la réponse");
+  assert.match(SW, /res\.clone\(\)/, "le clone doit être pris avant que la page consomme le corps");
 });
 
 test("sw.js purge les caches obsolètes à l'activation", () => {
@@ -90,4 +103,20 @@ test("index.html enregistre le service worker, sous garde", () => {
   assert.match(HTML, /"serviceWorker" in navigator|'serviceWorker' in navigator/,
     "l'enregistrement doit être gardé (navigateurs anciens, contextes non sécurisés)");
   assert.match(HTML, /register\(\s*["']sw\.js/, "chemin d'enregistrement inattendu");
+});
+
+test("une réponse partielle ou opaque n'entre jamais en cache", () => {
+  // Une 206 (Range) ou une réponse opaque y serait illisible et prendrait la place.
+  const res = (status, type) => ({ status, type });
+  assert.equal(P.copiable(res(200)), true);
+  assert.equal(P.copiable(res(206)), false, "206 Range : illisible depuis le cache");
+  assert.equal(P.copiable(res(200, "opaque")), false, "opaque : illisible");
+  assert.equal(P.copiable(null), false);
+});
+
+test("la navigation est prechargee en parallele du demarrage du worker", () => {
+  /* Sans cela, Chrome ne lance la requete du document qu'une fois le worker
+     demarre : les deux sont serialises a chaque lancement a froid. */
+  assert.match(SW, /navigationPreload/, "navigationPreload doit etre active");
+  assert.match(SW, /preloadResponse/, "la reponse prechargee doit etre UTILISEE, sinon elle est perdue");
 });

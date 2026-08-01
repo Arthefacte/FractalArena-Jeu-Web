@@ -475,14 +475,15 @@ function Emblem3D(props) {
       envTex = null;
     (async () => {
       try {
-        const dynImport = m => new Function('m', 'return import(m)')(m);
-        const THREE = await dynImport('three');
+        // import() natif, résolu par l'<importmap> d'index.html (cf. plus bas :
+        // le détour par `new Function` n'a plus lieu d'être et coûtait 'unsafe-eval').
+        const THREE = await import('three');
         const {
           GLTFLoader
-        } = await dynImport('three/addons/loaders/GLTFLoader.js');
+        } = await import('three/addons/loaders/GLTFLoader.js');
         const {
           RoomEnvironment
-        } = await dynImport('three/addons/environments/RoomEnvironment.js');
+        } = await import('three/addons/environments/RoomEnvironment.js');
         if (disposed) return;
         const dpr = Math.min(2, window.devicePixelRatio || 1);
         renderer = new THREE.WebGLRenderer({
@@ -727,16 +728,17 @@ function Cinematique(props) {
       envTex = null;
     (async () => {
       try {
-        // import() natif masqué à Babel (le transformeur in-browser le réécrirait en require()).
-        // Résolu via l'<importmap> de index.html au runtime.
-        const dynImport = m => new Function('m', 'return import(m)')(m);
-        const THREE = await dynImport('three');
+        // import() natif, résolu par l'<importmap> d'index.html. Il passait autrefois
+        // par un `new Function` pour être masqué au Babel du navigateur, qui le
+        // réécrivait en require() ; ce transformeur ne tourne plus (build/), et le
+        // détour coûtait 'unsafe-eval' dans la CSP.
+        const THREE = await import('three');
         const {
           GLTFLoader
-        } = await dynImport('three/addons/loaders/GLTFLoader.js');
+        } = await import('three/addons/loaders/GLTFLoader.js');
         const {
           RoomEnvironment
-        } = await dynImport('three/addons/environments/RoomEnvironment.js');
+        } = await import('three/addons/environments/RoomEnvironment.js');
         if (disposed) return;
         const dpr = Math.min(2, window.devicePixelRatio || 1);
         renderer = new THREE.WebGLRenderer({
