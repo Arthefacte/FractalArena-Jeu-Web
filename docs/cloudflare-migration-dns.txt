@@ -26,10 +26,31 @@ fractalarena.com.	3600	IN	A	185.199.110.153
 fractalarena.com.	3600	IN	A	185.199.111.153
 www.fractalarena.com.	3600	IN	CNAME	arthefacte.github.io.
 
-; --- Redirection d'e-mails Namecheap — à laisser en DNS only ---
-fractalarena.com.	3600	IN	MX	10 eforward1.registrar-servers.com.
-fractalarena.com.	3600	IN	MX	10 eforward2.registrar-servers.com.
-fractalarena.com.	3600	IN	MX	10 eforward3.registrar-servers.com.
-fractalarena.com.	3600	IN	MX	15 eforward4.registrar-servers.com.
-fractalarena.com.	3600	IN	MX	20 eforward5.registrar-servers.com.
-fractalarena.com.	3600	IN	TXT	"v=spf1 include:spf.efwd.registrar-servers.com ~all"
+; --- Courrier : SUPPRIMÉ le 2026-08-01, remplacé par un verrouillage ---
+;
+; Les 5 MX eforward* ont été retirés. Un test d'envoi réel après la bascule a
+; répondu « 554 5.7.1 Relay access denied » : le forwarding e-mail de Namecheap
+; EXIGE leurs nameservers, il ne fonctionnait donc plus. Aucun mail n'a été
+; perdu — aucune redirection n'avait jamais été définie.
+;
+; Décision du propriétaire : pas de messagerie sur ce domaine (Telegram et X
+; suffisent). Le domaine est donc verrouillé contre l'USURPATION — ce qui
+; compte pour un jeu où les joueurs détiennent des fonds : sans ces
+; enregistrements, n'importe qui pouvait envoyer un « support@fractalarena.com,
+; confirmez votre portefeuille ici » qui arrivait en boîte de réception.
+;
+;   fractalarena.com.        MX  0 .                  <- null MX (RFC 7505)
+;   fractalarena.com.        TXT "v=spf1 -all"        <- aucun serveur autorisé
+;   _dmarc.fractalarena.com. TXT "v=DMARC1; p=reject; sp=reject; adkim=s; aspf=s"
+;   *._domainkey....         TXT "v=DKIM1; p="        <- toute signature révoquée
+;
+; Pour remettre une adresse un jour : Cloudflare Email Routing (gratuit), et
+; défaire ces quatre enregistrements.
+;
+; Anciens enregistrements, conservés pour mémoire :
+; fractalarena.com.	3600	IN	MX	10 eforward1.registrar-servers.com.
+; fractalarena.com.	3600	IN	MX	10 eforward2.registrar-servers.com.
+; fractalarena.com.	3600	IN	MX	10 eforward3.registrar-servers.com.
+; fractalarena.com.	3600	IN	MX	15 eforward4.registrar-servers.com.
+; fractalarena.com.	3600	IN	MX	20 eforward5.registrar-servers.com.
+; fractalarena.com.	3600	IN	TXT	"v=spf1 include:spf.efwd.registrar-servers.com ~all"
