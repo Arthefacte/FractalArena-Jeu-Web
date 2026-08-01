@@ -1,0 +1,75 @@
+// Component specs shared by the card generator and the screenshot pass.
+// `render` is the body of a function (DS, e) => ReactElement, as source text.
+// `pad` optional background padding override for the card body.
+export const GROUP_ORDER = ["Primitives", "Layout", "Stats", "Cards"];
+
+export const COMPONENTS = [
+  {
+    name: "Coin",
+    group: "Primitives",
+    subtitle: "Currency glyph, tintable",
+    viewport: { width: 480, height: 150 },
+    render: `e("div", { style:{ display:"flex", gap:24, alignItems:"center", fontFamily:"var(--font-display)", fontSize:24, fontWeight:700 } },
+      e("span", null, e(DS.Coin, {}), " 12 500"),
+      e("span", { style:{ color:"var(--elec)" } }, e(DS.Coin, { c:"var(--elec)" }), " 320"),
+      e("span", { style:{ color:"var(--alert)" } }, e(DS.Coin, { c:"var(--alert)" }), " 5"))`,
+  },
+  {
+    name: "Bar",
+    group: "Primitives",
+    subtitle: "HP (auto low/mid/high) and XP fills",
+    viewport: { width: 420, height: 240 },
+    render: `e("div", { style:{ display:"flex", flexDirection:"column", gap:14, width:300 } },
+      e("div", null, e("div",{className:"bar-label",style:{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:4,color:"var(--text-dim)"}},e("span",null,"HP"),e("span",null,"high")), e(DS.Bar, { frac:0.85, kind:"hp" })),
+      e("div", null, e("div",{className:"bar-label",style:{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:4,color:"var(--text-dim)"}},e("span",null,"HP"),e("span",null,"mid")), e(DS.Bar, { frac:0.5, kind:"hp" })),
+      e("div", null, e("div",{className:"bar-label",style:{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:4,color:"var(--text-dim)"}},e("span",null,"HP"),e("span",null,"low")), e(DS.Bar, { frac:0.18, kind:"hp" })),
+      e("div", null, e("div",{className:"bar-label",style:{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:4,color:"var(--text-dim)"}},e("span",null,"XP"),e("span",null,"640 / 1200")), e(DS.Bar, { frac:0.53, kind:"xp" })))`,
+  },
+  {
+    name: "SectionHead",
+    group: "Layout",
+    subtitle: "Eyebrow + title + sub",
+    viewport: { width: 520, height: 170 },
+    render: `e(DS.SectionHead, { eyebrow:"Collection", title:"Your Beasts", sub:"12 owned · 3 legendary · synced just now" })`,
+  },
+  {
+    name: "Modal",
+    group: "Layout",
+    subtitle: "Overlay dialog, Esc / backdrop close",
+    viewport: { width: 560, height: 360 },
+    full: true,
+    render: `e(DS.Modal, { onClose:()=>{} },
+      e(DS.SectionHead, { eyebrow:"Forge", title:"Confirm fusion", sub:"This action is permanent" }),
+      e("p", { className:"muted", style:{ fontSize:13, lineHeight:1.6 } }, "Two creatures will be consumed to mint a higher-rarity beast. Stats carry over with rarity variance applied."),
+      e("div", { style:{ display:"flex", gap:10, justifyContent:"flex-end", marginTop:18 } },
+        e("button", { className:"btn ghost" }, "Cancel"),
+        e("button", { className:"btn" }, "Forge")))`,
+  },
+  {
+    name: "StatGrid",
+    group: "Stats",
+    subtitle: "5-stat row, compact drops HP",
+    viewport: { width: 480, height: 240 },
+    render: `e("div", { style:{ display:"flex", flexDirection:"column", gap:18, width:400 } },
+      e("div", null, e("div",{className:"eyebrow",style:{marginBottom:8}},"Full"), e(DS.StatGrid, { beast: DS.sample.legendary })),
+      e("div", null, e("div",{className:"eyebrow",style:{marginBottom:8}},"Compact"), e(DS.StatGrid, { beast: DS.sample.legendary, compact:true })))`,
+  },
+  {
+    name: "MiniStats",
+    group: "Stats",
+    subtitle: "Inline stat bars (forge preview)",
+    viewport: { width: 420, height: 230 },
+    render: `e("div", { style:{ width:320 } }, e(DS.MiniStats, { beast: DS.sample.epic }))`,
+  },
+  {
+    name: "CreatureCard",
+    group: "Cards",
+    subtitle: "Collection card, all rarities + states",
+    viewport: { width: 1000, height: 400 },
+    render: `e("div", { style:{ display:"flex", gap:16, flexWrap:"nowrap" } },
+      e("div", { style:{ width:220 } }, e(DS.CreatureCard, { beast: DS.sample.legendary, showXp:true })),
+      e("div", { style:{ width:220 } }, e(DS.CreatureCard, { beast: DS.sample.epic, selectable:true, selected:true })),
+      e("div", { style:{ width:220 } }, e(DS.CreatureCard, { beast: DS.sample.rare, selectable:true })),
+      e("div", { style:{ width:220 } }, e(DS.CreatureCard, { beast: DS.sample.common })))`,
+  },
+];

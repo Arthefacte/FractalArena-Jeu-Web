@@ -4,3 +4,9 @@ logo3d.src.glb
 
 # dépendance dev-only (test de parse Babel market.jsx) — le runtime reste sans build step (Babel CDN)
 node_modules/
+
+# Design system (claude.ai/design) : les SOURCES du bundle sont versionnées,
+# l'artefact de build et les assets recopiés ne le sont pas (régénérables via
+# .design-sync/_tools/build.mjs + gen-cards/gen-docs/gen-readme).
+ds-bundle/*
+!ds-bundle/_src/
