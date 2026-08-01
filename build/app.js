@@ -400,6 +400,47 @@ function App() {
   useEffect(() => {
     if (window.FA_SFX) window.FA_SFX.setEnabled(g.options.sound);
   }, [g.options.sound]);
+
+  /* PWA — installation sur l'écran d'accueil. Le navigateur n'émet
+     beforeinstallprompt que s'il juge le site installable, et il faut le
+     RETENIR : l'événement n'est rejouable qu'une fois, et seulement sur un
+     geste du joueur. Sans lui, install() serait refusé — d'où la règle de
+     pwa-ui.js : pas d'invite tant qu'on ne détient pas l'événement. */
+  const [pwaPrompt, setPwaPrompt] = useState(null);
+  useEffect(() => {
+    const capte = e => {
+      e.preventDefault();
+      setPwaPrompt(e);
+    };
+    const installe = () => setPwaPrompt(null);
+    window.addEventListener("beforeinstallprompt", capte);
+    window.addEventListener("appinstalled", installe);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", capte);
+      window.removeEventListener("appinstalled", installe);
+    };
+  }, []);
+
+  /* PWA — perte de réseau. Les combats sont calculés sur le serveur : sans
+     réseau il n'y a pas de partie, et le dire vaut mieux que laisser un bouton
+     tourner dans le vide. On ne se fie pas qu'à navigator.onLine, qui ment
+     volontiers (wifi capté mais sans Internet) : les échecs consécutifs des
+     appels au jeu comptent aussi. */
+  const [enLigne, setEnLigne] = useState(() => navigator.onLine !== false);
+  useEffect(() => {
+    const perdu = () => setEnLigne(false);
+    const revenu = () => setEnLigne(true);
+    window.addEventListener("offline", perdu);
+    window.addEventListener("online", revenu);
+    return () => {
+      window.removeEventListener("offline", perdu);
+      window.removeEventListener("online", revenu);
+    };
+  }, []);
+  const etatReseau = window.FA_PWA.etatReseau({
+    online: enLigne,
+    echecsApi: 0
+  });
   function toast(msg, kind) {
     const id = Math.random();
     setToasts(T => [...T, {
@@ -3029,6 +3070,9 @@ function App() {
       onAccountCreated: s => setAccSecrets(s)
     }), /*#__PURE__*/React.createElement(Toasts, {
       toasts: toasts
+    }), /*#__PURE__*/React.createElement(window.PwaOfflineGate, {
+      etat: etatReseau,
+      onReessayer: () => setEnLigne(navigator.onLine !== false)
     }), accSecrets && /*#__PURE__*/React.createElement(window.SecretsGate, {
       secrets: accSecrets,
       onDone: () => setAccSecrets(null)
@@ -3057,11 +3101,17 @@ function App() {
     className: "app-shell"
   }, /*#__PURE__*/React.createElement(Header, {
     chipPop: chipPop
-  }), g.wallet && /*#__PURE__*/React.createElement(LockedBanner, null), /*#__PURE__*/React.createElement(BuybackTicker, null), /*#__PURE__*/React.createElement(Nav, null), /*#__PURE__*/React.createElement("div", {
+  }), g.wallet && /*#__PURE__*/React.createElement(LockedBanner, null), g.wallet && /*#__PURE__*/React.createElement(window.PwaInstallBanner, {
+    prompt: pwaPrompt,
+    onInstalled: () => setPwaPrompt(null)
+  }), /*#__PURE__*/React.createElement(BuybackTicker, null), /*#__PURE__*/React.createElement(Nav, null), /*#__PURE__*/React.createElement("div", {
     className: "view-anim",
     key: g.view
   }, /*#__PURE__*/React.createElement(View, null))), /*#__PURE__*/React.createElement(ChatFab, null), /*#__PURE__*/React.createElement(RoomFab, null), /*#__PURE__*/React.createElement(Toasts, {
     toasts: toasts
+  }), /*#__PURE__*/React.createElement(window.PwaOfflineGate, {
+    etat: etatReseau,
+    onReessayer: () => setEnLigne(navigator.onLine !== false)
   }), g.wallet && /*#__PURE__*/React.createElement(TutorialGate, null), g.wallet && /*#__PURE__*/React.createElement(LoginGate, null), accSecrets && /*#__PURE__*/React.createElement(window.SecretsGate, {
     secrets: accSecrets,
     onDone: () => setAccSecrets(null)
