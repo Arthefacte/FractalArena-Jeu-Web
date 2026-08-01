@@ -98,6 +98,6 @@ test("le sous-titre de la fenetre de fin ne parle de lier que quand il faut lier
 });
 
 test("le cache-bust suit la version", () => {
-  const m = IDX.match(/account\.jsx\?v=(\d+)/);
+  const m = IDX.match(/build\/account\.js\?v=(\d+)/);
   assert.ok(m && Number(m[1]) >= 100, "version bumpee pour cette livraison");
 });

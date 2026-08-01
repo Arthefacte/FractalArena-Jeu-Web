@@ -112,7 +112,7 @@ test("plus aucun texte n'exige du Fractal Bitcoin pour lier son portefeuille", (
 test("le cache-bust suit la version", () => {
   // Sans bump, les joueurs gardent l'ancien account.jsx en cache et n'ont jamais
   // la nouvelle porte — le correctif serait invisible pour ceux qui en ont besoin.
-  const m = IDX.match(/account\.jsx\?v=(\d+)/);
+  const m = IDX.match(/build\/account\.js\?v=(\d+)/);
   assert.ok(m, "account.jsx doit etre versionne dans index.html");
   assert.ok(Number(m[1]) >= 99, "la version doit avoir ete bumpee pour cette livraison");
 });

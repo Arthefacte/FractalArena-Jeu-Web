@@ -961,3 +961,11 @@ input { font-family: var(--font-mono); }
 .acc-confirm input { margin-top: 3px; flex: none; }
 .acc-banner { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 10px 14px; background: rgba(247,147,26,0.1); border-bottom: 1px solid rgba(247,147,26,0.3); font-size: 13px; }
 .acc-banner .grow { flex: 1 1 220px; }
+
+/* PWA — proposition d'installation. Même gabarit que .acc-banner, teinte cyan
+   pour ne pas se confondre avec l'avertissement orange du portefeuille. */
+.pwa-banner { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 10px 14px;
+  background: rgba(0,240,255,0.07); border-bottom: 1px solid rgba(0,240,255,0.25); font-size: 13px; }
+.pwa-banner .grow { flex: 1 1 240px; }
+.pwa-banner-t { font-weight: 700; color: var(--text); }
+.pwa-banner-p { color: var(--text-dim); margin-top: 2px; line-height: 1.4; }

@@ -275,6 +275,41 @@ function App() {
   // SFX : synchronise le module son avec le toggle options.sound (charge + bascule).
   useEffect(() => { if (window.FA_SFX) window.FA_SFX.setEnabled(g.options.sound); }, [g.options.sound]);
 
+  /* PWA — installation sur l'écran d'accueil. Le navigateur n'émet
+     beforeinstallprompt que s'il juge le site installable, et il faut le
+     RETENIR : l'événement n'est rejouable qu'une fois, et seulement sur un
+     geste du joueur. Sans lui, install() serait refusé — d'où la règle de
+     pwa-ui.js : pas d'invite tant qu'on ne détient pas l'événement. */
+  const [pwaPrompt, setPwaPrompt] = useState(null);
+  useEffect(() => {
+    const capte = (e) => { e.preventDefault(); setPwaPrompt(e); };
+    const installe = () => setPwaPrompt(null);
+    window.addEventListener("beforeinstallprompt", capte);
+    window.addEventListener("appinstalled", installe);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", capte);
+      window.removeEventListener("appinstalled", installe);
+    };
+  }, []);
+
+  /* PWA — perte de réseau. Les combats sont calculés sur le serveur : sans
+     réseau il n'y a pas de partie, et le dire vaut mieux que laisser un bouton
+     tourner dans le vide. On ne se fie pas qu'à navigator.onLine, qui ment
+     volontiers (wifi capté mais sans Internet) : les échecs consécutifs des
+     appels au jeu comptent aussi. */
+  const [enLigne, setEnLigne] = useState(() => navigator.onLine !== false);
+  useEffect(() => {
+    const perdu = () => setEnLigne(false);
+    const revenu = () => setEnLigne(true);
+    window.addEventListener("offline", perdu);
+    window.addEventListener("online", revenu);
+    return () => {
+      window.removeEventListener("offline", perdu);
+      window.removeEventListener("online", revenu);
+    };
+  }, []);
+  const etatReseau = window.FA_PWA.etatReseau({ online: enLigne, echecsApi: 0 });
+
   function toast(msg, kind) {
     const id = Math.random();
     setToasts((T) => [...T, { id, msg, kind }]);
@@ -1618,6 +1653,9 @@ function App() {
         <Ambient />
         <Onboarding onAccountCreated={(s) => setAccSecrets(s)} />
         <Toasts toasts={toasts} />
+        {/* Aussi avant connexion : sans réseau, on ne peut même pas créer de
+            compte — le dire tout de suite vaut mieux qu'un bouton qui échoue. */}
+        <window.PwaOfflineGate etat={etatReseau} onReessayer={() => setEnLigne(navigator.onLine !== false)} />
         {accSecrets && <window.SecretsGate secrets={accSecrets} onDone={() => setAccSecrets(null)} />}
       </FA_Ctx.Provider>
     );
@@ -1637,6 +1675,7 @@ function App() {
             elle atterrit tout en bas du document (.app-shell fait min-height: 100vh) et,
             sur mobile, sous la barre de nav fixe (audit IMPORTANT 5, 2026-07-27). */}
         {g.wallet && <LockedBanner />}
+        {g.wallet && <window.PwaInstallBanner prompt={pwaPrompt} onInstalled={() => setPwaPrompt(null)} />}
         <BuybackTicker />
         <Nav />
         <div className="view-anim" key={g.view}><View /></div>
@@ -1644,6 +1683,7 @@ function App() {
       <ChatFab />
       <RoomFab />
       <Toasts toasts={toasts} />
+      <window.PwaOfflineGate etat={etatReseau} onReessayer={() => setEnLigne(navigator.onLine !== false)} />
       {g.wallet && <TutorialGate />}
       {g.wallet && <LoginGate />}
       {accSecrets && <window.SecretsGate secrets={accSecrets} onDone={() => setAccSecrets(null)} />}

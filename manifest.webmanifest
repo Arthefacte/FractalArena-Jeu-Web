@@ -1,0 +1,21 @@
+{
+  "id": "fractal-arena",
+  "name": "Fractal Arena",
+  "short_name": "Fractal Arena",
+  "description": "Collectionne, fais évoluer et fais combattre tes créatures dans l'arène. Campagne, Tour infinie, Fosse et PvP asynchrone.",
+  "lang": "fr",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "theme_color": "#05070f",
+  "background_color": "#05070f",
+  "categories": ["games"],
+  "icons": [
+    { "src": "assets/pwa/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "assets/pwa/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "assets/pwa/icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "assets/pwa/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "assets/pwa/apple-touch-icon-180.png", "sizes": "180x180", "type": "image/png", "purpose": "any" }
+  ]
+}

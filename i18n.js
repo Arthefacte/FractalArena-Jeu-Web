@@ -155,6 +155,17 @@
     ACC_LINK_NO_UNISAT: { FR: "Installe l'extension UniSat sur ordinateur pour lier un portefeuille.", EN: "Install the UniSat extension on desktop to link a wallet.", ZH: "请在电脑上安装 UniSat 扩展以绑定钱包。" },
     ACC_LINK_DESKTOP_ONLY: { FR: "À faire sur ordinateur : lier demande une signature dans l'extension UniSat, impossible depuis un navigateur mobile. Ton compte et tes gains t'attendent, connecte-toi depuis un ordinateur avec l'extension installée.", EN: "Do this on a computer: linking requires a signature in the UniSat extension, which a mobile browser cannot do. Your account and earnings will keep — sign in from a computer with the extension installed.", ZH: "请在电脑上操作：绑定需要在 UniSat 扩展中签名，手机浏览器无法完成。你的账号和收益不会丢失，请在已安装扩展的电脑上登录。" },
     ACC_LINK_TAKEN: { FR: "Ce portefeuille est déjà lié à un autre compte. Utilises-en un autre.", EN: "That wallet is already linked to another account. Use a different one.", ZH: "该钱包已绑定至其他账号，请更换一个。" },
+    // PWA — installation sur l'écran d'accueil, et perte de réseau. Le jeu ne
+    // combat pas sans serveur : on le dit clairement plutôt que de laisser un
+    // bouton tourner dans le vide.
+    PWA_INSTALL_TITRE: { FR: "Mettre Fractal Arena sur ton écran d'accueil", EN: "Put Fractal Arena on your home screen", ZH: "将 Fractal Arena 添加到主屏幕" },
+    PWA_INSTALL_TEXTE: { FR: "Le jeu s'ouvre en plein écran, sans barre de navigateur, et démarre plus vite. Rien à télécharger sur un store.", EN: "The game opens full screen, with no browser bar, and starts faster. Nothing to download from a store.", ZH: "游戏将全屏打开，没有浏览器地址栏，启动更快。无需从应用商店下载。" },
+    PWA_INSTALL_OUI: { FR: "Installer", EN: "Install", ZH: "安装" },
+    PWA_INSTALL_NON: { FR: "Plus tard", EN: "Later", ZH: "稍后" },
+    PWA_IOS_GESTE: { FR: "Sur iPhone : touche le bouton Partager en bas de Safari, puis « Sur l'écran d'accueil ».", EN: "On iPhone: tap the Share button at the bottom of Safari, then “Add to Home Screen”.", ZH: "在 iPhone 上：点按 Safari 底部的分享按钮，然后选择“添加到主屏幕”。" },
+    PWA_OFFLINE_TITRE: { FR: "Connexion perdue", EN: "Connection lost", ZH: "连接已断开" },
+    PWA_OFFLINE_TEXTE: { FR: "Les combats sont calculés sur nos serveurs, pas sur ton téléphone. Sans réseau, aucun match ne peut démarrer — et rien n'est perdu de ta progression.", EN: "Fights are computed on our servers, not on your phone. With no network no match can start — and none of your progress is lost.", ZH: "战斗在我们的服务器上计算，而非你的手机。没有网络就无法开始对战——你的进度不会丢失。" },
+    PWA_OFFLINE_REESSAYER: { FR: "Réessayer", EN: "Try again", ZH: "重试" },
     ACC_LINK_SAME: { FR: "C'est l'adresse de ton compte de jeu. Crée un portefeuille séparé dans UniSat.", EN: "That's your game account address. Create a separate wallet in UniSat.", ZH: "这是你的游戏账号地址，请在 UniSat 中另建一个钱包。" },
     ACC_LINK_REJECTED: { FR: "Liaison annulée.", EN: "Linking cancelled.", ZH: "绑定已取消。" },
     ACC_LINK_FAIL: { FR: "La liaison n'a pas abouti. Réessaie dans un moment.", EN: "Linking could not be completed. Try again shortly.", ZH: "绑定未能完成，请稍后再试。" },
