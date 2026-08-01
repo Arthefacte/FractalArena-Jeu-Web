@@ -16,7 +16,6 @@ const readToken = () => ACC.readToken();
 const writeToken = (t, kind) => ACC.writeToken(t, kind);
 const clearToken = () => ACC.clearToken();
 const API_URL = window.FA_API_URL;
-const CLIENT_SECRET = "pastouche";
 const HAS_UNISAT = () => typeof window.unisat !== "undefined";
 const IS_MOBILE = () => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
 
@@ -707,14 +706,6 @@ function App() {
       try { localStorage.removeItem(SAVE_KEY); } catch (e) { }
       clearToken();
       setG((s) => ({ ...freshState(), lang: s.lang, options: s.options }));
-    },
-    async resetProgress() {
-      const w = gRef.current.wallet;
-      if (w) {
-        try { await fetch(`${API_URL}/save/${w}/reset`, { method: "POST", headers: { "x-client-secret": CLIENT_SECRET } }); } catch (e) { }
-      }
-      try { localStorage.removeItem(SAVE_KEY); } catch (e) { }
-      setG(freshState());
     },
 
     toggleSelect(id) {
