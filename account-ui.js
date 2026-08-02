@@ -129,10 +129,44 @@
     return hasUnisat ? null : "ACC_LINK_DESKTOP_ONLY";
   }
 
+  // Nommer un échec d'authentification.
+  //
+  // `authenticate()` attrapait TOUTE erreur et rendait "" sans rien dire :
+  // extension absente, extension verrouillée, signature refusée, serveur en
+  // panne — quatre causes appelant quatre gestes différents, réduites au même
+  // silence. On a diagnostiqué à l'aveugle, et ça a coûté une régression
+  // (v111 : le combat restait suspendu, v112 pour revenir en arrière).
+  //
+  // Rend { cle, detail } : `cle` est une clé i18n montrable au joueur, `detail`
+  // la trace brute (message de l'extension, code HTTP) pour la console.
+  function authFailure(etape, err, status) {
+    const msg = (err && (err.message || err.reason || String(err))) || "";
+    const code = Number(status) || 0;
+    const detail = [etape, msg, code ? "HTTP " + code : ""].filter(Boolean).join(" · ");
+    let cle;
+    if (etape === "extension") {
+      cle = "AUTHDIAG_NO_EXTENSION";
+    } else if (etape === "challenge") {
+      cle = "AUTHDIAG_CHALLENGE";
+    } else if (etape === "signature") {
+      // Verrouillé et refusé demandent deux gestes DIFFÉRENTS au joueur
+      // (déverrouiller vs accepter) : les confondre le laisse sans solution.
+      if (/lock/i.test(msg)) cle = "AUTHDIAG_LOCKED";
+      else if (/reject|denied|refus|cancel/i.test(msg)) cle = "AUTHDIAG_REJECTED";
+      else cle = "AUTHDIAG_SIGN_FAILED";
+    } else if (etape === "verify") {
+      cle = "AUTHDIAG_VERIFY";
+    } else {
+      // Une étape imprévue reste NOMMÉE : c'est tout l'objet de cette fonction.
+      cle = "AUTHDIAG_UNKNOWN";
+    }
+    return { cle, detail };
+  }
+
   window.FA_ACCOUNT = {
     KIND_GENERATED, KIND_UNISAT, TOKEN_KEY, KIND_KEY, BANNER_SNOOZE_MS,
     readToken, writeToken, clearToken, readKind,
     isValidRecoveryCode, looksLikeSeed, shouldShowLockedBanner, discoveryNextAction,
-    withdrawSigner, withdrawDestination, linkHintKey,
+    withdrawSigner, withdrawDestination, linkHintKey, authFailure,
   };
 })();

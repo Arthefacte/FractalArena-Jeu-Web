@@ -17,6 +17,10 @@ const writeToken = (t, kind) => ACC.writeToken(t, kind);
 const clearToken = () => ACC.clearToken();
 const API_URL = window.FA_API_URL;
 const HAS_UNISAT = () => typeof window.unisat !== "undefined";
+// Dernier échec d'authentification, sous la forme { cle, detail } rendue par
+// ACC.authFailure. Hors du state React à dessein : c'est un fait de diagnostic,
+// il ne doit pas provoquer de rendu ni disparaître au remontage d'un écran.
+let lastAuthReason = null;
 const IS_MOBILE = () => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
 
 // Progression campagne serveur (plat "w-f" → stars) vers le format client imbriqué.
@@ -480,11 +484,23 @@ function App() {
         });
       } catch (e) { /* retentable à la prochaine connexion */ }
     },
+    // NE JAMAIS échouer en silence ici. Les quatre causes possibles (pas
+    // d'extension, extension verrouillée, signature refusée, serveur en panne)
+    // appellent quatre gestes différents du joueur ; les confondre dans un `""`
+    // muet nous a fait diagnostiquer à l'aveugle et livrer une régression
+    // (v111 → retour arrière v112). Chaque sortie nomme désormais sa cause :
+    // en console pour nous, et dans `lastAuthReason` pour l'afficher au joueur.
     async authenticate(addr) {
-      if (typeof window.unisat === "undefined") return "";
+      const echec = (etape, err, status) => {
+        const r = ACC.authFailure(etape, err, status);
+        lastAuthReason = r;
+        console.error("[auth] échec —", r.detail, err || "");
+        return "";
+      };
+      if (typeof window.unisat === "undefined") return echec("extension", null, 0);
       try {
         const cr = await fetch(`${API_URL}/auth/challenge?wallet=${encodeURIComponent(addr)}&scope=session`);
-        if (!cr.ok) return "";
+        if (!cr.ok) return echec("challenge", null, cr.status);
         const ch = await cr.json();
         // Signe le message lié au scope si le serveur le fournit, sinon le nonce brut
         // (rétro-compat : le serveur actuel ne renvoie que `nonce`).
@@ -494,12 +510,14 @@ function App() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ wallet: addr, signature }),
         });
-        if (!vr.ok) return "";
+        if (!vr.ok) return echec("verify", null, vr.status);
         const { token } = await vr.json();
-        if (token) setG((s) => ({ ...s, authToken: token }));
-        return token || "";
+        if (token) { lastAuthReason = null; setG((s) => ({ ...s, authToken: token })); }
+        return token || echec("verify", null, 0);
       } catch (e) {
-        return "";
+        // C'est ici que tout se perdait : l'erreur de signMessage (verrouillé,
+        // refusé, popup avalée par la fenêtre PWA) arrivait et repartait muette.
+        return echec("signature", e, 0);
       }
     },
     async connectUnisat() {
@@ -759,7 +777,17 @@ function App() {
     async callFight({ free, betTier, isLoop }) {
       const s = gRef.current;
       // Tous les combats (gratuits ET payants) sont joués par le serveur
-      if (!s.authToken) return { ok: false, reason: "Connexion UniSat requise pour jouer" };
+      //
+      // On NE tente PAS de re-signer ici : en v111 cet appel partait vers
+      // window.unisat.signMessage(), dont la popup ne s'ouvre pas dans la
+      // fenêtre PWA — la promesse ne revenait jamais et le combat restait
+      // suspendu, sans message. On refuse donc tout de suite, mais en DISANT
+      // pourquoi : sans la raison, le joueur est devant un mur sans porte.
+      if (!s.authToken) {
+        const r = lastAuthReason;
+        const detail = r ? I18N.t(r.cle) : "";
+        return { ok: false, reason: detail ? `${I18N.t("AUTHDIAG_TITLE")} ${detail}` : I18N.t("AUTHDIAG_TITLE"), authReason: r };
+      }
       if (s.selected.length !== 3) return { ok: false, reason: "Sélectionne 3 bêtes" };
       if (free && s.freeFights <= 0) return { ok: false, reason: "Plus de combats gratuits" };
       let tier = betTier;
