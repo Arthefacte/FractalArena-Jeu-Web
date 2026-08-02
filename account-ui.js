@@ -129,39 +129,10 @@
     return hasUnisat ? null : "ACC_LINK_DESKTOP_ONLY";
   }
 
-  // Attendre que l'extension injecte `window.unisat`.
-  //
-  // L'injection est ASYNCHRONE : au démarrage, `typeof window.unisat` peut
-  // encore valoir "undefined" alors que l'extension est bien installée. Tester
-  // une seule fois, c'est courir une course — et le jeu la perdait depuis que la
-  // PWA démarre en 1,2 s au lieu de 26 s. Le joueur relançait l'app, aucune
-  // signature ne lui était proposée, et il butait sur « Connexion UniSat requise
-  // pour jouer » sans autre issue qu'un rechargement (qui, étant plus lent,
-  // laissait l'extension gagner la course — d'où un bug intermittent).
-  //
-  // Rend `false` à l'échéance plutôt que d'attendre indéfiniment : sur mobile ou
-  // dans un navigateur sans extension, `window.unisat` n'arrivera JAMAIS, et le
-  // démarrage ne doit pas se bloquer pour autant.
-  function waitForUnisat(timeoutMs, intervalMs) {
-    const total = typeof timeoutMs === "number" ? timeoutMs : 3000;
-    const step = typeof intervalMs === "number" ? intervalMs : 50;
-    return new Promise((resolve) => {
-      if (typeof window.unisat !== "undefined") return resolve(true);
-      let attendu = 0;
-      const id = window.setInterval(() => {
-        if (typeof window.unisat !== "undefined") { window.clearInterval(id); resolve(true); return; }
-        attendu += step;
-        // Toujours nettoyer l'intervalle : sans ça chaque tentative de connexion
-        // laisserait un timer tourner pour la vie de la page.
-        if (attendu >= total) { window.clearInterval(id); resolve(false); }
-      }, step);
-    });
-  }
-
   window.FA_ACCOUNT = {
     KIND_GENERATED, KIND_UNISAT, TOKEN_KEY, KIND_KEY, BANNER_SNOOZE_MS,
     readToken, writeToken, clearToken, readKind,
     isValidRecoveryCode, looksLikeSeed, shouldShowLockedBanner, discoveryNextAction,
-    withdrawSigner, withdrawDestination, linkHintKey, waitForUnisat,
+    withdrawSigner, withdrawDestination, linkHintKey,
   };
 })();
