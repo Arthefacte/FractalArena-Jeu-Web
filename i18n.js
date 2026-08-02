@@ -464,6 +464,17 @@
     WL_WD_DEST: { FR: "Destination des retraits", EN: "Withdrawals go to", ZH: "提现发往" },
     WL_WD_DEST_NONE: { FR: "Aucun portefeuille lié — retrait indisponible", EN: "No wallet linked — withdrawal unavailable", ZH: "未绑定钱包，暂不可提现" },
     AUTH_EXPIRED: { FR: "Session expirée — reconnecte-toi.", EN: "Session expired — please reconnect.", ZH: "会话已过期，请重新连接。" },
+    // Diagnostic d'authentification : chaque cause appelle un geste DIFFÉRENT du
+    // joueur. Les confondre dans un message unique le laisse sans solution —
+    // c'est ce qui nous a coûté un aller-retour v111/v112.
+    AUTHDIAG_TITLE:        { FR: "Connexion UniSat requise pour jouer.", EN: "UniSat connection required to play.", ZH: "需要连接 UniSat 才能游戏。" },
+    AUTHDIAG_NO_EXTENSION: { FR: "Aucune extension UniSat détectée. Sur ordinateur, installe-la puis relance le jeu ; sur mobile, la signature n'est pas possible.", EN: "No UniSat extension detected. On desktop, install it then restart the game; on mobile, signing is not possible.", ZH: "未检测到 UniSat 扩展。电脑端请先安装并重启游戏；手机端无法签名。" },
+    AUTHDIAG_LOCKED:       { FR: "Ton portefeuille UniSat est verrouillé. Ouvre l'extension, saisis ton mot de passe, puis relance le jeu.", EN: "Your UniSat wallet is locked. Open the extension, enter your password, then restart the game.", ZH: "你的 UniSat 钱包已锁定。请打开扩展并输入密码，然后重启游戏。" },
+    AUTHDIAG_REJECTED:     { FR: "Signature refusée. Relance le jeu et accepte la demande de signature d'UniSat.", EN: "Signature refused. Restart the game and accept UniSat's signature request.", ZH: "签名被拒绝。请重启游戏并接受 UniSat 的签名请求。" },
+    AUTHDIAG_SIGN_FAILED:  { FR: "La demande de signature n'a pas abouti. Ouvre l'extension UniSat, puis relance le jeu.", EN: "The signature request did not complete. Open the UniSat extension, then restart the game.", ZH: "签名请求未完成。请打开 UniSat 扩展，然后重启游戏。" },
+    AUTHDIAG_CHALLENGE:    { FR: "Le serveur n'a pas répondu à la demande de connexion. Réessaie dans un instant.", EN: "The server did not answer the sign-in request. Try again shortly.", ZH: "服务器未响应登录请求，请稍后重试。" },
+    AUTHDIAG_VERIFY:       { FR: "Le serveur a refusé la signature. Réessaie ; si ça persiste, signale-le.", EN: "The server refused the signature. Try again; if it persists, report it.", ZH: "服务器拒绝了该签名。请重试；若持续出现请反馈。" },
+    AUTHDIAG_UNKNOWN:      { FR: "Connexion impossible pour une raison inattendue. Relance le jeu.", EN: "Sign-in failed for an unexpected reason. Restart the game.", ZH: "因意外原因无法登录，请重启游戏。" },
     WL_REWARD_POOL: { FR: "Reward Pool", EN: "Reward Pool", ZH: "奖励池" },
     WL_COPY: { FR: "Copier", EN: "Copy", ZH: "复制" },
     WL_COPIED: { FR: "Copié !", EN: "Copied!", ZH: "已复制！" },
