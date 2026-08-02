@@ -9,13 +9,40 @@
   const KIND_GENERATED = "generated";
   const KIND_UNISAT = "unisat";
 
-  // Un compte UniSat peut re-signer silencieusement a tout moment : son jeton
-  // reste en sessionStorage (efface a la fermeture de l'onglet), comme decide a
-  // l'audit 2026-06-24. Un compte genere, lui, n'a rien a re-signer — sans
-  // persistance il faudrait ressaisir le code de recuperation a chaque fois.
-  // L'exposition XSS reste donc bornee aux comptes generes.
+  // L'app tourne-t-elle en fenetre installee (PWA) plutot que dans un onglet ?
+  // Gardes larges : ces API manquent dans les environnements de test et sur
+  // certains navigateurs — l'absence de reponse doit valoir "onglet", jamais une
+  // exception au chargement du module.
+  function estAppInstallee() {
+    try {
+      if (window.navigator && window.navigator.standalone === true) return true;
+      return !!(window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
+    } catch (e) { return false; }
+  }
+
+  // Ou vit le jeton de session.
+  //
+  // Un compte genere n'a rien a re-signer : son jeton persiste en localStorage,
+  // sinon il faudrait ressaisir le code de recuperation a chaque fois.
+  //
+  // Un compte UniSat gardait le sien en sessionStorage (efface a la fermeture,
+  // audit 2026-06-24), au motif qu'il « peut re-signer silencieusement a tout
+  // moment ». EN APPLICATION INSTALLEE, CE MOTIF EST FAUX : la popup
+  // d'approbation d'UniSat ne s'affiche pas dans une fenetre standalone, et il
+  // n'y a ni barre d'adresse ni barre d'extensions pour aller la chercher. Le
+  // joueur ne pouvait donc plus combattre des la deuxieme ouverture (constate en
+  // conditions reelles le 2026-08-02).
+  //
+  // On persiste donc aussi le jeton UniSat quand on est en fenetre installee.
+  // Ce que ca coute, dit franchement : un jeton qui survit a la fermeture est un
+  // jeton qu'une XSS pourrait voler. Ce qui le borne : la CSP est stricte depuis
+  // le 2026-08-01 (ni script en ligne, ni eval), et ce jeton est de portee
+  // `session` — IL NE PERMET PAS DE RETIRER DES FONDS, un retrait exige une
+  // signature separee en portee `withdraw`. C'est deja le traitement des
+  // comptes generes. En onglet, ou la popup fonctionne, rien ne change.
   function store(kind) {
-    return kind === KIND_GENERATED ? window.localStorage : window.sessionStorage;
+    if (kind === KIND_GENERATED) return window.localStorage;
+    return estAppInstallee() ? window.localStorage : window.sessionStorage;
   }
   function get(s, k) { try { return s.getItem(k) || ""; } catch (e) { return ""; } }
   function set(s, k, v) { try { s.setItem(k, v); } catch (e) {} }
@@ -32,8 +59,12 @@
     if (!token) { clearToken(); return; }
     // Purger l'autre stockage AVANT d'ecrire : jamais deux jetons en vie, sinon
     // readToken pourrait rendre le perime apres un changement de compte.
-    del(k === KIND_GENERATED ? window.sessionStorage : window.localStorage, TOKEN_KEY);
-    set(store(k), TOKEN_KEY, token);
+    // On deduit "l'autre" de la cible reellement choisie par store() — le
+    // deduire du `kind` seul etait juste tant qu'UniSat signifiait
+    // sessionStorage, ce qui n'est plus vrai en application installee.
+    const cible = store(k);
+    del(cible === window.localStorage ? window.sessionStorage : window.localStorage, TOKEN_KEY);
+    set(cible, TOKEN_KEY, token);
     set(window.localStorage, KIND_KEY, k);
   }
 
@@ -167,6 +198,6 @@
     KIND_GENERATED, KIND_UNISAT, TOKEN_KEY, KIND_KEY, BANNER_SNOOZE_MS,
     readToken, writeToken, clearToken, readKind,
     isValidRecoveryCode, looksLikeSeed, shouldShowLockedBanner, discoveryNextAction,
-    withdrawSigner, withdrawDestination, linkHintKey, authFailure,
+    withdrawSigner, withdrawDestination, linkHintKey, authFailure, estAppInstallee,
   };
 })();
