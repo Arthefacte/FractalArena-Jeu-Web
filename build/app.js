@@ -713,7 +713,11 @@ function App() {
       } catch (e) {/* retentable à la prochaine connexion */}
     },
     async authenticate(addr) {
-      if (typeof window.unisat === "undefined") return "";
+      // ATTENDRE l'extension, ne pas se contenter d'un coup d'œil : elle s'injecte
+      // de façon asynchrone et le démarrage rapide de la PWA la devance souvent.
+      // Un test unique rendait "" en silence — aucune signature proposée, et le
+      // joueur bloqué sur « Connexion UniSat requise » jusqu'au rechargement.
+      if (!(await ACC.waitForUnisat())) return "";
       try {
         const cr = await fetch(`${API_URL}/auth/challenge?wallet=${encodeURIComponent(addr)}&scope=session`);
         if (!cr.ok) return "";
@@ -1235,10 +1239,19 @@ function App() {
     }) {
       const s = gRef.current;
       // Tous les combats (gratuits ET payants) sont joués par le serveur
-      if (!s.authToken) return {
-        ok: false,
-        reason: "Connexion UniSat requise pour jouer"
-      };
+      // Sans jeton, TENTER une signature avant de refuser. Refuser sèchement ici
+      // était une impasse : ce garde-fou local empêchait justement l'appel qui
+      // aurait rendu la main au joueur, et seul un rechargement de page l'en
+      // sortait. Un compte généré n'a rien à signer (pas de clé au navigateur) —
+      // pour lui, l'attente de l'extension serait vaine.
+      let tok = s.authToken;
+      if (!tok) {
+        if (s.accountKind !== ACC.KIND_GENERATED) tok = await actions.authenticate(s.wallet);
+        if (!tok) return {
+          ok: false,
+          reason: "Connexion UniSat requise pour jouer"
+        };
+      }
       if (s.selected.length !== 3) return {
         ok: false,
         reason: "Sélectionne 3 bêtes"
@@ -1263,9 +1276,11 @@ function App() {
       try {
         const resp = await fetch(`${API_URL}/fight`, {
           method: "POST",
+          // `tok`, pas `s.authToken` : `s` est un instantané pris AVANT la
+          // re-signature ci-dessus, il porterait encore le jeton vide.
           headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${s.authToken}`
+            "Authorization": `Bearer ${tok}`
           },
           body: JSON.stringify({
             bet_tier: free ? "" : tier,
