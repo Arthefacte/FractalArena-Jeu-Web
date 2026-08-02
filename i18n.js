@@ -475,6 +475,10 @@
     AUTHDIAG_CHALLENGE:    { FR: "Le serveur n'a pas répondu à la demande de connexion. Réessaie dans un instant.", EN: "The server did not answer the sign-in request. Try again shortly.", ZH: "服务器未响应登录请求，请稍后重试。" },
     AUTHDIAG_VERIFY:       { FR: "Le serveur a refusé la signature. Réessaie ; si ça persiste, signale-le.", EN: "The server refused the signature. Try again; if it persists, report it.", ZH: "服务器拒绝了该签名。请重试；若持续出现请反馈。" },
     AUTHDIAG_UNKNOWN:      { FR: "Connexion impossible pour une raison inattendue. Relance le jeu.", EN: "Sign-in failed for an unexpected reason. Restart the game.", ZH: "因意外原因无法登录，请重启游戏。" },
+    // En fenêtre installée, la popup d'UniSat ne s'affiche pas d'elle-même : la
+    // demande attend, invisible, jusqu'à ce que le joueur ouvre l'extension.
+    // Sans ce message, il attend devant un écran qui ne lui demande rien.
+    AUTHDIAG_PENDING_APP:  { FR: "Signature en attente : ouvre l'extension UniSat pour la valider. Une seule fois — ensuite le jeu se souviendra de toi.", EN: "Signature pending: open the UniSat extension to approve it. Just once — the game will remember you afterwards.", ZH: "签名待确认：请打开 UniSat 扩展进行批准。仅需一次，之后游戏会记住你。" },
     WL_REWARD_POOL: { FR: "Reward Pool", EN: "Reward Pool", ZH: "奖励池" },
     WL_COPY: { FR: "Copier", EN: "Copy", ZH: "复制" },
     WL_COPIED: { FR: "Copié !", EN: "Copied!", ZH: "已复制！" },

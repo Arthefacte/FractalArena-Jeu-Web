@@ -502,6 +502,12 @@ function App() {
         const cr = await fetch(`${API_URL}/auth/challenge?wallet=${encodeURIComponent(addr)}&scope=session`);
         if (!cr.ok) return echec("challenge", null, cr.status);
         const ch = await cr.json();
+        // En fenêtre installée, la popup d'UniSat ne s'affiche PAS d'elle-même :
+        // la demande part, l'extension la met en attente, et rien n'apparaît —
+        // il n'y a ni barre d'adresse ni barre d'extensions pour aller la
+        // chercher. Le joueur restait donc devant un écran qui ne lui demandait
+        // rien. On le dit AVANT de bloquer sur la promesse, pas après.
+        if (ACC.estAppInstallee()) toast(I18N.t("AUTHDIAG_PENDING_APP"), "info");
         // Signe le message lié au scope si le serveur le fournit, sinon le nonce brut
         // (rétro-compat : le serveur actuel ne renvoie que `nonce`).
         const signature = await window.unisat.signMessage(ch.message || ch.nonce);
@@ -785,7 +791,12 @@ function App() {
       // pourquoi : sans la raison, le joueur est devant un mur sans porte.
       if (!s.authToken) {
         const r = lastAuthReason;
-        const detail = r ? I18N.t(r.cle) : "";
+        // Pas de raison enregistrée + fenêtre installée = le cas le plus courant
+        // ici : la signature demandée au démarrage est TOUJOURS en attente dans
+        // l'extension, invisible. Rien n'a échoué, donc rien n'a été consigné —
+        // et sans ce cas le joueur ne lirait que le message générique, qui ne
+        // lui dit pas le seul geste qui débloque.
+        const detail = r ? I18N.t(r.cle) : (ACC.estAppInstallee() ? I18N.t("AUTHDIAG_PENDING_APP") : "");
         return { ok: false, reason: detail ? `${I18N.t("AUTHDIAG_TITLE")} ${detail}` : I18N.t("AUTHDIAG_TITLE"), authReason: r };
       }
       if (s.selected.length !== 3) return { ok: false, reason: "Sélectionne 3 bêtes" };

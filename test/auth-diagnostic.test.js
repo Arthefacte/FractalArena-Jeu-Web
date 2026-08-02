@@ -73,7 +73,8 @@ test("toute clé produite par authFailure existe en i18n, dans les 3 langues", (
     ["etape-imprevue", null, 0],
   ];
   const cles = new Set(cas.map((c) => A.authFailure(c[0], c[1], c[2]).cle));
-  cles.add("AUTHDIAG_TITLE"); // posée par callFight
+  cles.add("AUTHDIAG_TITLE");        // posée par callFight
+  cles.add("AUTHDIAG_PENDING_APP");  // signature en attente, fenêtre installée
   for (const cle of cles) {
     const m = I18N.match(new RegExp("\\b" + cle + ":\\s*\\{[^}]*\\}"));
     assert.ok(m, `${cle} est produite par le code mais absente d'i18n.js — le joueur verrait un message vide`);
