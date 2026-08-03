@@ -213,7 +213,7 @@ function LinkWalletButton({
     // Sur mobile, l'extension UniSat n'est jamais injectée et rien n'est signable :
     // le dire ICI, pas après un clic qui échoue. Le bouton reste actif — l'extension
     // peut s'injecter tardivement, et un bouton mort n'explique rien.
-    const hint = ACC.linkHintKey(typeof window.unisat !== "undefined");
+    const hint = ACC.linkHintKey(ACC.hasProvider());
     return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
       className: "btn block",
       disabled: busy || disabled,

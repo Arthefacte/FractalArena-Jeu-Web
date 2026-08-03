@@ -152,6 +152,26 @@
     return disc.dust_sent ? "txid" : "dust";
   }
 
+  // Le portefeuille UniSat à interroger — JAMAIS window.unisat en direct.
+  //
+  // UniSat a introduit `window.unisat_wallet` parce que de nombreux portefeuilles
+  // forkent leur code et injectent eux aussi `window.unisat` (docs/api/browser-detection.md
+  // de unisat-wallet/wallet). Sur une machine où un fork est installé, `window.unisat`
+  // peut donc désigner un AUTRE portefeuille que celui que le joueur croit utiliser.
+  // Or lier un portefeuille est IRRÉVERSIBLE côté jeu (incident du 2026-07-30) et la
+  // signature engage les retraits : on prend le global dédié en premier, et on ne
+  // retombe sur l'ancien que parce que les versions installées aujourd'hui n'exposent
+  // que celui-là.
+  function provider() {
+    return (typeof window.unisat_wallet !== "undefined" && window.unisat_wallet)
+        || (typeof window.unisat !== "undefined" && window.unisat)
+        || null;
+  }
+
+  function hasProvider() {
+    return !!provider();
+  }
+
   // Note à afficher sous le bouton de liaison. Sans extension UniSat injectée, lier
   // est impossible — c'est TOUJOURS le cas dans un navigateur mobile, qui ne sait pas
   // signer. Le joueur ne l'apprenait qu'après avoir cliqué (échec « no-unisat ») ;
@@ -199,5 +219,6 @@
     readToken, writeToken, clearToken, readKind,
     isValidRecoveryCode, looksLikeSeed, shouldShowLockedBanner, discoveryNextAction,
     withdrawSigner, withdrawDestination, linkHintKey, authFailure, estAppInstallee,
+    provider, hasProvider,
   };
 })();
