@@ -16,7 +16,9 @@ const readToken = () => ACC.readToken();
 const writeToken = (t, kind) => ACC.writeToken(t, kind);
 const clearToken = () => ACC.clearToken();
 const API_URL = window.FA_API_URL;
-const HAS_UNISAT = () => typeof window.unisat !== "undefined";
+// Toujours via ACC : `window.unisat` peut être un portefeuille FORKÉ qui a squatté
+// le global. Voir ACC.provider() dans account-ui.js.
+const HAS_UNISAT = () => ACC.hasProvider();
 // Dernier échec d'authentification, sous la forme { cle, detail } rendue par
 // ACC.authFailure. Hors du state React à dessein : c'est un fait de diagnostic,
 // il ne doit pas provoquer de rendu ni disparaître au remontage d'un écran.
@@ -497,7 +499,9 @@ function App() {
         console.error("[auth] échec —", r.detail, err || "");
         return "";
       };
-      if (typeof window.unisat === "undefined") return echec("extension", null, 0);
+      // Résolu UNE fois : la garde et la signature doivent porter sur le même objet.
+      const uni = ACC.provider();
+      if (!uni) return echec("extension", null, 0);
       try {
         const cr = await fetch(`${API_URL}/auth/challenge?wallet=${encodeURIComponent(addr)}&scope=session`);
         if (!cr.ok) return echec("challenge", null, cr.status);
@@ -510,7 +514,7 @@ function App() {
         if (ACC.estAppInstallee()) toast(I18N.t("AUTHDIAG_PENDING_APP"), "info");
         // Signe le message lié au scope si le serveur le fournit, sinon le nonce brut
         // (rétro-compat : le serveur actuel ne renvoie que `nonce`).
-        const signature = await window.unisat.signMessage(ch.message || ch.nonce);
+        const signature = await uni.signMessage(ch.message || ch.nonce);
         const vr = await fetch(`${API_URL}/auth/verify`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -527,9 +531,10 @@ function App() {
       }
     },
     async connectUnisat() {
-      if (typeof window.unisat === "undefined") return { ok: false, reason: "no-unisat" };
+      const uni = ACC.provider();
+      if (!uni) return { ok: false, reason: "no-unisat" };
       try {
-        const accounts = await window.unisat.requestAccounts();
+        const accounts = await uni.requestAccounts();
         const addr = (accounts && accounts[0]) || "";
         if (!/^bc1/i.test(addr)) return { ok: false, reason: "bad-address" };
         // Authentifier D'ABORD (obtenir le token) puis charger la save AVEC le token :
@@ -641,9 +646,10 @@ function App() {
     async requestWalletAddress() {
       const s = gRef.current;
       if (!s.authToken) return { ok: false, reason: "auth" };
-      if (typeof window.unisat === "undefined") return { ok: false, reason: "no-unisat" };
+      const uni = ACC.provider();
+      if (!uni) return { ok: false, reason: "no-unisat" };
       try {
-        const accounts = await window.unisat.requestAccounts();
+        const accounts = await uni.requestAccounts();
         const addr = (accounts && accounts[0]) || "";
         if (!/^bc1/i.test(addr)) return { ok: false, reason: "bad-address" };
         if (addr === s.wallet) return { ok: false, reason: "same" };
@@ -659,14 +665,15 @@ function App() {
     async linkWallet(addr) {
       const s = gRef.current;
       if (!s.authToken) return { ok: false, reason: "auth" };
-      if (typeof window.unisat === "undefined") return { ok: false, reason: "no-unisat" };
+      const uni = ACC.provider();
+      if (!uni) return { ok: false, reason: "no-unisat" };
       if (!/^bc1/i.test(addr || "")) return { ok: false, reason: "bad-address" };
       if (addr === s.wallet) return { ok: false, reason: "same" };
       try {
         const cr = await fetch(`${API_URL}/auth/challenge?wallet=${encodeURIComponent(addr)}&scope=withdraw`);
         if (!cr.ok) return { ok: false, reason: "server" };
         const ch = await cr.json();
-        const signature = await window.unisat.signMessage(ch.message || ch.nonce);
+        const signature = await uni.signMessage(ch.message || ch.nonce);
         const r = await fetch(`${API_URL}/account/link-wallet`, {
           method: "POST",
           headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
@@ -702,7 +709,8 @@ function App() {
       // s'arrête AVANT tout appel réseau, avec un motif que la modale sait traduire en
       // « lie ton portefeuille » — et non en « signature requise », qui n'indique rien.
       if (!qui) return { ok: false, reason: "not-linked" };
-      if (typeof window.unisat === "undefined") return { ok: false, reason: "unisat" };
+      const uni = ACC.provider();
+      if (!uni) return { ok: false, reason: "unisat" };
       try {
         const cr = await fetch(`${API_URL}/auth/challenge?wallet=${encodeURIComponent(qui.signer)}&scope=withdraw`
           + (qui.account ? `&account=${encodeURIComponent(qui.account)}` : ""));
@@ -710,7 +718,7 @@ function App() {
         const ch = await cr.json();
         // Signe le message lié au scope « withdraw » si le serveur le fournit, sinon le nonce
         // brut (rétro-compat). Lie la signature à l'intention de retrait une fois le serveur à jour.
-        const signature = await window.unisat.signMessage(ch.message || ch.nonce);
+        const signature = await uni.signMessage(ch.message || ch.nonce);
         // Le compte visé doit accompagner le verify autant que le challenge : il fait
         // partie du texte signé, l'omettre ici ferait reconstruire au serveur un message
         // différent de celui que le joueur a signé.
