@@ -26,12 +26,14 @@ function loadMuted(wallet) {
 function saveMuted(wallet, list) {
   try { localStorage.setItem(mutedKey(wallet), JSON.stringify(list)); } catch (e) {}
 }
-function shortWallet(w) { return w ? w.slice(0, 6) + "…" + w.slice(-4) : "?"; }
 // Nom sûr : si le player_name ressemble à une arnaque, on retombe sur le wallet tronqué
 const NAME_BAD_RE = /(https?:\/\/|www\.|\b(bc1|[13])[a-z0-9]{20,}\b|t\.me|telegram|whatsapp)/i;
 function safeName(m) {
   if (m.name && !NAME_BAD_RE.test(m.name)) return m.name.slice(0, 24);
-  return shortWallet(m.wallet);
+  // Le nom est composé et stocké par le serveur (names.js) : nom .fb, portefeuille lié
+  // ou « Joueur NNNNN ». S'il manque, on n'affiche pas l'adresse du message à la place —
+  // pour un compte créé sans portefeuille, c'est une adresse fabriquée par le serveur.
+  return "?";
 }
 function hhmm(ts) {
   try { return new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); }

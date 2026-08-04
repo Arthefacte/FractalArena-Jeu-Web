@@ -193,7 +193,8 @@ function Arene() {
           <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 4 }}>
             {(pvp.ladder || []).map((row) => (
               <div key={row.wallet} className="flex between" style={{ padding: "5px 8px", background: row.wallet === g.wallet ? "rgba(0,240,255,0.08)" : "transparent", fontSize: 12 }}>
-                <span className="mono">{row.rank}. {row.wallet === g.wallet ? "➤ " : ""}{(row.name || row.wallet || "").slice(0, 10)}</span>
+                {/* 14 : « Joueur 48213 » fait 12 caractères — à 10 le numéro était coupé. */}
+                <span className="mono">{row.rank}. {row.wallet === g.wallet ? "➤ " : ""}{(row.name || "").slice(0, 14)}</span>
                 <span className="mono" style={{ color: "var(--elec)" }}>{row.rating} · {row.wins || 0}-{row.losses || 0}</span>
               </div>
             ))}
