@@ -172,6 +172,16 @@
     return !!provider();
   }
 
+  // Nom à afficher quand le serveur n'a PAS répondu (404, réseau coupé) : lui seul
+  // fournit `display_name`. Pour un compte généré, l'adresse du compte a été fabriquée
+  // par le serveur — l'afficher présenterait au joueur, comme sien, un portefeuille
+  // dont il n'a pas la clé. On préfère ne rien afficher : le nom arrive à la synchro.
+  // Pour un compte UniSat, l'adresse EST le portefeuille du joueur : on l'abrège.
+  function localDisplayName(addr, kind) {
+    if (!addr || kind === KIND_GENERATED) return "";
+    return addr.slice(0, 6) + "…" + addr.slice(-4);
+  }
+
   // Note à afficher sous le bouton de liaison. Sans extension UniSat injectée, lier
   // est impossible — c'est TOUJOURS le cas dans un navigateur mobile, qui ne sait pas
   // signer. Le joueur ne l'apprenait qu'après avoir cliqué (échec « no-unisat ») ;
@@ -219,6 +229,6 @@
     readToken, writeToken, clearToken, readKind,
     isValidRecoveryCode, looksLikeSeed, shouldShowLockedBanner, discoveryNextAction,
     withdrawSigner, withdrawDestination, linkHintKey, authFailure, estAppInstallee,
-    provider, hasProvider,
+    provider, hasProvider, localDisplayName,
   };
 })();

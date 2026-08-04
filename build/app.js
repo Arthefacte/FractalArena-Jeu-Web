@@ -107,7 +107,10 @@ function serverToState(save, addr, s) {
     equipment: Array.isArray(save.equipment) ? save.equipment : [],
     selected: s.selected.filter(id => rosterIds.has(id)),
     // retire les ids absents du nouveau roster
-    playerName: save.player_name || addr.slice(0, 6) + "…" + addr.slice(-4),
+    // Le nom affiché vient du serveur (`display_name`, names.js) : lui seul sait si
+    // `addr` est un portefeuille du joueur ou une adresse fabriquée à la création d'un
+    // compte sans wallet. Le recalculer ici réaffichait cette adresse-là au joueur.
+    playerName: save.player_name || save.display_name || "",
     playerTitle: save.player_title || "",
     holderDays: save.holder_badge_days ?? 0,
     lang: save.lang || s.lang || "FR",
@@ -623,7 +626,7 @@ function App() {
             authToken: s.authToken,
             onchainVerified: false,
             view: "team",
-            playerName: addr.slice(0, 6) + "…" + addr.slice(-4),
+            playerName: ACC.localDisplayName(addr, s.accountKind),
             roster: D.starterRoster(),
             locked: D.ECON.WELCOME_LOCKED,
             liquid: D.ECON.WELCOME_LIQUID,
@@ -679,7 +682,7 @@ function App() {
               authToken: s.authToken,
               wallet: addr,
               view: "team",
-              playerName: addr.slice(0, 6) + "…" + addr.slice(-4),
+              playerName: ACC.localDisplayName(addr, s.accountKind),
               roster: D.starterRoster(),
               locked: D.ECON.WELCOME_LOCKED,
               liquid: D.ECON.WELCOME_LIQUID,
@@ -692,7 +695,7 @@ function App() {
           return {
             ...s,
             wallet: addr,
-            playerName: addr.slice(0, 6) + "…" + addr.slice(-4),
+            playerName: ACC.localDisplayName(addr, s.accountKind),
             ordinalName: "",
             selected: [],
             view: "team"

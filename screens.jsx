@@ -898,9 +898,12 @@ function Options() {
         <div className="flex between center" style={{ marginBottom: 6 }}>
           <span className="mono" style={{ fontSize: 12, color: "var(--text-dim)" }}>{I18N.t("OP_ORDINAL")}</span>
           <span className="mono" style={{ fontSize: 13, fontWeight: 700, color: g.ordinalName ? "var(--elec)" : "var(--text-faint)" }}>
+            {/* Repli sur le nom décidé par le serveur (display_name) et non sur l'adresse
+                du compte : pour un compte créé sans portefeuille, celle-ci a été
+                fabriquée par le serveur et n'appartient pas au joueur. */}
             {g.ordinalName
               ? ((g.playerTitle ? g.playerTitle + " " : "") + g.ordinalName)
-              : (g.wallet ? (g.wallet.slice(0, 6) + "…" + g.wallet.slice(-4)) : "—")}
+              : (g.playerName || "—")}
           </span>
         </div>
         <div className="mono" style={{ fontSize: 10.5, color: "var(--text-faint)", marginBottom: 14 }}>{I18N.t("OP_ORDINAL_HINT")}</div>

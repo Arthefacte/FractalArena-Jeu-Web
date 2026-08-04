@@ -1884,7 +1884,7 @@ function Options() {
       fontWeight: 700,
       color: g.ordinalName ? "var(--elec)" : "var(--text-faint)"
     }
-  }, g.ordinalName ? (g.playerTitle ? g.playerTitle + " " : "") + g.ordinalName : g.wallet ? g.wallet.slice(0, 6) + "…" + g.wallet.slice(-4) : "—")), /*#__PURE__*/React.createElement("div", {
+  }, g.ordinalName ? (g.playerTitle ? g.playerTitle + " " : "") + g.ordinalName : g.playerName || "—")), /*#__PURE__*/React.createElement("div", {
     className: "mono",
     style: {
       fontSize: 10.5,
