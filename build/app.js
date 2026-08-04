@@ -110,7 +110,9 @@ function serverToState(save, addr, s) {
     // Le nom affiché vient du serveur (`display_name`, names.js) : lui seul sait si
     // `addr` est un portefeuille du joueur ou une adresse fabriquée à la création d'un
     // compte sans wallet. Le recalculer ici réaffichait cette adresse-là au joueur.
-    playerName: save.player_name || save.display_name || "",
+    // `player_name` n'est plus consulté : aucun écran n'en fait saisir un, et la valeur
+    // figée en base par l'ancien client (le nom qu'il fabriquait) repassait devant.
+    playerName: save.display_name || "",
     playerTitle: save.player_title || "",
     holderDays: save.holder_badge_days ?? 0,
     lang: save.lang || s.lang || "FR",
@@ -138,7 +140,9 @@ function stateToServer(g) {
     session_arte_net: g.session.net,
     session_combat_count: g.totalFights,
     next_creature_id: 0,
-    player_name: g.playerName,
+    // player_name n'est plus envoyé : c'est le serveur qui décide du nom affiché
+    // (`display_name`). Le renvoyer figeait en base un nom fabriqué par le client, qui
+    // reprenait ensuite le dessus — pour un compte sans portefeuille, son adresse serveur.
     ordinal_name: g.ordinalName,
     lang: g.lang,
     airdrop_claimed: false,
