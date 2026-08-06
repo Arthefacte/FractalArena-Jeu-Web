@@ -23,6 +23,11 @@
   },
   "homepage": "https://github.com/Arthefacte/FractalArena-Jeu-Web#readme",
   "devDependencies": {
-    "@babel/standalone": "7.29.0"
+    "@babel/standalone": "7.29.0",
+    "@gltf-transform/core": "^4.4.2",
+    "@gltf-transform/extensions": "^4.4.2",
+    "@gltf-transform/functions": "^4.4.2",
+    "meshoptimizer": "^1.2.0",
+    "sharp": "^0.35.3"
   }
 }

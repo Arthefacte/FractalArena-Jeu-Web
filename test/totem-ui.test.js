@@ -3,8 +3,8 @@ const assert = require("node:assert");
 const TU = require("../totem-ui");
 
 test("totemArtFallback : asset du type", () => {
-  assert.strictEqual(TU.totemArtFallback("HASH"), "assets/HASHBYTE.png");
-  assert.strictEqual(TU.totemArtFallback("GENESIS"), "assets/GENESIS.png");
+  assert.strictEqual(TU.totemArtFallback("HASH"), "assets/HASHBYTE.webp");
+  assert.strictEqual(TU.totemArtFallback("GENESIS"), "assets/GENESIS.webp");
 });
 
 test("tierName : paliers 0..5", () => {
@@ -25,11 +25,11 @@ test("totemArt : artUrl présent → l'URL générée", () => {
 });
 
 test("totemArt : pas d'artUrl → repli par type", () => {
-  assert.strictEqual(TU.totemArt({ type: "GENESIS", tier: 1, artUrl: null }), "assets/GENESIS.png");
+  assert.strictEqual(TU.totemArt({ type: "GENESIS", tier: 1, artUrl: null }), "assets/GENESIS.webp");
 });
 
 test("totemArt : totem absent → repli HASHBYTE", () => {
-  assert.strictEqual(TU.totemArt(null), "assets/HASHBYTE.png");
+  assert.strictEqual(TU.totemArt(null), "assets/HASHBYTE.webp");
 });
 
 test("totemArt : privilégie displayArtUrl (image cosmétique choisie)", () => {
@@ -39,7 +39,7 @@ test("totemArt : sans displayArtUrl, retombe sur artUrl", () => {
   assert.strictEqual(TU.totemArt({ type:"HASH", artUrl:"a.webp", displayArtUrl:null }), "a.webp");
 });
 test("totemArt : sans image, fallback du type", () => {
-  assert.strictEqual(TU.totemArt({ type:"GENESIS" }), "assets/GENESIS.png");
+  assert.strictEqual(TU.totemArt({ type:"GENESIS" }), "assets/GENESIS.webp");
 });
 test("galleryItems : paliers révélés triés, [] si aucun", () => {
   assert.deepStrictEqual(

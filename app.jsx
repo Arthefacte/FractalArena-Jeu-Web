@@ -1781,7 +1781,7 @@ function Header({ chipPop }) {
     <header className="hdr">
       {window.Emblem3D
         ? <span className="hdr-logo" style={{ display: "inline-block" }}><window.Emblem3D /></span>
-        : <img className="hdr-logo" src="assets/LOGO_cut.png" alt="Fractal Arena" />}
+        : <img className="hdr-logo" src="assets/LOGO_cut.webp" alt="Fractal Arena" />}
       <div className="hdr-word">
         <span className="hdr-title">FRACTAL ARENA</span>
         <span className="hdr-sub">FRACTAL BITCOIN · AUTO-BATTLER</span>
@@ -1881,7 +1881,7 @@ function Onboarding({ onAccountCreated }) {
         <div className="ob-logo" style={{ position: "relative", width: 168, height: 168, margin: "0 auto 26px", animation: "obFloat 4.5s ease-in-out infinite" }}>
           {window.Emblem3D
             ? <window.Emblem3D style={{ filter: "drop-shadow(0 0 18px rgba(247,147,26,0.35))" }} />
-            : <img src="assets/LOGO_cut.png" alt="Fractal Arena" style={{ position: "relative", width: "100%", height: "100%", objectFit: "contain", filter: "drop-shadow(0 0 18px rgba(247,147,26,0.35))" }} />}
+            : <img src="assets/LOGO_cut.webp" alt="Fractal Arena" style={{ position: "relative", width: "100%", height: "100%", objectFit: "contain", filter: "drop-shadow(0 0 18px rgba(247,147,26,0.35))" }} />}
         </div>
         <div className="eyebrow">{I18N.t("OB_TAG")}</div>
         <div className="hdr-title" style={{ fontSize: 40, letterSpacing: 6, display: "block", margin: "8px 0 18px" }}>FRACTAL ARENA</div>

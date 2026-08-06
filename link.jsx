@@ -16,8 +16,8 @@ function Link() {
       <h2>{I18N.t("LINK_TITLE")}</h2>
       <div style={{ display: "flex", gap: 16, alignItems: "center", margin: "12px 0" }}>
         <img alt="Totem"
-             src={t ? TU.totemArt(t) : "assets/HASHBYTE.png"}
-             onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = t ? TU.totemArtFallback(t.type) : "assets/HASHBYTE.png"; }}
+             src={t ? TU.totemArt(t) : "assets/HASHBYTE.webp"}
+             onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = t ? TU.totemArtFallback(t.type) : "assets/HASHBYTE.webp"; }}
              style={{ width: 120, height: 120, borderRadius: 12,
                       filter: dormant ? "grayscale(1) opacity(0.5)" : "none" }} />
         <div>

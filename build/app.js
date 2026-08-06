@@ -3224,7 +3224,7 @@ function Header({
     }
   }, /*#__PURE__*/React.createElement(window.Emblem3D, null)) : /*#__PURE__*/React.createElement("img", {
     className: "hdr-logo",
-    src: "assets/LOGO_cut.png",
+    src: "assets/LOGO_cut.webp",
     alt: "Fractal Arena"
   }), /*#__PURE__*/React.createElement("div", {
     className: "hdr-word"
@@ -3414,7 +3414,7 @@ function Onboarding({
       filter: "drop-shadow(0 0 18px rgba(247,147,26,0.35))"
     }
   }) : /*#__PURE__*/React.createElement("img", {
-    src: "assets/LOGO_cut.png",
+    src: "assets/LOGO_cut.webp",
     alt: "Fractal Arena",
     style: {
       position: "relative",

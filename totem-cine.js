@@ -151,7 +151,7 @@ export function play({ imageUrl, fallbackUrl, glbUrl = DEFAULT_GLB, onDone } = {
   const { dom } = ctx;
   ctx.renderer.domElement.style.display = ''; // ré-affiche le canvas (un play précédent a pu le cacher)
   dom.img.onerror = () => { dom.img.onerror = null; if (fallbackUrl) dom.img.src = fallbackUrl; };
-  dom.img.src = imageUrl || fallbackUrl || 'assets/HASHBYTE.png';
+  dom.img.src = imageUrl || fallbackUrl || 'assets/HASHBYTE.webp';
   if (dom.img.decode) dom.img.decode().catch(() => {}); // décode l'image AVANT le reveal → pas d'à-coup
   dom.root.style.display = 'block';
   dom.flash.style.transition = 'none'; dom.flash.style.opacity = 0;

@@ -92,7 +92,7 @@ function cineVals(t, opts) {
   const blurE = L(18, 0, S(8.4, 9.9));
   const settleY = L(0, -5, S(11.0, 12.2)) + (t > 11 ? Math.sin(t * 1.4) * 0.7 : 0);
   const emblemStyle = { position: 'absolute', left: '50%', top: 'calc(44% - 3cm)', width: 'min(50vmin,540px)', height: 'min(50vmin,540px)', perspective: '1600px', transform: `translate(-50%,-50%) translateY(${settleY}%) scale(${scaleE})`, opacity: opP, filter: `blur(${blurE}px) drop-shadow(0 4px 16px rgba(0,0,0,0.5))`, pointerEvents: 'none', willChange: 'transform' };
-  const glowStyle = { position: 'absolute', left: '50%', top: 'calc(44% - 3cm)', width: 'min(78vmin,820px)', height: 'min(78vmin,820px)', transform: `translate(-50%,-50%) translateY(${settleY}%) scale(${L(0.5, 1.2, S(8.4, 10.6)) + 0.05 * Math.sin(t * 2.2)})`, background: `radial-gradient(circle, ${rgba(0.5)} 0%, ${rgba(0.12)} 38%, transparent 68%)`, opacity: S(8.4, 9.8) * (0.65 + 0.35 * Math.sin(t * 2.0)), filter: 'blur(14px)', mixBlendMode: 'screen', pointerEvents: 'none' };
+  const glowStyle = { position: 'absolute', left: '50%', top: 'calc(44% - 3cm)', width: 'min(78vmin,820px)', height: 'min(78vmin,820px)', transform: `translate(-50%,-50%) translateY(${settleY}%) scale(${L(0.5, 1.2, S(8.4, 10.6)) + 0.05 * Math.sin(t * 2.2)})`, background: `radial-gradient(circle, ${rgba(0.5)} 0%, ${rgba(0.12)} 38%, transparent 68%)`, opacity: S(8.4, 9.8) * (0.65 + 0.35 * Math.sin(t * 2.0)), mixBlendMode: 'screen', pointerEvents: 'none' };
 
   const loreOut = 1 - S(4.3, 5.1);
   const loreStyle = { position: 'absolute', left: '50%', top: '45%', transform: 'translate(-50%,-50%)', width: 'min(88vw,840px)', textAlign: 'center', pointerEvents: 'none' };
@@ -193,7 +193,7 @@ function Emblem3D(props) {
         scene.add(group);
 
         const loader = new GLTFLoader();
-        loader.load('assets/Emblem_optimise_12Mo.glb', (gltf) => {
+        loader.load('assets/emblem.glb', (gltf) => {
           if (disposed) return;
           const m1 = gltf.scene;
           const box = new THREE.Box3().setFromObject(m1);
@@ -384,7 +384,7 @@ function Cinematique(props) {
         scene.add(group);
 
         const loader = new GLTFLoader();
-        loader.load('assets/Emblem_optimise_12Mo.glb', (gltf) => {
+        loader.load('assets/emblem.glb', (gltf) => {
           if (disposed) return;
           const m1 = gltf.scene;
           const box = new THREE.Box3().setFromObject(m1);
@@ -457,7 +457,7 @@ function Cinematique(props) {
       onDragStart={(e) => e.preventDefault()}
       style={{ position: 'fixed', inset: 0, overflow: 'hidden', background: '#05070f', fontFamily: "'Chakra Petch',sans-serif", color: '#EAF1FF', zIndex: 1000, userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}
     >
-      <img src="assets/BACKGROUND.png" alt="" draggable={false} style={v.bgStyle} />
+      <img src="assets/BACKGROUND.webp" alt="" draggable={false} style={v.bgStyle} />
       <div style={v.darkStyle} />
       <div style={v.scanStyle} />
       <div style={v.sweepStyle} />

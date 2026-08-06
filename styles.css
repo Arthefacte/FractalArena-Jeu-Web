@@ -593,7 +593,10 @@ input { font-family: var(--font-mono); }
   padding: 24px;
   animation: ovIn .2s ease-out;
 }
-@keyframes ovIn { from { backdrop-filter: blur(0px); } to { backdrop-filter: blur(7px); } }
+/* Fondu d'opacité, pas de backdrop-filter animé : faire monter un flou de 0 à 7 px sur un
+   `position:fixed; inset:0` obligeait le navigateur à re-flouter tout l'écran à chaque frame,
+   à chaque ouverture de modale. Le flou est désormais posé une fois, sur une couche stable. */
+@keyframes ovIn { from { opacity: 0; } to { opacity: 1; } }
 .modal {
   position: relative; width: 100%; max-width: 480px;
   background: linear-gradient(180deg, var(--bg-panel-2), var(--bg-panel));
