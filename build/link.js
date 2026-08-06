@@ -32,10 +32,10 @@ function Link() {
     }
   }, /*#__PURE__*/React.createElement("img", {
     alt: "Totem",
-    src: t ? TU.totemArt(t) : "assets/HASHBYTE.png",
+    src: t ? TU.totemArt(t) : "assets/HASHBYTE.webp",
     onError: e => {
       e.currentTarget.onerror = null;
-      e.currentTarget.src = t ? TU.totemArtFallback(t.type) : "assets/HASHBYTE.png";
+      e.currentTarget.src = t ? TU.totemArtFallback(t.type) : "assets/HASHBYTE.webp";
     },
     style: {
       width: 120,

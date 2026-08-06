@@ -220,7 +220,6 @@ function cineVals(t, opts) {
     transform: `translate(-50%,-50%) translateY(${settleY}%) scale(${L(0.5, 1.2, S(8.4, 10.6)) + 0.05 * Math.sin(t * 2.2)})`,
     background: `radial-gradient(circle, ${rgba(0.5)} 0%, ${rgba(0.12)} 38%, transparent 68%)`,
     opacity: S(8.4, 9.8) * (0.65 + 0.35 * Math.sin(t * 2.0)),
-    filter: 'blur(14px)',
     mixBlendMode: 'screen',
     pointerEvents: 'none'
   };
@@ -511,7 +510,7 @@ function Emblem3D(props) {
         group = new THREE.Group();
         scene.add(group);
         const loader = new GLTFLoader();
-        loader.load('assets/Emblem_optimise_12Mo.glb', gltf => {
+        loader.load('assets/emblem.glb', gltf => {
           if (disposed) return;
           const m1 = gltf.scene;
           const box = new THREE.Box3().setFromObject(m1);
@@ -766,7 +765,7 @@ function Cinematique(props) {
         group = new THREE.Group();
         scene.add(group);
         const loader = new GLTFLoader();
-        loader.load('assets/Emblem_optimise_12Mo.glb', gltf => {
+        loader.load('assets/emblem.glb', gltf => {
           if (disposed) return;
           const m1 = gltf.scene;
           const box = new THREE.Box3().setFromObject(m1);
@@ -904,7 +903,7 @@ function Cinematique(props) {
       WebkitTouchCallout: 'none'
     }
   }, /*#__PURE__*/React.createElement("img", {
-    src: "assets/BACKGROUND.png",
+    src: "assets/BACKGROUND.webp",
     alt: "",
     draggable: false,
     style: v.bgStyle

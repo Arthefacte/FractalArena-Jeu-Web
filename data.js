@@ -67,12 +67,12 @@ window.FA_API_URL = (typeof location !== "undefined" &&
 
   // ---- Creature art (real assets) ----
   const ART = {
-    HashByte: "assets/HASHBYTE.png",
-    Miner: "assets/MINER.png",
-    LEDGER: "assets/LEDGER.png",
-    NETWORK: "assets/NETWORK.png",
-    BLOCK: "assets/BLOCK.png",
-    GENESIS: "assets/GENESIS.png",
+    HashByte: "assets/HASHBYTE.webp",
+    Miner: "assets/MINER.webp",
+    LEDGER: "assets/LEDGER.webp",
+    NETWORK: "assets/NETWORK.webp",
+    BLOCK: "assets/BLOCK.webp",
+    GENESIS: "assets/GENESIS.webp",
   };
   // Display names per type
   const TYPE_LABEL = {

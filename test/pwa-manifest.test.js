@@ -4,7 +4,7 @@
    d'écran d'accueil. C'est ce que ces règles verrouillent.
 
    Contrainte du propriétaire du jeu : qualité avant le poids. Les icônes sont
-   dérivées de l'emblème réel en pleine résolution (assets/boot-emblem.png,
+   dérivées de l'emblème réel en pleine résolution (_bake/boot-emblem.png,
    920x920), pas redessinées ni sous-échantillonnées à l'économie —
    cf. _bake/gen-pwa-icons.mjs. */
 const test = require("node:test");

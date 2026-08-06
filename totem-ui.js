@@ -4,12 +4,12 @@
 
   // Repli déterministe : asset du type (en attendant l'art génératif, Plan 5)
   const TYPE_ART = {
-    HASH: "assets/HASHBYTE.png", MINING: "assets/MINER.png", LEDGER: "assets/LEDGER.png",
-    NETWORK: "assets/NETWORK.png", BLOCK: "assets/BLOCK.png", GENESIS: "assets/GENESIS.png",
+    HASH: "assets/HASHBYTE.webp", MINING: "assets/MINER.webp", LEDGER: "assets/LEDGER.webp",
+    NETWORK: "assets/NETWORK.webp", BLOCK: "assets/BLOCK.webp", GENESIS: "assets/GENESIS.webp",
   };
   const TIER_NAMES = ["Dormant", "Hatchling", "Fledgling", "Ascendant", "Sovereign", "Ascended"];
 
-  function totemArtFallback(type) { return TYPE_ART[type] || "assets/HASHBYTE.png"; }
+  function totemArtFallback(type) { return TYPE_ART[type] || "assets/HASHBYTE.webp"; }
   function tierName(tier) { return TIER_NAMES[tier] || TIER_NAMES[0]; }
   function pct(x) { return Math.round((x || 0) * 100); }
   function auraSummary(aura) {
@@ -17,7 +17,7 @@
     return `+${pct(aura.ampSameType)}% même type · +${pct(aura.globalBuff)}% global`;
   }
   function totemArt(t) {
-    if (!t) return "assets/HASHBYTE.png";
+    if (!t) return "assets/HASHBYTE.webp";
     return t.displayArtUrl || t.artUrl || totemArtFallback(t.type);
   }
   // Images de palier révélées, pour la galerie cosmétique. Trié par palier croissant.
