@@ -40,5 +40,22 @@
     return { anime: true, delta };
   }
 
-  window.FA_JUICE_UI = { shakeIntensity, particleSpec, clamp01, variationSolde };
+  // Ce qui vient d'entrer dans chaque pool de rachat, tier par tier. Seules les
+  // HAUSSES : un pool qui redescend, c'est un rachat exécuté — un événement d'une
+  // autre nature, qui ne se résume pas à un « −5000 » discret sur une jauge.
+  // Un pool absent du relevé précédent est ignoré : on ne sait pas d'où il part,
+  // et son total entier ne serait pas un gain.
+  function gainsPools(prev, suivants, initialise) {
+    const gains = {};
+    if (!initialise || !Array.isArray(prev) || !Array.isArray(suivants)) return gains;
+    const avant = new Map(prev.map((p) => [p.tier, p.total || 0]));
+    for (const p of suivants) {
+      if (!avant.has(p.tier)) continue;
+      const d = (p.total || 0) - avant.get(p.tier);
+      if (d > 0) gains[p.tier] = d;
+    }
+    return gains;
+  }
+
+  window.FA_JUICE_UI = { shakeIntensity, particleSpec, clamp01, variationSolde, gainsPools };
 })();

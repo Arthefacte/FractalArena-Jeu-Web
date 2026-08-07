@@ -66,3 +66,36 @@ test("variationSolde : un solde inchange n'anime rien", () => {
 test("variationSolde : le premier remplissage n'est pas un gain", () => {
   assert.deepStrictEqual(J.variationSolde(0, 636, false), { anime: false, delta: 0 });
 });
+
+// --- Gains entrants des pools de rachat ---
+// Le joueur qui offre au pool doit voir la jauge bouger. Seules les HAUSSES
+// s'annoncent : un pool qui redescend, c'est un rachat execute — un evenement
+// d'une autre nature, qui ne se resume pas a un « -5000 » discret.
+
+const POOLS_A = [{ tier: 5000, total: 100 }, { tier: 10000, total: 40 }];
+
+test("gainsPools : seules les hausses sont annoncees, pool par pool", () => {
+  const suivant = [{ tier: 5000, total: 110 }, { tier: 10000, total: 40 }];
+  assert.deepStrictEqual(J.gainsPools(POOLS_A, suivant, true), { 5000: 10 });
+});
+
+test("gainsPools : un rachat qui vide un pool n'anime rien", () => {
+  const suivant = [{ tier: 5000, total: 0 }, { tier: 10000, total: 40 }];
+  assert.deepStrictEqual(J.gainsPools(POOLS_A, suivant, true), {});
+});
+
+test("gainsPools : plusieurs pools peuvent monter en meme temps", () => {
+  const suivant = [{ tier: 5000, total: 105 }, { tier: 10000, total: 47 }];
+  assert.deepStrictEqual(J.gainsPools(POOLS_A, suivant, true), { 5000: 5, 10000: 7 });
+});
+
+// Premier chargement : les totaux arrivent d'un coup depuis /buyback/status.
+// Sans garde, chaque ouverture du jeu ferait pleuvoir des « +2 400 ».
+test("gainsPools : le premier chargement n'est pas un gain", () => {
+  assert.deepStrictEqual(J.gainsPools([], POOLS_A, false), {});
+});
+
+test("gainsPools : un pool inconnu au tour precedent est ignore, pas invente", () => {
+  const suivant = [...POOLS_A, { tier: 25000, total: 900 }];
+  assert.deepStrictEqual(J.gainsPools(POOLS_A, suivant, true), {});
+});
