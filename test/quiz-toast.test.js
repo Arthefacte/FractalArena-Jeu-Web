@@ -51,7 +51,10 @@ test("la bulle affiche un decompte", () => {
 // desynchronisent, et la bulle se ferme avant la fin du compte affiche.
 test("le decompte est ce qui ferme la bulle, pas un second minuteur", () => {
   assert.ok(!/setTimeout\([^)]*fermer/.test(src), "un setTimeout parallele au decompte");
-  assert.match(src, /if\s*\(\s*r\s*<=\s*0\s*\)\s*fermer\(\)/);
+  // A zero, la bulle disparait : soit par fermer(), soit par garder() qui ferme
+  // apres avoir confirme. Le test tient a ce que le compteur declenche la sortie,
+  // pas a la forme exacte de la branche.
+  assert.match(src, /if\s*\(\s*r\s*<=\s*0\s*\)[\s\S]{0,120}(garder|fermer)\(\)/);
 });
 
 // Sans choix, la bulle se ferme et rien n'est offert : le joueur doit le savoir
@@ -85,6 +88,45 @@ test("pas de croix tant que le choix garder/offrir est a l'ecran", () => {
 test("la croix porte un nom accessible traduit", () => {
   const bouton = src.match(/<button[^>]*quiz-close[^>]*>/);
   assert.match(bouton[0], /aria-label=\{I18N\.t\("QUIZ_CLOSE"\)\}/);
+});
+
+// « Offrir » confirmait par un toast, « Garder » ne disait rien : le gain part
+// dans le solde verrouille, que le bandeau du haut n'affiche pas — le joueur
+// voyait la bulle disparaitre sans qu'aucun chiffre ne bouge, et concluait qu'il
+// n'avait rien recu. Les deux issues doivent se confirmer pareil.
+test("garder confirme par un toast, comme offrir", () => {
+  assert.match(src, /function garder\(/, "garder() doit exister a cote d'offrir()");
+  const bloc = src.slice(src.indexOf("function garder("), src.indexOf("function garder(") + 400);
+  assert.match(bloc, /toast\(/, "garder() doit confirmer au joueur");
+  assert.match(bloc, /QUIZ_KEPT/);
+  const bouton = src.match(/<button className="quiz-choice" onClick=\{(\w+)\}>[\s\S]{0,120}QUIZ_KEEP/);
+  assert.ok(bouton, "bouton Garder introuvable");
+  assert.strictEqual(bouton[1], "garder", "le bouton Garder doit appeler garder(), pas fermer()");
+});
+
+// Laisser le decompte expirer, c'est garder aussi : meme confirmation, sinon le
+// cas ou le joueur est le plus perdu est justement celui qui ne dit rien.
+test("l'expiration avec un choix en attente confirme la conservation", () => {
+  assert.match(src, /choixRef/, "le minuteur doit connaitre l'etat courant du choix");
+  assert.match(src, /if\s*\(\s*r\s*<=\s*0\s*\)\s*\{?\s*(choixRef\.current\s*\?\s*garder\(\)|if\s*\(\s*choixRef\.current\s*\)\s*garder\(\))/,
+    "a 0 s, un choix en attente doit passer par garder()");
+});
+
+// Un don qui echoue fermait la bulle sans un mot : le joueur croyait avoir donne
+// alors que rien n'etait parti.
+test("un don qui echoue le dit au joueur", () => {
+  const bloc = src.slice(src.indexOf("async function offrir("), src.indexOf("async function offrir(") + 1400);
+  assert.match(bloc, /QUIZ_GIVE_REFUSED/, "un refus serveur doit etre annonce");
+  assert.match(bloc, /QUIZ_GIVE_UNSURE/, "une coupure reseau doit etre annoncee comme incertaine");
+  assert.match(bloc, /"bad"/, "l'echec doit se voir comme un echec, pas comme un succes");
+});
+
+// Reseau coupe : le serveur a pu commettre le don avant que la reponse se perde.
+// Affirmer « tes FA sont restes » serait un mensonge une fois sur deux.
+test("le doute reseau ne se fait pas passer pour un refus", () => {
+  const bloc = src.slice(src.indexOf("async function offrir("), src.indexOf("async function offrir(") + 1400);
+  assert.match(bloc, /reason\s*===\s*"network"[\s\S]{0,400}QUIZ_GIVE_UNSURE/,
+    "seul le cas reseau doit produire le message incertain");
 });
 
 // Aucune bulle pendant un combat, une modale ou une signature : un seul point de
