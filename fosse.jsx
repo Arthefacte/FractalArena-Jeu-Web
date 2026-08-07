@@ -135,6 +135,15 @@ function Fosse() {
     }
   }, [g.selected.join(","), g.roster, playing]);
 
+  // Un combat en cours de résolution ne se fait pas interrompre par une bulle de
+  // quiz : on marque l'application occupée le temps du déroulé (quiz.jsx lit le
+  // drapeau `fa-busy` sur <body>), et on le retire aussi au démontage.
+  useEffect(() => {
+    const set = window.FA_SET_BUSY;
+    if (set) set("fosse", playing);
+    return () => { if (set) set("fosse", false); };
+  }, [playing]);
+
   // cleanup on unmount
   useEffect(() => () => { loopRef.current = false; runIdRef.current++; if (stepRef.current) clearTimeout(stepRef.current); }, []);
 

@@ -61,6 +61,19 @@ const HAS_UNISAT = () => ACC.hasProvider();
 let lastAuthReason = null;
 const IS_MOBILE = () => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
 
+// Une signature UniSat ouvre une popup hors de la page : rien ne doit s'afficher
+// par-dessus pendant ce temps. On marque l'application occupée (quiz.jsx pose et
+// lit le drapeau `fa-busy` sur <body>) et on la libère quoi qu'il arrive.
+async function pendantSignature(promesse) {
+  const set = window.FA_SET_BUSY;
+  if (set) set("signature", true);
+  try {
+    return await promesse;
+  } finally {
+    if (set) set("signature", false);
+  }
+}
+
 // Progression campagne serveur (plat "w-f" → stars) vers le format client imbriqué.
 function nestProgress(flat) {
   const out = {};
@@ -753,7 +766,7 @@ function App() {
         if (ACC.estAppInstallee()) toast(I18N.t("AUTHDIAG_PENDING_APP"), "info");
         // Signe le message lié au scope si le serveur le fournit, sinon le nonce brut
         // (rétro-compat : le serveur actuel ne renvoie que `nonce`).
-        const signature = await uni.signMessage(ch.message || ch.nonce);
+        const signature = await pendantSignature(uni.signMessage(ch.message || ch.nonce));
         const vr = await fetch(`${API_URL}/auth/verify`, {
           method: "POST",
           headers: {
@@ -1044,7 +1057,7 @@ function App() {
           reason: "server"
         };
         const ch = await cr.json();
-        const signature = await uni.signMessage(ch.message || ch.nonce);
+        const signature = await pendantSignature(uni.signMessage(ch.message || ch.nonce));
         const r = await fetch(`${API_URL}/account/link-wallet`, {
           method: "POST",
           headers: {
@@ -1126,7 +1139,7 @@ function App() {
         const ch = await cr.json();
         // Signe le message lié au scope « withdraw » si le serveur le fournit, sinon le nonce
         // brut (rétro-compat). Lie la signature à l'intention de retrait une fois le serveur à jour.
-        const signature = await uni.signMessage(ch.message || ch.nonce);
+        const signature = await pendantSignature(uni.signMessage(ch.message || ch.nonce));
         // Le compte visé doit accompagner le verify autant que le challenge : il fait
         // partie du texte signé, l'omettre ici ferait reconstruire au serveur un message
         // différent de celui que le joueur a signé.
@@ -2137,6 +2150,184 @@ function App() {
         };
       }
     },
+    // --- Quiz éducatif ---
+    // Tire la prochaine question. Lecture seule : le serveur n'écrit rien ici et
+    // ne renvoie jamais la bonne réponse — seulement l'énoncé et les trois choix.
+    async fetchQuizQuestion() {
+      const s = gRef.current;
+      if (!s.wallet) return {
+        ok: false
+      };
+      try {
+        const lang = encodeURIComponent(I18N.getLang() || "FR");
+        const resp = await fetch(`${API_URL}/quiz/next/${encodeURIComponent(s.wallet)}?lang=${lang}`);
+        if (!resp.ok) return {
+          ok: false
+        };
+        return {
+          ok: true,
+          data: await resp.json()
+        };
+      } catch (e) {
+        return {
+          ok: false
+        };
+      }
+    },
+    // Répond. La destination ne se choisit pas ici : le serveur crédite toujours
+    // le joueur d'abord (il ne peut pas décider avant de savoir s'il a juste), et
+    // c'est donateQuiz qui convertit ensuite ce gain en don.
+    async answerQuiz(questionId, choice) {
+      const s = gRef.current;
+      if (!s.authToken) return {
+        ok: false,
+        reason: "auth"
+      };
+      try {
+        const lang = encodeURIComponent(I18N.getLang() || "FR");
+        const resp = await fetch(`${API_URL}/quiz/answer?lang=${lang}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${s.authToken}`
+          },
+          body: JSON.stringify({
+            question_id: questionId,
+            choice
+          })
+        });
+        if (resp.status === 401) {
+          const re = await actions.authenticate(gRef.current.wallet);
+          if (!re) {
+            toast(I18N.t("AUTH_EXPIRED"), "bad");
+            return {
+              ok: false,
+              reason: "auth"
+            };
+          }
+          return {
+            ok: false,
+            reason: "retry"
+          };
+        }
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({}));
+          return {
+            ok: false,
+            reason: err.error || `Erreur ${resp.status}`
+          };
+        }
+        const data = await resp.json();
+        if (data.reward > 0) setG(st => ({
+          ...st,
+          locked: (st.locked || 0) + data.reward
+        }));
+        return {
+          ok: true,
+          data
+        };
+      } catch (e) {
+        return {
+          ok: false,
+          reason: "network"
+        };
+      }
+    },
+    // Convertit le gain déjà crédité en don au pool de rachat (fenêtre de 60 s
+    // côté serveur). Le solde verrouillé redescend d'autant.
+    async donateQuiz(questionId) {
+      const s = gRef.current;
+      if (!s.authToken) return {
+        ok: false,
+        reason: "auth"
+      };
+      try {
+        const resp = await fetch(`${API_URL}/quiz/donate`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${s.authToken}`
+          },
+          body: JSON.stringify({
+            question_id: questionId
+          })
+        });
+        if (resp.status === 401) {
+          const re = await actions.authenticate(gRef.current.wallet);
+          if (!re) {
+            toast(I18N.t("AUTH_EXPIRED"), "bad");
+            return {
+              ok: false,
+              reason: "auth"
+            };
+          }
+          return {
+            ok: false,
+            reason: "retry"
+          };
+        }
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({}));
+          return {
+            ok: false,
+            reason: err.error || `Erreur ${resp.status}`
+          };
+        }
+        const data = await resp.json();
+        const donne = data.granted_pool || 0;
+        if (donne > 0) setG(st => ({
+          ...st,
+          locked: Math.max(0, (st.locked || 0) - donne)
+        }));
+        return {
+          ok: true,
+          data
+        };
+      } catch (e) {
+        return {
+          ok: false,
+          reason: "network"
+        };
+      }
+    },
+    // Bandeau public : aucune authentification, réponse déjà cachée 30 s côté serveur.
+    async fetchQuizTicker() {
+      try {
+        const resp = await fetch(`${API_URL}/quiz/ticker`);
+        if (!resp.ok) return {
+          ok: false
+        };
+        return {
+          ok: true,
+          data: await resp.json()
+        };
+      } catch (e) {
+        return {
+          ok: false
+        };
+      }
+    },
+    // Fiche de prestige : deux compteurs (savoir, contribution) et leurs titres.
+    async fetchQuizProfile() {
+      const s = gRef.current;
+      if (!s.wallet) return {
+        ok: false
+      };
+      try {
+        const resp = await fetch(`${API_URL}/quiz/profile/${encodeURIComponent(s.wallet)}`);
+        if (!resp.ok) return {
+          ok: false
+        };
+        return {
+          ok: true,
+          data: await resp.json()
+        };
+      } catch (e) {
+        return {
+          ok: false
+        };
+      }
+    },
     // --- Parcours de découverte ---
     // État du parcours. Le serveur recompte la progression à chaque appel : le
     // client n'en garde aucune trace et n'en calcule jamais. `eligible: false`
@@ -3144,7 +3335,7 @@ function App() {
   }), g.wallet && /*#__PURE__*/React.createElement(LockedBanner, null), g.wallet && /*#__PURE__*/React.createElement(window.PwaInstallBanner, {
     prompt: pwaPrompt,
     onInstalled: () => setPwaPrompt(null)
-  }), /*#__PURE__*/React.createElement(BuybackTicker, null), /*#__PURE__*/React.createElement(Nav, null), /*#__PURE__*/React.createElement("div", {
+  }), /*#__PURE__*/React.createElement(BuybackTicker, null), /*#__PURE__*/React.createElement(window.QuizTicker, null), /*#__PURE__*/React.createElement(Nav, null), /*#__PURE__*/React.createElement("div", {
     className: "view-anim",
     key: g.view
   }, /*#__PURE__*/React.createElement(View, null))), /*#__PURE__*/React.createElement(ChatFab, null), /*#__PURE__*/React.createElement(RoomFab, null), /*#__PURE__*/React.createElement(Toasts, {
@@ -3152,7 +3343,7 @@ function App() {
   }), /*#__PURE__*/React.createElement(window.PwaOfflineGate, {
     etat: etatReseau,
     onReessayer: () => setEnLigne(navigator.onLine !== false)
-  }), g.wallet && /*#__PURE__*/React.createElement(TutorialGate, null), g.wallet && /*#__PURE__*/React.createElement(LoginGate, null), accSecrets && /*#__PURE__*/React.createElement(window.SecretsGate, {
+  }), g.wallet && /*#__PURE__*/React.createElement(TutorialGate, null), g.wallet && /*#__PURE__*/React.createElement(LoginGate, null), g.wallet && /*#__PURE__*/React.createElement(window.QuizToast, null), accSecrets && /*#__PURE__*/React.createElement(window.SecretsGate, {
     secrets: accSecrets,
     onDone: () => setAccSecrets(null)
   }), (() => {

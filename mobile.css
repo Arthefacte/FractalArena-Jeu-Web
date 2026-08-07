@@ -103,6 +103,13 @@
 
   /* ---- Toasts above the bottom bar ---- */
   .toast-wrap { bottom: calc(78px + env(safe-area-inset-bottom, 0)); }
+
+  /* ---- Quiz : pleine largeur au-dessus de la barre de nav ----
+     À 320 px fixes, la bulle débordait sous la nav fixe et sous les fabs. */
+  .quiz-toast {
+    left: 12px; right: 12px; width: auto;
+    bottom: calc(140px + env(safe-area-inset-bottom, 0));
+  }
 }
 
 /* Extra squeeze for very narrow phones */
