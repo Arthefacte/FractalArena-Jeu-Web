@@ -909,6 +909,21 @@
     CINE_REPLAY:  { FR: "⟳ Revoir", EN: "⟳ Replay", ZH: "⟳ 重播" },
     CINE_LOADING: { FR: "Initialisation du protocole…", EN: "Initializing protocol…", ZH: "协议初始化中…" },
     CINE_SOUND:   { FR: "SON", EN: "SOUND", ZH: "声音" },
+
+    // ---- Quiz éducatif ----
+    // Les deux destinations pèsent pareil : même longueur d'intention, aucun
+    // adjectif valorisant d'un côté ni culpabilisant de l'autre. Le montant vient
+    // du serveur (%d) et s'écrit « %d FA » pour que FaText y mette le logo.
+    QUIZ_KEEP:  { FR: "Garder %d FA", EN: "Keep %d FA", ZH: "保留 %d FA" },
+    QUIZ_GIVE:  { FR: "Offrir au rachat", EN: "Give to buyback", ZH: "捐给回购池" },
+    QUIZ_CORRECT: { FR: "Bonne réponse", EN: "Correct", ZH: "回答正确" },
+    QUIZ_WRONG:   { FR: "Mauvaise réponse", EN: "Wrong answer", ZH: "回答错误" },
+    QUIZ_REVIEW:  { FR: "Révision — sans récompense", EN: "Review — no reward", ZH: "复习 — 无奖励" },
+    QUIZ_GIVEN:   { FR: "%d FA ajoutés au pool de rachat", EN: "%d FA added to the buyback pool", ZH: "已向回购池注入 %d FA" },
+    QUIZ_TICKER_DON:   { FR: "%s a offert %d FA au rachat", EN: "%s gave %d FA to the buyback", ZH: "%s 向回购池捐赠了 %d FA" },
+    QUIZ_TICKER_TOTAL: { FR: "Les joueurs ont offert %d FA au rachat", EN: "Players have given %d FA to the buyback", ZH: "玩家已向回购池捐赠 %d FA" },
+    QUIZ_TITLE_KNOWLEDGE: { FR: "Savoir", EN: "Knowledge", ZH: "知识" },
+    QUIZ_TITLE_CONTRIB:   { FR: "Contribution", EN: "Contribution", ZH: "贡献" },
   };
 
   let lang = "FR";
