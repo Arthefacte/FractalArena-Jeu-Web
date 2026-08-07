@@ -28,6 +28,138 @@ const {
 } = window;
 const API_URL = window.FA_API_URL;
 
+/* ---------------- PRESTIGE DU QUIZ ----------------
+   Deux pistes indépendantes, servies par GET /quiz/profile : le savoir (bonnes
+   réponses) et la contribution (FA versés aux pools de rachat, quiz et sinks de
+   jeu confondus). Le joueur choisit lequel des deux titres il porte ; en v1 ce
+   choix est local (localStorage) — aucune route serveur de plus. */
+const QUIZ_TITLE_KEY = "fa_quiz_title_choice";
+function litChoixTitre() {
+  try {
+    return localStorage.getItem(QUIZ_TITLE_KEY) || "none";
+  } catch (e) {
+    return "none";
+  }
+}
+
+// Le titre à afficher à côté du nom, d'après le choix du joueur. Renvoie "" si
+// le titre visé n'est pas encore débloqué : on n'affiche jamais un titre vide.
+function titrePrestige(profil, choix) {
+  if (!profil || !choix || choix === "none") return "";
+  if (choix === "knowledge") return profil.knowledge_title || "";
+  if (choix === "contribution") return profil.contribution_title || "";
+  return "";
+}
+function QuizPrestige() {
+  const {
+    actions
+  } = useFA();
+  const [profil, setProfil] = useState(null);
+  const [quizTitleChoice, setQuizTitleChoice] = useState(litChoixTitre);
+  useEffect(() => {
+    let vivant = true;
+    actions.fetchQuizProfile().then(r => {
+      if (vivant && r.ok) setProfil(r.data);
+    });
+    return () => {
+      vivant = false;
+    };
+  }, [actions]);
+  function choisir(v) {
+    setQuizTitleChoice(v);
+    try {
+      localStorage.setItem(QUIZ_TITLE_KEY, v);
+    } catch (e) {/* mode privé : le choix ne survit pas, tant pis */}
+  }
+  if (!profil) return null;
+  const options = [["none", I18N.t("QUIZ_NONE"), ""], ["knowledge", I18N.t("QUIZ_TITLE_KNOWLEDGE"), profil.knowledge_title || ""], ["contribution", I18N.t("QUIZ_TITLE_CONTRIB"), profil.contribution_title || ""]];
+  return /*#__PURE__*/React.createElement("div", {
+    className: "panel oct",
+    style: {
+      border: "1px solid var(--line)",
+      padding: 20,
+      marginTop: 16
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "eyebrow",
+    style: {
+      color: "var(--elec)",
+      marginBottom: 12
+    }
+  }, I18N.t("QUIZ_PRESTIGE")), /*#__PURE__*/React.createElement("div", {
+    className: "flex between center",
+    style: {
+      marginBottom: 4
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "mono",
+    style: {
+      fontSize: 12,
+      color: "var(--text-dim)"
+    }
+  }, I18N.t("QUIZ_TITLE_KNOWLEDGE")), /*#__PURE__*/React.createElement("span", {
+    className: "mono",
+    style: {
+      fontSize: 13,
+      fontWeight: 700,
+      color: profil.knowledge_title ? "var(--elec)" : "var(--text-faint)"
+    }
+  }, profil.knowledge_title || "—")), /*#__PURE__*/React.createElement("div", {
+    className: "mono muted",
+    style: {
+      fontSize: 11,
+      marginBottom: 12
+    }
+  }, I18N.t("QUIZ_ANSWERED", profil.knowledge || 0, profil.total_questions || 0)), /*#__PURE__*/React.createElement("div", {
+    className: "flex between center",
+    style: {
+      marginBottom: 4
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "mono",
+    style: {
+      fontSize: 12,
+      color: "var(--text-dim)"
+    }
+  }, I18N.t("QUIZ_TITLE_CONTRIB")), /*#__PURE__*/React.createElement("span", {
+    className: "mono",
+    style: {
+      fontSize: 13,
+      fontWeight: 700,
+      color: profil.contribution_title ? "var(--fire)" : "var(--text-faint)"
+    }
+  }, profil.contribution_title || "—")), /*#__PURE__*/React.createElement("div", {
+    className: "mono muted",
+    style: {
+      fontSize: 11,
+      marginBottom: 14
+    }
+  }, /*#__PURE__*/React.createElement(FaText, {
+    text: I18N.t("QUIZ_CONTRIBUTED", profil.contribution || 0),
+    s: 11
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      fontSize: 12,
+      color: "var(--text-dim)",
+      marginBottom: 8
+    }
+  }, I18N.t("QUIZ_SHOWN")), /*#__PURE__*/React.createElement("div", {
+    className: "flex gap12 wrap"
+  }, options.map(([v, label, titre]) => /*#__PURE__*/React.createElement("button", {
+    key: v,
+    className: cx("btn sm", quizTitleChoice === v && "on"),
+    style: {
+      flex: 1,
+      minWidth: 96
+    }
+    // Un titre pas encore débloqué ne se choisit pas : il n'y a rien à porter.
+    ,
+    disabled: v !== "none" && !titre,
+    onClick: () => choisir(v)
+  }, label))));
+}
+
 /* ---------------- TEAM ---------------- */
 function Team() {
   const {
@@ -1802,7 +1934,7 @@ function Perso() {
     frac: g.holderDays / 360,
     kind: "xp",
     className: ""
-  }))));
+  })), /*#__PURE__*/React.createElement(QuizPrestige, null)));
 }
 
 /* ---------------- OPTIONS ---------------- */
@@ -1821,6 +1953,18 @@ function Options() {
   const [confirmDisconnect, setConfirmDisconnect] = useState(false);
   const isGenerated = g.accountKind === window.FA_ACCOUNT.KIND_GENERATED;
   const langs = [["FR", "Français"], ["EN", "English"], ["ZH", "中文"]];
+  // Titre de prestige que le joueur a choisi de porter (choix local, cf. QuizPrestige).
+  // Sans cet affichage le sélecteur ne changerait rien à l'écran.
+  const [prestigeAffiche, setPrestigeAffiche] = useState("");
+  useEffect(() => {
+    let vivant = true;
+    actions.fetchQuizProfile().then(r => {
+      if (vivant && r.ok) setPrestigeAffiche(titrePrestige(r.data, litChoixTitre()));
+    });
+    return () => {
+      vivant = false;
+    };
+  }, [actions]);
   function onDisconnectClick() {
     if (isGenerated) setConfirmDisconnect(true);else actions.disconnect();
   }
@@ -1884,7 +2028,7 @@ function Options() {
       fontWeight: 700,
       color: g.ordinalName ? "var(--elec)" : "var(--text-faint)"
     }
-  }, g.ordinalName ? (g.playerTitle ? g.playerTitle + " " : "") + g.ordinalName : g.playerName || "—")), /*#__PURE__*/React.createElement("div", {
+  }, prestigeAffiche ? prestigeAffiche + " " : "", g.ordinalName ? (g.playerTitle ? g.playerTitle + " " : "") + g.ordinalName : g.playerName || "—")), /*#__PURE__*/React.createElement("div", {
     className: "mono",
     style: {
       fontSize: 10.5,

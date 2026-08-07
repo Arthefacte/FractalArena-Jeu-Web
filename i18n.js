@@ -924,6 +924,11 @@
     QUIZ_TICKER_TOTAL: { FR: "Les joueurs ont offert %d FA au rachat", EN: "Players have given %d FA to the buyback", ZH: "玩家已向回购池捐赠 %d FA" },
     QUIZ_TITLE_KNOWLEDGE: { FR: "Savoir", EN: "Knowledge", ZH: "知识" },
     QUIZ_TITLE_CONTRIB:   { FR: "Contribution", EN: "Contribution", ZH: "贡献" },
+    QUIZ_PRESTIGE:    { FR: "Prestige", EN: "Prestige", ZH: "威望" },
+    QUIZ_ANSWERED:    { FR: "%d / %d bonnes réponses", EN: "%d / %d correct answers", ZH: "答对 %d / %d 题" },
+    QUIZ_CONTRIBUTED: { FR: "%d FA versés au rachat", EN: "%d FA given to the buyback", ZH: "已向回购池投入 %d FA" },
+    QUIZ_SHOWN:       { FR: "Titre affiché", EN: "Displayed title", ZH: "展示的称号" },
+    QUIZ_NONE:        { FR: "Aucun", EN: "None", ZH: "不展示" },
   };
 
   let lang = "FR";
