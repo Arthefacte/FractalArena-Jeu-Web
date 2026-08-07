@@ -169,6 +169,12 @@ function Market() {
   const { g, actions } = useFA();
   const [tab, setTab] = useState("browse");
   useEffect(() => { actions.marketRefresh(); }, [g.authToken]);
+  // Ici, et pas au boot : c'est le premier écran où une grille de reliques
+  // s'affiche. À l'inactivité, pour ne pas disputer le thread au rendu.
+  useEffect(() => {
+    const M = window.FA_RELIC_MODELS;
+    if (M && M.preloadWhenIdle) M.preloadWhenIdle();
+  }, []);
   return (
     <div style={{ maxWidth: 640, margin: "0 auto", padding: "8px 4px" }}>
       <SectionHead title={I18N.t("MKT_TITLE")} sub={I18N.t("MKT_TAG")} />

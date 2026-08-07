@@ -47,6 +47,19 @@ import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
   }
 
   function preload() { A.TYPES.forEach(loadModel); }
+
+  // Préchargement des écrans qui affichent une grille de reliques : utile pour
+  // éviter huit replis qui clignotent, mais jamais au prix d'un rendu en cours.
+  // requestIdleCallback attend que le navigateur n'ait plus rien d'urgent à faire ;
+  // appelable autant de fois qu'on veut, loadModel dédoublonne.
+  let _idle = null;
+  function preloadWhenIdle() {
+    if (_idle !== null) return;
+    const differer = (typeof requestIdleCallback === "function")
+      ? requestIdleCallback
+      : (fn) => setTimeout(fn, 1200); // Safari : pas d'idle callback
+    _idle = differer(() => { _idle = null; preload(); });
+  }
   function isReady(type) { return !!_loaded[type]; }
 
   // Clone le modèle + ses matériaux, applique le glow de rareté (préserve la couleur/texture).
@@ -68,5 +81,5 @@ import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
     return inst;
   }
 
-  window.FA_RELIC_MODELS = { preload, isReady, makeInstance, loadModel };
+  window.FA_RELIC_MODELS = { preload, preloadWhenIdle, isReady, makeInstance, loadModel };
 })();
