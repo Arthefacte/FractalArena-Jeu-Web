@@ -65,10 +65,26 @@ test("la sonde est le premier script de la page", () => {
   assert.ok(iDiag < iData, "diag.js doit preceder data.js, sinon il rate le debut du boot");
 });
 
+test("les jalons sont horodates en absolu, comparables au premier pixel", () => {
+  // La v1 soustrayait l'instant de chargement de la sonde : les jalons n'etaient
+  // comparables a rien, et on ne pouvait pas dire si la cinematique demarrait
+  // avant ou apres le premier pixel. C'est ce qui a fait perdre une manche.
+  assert.ok(!/performance\.now\(\)\s*-\s*T0/.test(SRC), "les jalons doivent rester en temps absolu");
+  assert.match(SRC, /marque = function \(nom\) \{[\s\S]*?Math\.round\(performance\.now\(\)\)/);
+});
+
+test("la traversee du service worker est mesuree", () => {
+  // 86 requetes servies depuis le cache et un premier pixel a 6,3 s : sans
+  // workerStart, impossible de savoir ou passent les secondes.
+  assert.match(SRC, /workerStart/);
+  assert.match(SRC, /fetchStart/);
+});
+
 test("la cinematique pose ses jalons", () => {
   for (const jalon of ["three-importe", "renderer-cree", "pmrem-pret", "emblème-charge", "1re-image"]) {
     assert.ok(CINE.includes(jalon), "jalon absent : " + jalon);
   }
+  assert.match(lire("app.jsx"), /marque\('react-monte'\)/, "jalon react-monte absent");
   // Toujours garde par `window.FA_DIAG &&` : jamais d'exception si le fichier manque.
   const appels = CINE.match(/FA_DIAG\.marque/g) || [];
   const gardes = CINE.match(/window\.FA_DIAG && window\.FA_DIAG\.marque/g) || [];

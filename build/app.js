@@ -3735,5 +3735,9 @@ function Toasts({
     className: cx("toast", t.kind)
   }, t.msg)));
 }
+
+// Jalon de diagnostic : situe la fin de l'exécution des scripts. Tout ce qui se
+// passe avant est du chargement, tout ce qui suit est de l'application.
+window.FA_DIAG && window.FA_DIAG.marque('react-monte');
 ReactDOM.createRoot(document.getElementById("root")).render(/*#__PURE__*/React.createElement(App, null));
 })();
