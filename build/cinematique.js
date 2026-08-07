@@ -487,6 +487,7 @@ function Emblem3D(props) {
           RoomEnvironment
         } = await import('three/addons/environments/RoomEnvironment.js');
         if (disposed) return;
+        window.FA_DIAG && window.FA_DIAG.marque('three-importe');
         const dpr = Math.min(2, window.devicePixelRatio || 1);
         renderer = new THREE.WebGLRenderer({
           canvas,
@@ -497,12 +498,14 @@ function Emblem3D(props) {
         renderer.outputColorSpace = THREE.SRGBColorSpace;
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
         renderer.toneMappingExposure = 1.15;
+        window.FA_DIAG && window.FA_DIAG.marque('renderer-cree');
         scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
         camera.position.set(0, 0, 6);
         pmrem = new THREE.PMREMGenerator(renderer);
         envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
         scene.environment = envTex;
+        window.FA_DIAG && window.FA_DIAG.marque('pmrem-pret');
         const key = new THREE.DirectionalLight(0xffffff, 2.4);
         key.position.set(2.5, 3, 4);
         scene.add(key);
@@ -533,12 +536,14 @@ function Emblem3D(props) {
           group.add(wrap1);
           group.add(wrap2);
           group.scale.setScalar(2.6 / maxDim);
+          window.FA_DIAG && window.FA_DIAG.marque('emblème-charge');
         }, undefined, err => {
           console.warn('GLB load error', err);
         });
         const clock = new THREE.Clock();
         const render = () => {
           raf = requestAnimationFrame(render);
+          window.FA_DIAG && window.FA_DIAG.marque('1re-image');
           const w = canvas.clientWidth,
             h = canvas.clientHeight;
           if (w && h && (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr))) {
@@ -742,6 +747,7 @@ function Cinematique(props) {
           RoomEnvironment
         } = await import('three/addons/environments/RoomEnvironment.js');
         if (disposed) return;
+        window.FA_DIAG && window.FA_DIAG.marque('three-importe');
         const dpr = Math.min(2, window.devicePixelRatio || 1);
         renderer = new THREE.WebGLRenderer({
           canvas,
@@ -752,12 +758,14 @@ function Cinematique(props) {
         renderer.outputColorSpace = THREE.SRGBColorSpace;
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
         renderer.toneMappingExposure = 1.15;
+        window.FA_DIAG && window.FA_DIAG.marque('renderer-cree');
         scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
         camera.position.set(0, 0, 6);
         pmrem = new THREE.PMREMGenerator(renderer);
         envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
         scene.environment = envTex;
+        window.FA_DIAG && window.FA_DIAG.marque('pmrem-pret');
         const key = new THREE.DirectionalLight(0xffffff, 2.4);
         key.position.set(2.5, 3, 4);
         scene.add(key);
@@ -788,12 +796,14 @@ function Cinematique(props) {
           group.add(wrap1);
           group.add(wrap2);
           group.scale.setScalar(2.6 / maxDim);
+          window.FA_DIAG && window.FA_DIAG.marque('emblème-charge');
         }, undefined, err => {
           console.warn('GLB load error', err);
         });
         const clock = new THREE.Clock();
         const render = () => {
           raf = requestAnimationFrame(render);
+          window.FA_DIAG && window.FA_DIAG.marque('1re-image');
           const w = canvas.clientWidth,
             h = canvas.clientHeight;
           if (w && h && (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr))) {
