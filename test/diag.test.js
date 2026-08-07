@@ -73,6 +73,14 @@ test("les jalons sont horodates en absolu, comparables au premier pixel", () => 
   assert.match(SRC, /marque = function \(nom\) \{[\s\S]*?Math\.round\(performance\.now\(\)\)/);
 });
 
+test("les images bloquantes sont attribuees a leurs scripts", () => {
+  // Mesurer qu'une seconde est perdue ne sert a rien si on ignore quel code la perd :
+  // long-animation-frame nomme le fichier et la fonction, longtask non.
+  assert.match(SRC, /long-animation-frame/);
+  assert.match(SRC, /sourceURL/);
+  assert.match(SRC, /sourceFunctionName/);
+});
+
 test("la traversee du service worker est mesuree", () => {
   // 86 requetes servies depuis le cache et un premier pixel a 6,3 s : sans
   // workerStart, impossible de savoir ou passent les secondes.

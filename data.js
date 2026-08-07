@@ -18,7 +18,7 @@ window.FA_API_URL = (typeof location !== "undefined" &&
 // correctif du crash mobile n'atteignait aucun joueur. Une URL neuve à chaque
 // livraison force le CDN à revenir chercher le fichier à l'origine.
 // À BUMPER AVEC LES BALISES ?v= D'index.html — un test le vérifie.
-window.FA_ASSET_V = "125";
+window.FA_ASSET_V = "126";
 window.FA_ASSET_URL = function (chemin) {
   return chemin + (chemin.indexOf("?") === -1 ? "?v=" : "&v=") + window.FA_ASSET_V;
 };
