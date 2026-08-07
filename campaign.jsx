@@ -142,6 +142,14 @@ function CampaignCombat({ worldIndex, floorIndex, onBack, onCleared }) {
     }
   }, [g.selected.join(","), playing]);
 
+  // Même règle que la Fosse : pas de bulle de quiz pendant la résolution d'un
+  // combat (quiz.jsx lit le drapeau `fa-busy` sur <body>).
+  useEffect(() => {
+    const set = window.FA_SET_BUSY;
+    if (set) set("campagne", playing);
+    return () => { if (set) set("campagne", false); };
+  }, [playing]);
+
   useEffect(() => () => { runIdRef.current++; if (stepRef.current) clearTimeout(stepRef.current); }, []);
   useEffect(() => { if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight; }, [logLines]);
   // rafraîchit le compte à rebours « prochaine entrée gratuite » sans recharger

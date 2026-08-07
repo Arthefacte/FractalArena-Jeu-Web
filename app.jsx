@@ -25,6 +25,15 @@ const HAS_UNISAT = () => ACC.hasProvider();
 let lastAuthReason = null;
 const IS_MOBILE = () => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
 
+// Une signature UniSat ouvre une popup hors de la page : rien ne doit s'afficher
+// par-dessus pendant ce temps. On marque l'application occupée (quiz.jsx pose et
+// lit le drapeau `fa-busy` sur <body>) et on la libère quoi qu'il arrive.
+async function pendantSignature(promesse) {
+  const set = window.FA_SET_BUSY;
+  if (set) set("signature", true);
+  try { return await promesse; } finally { if (set) set("signature", false); }
+}
+
 // Progression campagne serveur (plat "w-f" → stars) vers le format client imbriqué.
 function nestProgress(flat) {
   const out = {};
@@ -521,7 +530,7 @@ function App() {
         if (ACC.estAppInstallee()) toast(I18N.t("AUTHDIAG_PENDING_APP"), "info");
         // Signe le message lié au scope si le serveur le fournit, sinon le nonce brut
         // (rétro-compat : le serveur actuel ne renvoie que `nonce`).
-        const signature = await uni.signMessage(ch.message || ch.nonce);
+        const signature = await pendantSignature(uni.signMessage(ch.message || ch.nonce));
         const vr = await fetch(`${API_URL}/auth/verify`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -680,7 +689,7 @@ function App() {
         const cr = await fetch(`${API_URL}/auth/challenge?wallet=${encodeURIComponent(addr)}&scope=withdraw`);
         if (!cr.ok) return { ok: false, reason: "server" };
         const ch = await cr.json();
-        const signature = await uni.signMessage(ch.message || ch.nonce);
+        const signature = await pendantSignature(uni.signMessage(ch.message || ch.nonce));
         const r = await fetch(`${API_URL}/account/link-wallet`, {
           method: "POST",
           headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
@@ -725,7 +734,7 @@ function App() {
         const ch = await cr.json();
         // Signe le message lié au scope « withdraw » si le serveur le fournit, sinon le nonce
         // brut (rétro-compat). Lie la signature à l'intention de retrait une fois le serveur à jour.
-        const signature = await uni.signMessage(ch.message || ch.nonce);
+        const signature = await pendantSignature(uni.signMessage(ch.message || ch.nonce));
         // Le compte visé doit accompagner le verify autant que le challenge : il fait
         // partie du texte signé, l'omettre ici ferait reconstruire au serveur un message
         // différent de celui que le joueur a signé.
@@ -1825,6 +1834,7 @@ function App() {
       <window.PwaOfflineGate etat={etatReseau} onReessayer={() => setEnLigne(navigator.onLine !== false)} />
       {g.wallet && <TutorialGate />}
       {g.wallet && <LoginGate />}
+      {g.wallet && <window.QuizToast />}
       {accSecrets && <window.SecretsGate secrets={accSecrets} onDone={() => setAccSecrets(null)} />}
       {(() => {
         const pz = [
