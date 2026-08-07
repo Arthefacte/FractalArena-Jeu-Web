@@ -36,13 +36,47 @@ test("le montant credite s'affiche en clair, signe", () => {
   assert.match(APP, /delta\s*>\s*0\s*\?\s*"\+"/, "le signe du delta doit etre explicite");
 });
 
-// Au login la save arrive d'un coup (0 -> le solde reel) : sans garde, le joueur
-// verrait « +38 610 » a chaque connexion.
-test("le premier remplissage du solde n'est pas annonce comme un gain", () => {
-  assert.match(APP, /lockedPret|initialise/, "la garde du premier remplissage est absente");
-});
+// (La garde du premier remplissage est verifiee plus bas, dans le bloc de
+// useVariationSolde : elle sert desormais les deux soldes.)
 
 test("juice-ui.js est charge avant app.js", () => {
   assert.ok(HTML.indexOf("juice-ui.js") < HTML.indexOf("build/app.js"),
     "app.jsx lit window.FA_JUICE_UI : le module doit exister avant");
+});
+
+// --- Les deux soldes, crédit ET débit ---
+// Le liquide (« retirable ») bouge autant que le verrouillé : combats, retraits,
+// Tour, PvP. Il n'avait qu'une pulsation muette, sans montant.
+
+test("le chip liquide annonce lui aussi son montant", () => {
+  const ligne = APP.split("\n").find((l) => /cx\("chip",\s*"liquid"/.test(l));
+  assert.ok(ligne, "chip liquide introuvable dans le bandeau");
+  assert.match(ligne, /key=\{/, "sans key, l'animation ne rejoue pas");
+  assert.match(ligne, /liquidPop/, "le chip liquide doit recevoir sa variation");
+});
+
+// Deux effets copies l'un sur l'autre auraient diverge a la premiere correction :
+// une seule mecanique sert les deux soldes.
+test("les deux soldes partagent la meme mecanique", () => {
+  assert.match(APP, /function useVariationSolde\(/, "la mecanique doit etre factorisee");
+  const usages = APP.match(/useVariationSolde\(/g) || [];
+  assert.ok(usages.length >= 3, "definie une fois, utilisee par les deux soldes");
+});
+
+// Un debit n'est pas un gain terne : il se lit d'un coup d'oeil.
+test("un debit s'affiche en rouge, un credit en vert", () => {
+  const bas = CSS.match(/\.chip-delta\.down\s*\{[^}]*\}/);
+  assert.ok(bas, "regle .chip-delta.down introuvable");
+  assert.match(bas[0], /--alert/, "un debit doit se voir comme un debit");
+  const haut = CSS.match(/\.chip-delta\.up\s*\{[^}]*\}/);
+  assert.match(haut[0], /--success/);
+});
+
+// Meme garde que pour le verrouille : au login la save arrive d'un coup et le
+// liquide passe de 0 a son total.
+test("le premier remplissage des deux soldes n'est pas annonce comme un gain", () => {
+  const i = APP.indexOf("function useVariationSolde(");
+  const bloc = APP.slice(i, i + 700);
+  assert.match(bloc, /variationSolde/, "la decision vient de la logique pure");
+  assert.match(bloc, /pret|initialise/, "la garde du premier remplissage est absente");
 });

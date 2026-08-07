@@ -173,7 +173,9 @@ input { font-family: var(--font-mono); }
   color: var(--text);
 }
 .chip .coin { color: var(--gold); font-weight: 700; }
-.chip.locked { color: var(--text-dim); border-color: var(--line-soft); position: relative; }
+/* Les deux chips portent leur delta : il est en absolu, il leur faut le contexte. */
+.chip.liquid, .chip.locked { position: relative; }
+.chip.locked { color: var(--text-dim); border-color: var(--line-soft); }
 .chip.locked .ico { color: var(--fire); }
 /* Le montant reprend la couleur que l'écran Portefeuille donne au verrouillé :
    le chiffre se lit, le mot « Verrouillé » reste en retrait. */
@@ -190,8 +192,10 @@ input { font-family: var(--font-mono); }
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);  /* lisible par-dessus l'écran */
   animation: chipDelta 1.4s ease-out both;
 }
+/* Un débit se lit comme un débit. Le gris de départ le faisait passer pour une
+   mention secondaire, alors qu'il dit qu'on vient de perdre des FA. */
 .chip-delta.up { color: var(--success); }
-.chip-delta.down { color: var(--text-dim); }
+.chip-delta.down { color: var(--alert); }
 @keyframes chipDelta {
   0%   { opacity: 0; transform: translateY(-8px); }
   20%  { opacity: 1; transform: translateY(0); }
