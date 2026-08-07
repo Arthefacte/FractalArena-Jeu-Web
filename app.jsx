@@ -1214,6 +1214,100 @@ function App() {
         return { ok: false, reason: "network" };
       }
     },
+    // --- Quiz éducatif ---
+    // Tire la prochaine question. Lecture seule : le serveur n'écrit rien ici et
+    // ne renvoie jamais la bonne réponse — seulement l'énoncé et les trois choix.
+    async fetchQuizQuestion() {
+      const s = gRef.current;
+      if (!s.wallet) return { ok: false };
+      try {
+        const lang = encodeURIComponent(I18N.getLang() || "FR");
+        const resp = await fetch(`${API_URL}/quiz/next/${encodeURIComponent(s.wallet)}?lang=${lang}`);
+        if (!resp.ok) return { ok: false };
+        return { ok: true, data: await resp.json() };
+      } catch (e) {
+        return { ok: false };
+      }
+    },
+    // Répond. La destination ne se choisit pas ici : le serveur crédite toujours
+    // le joueur d'abord (il ne peut pas décider avant de savoir s'il a juste), et
+    // c'est donateQuiz qui convertit ensuite ce gain en don.
+    async answerQuiz(questionId, choice) {
+      const s = gRef.current;
+      if (!s.authToken) return { ok: false, reason: "auth" };
+      try {
+        const lang = encodeURIComponent(I18N.getLang() || "FR");
+        const resp = await fetch(`${API_URL}/quiz/answer?lang=${lang}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
+          body: JSON.stringify({ question_id: questionId, choice }),
+        });
+        if (resp.status === 401) {
+          const re = await actions.authenticate(gRef.current.wallet);
+          if (!re) { toast(I18N.t("AUTH_EXPIRED"), "bad"); return { ok: false, reason: "auth" }; }
+          return { ok: false, reason: "retry" };
+        }
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({}));
+          return { ok: false, reason: err.error || `Erreur ${resp.status}` };
+        }
+        const data = await resp.json();
+        if (data.reward > 0) setG((st) => ({ ...st, locked: (st.locked || 0) + data.reward }));
+        return { ok: true, data };
+      } catch (e) {
+        return { ok: false, reason: "network" };
+      }
+    },
+    // Convertit le gain déjà crédité en don au pool de rachat (fenêtre de 60 s
+    // côté serveur). Le solde verrouillé redescend d'autant.
+    async donateQuiz(questionId) {
+      const s = gRef.current;
+      if (!s.authToken) return { ok: false, reason: "auth" };
+      try {
+        const resp = await fetch(`${API_URL}/quiz/donate`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
+          body: JSON.stringify({ question_id: questionId }),
+        });
+        if (resp.status === 401) {
+          const re = await actions.authenticate(gRef.current.wallet);
+          if (!re) { toast(I18N.t("AUTH_EXPIRED"), "bad"); return { ok: false, reason: "auth" }; }
+          return { ok: false, reason: "retry" };
+        }
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({}));
+          return { ok: false, reason: err.error || `Erreur ${resp.status}` };
+        }
+        const data = await resp.json();
+        const donne = data.granted_pool || 0;
+        if (donne > 0) setG((st) => ({ ...st, locked: Math.max(0, (st.locked || 0) - donne) }));
+        return { ok: true, data };
+      } catch (e) {
+        return { ok: false, reason: "network" };
+      }
+    },
+    // Bandeau public : aucune authentification, réponse déjà cachée 30 s côté serveur.
+    async fetchQuizTicker() {
+      try {
+        const resp = await fetch(`${API_URL}/quiz/ticker`);
+        if (!resp.ok) return { ok: false };
+        return { ok: true, data: await resp.json() };
+      } catch (e) {
+        return { ok: false };
+      }
+    },
+    // Fiche de prestige : deux compteurs (savoir, contribution) et leurs titres.
+    async fetchQuizProfile() {
+      const s = gRef.current;
+      if (!s.wallet) return { ok: false };
+      try {
+        const resp = await fetch(`${API_URL}/quiz/profile/${encodeURIComponent(s.wallet)}`);
+        if (!resp.ok) return { ok: false };
+        return { ok: true, data: await resp.json() };
+      } catch (e) {
+        return { ok: false };
+      }
+    },
     // --- Parcours de découverte ---
     // État du parcours. Le serveur recompte la progression à chaque appel : le
     // client n'en garde aucune trace et n'en calcule jamais. `eligible: false`
