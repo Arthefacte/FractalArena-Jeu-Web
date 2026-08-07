@@ -173,8 +173,31 @@ input { font-family: var(--font-mono); }
   color: var(--text);
 }
 .chip .coin { color: var(--gold); font-weight: 700; }
-.chip.locked { color: var(--text-dim); border-color: var(--line-soft); }
+.chip.locked { color: var(--text-dim); border-color: var(--line-soft); position: relative; }
 .chip.locked .ico { color: var(--fire); }
+/* Le montant reprend la couleur que l'écran Portefeuille donne au verrouillé :
+   le chiffre se lit, le mot « Verrouillé » reste en retrait. */
+.chip.locked .chip-amount { color: var(--fire); font-weight: 700; }
+/* Le crédit qui s'échappe du chip et s'efface. `position: absolute` : il ne
+   pousse rien, donc le bandeau ne se réagence pas à chaque gain.
+   Il descend au lieu de monter — le bandeau est collé en haut de l'écran
+   (`.hdr` sticky, top 0) et il ne reste que 12 px de marge au-dessus du chip :
+   un « +10 » qui monte sortirait par le haut de la fenêtre. */
+.chip-delta {
+  position: absolute; right: 8px; top: 100%;
+  font-family: var(--font-mono); font-size: 12px; font-weight: 700;
+  pointer-events: none; white-space: nowrap;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);  /* lisible par-dessus l'écran */
+  animation: chipDelta 1.4s ease-out both;
+}
+.chip-delta.up { color: var(--success); }
+.chip-delta.down { color: var(--text-dim); }
+@keyframes chipDelta {
+  0%   { opacity: 0; transform: translateY(-8px); }
+  20%  { opacity: 1; transform: translateY(0); }
+  70%  { opacity: 1; transform: translateY(5px); }
+  100% { opacity: 0; transform: translateY(14px); }
+}
 .chip.pop { animation: chipPop 0.45s cubic-bezier(.2,1.4,.4,1); }
 @keyframes chipPop {
   0% { transform: scale(1); }

@@ -44,3 +44,25 @@ test("particleSpec : crit et sp se distinguent de atk", () => {
 test("pureté : deux appels identiques rendent le même résultat", () => {
   assert.deepStrictEqual(J.particleSpec("sp", true), J.particleSpec("sp", true));
 });
+
+// --- Variation de solde affichée dans le bandeau du haut ---
+// Un gain qui n'apparait nulle part n'a pas eu lieu, du point de vue du joueur :
+// le quiz creditait le solde verrouille sans que rien ne bouge a l'ecran.
+
+test("variationSolde : une hausse s'annonce avec son montant", () => {
+  assert.deepStrictEqual(J.variationSolde(626, 636, true), { anime: true, delta: 10 });
+});
+
+test("variationSolde : une baisse aussi (offrir retire du verrouille)", () => {
+  assert.deepStrictEqual(J.variationSolde(636, 626, true), { anime: true, delta: -10 });
+});
+
+test("variationSolde : un solde inchange n'anime rien", () => {
+  assert.deepStrictEqual(J.variationSolde(636, 636, true), { anime: false, delta: 0 });
+});
+
+// Au login la save arrive d'un coup : 0 -> 636. Ce n'est pas un gain, et
+// afficher « +636 » a la connexion serait un mensonge visuel.
+test("variationSolde : le premier remplissage n'est pas un gain", () => {
+  assert.deepStrictEqual(J.variationSolde(0, 636, false), { anime: false, delta: 0 });
+});

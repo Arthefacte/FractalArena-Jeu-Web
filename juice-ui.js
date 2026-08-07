@@ -29,5 +29,16 @@
     return { count: 6, color: "var(--alert)", spread: 22 };
   }
 
-  window.FA_JUICE_UI = { shakeIntensity, particleSpec, clamp01 };
+  // Un solde qui change doit se voir : un gain que rien ne signale n'a pas eu
+  // lieu, du point de vue du joueur. `initialise` distingue un vrai mouvement du
+  // premier remplissage — au login la sauvegarde arrive d'un coup (0 → le solde
+  // réel) et annoncer « +38 610 » à chaque connexion serait un mensonge visuel.
+  function variationSolde(prev, next, initialise) {
+    if (!initialise) return { anime: false, delta: 0 };
+    const delta = next - prev;
+    if (!delta) return { anime: false, delta: 0 };
+    return { anime: true, delta };
+  }
+
+  window.FA_JUICE_UI = { shakeIntensity, particleSpec, clamp01, variationSolde };
 })();
