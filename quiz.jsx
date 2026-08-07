@@ -135,6 +135,10 @@ function QuizToast() {
       // Message factuel, jamais « tu soutiens le cours ». Le montant passe par
       // FaText (le toast rend son message tel quel) : logo du token, pas « FA ».
       toast(<FaText text={I18N.t("QUIZ_GIVEN", (r.data && r.data.granted_pool) || 0)} s={12} />, "good");
+      // Les jauges de rachat n'interrogent le serveur qu'une fois par minute :
+      // sans ce signal, la jauge ne bougerait que bien après le clic et
+      // l'animation ne se rattacherait plus au geste du joueur.
+      window.dispatchEvent(new CustomEvent("fa:buyback-refresh"));
     } else if (r.reason === "network") {
       // La requête est partie sans que la réponse revienne : le serveur a pu
       // commettre le don. Annoncer « tes FA sont restés » serait un mensonge une
