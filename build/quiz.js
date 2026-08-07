@@ -55,9 +55,14 @@ function QuizToast() {
   const [verdict, setVerdict] = useState(null); // réponse du serveur
   const [envoi, setEnvoi] = useState(false); // une seule réponse à la fois
   const [donne, setDonne] = useState(false); // don déjà effectué
+  const [restant, setRestant] = useState(0); // secondes affichées par le décompte
   const lastAskAt = useRef(0);
-  const effacement = useRef(null);
+  const finAt = useRef(0);
   const ouvert = !!question;
+  // Une bonne réponse hors révision rapporte : le joueur doit alors choisir la
+  // destination des FA. Tant que ce choix est à l'écran, la bulle l'attend.
+  const gagne = !!(verdict && verdict.correct && !verdict.revision && verdict.reward > 0);
+  const choixEnAttente = gagne && !donne;
 
   // Minuterie : on regarde chaque seconde s'il est temps de proposer une bulle.
   // shouldAsk() tranche — le composant ne décide rien.
@@ -80,14 +85,25 @@ function QuizToast() {
     return () => clearInterval(id);
   }, [g.wallet, question, actions]);
 
-  // Auto-effacement : une question qu'on ignore n'est PAS consommée — on ferme
-  // sans rien envoyer au serveur, elle pourra revenir plus tard.
+  // Le décompte EST l'horloge de la bulle : ce que le joueur voit descendre est
+  // ce qui la ferme. Il repart à 30 s quand la réponse arrive — lire l'explication
+  // et choisir la destination est une étape à part entière. Une question qu'on
+  // laisse expirer n'est PAS consommée (rien n'est envoyé au serveur) ; un choix
+  // qu'on laisse expirer vaut « garder » : les FA sont déjà crédités, rien n'est
+  // offert au pool.
   useEffect(() => {
-    clearTimeout(effacement.current);
-    if (!ouvert) return undefined;
-    const delai = verdict ? 6000 : QUIZ.QUIZ_TOAST_MS;
-    effacement.current = setTimeout(() => fermer(), delai);
-    return () => clearTimeout(effacement.current);
+    if (!ouvert) {
+      setRestant(0);
+      return undefined;
+    }
+    finAt.current = Date.now() + QUIZ.QUIZ_TOAST_MS;
+    setRestant(QUIZ.restantSecondes(finAt.current, Date.now()));
+    const id = setInterval(() => {
+      const r = QUIZ.restantSecondes(finAt.current, Date.now());
+      setRestant(r);
+      if (r <= 0) fermer();
+    }, 250);
+    return () => clearInterval(id);
   }, [ouvert, verdict]);
   function fermer() {
     setQuestion(null);
@@ -128,14 +144,25 @@ function QuizToast() {
     fermer();
   }
   if (!g.wallet || !question) return null;
-  const gagne = verdict && verdict.correct && !verdict.revision && verdict.reward > 0;
   return /*#__PURE__*/React.createElement("div", {
     className: "quiz-toast",
     role: "dialog",
     "aria-live": "polite"
-  }, question.revision && /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "quiz-countdown",
+    "aria-hidden": "true"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "quiz-countdown-bar",
+    style: {
+      width: restant / (QUIZ.QUIZ_TOAST_MS / 1000) * 100 + "%"
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "quiz-head"
+  }, question.revision ? /*#__PURE__*/React.createElement("div", {
     className: "quiz-tag"
-  }, I18N.t("QUIZ_REVIEW")), /*#__PURE__*/React.createElement("div", {
+  }, I18N.t("QUIZ_REVIEW")) : /*#__PURE__*/React.createElement("span", null), /*#__PURE__*/React.createElement("div", {
+    className: "quiz-timer"
+  }, I18N.t("QUIZ_SECONDS", restant))), /*#__PURE__*/React.createElement("div", {
     className: "quiz-q"
   }, question.q), !verdict && /*#__PURE__*/React.createElement("div", {
     className: "quiz-answers"
@@ -150,7 +177,7 @@ function QuizToast() {
     className: cx("quiz-verdict", verdict.correct ? "ok" : "ko")
   }, I18N.t(verdict.correct ? "QUIZ_CORRECT" : "QUIZ_WRONG")), /*#__PURE__*/React.createElement("div", {
     className: "quiz-why"
-  }, verdict.explanation), gagne && !donne && /*#__PURE__*/React.createElement("div", {
+  }, verdict.explanation), choixEnAttente && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     className: "quiz-dest"
   }, /*#__PURE__*/React.createElement("button", {
     className: "quiz-choice",
@@ -161,7 +188,9 @@ function QuizToast() {
   })), /*#__PURE__*/React.createElement("button", {
     className: "quiz-choice",
     onClick: offrir
-  }, I18N.t("QUIZ_GIVE")))));
+  }, I18N.t("QUIZ_GIVE"))), /*#__PURE__*/React.createElement("div", {
+    className: "quiz-timeout"
+  }, I18N.t("QUIZ_TIMEOUT")))));
 }
 
 // ---- le bandeau des dons ----

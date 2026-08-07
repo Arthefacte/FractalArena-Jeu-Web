@@ -988,6 +988,23 @@ input { font-family: var(--font-mono); }
   animation: quiz-in 0.25s ease both;
 }
 @keyframes quiz-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+/* Décompte : une barre qui se vide en haut de la bulle. La transition suit le
+   pas du minuteur (1 s) pour glisser au lieu de sauter. Couleur neutre : elle
+   informe d'une fermeture, elle ne dramatise pas une urgence. */
+.quiz-countdown {
+  height: 2px; margin: -12px -14px 10px;
+  border-radius: 10px 10px 0 0;   /* épouse le haut de la bulle */
+  background: rgba(255, 255, 255, 0.07); overflow: hidden;
+}
+.quiz-countdown-bar {
+  height: 100%; background: var(--elec); opacity: 0.55;
+  transition: width 1s linear;
+}
+.quiz-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.quiz-timer {
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: 1px;
+  color: var(--text-dim); margin-bottom: 6px; flex: 0 0 auto;
+}
 .quiz-tag {
   font-family: var(--font-mono); font-size: 10px; letter-spacing: 1px;
   text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px;
@@ -1017,6 +1034,9 @@ input { font-family: var(--font-mono); }
   background: rgba(255, 255, 255, 0.04); color: var(--text); cursor: pointer;
 }
 .quiz-choice:hover { border-color: var(--elec); }
+/* L'avertissement d'expiration : sous les deux boutons, à égale distance des
+   deux — il décrit une conséquence, il ne pousse vers aucune option. */
+.quiz-timeout { font-size: 11px; color: var(--text-dim); text-align: center; }
 /* Bandeau des dons du quiz — une ligne, sous les jauges de rachat. Même famille
    visuelle que .bb-ticker mais plus discret : c'est une information, pas une jauge. */
 .quiz-ticker {

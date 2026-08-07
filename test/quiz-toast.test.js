@@ -31,8 +31,34 @@ test("la classe du toast existe dans styles.css", () => {
 
 // Une question ignoree n'est pas consommee : l'auto-effacement ferme le toast
 // sans appeler /quiz/answer, sinon le joueur perdrait la question sans y toucher.
-test("l'auto-effacement utilise QUIZ_TOAST_MS", () => {
-  assert.match(src, /QUIZ_TOAST_MS/);
+// Le bug : apres la reponse, la bulle se refermait au bout de 6 s — le temps de
+// lire l'explication, le choix garder/offrir avait disparu. Aucune duree ne doit
+// plus vivre en dur dans le composant.
+test("aucun delai d'effacement en dur dans le composant", () => {
+  assert.ok(!/\b6000\b/.test(src), "6000 ms en dur : le joueur n'a pas le temps de choisir");
+  assert.match(src, /QUIZ\.QUIZ_TOAST_MS/, "la duree vient de la logique pure");
+});
+
+// Le joueur doit voir venir la fermeture, sinon la bulle disparait sans preavis.
+test("la bulle affiche un decompte", () => {
+  assert.match(src, /restantSecondes/, "le decompte vient de la logique pure");
+  assert.match(src, /quiz-countdown/);
+  assert.match(src, /QUIZ_SECONDS/);
+  assert.match(css, /\.quiz-countdown/);
+});
+
+// Meme horloge pour l'affichage et la fermeture : deux minuteries separees se
+// desynchronisent, et la bulle se ferme avant la fin du compte affiche.
+test("le decompte est ce qui ferme la bulle, pas un second minuteur", () => {
+  assert.ok(!/setTimeout\([^)]*fermer/.test(src), "un setTimeout parallele au decompte");
+  assert.match(src, /if\s*\(\s*r\s*<=\s*0\s*\)\s*fermer\(\)/);
+});
+
+// Sans choix, la bulle se ferme et rien n'est offert : le joueur doit le savoir
+// AVANT, pas le decouvrir en voyant la bulle disparaitre.
+test("le joueur est prevenu de ce qui arrive s'il ne choisit pas", () => {
+  assert.match(src, /QUIZ_TIMEOUT/);
+  assert.match(css, /\.quiz-timeout/);
 });
 
 // Aucune bulle pendant un combat, une modale ou une signature : un seul point de
