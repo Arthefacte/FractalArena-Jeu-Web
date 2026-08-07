@@ -163,8 +163,45 @@ function QuizToast() {
     onClick: offrir
   }, I18N.t("QUIZ_GIVE")))));
 }
+
+// ---- le bandeau des dons ----
+
+// Une ligne, un don réel — ou, à défaut, le cumul communautaire. tickerLine()
+// tranche (quiz-ui.js) : le composant ne met rien en forme lui-même, et
+// n'invente jamais de joueur pour remplir la barre.
+function QuizTicker() {
+  const {
+    actions
+  } = useFA();
+  const [data, setData] = useState(null);
+  useEffect(() => {
+    let vivant = true;
+    async function charger() {
+      const r = await actions.fetchQuizTicker();
+      if (vivant && r.ok) setData(r.data);
+    }
+    charger();
+    // Même cadence que les bulles ; le serveur cache sa réponse 30 s de son côté.
+    const id = setInterval(charger, QUIZ.QUIZ_INTERVAL_MS);
+    return () => {
+      vivant = false;
+      clearInterval(id);
+    };
+  }, [actions]);
+  const ligne = QUIZ.tickerLine(data, (k, ...a) => I18N.t(k, ...a));
+  // Pas de don, pas de cumul : pas de barre. Une barre vide serait un bandeau
+  // qui occupe l'écran pour ne rien dire.
+  if (!ligne) return null;
+  return /*#__PURE__*/React.createElement("div", {
+    className: "quiz-ticker"
+  }, /*#__PURE__*/React.createElement(FaText, {
+    text: ligne,
+    s: 11
+  }));
+}
 Object.assign(window, {
   QuizToast,
+  QuizTicker,
   quizEstOccupe: estOccupe
 });
 })();

@@ -1825,6 +1825,9 @@ function App() {
         {g.wallet && <LockedBanner />}
         {g.wallet && <window.PwaInstallBanner prompt={pwaPrompt} onInstalled={() => setPwaPrompt(null)} />}
         <BuybackTicker />
+        {/* Les dons du quiz alimentent les mêmes pools : le bandeau se lit juste
+            sous les jauges de rachat, là où le joueur regarde déjà. */}
+        <window.QuizTicker />
         <Nav />
         <div className="view-anim" key={g.view}><View /></div>
       </div>

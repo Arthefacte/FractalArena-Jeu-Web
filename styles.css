@@ -1017,3 +1017,13 @@ input { font-family: var(--font-mono); }
   background: rgba(255, 255, 255, 0.04); color: var(--text); cursor: pointer;
 }
 .quiz-choice:hover { border-color: var(--elec); }
+/* Bandeau des dons du quiz — une ligne, sous les jauges de rachat. Même famille
+   visuelle que .bb-ticker mais plus discret : c'est une information, pas une jauge. */
+.quiz-ticker {
+  padding: 4px 14px;
+  background: rgba(0, 0, 0, 0.22);
+  border-bottom: 1px solid var(--line);
+  font-family: var(--font-mono); font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}

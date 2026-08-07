@@ -3335,7 +3335,7 @@ function App() {
   }), g.wallet && /*#__PURE__*/React.createElement(LockedBanner, null), g.wallet && /*#__PURE__*/React.createElement(window.PwaInstallBanner, {
     prompt: pwaPrompt,
     onInstalled: () => setPwaPrompt(null)
-  }), /*#__PURE__*/React.createElement(BuybackTicker, null), /*#__PURE__*/React.createElement(Nav, null), /*#__PURE__*/React.createElement("div", {
+  }), /*#__PURE__*/React.createElement(BuybackTicker, null), /*#__PURE__*/React.createElement(window.QuizTicker, null), /*#__PURE__*/React.createElement(Nav, null), /*#__PURE__*/React.createElement("div", {
     className: "view-anim",
     key: g.view
   }, /*#__PURE__*/React.createElement(View, null))), /*#__PURE__*/React.createElement(ChatFab, null), /*#__PURE__*/React.createElement(RoomFab, null), /*#__PURE__*/React.createElement(Toasts, {
