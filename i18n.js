@@ -923,6 +923,7 @@
     QUIZ_TICKER_DON:   { FR: "%s a offert %d FA au rachat", EN: "%s gave %d FA to the buyback", ZH: "%s 向回购池捐赠了 %d FA" },
     QUIZ_TICKER_TOTAL: { FR: "Les joueurs ont offert %d FA au rachat", EN: "Players have given %d FA to the buyback", ZH: "玩家已向回购池捐赠 %d FA" },
     QUIZ_SECONDS: { FR: "%d s", EN: "%d s", ZH: "%d 秒" },
+    QUIZ_CLOSE: { FR: "Fermer", EN: "Close", ZH: "关闭" },
     QUIZ_TIMEOUT: {
       FR: "Sans choix, la bulle se ferme et rien n'est offert.",
       EN: "Without a choice, the bubble closes and nothing is given.",

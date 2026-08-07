@@ -1009,6 +1009,15 @@ input { font-family: var(--font-mono); }
   font-family: var(--font-mono); font-size: 10px; letter-spacing: 1px;
   text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px;
 }
+/* Croix de fermeture — cible tactile de 24px pour un glyphe de 16px : sur mobile
+   un « × » à sa taille de dessin se rate une fois sur deux. */
+.quiz-close {
+  flex: 0 0 auto; width: 24px; height: 24px; margin: -4px -6px 6px 2px;
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 0; border: 0; border-radius: 6px; background: none;
+  color: var(--text-dim); font-size: 16px; line-height: 1; cursor: pointer;
+}
+.quiz-close:hover { color: var(--text); background: rgba(255, 255, 255, 0.06); }
 .quiz-q { color: var(--text); margin-bottom: 10px; }
 .quiz-answers { display: flex; flex-direction: column; gap: 6px; }
 .quiz-answer {

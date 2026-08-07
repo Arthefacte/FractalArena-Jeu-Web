@@ -139,6 +139,15 @@ function QuizToast() {
       <div className="quiz-head">
         {question.revision ? <div className="quiz-tag">{I18N.t("QUIZ_REVIEW")}</div> : <span />}
         <div className="quiz-timer">{I18N.t("QUIZ_SECONDS", restant)}</div>
+        {/* La croix n'apparaît qu'une fois l'explication lue et rien à décider.
+            Tant que garder/offrir est à l'écran elle serait une troisième sortie
+            valant « garder » : garder aurait deux portes, offrir une seule, et
+            les deux options cesseraient de peser pareil. */}
+        {verdict && !choixEnAttente && (
+          <button className="quiz-close" aria-label={I18N.t("QUIZ_CLOSE")} onClick={fermer}>
+            ×
+          </button>
+        )}
       </div>
       <div className="quiz-q">{question.q}</div>
 

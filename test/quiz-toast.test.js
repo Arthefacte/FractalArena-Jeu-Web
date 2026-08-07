@@ -61,6 +61,32 @@ test("le joueur est prevenu de ce qui arrive s'il ne choisit pas", () => {
   assert.match(css, /\.quiz-timeout/);
 });
 
+// Explication lue, rien a decider : le joueur ne doit pas attendre la fin du
+// decompte pour recuperer son ecran.
+test("une croix ferme la bulle une fois l'explication lue", () => {
+  assert.match(src, /quiz-close/);
+  assert.match(css, /\.quiz-close/);
+  const bouton = src.match(/<button[^>]*quiz-close[^>]*>/);
+  assert.ok(bouton, "bouton de fermeture introuvable");
+  assert.match(bouton[0], /onClick=\{fermer\}/, "la croix doit appeler fermer()");
+});
+
+// La croix ne s'affiche QUE quand il n'y a plus rien a decider. Tant que
+// garder/offrir est a l'ecran, une croix serait une troisieme sortie qui vaut
+// « garder » : garder deviendrait accessible a deux endroits, offrir a un seul,
+// et les deux options cesseraient de peser pareil.
+test("pas de croix tant que le choix garder/offrir est a l'ecran", () => {
+  assert.match(src, /verdict\s*&&\s*!choixEnAttente\s*&&[\s\S]{0,200}quiz-close/,
+    "la croix doit etre gardee par `verdict && !choixEnAttente`");
+});
+
+// Une croix sans nom n'est qu'un pictogramme : les lecteurs d'ecran doivent
+// l'annoncer, et le libelle passe par i18n comme tout le reste de la bulle.
+test("la croix porte un nom accessible traduit", () => {
+  const bouton = src.match(/<button[^>]*quiz-close[^>]*>/);
+  assert.match(bouton[0], /aria-label=\{I18N\.t\("QUIZ_CLOSE"\)\}/);
+});
+
 // Aucune bulle pendant un combat, une modale ou une signature : un seul point de
 // verite (la classe fa-busy sur <body>), pose par FA_SET_BUSY.
 test("le drapeau d'occupation est expose et consomme", () => {

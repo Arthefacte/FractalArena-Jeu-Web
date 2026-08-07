@@ -162,7 +162,11 @@ function QuizToast() {
     className: "quiz-tag"
   }, I18N.t("QUIZ_REVIEW")) : /*#__PURE__*/React.createElement("span", null), /*#__PURE__*/React.createElement("div", {
     className: "quiz-timer"
-  }, I18N.t("QUIZ_SECONDS", restant))), /*#__PURE__*/React.createElement("div", {
+  }, I18N.t("QUIZ_SECONDS", restant)), verdict && !choixEnAttente && /*#__PURE__*/React.createElement("button", {
+    className: "quiz-close",
+    "aria-label": I18N.t("QUIZ_CLOSE"),
+    onClick: fermer
+  }, "\xD7")), /*#__PURE__*/React.createElement("div", {
     className: "quiz-q"
   }, question.q), !verdict && /*#__PURE__*/React.createElement("div", {
     className: "quiz-answers"
