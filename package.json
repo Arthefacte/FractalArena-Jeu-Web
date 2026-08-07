@@ -7,7 +7,7 @@
     "test": "test"
   },
   "scripts": {
-    "build": "node tools/precompile.mjs",
+    "build": "node tools/precompile.mjs && node tools/asset-hashes.mjs",
     "test": "node --test --test-force-exit test/*.test.js"
   },
   "repository": {
