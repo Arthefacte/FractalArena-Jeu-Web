@@ -920,6 +920,23 @@
     QUIZ_WRONG:   { FR: "Mauvaise réponse", EN: "Wrong answer", ZH: "回答错误" },
     QUIZ_REVIEW:  { FR: "Révision — sans récompense", EN: "Review — no reward", ZH: "复习 — 无奖励" },
     QUIZ_GIVEN:   { FR: "%d FA ajoutés au pool de rachat", EN: "%d FA added to the buyback pool", ZH: "已向回购池注入 %d FA" },
+    // Le gain atterrit dans le solde verrouillé (« misable uniquement ») : le dire,
+    // sinon le joueur cherche ses FA dans le bandeau du haut, qui n'affiche que le liquide.
+    QUIZ_KEPT: {
+      FR: "%d FA ajoutés à ton solde misable",
+      EN: "%d FA added to your bettable balance",
+      ZH: "已向你的可下注余额增加 %d FA",
+    },
+    QUIZ_GIVE_REFUSED: {
+      FR: "Don impossible : tes %d FA restent sur ton solde",
+      EN: "Donation not possible: your %d FA stay on your balance",
+      ZH: "无法捐赠：你的 %d FA 仍在余额中",
+    },
+    QUIZ_GIVE_UNSURE: {
+      FR: "Don non confirmé — vérifie ton solde dans le portefeuille",
+      EN: "Donation unconfirmed — check your balance in the wallet",
+      ZH: "捐赠未确认 — 请在钱包中查看余额",
+    },
     QUIZ_TICKER_DON:   { FR: "%s a offert %d FA au rachat", EN: "%s gave %d FA to the buyback", ZH: "%s 向回购池捐赠了 %d FA" },
     QUIZ_TICKER_TOTAL: { FR: "Les joueurs ont offert %d FA au rachat", EN: "Players have given %d FA to the buyback", ZH: "玩家已向回购池捐赠 %d FA" },
     QUIZ_SECONDS: { FR: "%d s", EN: "%d s", ZH: "%d 秒" },

@@ -63,6 +63,11 @@ function QuizToast() {
   // destination des FA. Tant que ce choix est à l'écran, la bulle l'attend.
   const gagne = !!(verdict && verdict.correct && !verdict.revision && verdict.reward > 0);
   const choixEnAttente = gagne && !donne;
+  // Le minuteur vit dans une closure figée au rendu où il a démarré ; sans cette
+  // ref il lirait un choixEnAttente périmé et confirmerait une conservation après
+  // un don réussi.
+  const choixRef = useRef(false);
+  choixRef.current = choixEnAttente;
 
   // Minuterie : on regarde chaque seconde s'il est temps de proposer une bulle.
   // shouldAsk() tranche — le composant ne décide rien.
@@ -101,7 +106,11 @@ function QuizToast() {
     const id = setInterval(() => {
       const r = QUIZ.restantSecondes(finAt.current, Date.now());
       setRestant(r);
-      if (r <= 0) fermer();
+      // Laisser filer le décompte, c'est garder : même confirmation qu'un clic,
+      // sinon le cas où le joueur est le plus perdu est celui qui ne dit rien.
+      if (r <= 0) {
+        if (choixRef.current) garder();else fermer();
+      }
     }, 250);
     return () => clearInterval(id);
   }, [ouvert, verdict]);
@@ -125,9 +134,20 @@ function QuizToast() {
     setVerdict(r.data);
   }
 
+  // Les deux issues se confirment pareil. « Garder » n'a rien à envoyer — les FA
+  // sont crédités par /quiz/answer — mais rester muet le faisait passer pour une
+  // option qui ne donne rien : le gain va dans le solde verrouillé, que le bandeau
+  // du haut n'affiche pas, donc aucun chiffre ne bougeait à l'écran.
+  function garder() {
+    toast(/*#__PURE__*/React.createElement(FaText, {
+      text: I18N.t("QUIZ_KEPT", verdict && verdict.reward || 0),
+      s: 12
+    }), "good");
+    fermer();
+  }
+
   // « Offrir » reprend les 10 FA déjà crédités et les verse au pool (fenêtre de
-  // 60 s côté serveur). « Garder » ne fait rien d'autre que fermer : c'est ce
-  // qui permet aux deux options d'avoir exactement le même poids à l'écran.
+  // 60 s côté serveur).
   async function offrir() {
     if (donne) return;
     let r = await actions.donateQuiz(question.id);
@@ -140,6 +160,18 @@ function QuizToast() {
         text: I18N.t("QUIZ_GIVEN", r.data && r.data.granted_pool || 0),
         s: 12
       }), "good");
+    } else if (r.reason === "network") {
+      // La requête est partie sans que la réponse revienne : le serveur a pu
+      // commettre le don. Annoncer « tes FA sont restés » serait un mensonge une
+      // fois sur deux — on renvoie le joueur à la seule source de vérité.
+      toast(I18N.t("QUIZ_GIVE_UNSURE"), "bad");
+    } else {
+      // Le serveur a répondu non (fenêtre écoulée, compte non vérifié, 429…) :
+      // là on sait que rien n'est parti. Jamais l'erreur brute au joueur.
+      toast(/*#__PURE__*/React.createElement(FaText, {
+        text: I18N.t("QUIZ_GIVE_REFUSED", verdict && verdict.reward || 0),
+        s: 12
+      }), "bad");
     }
     fermer();
   }
@@ -185,7 +217,7 @@ function QuizToast() {
     className: "quiz-dest"
   }, /*#__PURE__*/React.createElement("button", {
     className: "quiz-choice",
-    onClick: fermer
+    onClick: garder
   }, /*#__PURE__*/React.createElement(FaText, {
     text: I18N.t("QUIZ_KEEP", verdict.reward),
     s: 12

@@ -11,6 +11,7 @@ const CLES = [
   "QUIZ_GIVEN", "QUIZ_TICKER_DON", "QUIZ_TICKER_TOTAL",
   "QUIZ_TITLE_KNOWLEDGE", "QUIZ_TITLE_CONTRIB",
   "QUIZ_SECONDS", "QUIZ_TIMEOUT", "QUIZ_CLOSE",
+  "QUIZ_KEPT", "QUIZ_GIVE_REFUSED", "QUIZ_GIVE_UNSURE",
 ];
 
 test("toutes les cles du quiz existent en FR, EN et ZH", () => {
@@ -50,9 +51,32 @@ test("le message d'expiration annonce le fait, sans pousser au don", () => {
 
 // Convention du depot (components.jsx:30) : un montant s'ecrit « %d FA » dans i18n,
 // FaText le remplace par le logo du token. Sans « FA » apres le nombre, pas de logo.
+// Le gain va dans le solde VERROUILLE (arte_locked, « misable uniquement »), que
+// le bandeau du haut n'affiche pas — il ne montre que le liquide. Un « 10 FA
+// gardés » sec laisserait le joueur chercher un solde qui n'a pas bouge.
+test("le message de conservation dit ou vont les FA", () => {
+  for (const lang of LANGS) {
+    assert.ok(/misable|bettable|下注/i.test(T.QUIZ_KEPT[lang]),
+      `${lang} : QUIZ_KEPT doit nommer le solde misable, sinon le joueur cherche en vain`);
+  }
+});
+
+// Un don qui echoue ne doit jamais se taire, et ne doit pas non plus affirmer
+// ce qu'on ne sait pas : serveur qui refuse (rien n'est parti) et reseau coupe
+// (le serveur a pu commettre le don) sont deux situations differentes.
+test("l'echec d'un don distingue le refus du doute", () => {
+  for (const lang of LANGS) {
+    assert.ok(!/erreur 4\d\d|error 5\d\d|undefined/i.test(T.QUIZ_GIVE_REFUSED[lang]),
+      `${lang} : erreur technique brute renvoyee au joueur`);
+  }
+  assert.match(T.QUIZ_GIVE_REFUSED.FR, /%d FA/, "le refus doit rappeler le montant conserve");
+  assert.ok(!/%d/.test(T.QUIZ_GIVE_UNSURE.FR),
+    "le doute ne doit annoncer aucun montant : on ignore si le don est passe");
+});
+
 test("les montants suivent la convention FaText", () => {
   for (const lang of LANGS) {
-    for (const cle of ["QUIZ_KEEP", "QUIZ_GIVEN", "QUIZ_TICKER_DON", "QUIZ_TICKER_TOTAL"]) {
+    for (const cle of ["QUIZ_KEEP", "QUIZ_GIVEN", "QUIZ_KEPT", "QUIZ_TICKER_DON", "QUIZ_TICKER_TOTAL"]) {
       assert.match(T[cle][lang], /%d\s*FA\b/, `${cle}/${lang} : montant hors convention FaText`);
     }
   }
