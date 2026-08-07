@@ -18,9 +18,20 @@ window.FA_API_URL = (typeof location !== "undefined" &&
 // correctif du crash mobile n'atteignait aucun joueur. Une URL neuve à chaque
 // livraison force le CDN à revenir chercher le fichier à l'origine.
 // À BUMPER AVEC LES BALISES ?v= D'index.html — un test le vérifie.
-window.FA_ASSET_V = "127";
+// Ne sert plus que de REPLI : un asset absent du manifeste doit rester cache-busté
+// plutôt que servi indéfiniment par le CDN.
+window.FA_ASSET_V = "128";
+
+// L'URL porte l'empreinte du CONTENU du fichier (asset-hashes.js, généré au build),
+// et non la version du jeu. Versionner par la version du jeu — ce que faisait la
+// PR #92 — donnait une URL neuve à chaque livraison pour un fichier inchangé :
+// mesuré le 07/08/2026, `emblem.glb` était retéléchargé en entier (1350 Ko) à
+// chaque déploiement, et c'était la requête la plus lente du service worker.
+// Un fichier inchangé garde son URL, donc son cache ; un fichier modifié en change.
 window.FA_ASSET_URL = function (chemin) {
-  return chemin + (chemin.indexOf("?") === -1 ? "?v=" : "&v=") + window.FA_ASSET_V;
+  var table = window.FA_ASSET_HASHES || {};
+  var v = table[chemin] || window.FA_ASSET_V;
+  return chemin + (chemin.indexOf("?") === -1 ? "?v=" : "&v=") + v;
 };
 
 (function () {
