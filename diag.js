@@ -15,7 +15,11 @@
   window.FA_DIAG = { actif: actif, marque: function () {} };
   if (!actif) return;
 
-  const T0 = performance.now();
+  // Tout est horodaté en absolu : performance.now() compte déjà depuis le début
+  // de la navigation. La v1 soustrayait l'instant de chargement de la sonde, ce
+  // qui rendait les jalons incomparables au « premier pixel » — on ne pouvait pas
+  // dire si la cinématique démarrait avant ou après lui.
+  const T_SONDE = Math.round(performance.now()); // quand la sonde elle-même a démarré
   const gels = [];      // tâches longues : le thread ne rend plus la main
   const etapes = {};    // jalons posés par la cinématique (FA_DIAG.marque)
 
@@ -30,7 +34,7 @@
   // Jalons de la cinématique. Appelée depuis cinematique.jsx ; sans ?diag=1
   // c'est une fonction vide, donc coût nul en production.
   window.FA_DIAG.marque = function (nom) {
-    if (etapes[nom] === undefined) etapes[nom] = Math.round(performance.now() - T0);
+    if (etapes[nom] === undefined) etapes[nom] = Math.round(performance.now());
   };
 
   // Images réellement affichées. Un chiffre honnête seulement si l'onglet est
@@ -52,6 +56,39 @@
       .slice(0, 5)
       .map((x) => x.name.split("/").pop().split("?")[0] + " " + Math.round(x.transferSize / 1024) + " Ko");
     return { total: Math.round(octets / 1024), nb: r.length, lourds: lourds };
+  }
+
+  // Traversée du service worker. `workerStart` marque l'instant où la requête
+  // entre dans le worker ; l'écart avec `fetchStart` est le temps d'attente de
+  // son démarrage, et `responseEnd - workerStart` ce que le worker a mis à
+  // répondre. Quand 86 requêtes sont servies depuis le cache et que le premier
+  // pixel arrive quand même à 6 s, c'est ici qu'il faut regarder.
+  function serviceWorker() {
+    const r = performance.getEntriesByType("resource");
+    const parSw = r.filter(function (x) { return x.workerStart > 0; });
+    if (parSw.length === 0) {
+      return { actif: !!(navigator.serviceWorker && navigator.serviceWorker.controller), servies: 0 };
+    }
+    let attente = 0, service = 0, pire = null;
+    for (const x of parSw) {
+      const a = x.workerStart - x.fetchStart;      // réveil du worker
+      const s = x.responseEnd - x.workerStart;     // travail du worker
+      attente += a; service += s;
+      if (!pire || (a + s) > pire.total) {
+        pire = { total: a + s, nom: x.name.split("/").pop().split("?")[0], attente: Math.round(a), service: Math.round(s) };
+      }
+    }
+    const derniere = parSw.reduce(function (m, x) { return Math.max(m, x.responseEnd); }, 0);
+    return {
+      actif: true,
+      servies: parSw.length,
+      surTotal: r.length,
+      attenteCumulee: Math.round(attente),
+      serviceCumule: Math.round(service),
+      moyenneParRequete: Math.round((attente + service) / parSw.length),
+      derniereReponse: Math.round(derniere),
+      pire: pire,
+    };
   }
 
   function gpu() {
@@ -86,9 +123,23 @@
     L.push("  page chargee      : " + Math.round(nav.loadEventEnd || 0) + " ms");
     L.push("  telecharge        : " + net.total + " Ko en " + net.nb + " requetes");
     if (net.lourds.length) L.push("  plus lourds       : " + net.lourds.join(" | "));
+    L.push("  sonde demarree a  : " + T_SONDE + " ms");
     L.push("");
-    L.push("CINEMATIQUE (jalons, ms depuis le demarrage de la sonde)");
-    const ordre = ["three-importe", "renderer-cree", "pmrem-pret", "emblème-charge", "1re-image"];
+    L.push("SERVICE WORKER");
+    const sw = serviceWorker();
+    if (!sw.servies) {
+      L.push("  aucune requete servie par le worker (actif : " + sw.actif + ")");
+    } else {
+      L.push("  requetes via SW   : " + sw.servies + " / " + sw.surTotal);
+      L.push("  attente de reveil : " + sw.attenteCumulee + " ms cumules");
+      L.push("  temps de service  : " + sw.serviceCumule + " ms cumules");
+      L.push("  moyenne/requete   : " + sw.moyenneParRequete + " ms");
+      L.push("  derniere reponse  : " + sw.derniereReponse + " ms");
+      L.push("  pire              : " + sw.pire.nom + " (reveil " + sw.pire.attente + " ms + service " + sw.pire.service + " ms)");
+    }
+    L.push("");
+    L.push("CINEMATIQUE (jalons, ms depuis le debut du chargement)");
+    const ordre = ["react-monte", "three-importe", "renderer-cree", "pmrem-pret", "emblème-charge", "1re-image"];
     let precedent = 0;
     for (const k of ordre) {
       if (etapes[k] === undefined) { L.push("  " + k + " : NON ATTEINT"); continue; }
