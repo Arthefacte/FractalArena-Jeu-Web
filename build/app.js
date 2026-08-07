@@ -256,6 +256,37 @@ function loadState() {
     return null;
   }
 }
+
+// Un solde qui change s'annonce : pulsation du chip + montant signé qui s'échappe.
+// Une seule mécanique pour le liquide et le verrouillé — deux effets copiés l'un
+// sur l'autre auraient divergé à la première correction.
+// `actif` (le joueur est connecté) porte la garde du premier remplissage : à la
+// connexion la sauvegarde arrive d'un coup, de 0 au solde réel, et sans elle le
+// joueur verrait « +38 610 » à chaque ouverture du jeu. variationSolde() tranche
+// (juice-ui.js, pure et testée).
+function useVariationSolde(valeur, actif) {
+  const [pop, setPop] = useState({
+    n: 0,
+    delta: 0
+  });
+  const prev = useRef(valeur);
+  const pret = useRef(false);
+  useEffect(() => {
+    if (!actif) {
+      prev.current = valeur;
+      pret.current = false;
+      return;
+    }
+    const v = window.FA_JUICE_UI.variationSolde(prev.current, valeur, pret.current);
+    prev.current = valeur;
+    pret.current = true;
+    if (v.anime) setPop(p => ({
+      n: p.n + 1,
+      delta: v.delta
+    }));
+  }, [valeur, actif]);
+  return pop;
+}
 function App() {
   const [g, setG] = useState(() => {
     const s = loadState() || freshState();
@@ -263,14 +294,6 @@ function App() {
     return s;
   });
   const [toasts, setToasts] = useState([]);
-  const [chipPop, setChipPop] = useState(0);
-  // Bandeau du haut : le solde verrouillé annonce ses mouvements comme le liquide,
-  // et affiche le montant crédité. Le quiz y verse ses gains — sans ce signal,
-  // passer de 626 à 636 ne se voyait pas et le joueur croyait n'avoir rien reçu.
-  const [lockedPop, setLockedPop] = useState({
-    n: 0,
-    delta: 0
-  });
   const [, setNow] = useState(Date.now()); // tic 1s pour le compte à rebours combats gratuits
   const [cineDone, setCineDone] = useState(false); // cinématique d'ouverture : jouée à chaque visite déconnecté
   // Secrets d'un compte tout juste créé (seed + code de récupération). Vit ICI, au niveau du
@@ -419,34 +442,9 @@ function App() {
     return () => clearInterval(t);
   }, [g.wallet, g.freeFights]);
 
-  // chip pop on liquid change
-  const prevLiquid = useRef(g.liquid);
-  useEffect(() => {
-    if (g.liquid !== prevLiquid.current) {
-      prevLiquid.current = g.liquid;
-      setChipPop(n => n + 1);
-    }
-  }, [g.liquid]);
-
-  // Même chose pour le solde verrouillé, avec le montant en clair. `lockedPret`
-  // absorbe le premier remplissage : à la connexion la sauvegarde arrive d'un
-  // coup et le delta vaudrait tout le solde. variationSolde() tranche (juice-ui.js).
-  const prevLocked = useRef(g.locked);
-  const lockedPret = useRef(false);
-  useEffect(() => {
-    if (!g.wallet) {
-      prevLocked.current = g.locked;
-      lockedPret.current = false;
-      return;
-    }
-    const v = window.FA_JUICE_UI.variationSolde(prevLocked.current, g.locked, lockedPret.current);
-    prevLocked.current = g.locked;
-    lockedPret.current = true;
-    if (v.anime) setLockedPop(p => ({
-      n: p.n + 1,
-      delta: v.delta
-    }));
-  }, [g.locked, g.wallet]);
+  // Les deux soldes du bandeau annoncent leurs mouvements de la même façon.
+  const liquidPop = useVariationSolde(g.liquid, !!g.wallet);
+  const lockedPop = useVariationSolde(g.locked, !!g.wallet);
 
   // SFX : synchronise le module son avec le toggle options.sound (charge + bascule).
   useEffect(() => {
@@ -3358,7 +3356,7 @@ function App() {
   }, /*#__PURE__*/React.createElement(Ambient, null), /*#__PURE__*/React.createElement("div", {
     className: "app-shell"
   }, /*#__PURE__*/React.createElement(Header, {
-    chipPop: chipPop,
+    liquidPop: liquidPop,
     lockedPop: lockedPop
   }), g.wallet && /*#__PURE__*/React.createElement(LockedBanner, null), g.wallet && /*#__PURE__*/React.createElement(window.PwaInstallBanner, {
     prompt: pwaPrompt,
@@ -3427,8 +3425,20 @@ function Ambient() {
     }
   }))));
 }
+
+// Le montant qui vient d'entrer ou de sortir, signé et coloré : un crédit se lit
+// en vert, un débit en rouge. `position: absolute` côté CSS — il ne pousse rien,
+// donc le bandeau ne se réagence pas à chaque mouvement.
+function ChipDelta({
+  delta
+}) {
+  if (!delta) return null;
+  return /*#__PURE__*/React.createElement("span", {
+    className: cx("chip-delta", delta > 0 ? "up" : "down")
+  }, delta > 0 ? "+" : "−", fmt(Math.abs(delta)));
+}
 function Header({
-  chipPop,
+  liquidPop,
   lockedPop
 }) {
   const {
@@ -3470,8 +3480,8 @@ function Header({
       justifyContent: "flex-end"
     }
   }, /*#__PURE__*/React.createElement("span", {
-    key: chipPop,
-    className: "chip pop"
+    key: "lq" + liquidPop.n,
+    className: cx("chip", "liquid", liquidPop.n > 0 && "pop")
   }, /*#__PURE__*/React.createElement("img", {
     src: "assets/TOKEN.png",
     alt: "",
@@ -3481,7 +3491,9 @@ function Header({
       borderRadius: 3,
       border: "1px solid var(--line)"
     }
-  }), " ", fmt(g.liquid)), g.locked > 0 && /*#__PURE__*/React.createElement("span", {
+  }), fmt(g.liquid), /*#__PURE__*/React.createElement(ChipDelta, {
+    delta: liquidPop.delta
+  })), g.locked > 0 && /*#__PURE__*/React.createElement("span", {
     key: "lk" + lockedPop.n,
     className: cx("chip", "locked", lockedPop.n > 0 && "pop")
   }, /*#__PURE__*/React.createElement("img", {
@@ -3495,9 +3507,9 @@ function Header({
     }
   }), /*#__PURE__*/React.createElement("b", {
     className: "chip-amount"
-  }, fmt(g.locked)), " ", I18N.t("LOCKED_CHIP"), lockedPop.delta !== 0 && /*#__PURE__*/React.createElement("span", {
-    className: cx("chip-delta", lockedPop.delta > 0 ? "up" : "down")
-  }, lockedPop.delta > 0 ? "+" : "−", fmt(Math.abs(lockedPop.delta)))), /*#__PURE__*/React.createElement("div", {
+  }, fmt(g.locked)), " ", I18N.t("LOCKED_CHIP"), /*#__PURE__*/React.createElement(ChipDelta, {
+    delta: lockedPop.delta
+  })), /*#__PURE__*/React.createElement("div", {
     className: "lang-switch"
   }, [["FR", "FR"], ["EN", "EN"], ["ZH", "中文"]].map(([code, lbl]) => /*#__PURE__*/React.createElement("button", {
     key: code,

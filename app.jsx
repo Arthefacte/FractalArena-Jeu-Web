@@ -179,14 +179,30 @@ function loadState() {
   } catch (e) { return null; }
 }
 
+// Un solde qui change s'annonce : pulsation du chip + montant signé qui s'échappe.
+// Une seule mécanique pour le liquide et le verrouillé — deux effets copiés l'un
+// sur l'autre auraient divergé à la première correction.
+// `actif` (le joueur est connecté) porte la garde du premier remplissage : à la
+// connexion la sauvegarde arrive d'un coup, de 0 au solde réel, et sans elle le
+// joueur verrait « +38 610 » à chaque ouverture du jeu. variationSolde() tranche
+// (juice-ui.js, pure et testée).
+function useVariationSolde(valeur, actif) {
+  const [pop, setPop] = useState({ n: 0, delta: 0 });
+  const prev = useRef(valeur);
+  const pret = useRef(false);
+  useEffect(() => {
+    if (!actif) { prev.current = valeur; pret.current = false; return; }
+    const v = window.FA_JUICE_UI.variationSolde(prev.current, valeur, pret.current);
+    prev.current = valeur;
+    pret.current = true;
+    if (v.anime) setPop((p) => ({ n: p.n + 1, delta: v.delta }));
+  }, [valeur, actif]);
+  return pop;
+}
+
 function App() {
   const [g, setG] = useState(() => { const s = loadState() || freshState(); I18N.setLang(s.lang); return s; });
   const [toasts, setToasts] = useState([]);
-  const [chipPop, setChipPop] = useState(0);
-  // Bandeau du haut : le solde verrouillé annonce ses mouvements comme le liquide,
-  // et affiche le montant crédité. Le quiz y verse ses gains — sans ce signal,
-  // passer de 626 à 636 ne se voyait pas et le joueur croyait n'avoir rien reçu.
-  const [lockedPop, setLockedPop] = useState({ n: 0, delta: 0 });
   const [, setNow] = useState(Date.now()); // tic 1s pour le compte à rebours combats gratuits
   const [cineDone, setCineDone] = useState(false); // cinématique d'ouverture : jouée à chaque visite déconnecté
   // Secrets d'un compte tout juste créé (seed + code de récupération). Vit ICI, au niveau du
@@ -293,22 +309,9 @@ function App() {
     return () => clearInterval(t);
   }, [g.wallet, g.freeFights]);
 
-  // chip pop on liquid change
-  const prevLiquid = useRef(g.liquid);
-  useEffect(() => { if (g.liquid !== prevLiquid.current) { prevLiquid.current = g.liquid; setChipPop((n) => n + 1); } }, [g.liquid]);
-
-  // Même chose pour le solde verrouillé, avec le montant en clair. `lockedPret`
-  // absorbe le premier remplissage : à la connexion la sauvegarde arrive d'un
-  // coup et le delta vaudrait tout le solde. variationSolde() tranche (juice-ui.js).
-  const prevLocked = useRef(g.locked);
-  const lockedPret = useRef(false);
-  useEffect(() => {
-    if (!g.wallet) { prevLocked.current = g.locked; lockedPret.current = false; return; }
-    const v = window.FA_JUICE_UI.variationSolde(prevLocked.current, g.locked, lockedPret.current);
-    prevLocked.current = g.locked;
-    lockedPret.current = true;
-    if (v.anime) setLockedPop((p) => ({ n: p.n + 1, delta: v.delta }));
-  }, [g.locked, g.wallet]);
+  // Les deux soldes du bandeau annoncent leurs mouvements de la même façon.
+  const liquidPop = useVariationSolde(g.liquid, !!g.wallet);
+  const lockedPop = useVariationSolde(g.locked, !!g.wallet);
 
   // SFX : synchronise le module son avec le toggle options.sound (charge + bascule).
   useEffect(() => { if (window.FA_SFX) window.FA_SFX.setEnabled(g.options.sound); }, [g.options.sound]);
@@ -1834,7 +1837,7 @@ function App() {
     <FA_Ctx.Provider value={ctx}>
       <Ambient />
       <div className="app-shell">
-        <Header chipPop={chipPop} lockedPop={lockedPop} />
+        <Header liquidPop={liquidPop} lockedPop={lockedPop} />
         {/* Contrepartie économique du compte sans wallet : doit être vue, pas juste exister.
             Rendu ICI (dans .app-shell, sous le Header) plutôt qu'en frère du shell — sinon
             elle atterrit tout en bas du document (.app-shell fait min-height: 100vh) et,
@@ -1899,7 +1902,19 @@ function Ambient() {
   );
 }
 
-function Header({ chipPop, lockedPop }) {
+// Le montant qui vient d'entrer ou de sortir, signé et coloré : un crédit se lit
+// en vert, un débit en rouge. `position: absolute` côté CSS — il ne pousse rien,
+// donc le bandeau ne se réagence pas à chaque mouvement.
+function ChipDelta({ delta }) {
+  if (!delta) return null;
+  return (
+    <span className={cx("chip-delta", delta > 0 ? "up" : "down")}>
+      {delta > 0 ? "+" : "−"}{fmt(Math.abs(delta))}
+    </span>
+  );
+}
+
+function Header({ liquidPop, lockedPop }) {
   const { g, actions } = useFA();
   return (
     <header className="hdr">
@@ -1914,18 +1929,16 @@ function Header({ chipPop, lockedPop }) {
         <span className="pill mono" style={{ background: "rgba(255,59,92,0.14)", border: "1px solid var(--alert)", color: "var(--alert)", fontSize: 10, letterSpacing: 2, padding: "3px 8px" }}>LOCAL</span>}
       <div className="hdr-spacer" />
       <div className="flex gap8 center wrap" style={{ justifyContent: "flex-end" }}>
-        <span key={chipPop} className="chip pop"><img src="assets/TOKEN.png" alt="" width="16" height="16" style={{ borderRadius: 3, border: "1px solid var(--line)" }} /> {fmt(g.liquid)}</span>
+        <span key={"lq" + liquidPop.n} className={cx("chip", "liquid", liquidPop.n > 0 && "pop")}>
+          <img src="assets/TOKEN.png" alt="" width="16" height="16" style={{ borderRadius: 3, border: "1px solid var(--line)" }} />
+          {fmt(g.liquid)}
+          <ChipDelta delta={liquidPop.delta} />
+        </span>
         {g.locked > 0 && (
           <span key={"lk" + lockedPop.n} className={cx("chip", "locked", lockedPop.n > 0 && "pop")}>
             <img src="assets/TOKEN.png" alt="" width="16" height="16" style={{ borderRadius: 3, border: "1px solid var(--line)" }} />
             <b className="chip-amount">{fmt(g.locked)}</b> {I18N.t("LOCKED_CHIP")}
-            {/* Le montant crédité, en clair et signé : « +10 » et « −10 » ne
-                disent pas la même chose. Monte puis s'efface, sans rien décaler. */}
-            {lockedPop.delta !== 0 && (
-              <span className={cx("chip-delta", lockedPop.delta > 0 ? "up" : "down")}>
-                {lockedPop.delta > 0 ? "+" : "−"}{fmt(Math.abs(lockedPop.delta))}
-              </span>
-            )}
+            <ChipDelta delta={lockedPop.delta} />
           </span>
         )}
         <div className="lang-switch">
