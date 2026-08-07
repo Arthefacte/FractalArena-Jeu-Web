@@ -8,7 +8,10 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 
-const DEFAULT_GLB = 'assets/logo3d.glb';
+// Versionné via FA_ASSET_URL (data.js) : une URL nue reste servie par le CDN
+// longtemps après que le fichier a changé.
+const DEFAULT_GLB = (typeof window !== 'undefined' && window.FA_ASSET_URL)
+  ? window.FA_ASSET_URL('assets/logo3d.glb') : 'assets/logo3d.glb';
 const INTRO_DUR = 1.5, WIND_DUR = 3.8, WIND_AMP = 1.05, SPIN_DUR = 2.8;
 const CAM_FAR = 9.5, CAM_NEAR = 5.6;
 const easeOut = x => 1 - Math.pow(1 - x, 3);

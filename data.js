@@ -10,6 +10,19 @@ window.FA_API_URL = (typeof location !== "undefined" &&
   ? "http://localhost:3000"
   : "https://fractal-arena-server-production.up.railway.app";
 
+// Version des assets binaires (.glb). Les scripts portent « ?v=N » dans index.html ;
+// les modèles 3D, eux, étaient chargés par des URL nues — et le 07/08/2026 on a
+// découvert que Cloudflare servait encore les .glb d'avant l'allègement de la PR #90
+// (12,7 Mo au lieu de 492 Ko, Age de 5 jours, et un 404 mis en cache sur
+// assets/emblem.glb). Rien ne signalait au CDN que le fichier avait changé : le
+// correctif du crash mobile n'atteignait aucun joueur. Une URL neuve à chaque
+// livraison force le CDN à revenir chercher le fichier à l'origine.
+// À BUMPER AVEC LES BALISES ?v= D'index.html — un test le vérifie.
+window.FA_ASSET_V = "120";
+window.FA_ASSET_URL = function (chemin) {
+  return chemin + (chemin.indexOf("?") === -1 ? "?v=" : "&v=") + window.FA_ASSET_V;
+};
+
 (function () {
   "use strict";
 
