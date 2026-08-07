@@ -12,6 +12,9 @@ const {
   useMemo
 } = React;
 const I18N = window.FA_I18N;
+// Emblème de la cinématique, en URL versionnée (FA_ASSET_URL, data.js). Sans version,
+// le CDN a servi un 404 mis en cache pendant un jour après l'ajout du fichier.
+const EMBLEM_GLB = typeof window !== 'undefined' && window.FA_ASSET_URL ? window.FA_ASSET_URL('assets/emblem.glb') : 'assets/emblem.glb';
 const CINE_DUR = 20.0;
 
 // Libère TOUTES les ressources GPU d'une scène Three.js au démontage. Sans ça, le GLB
@@ -510,7 +513,7 @@ function Emblem3D(props) {
         group = new THREE.Group();
         scene.add(group);
         const loader = new GLTFLoader();
-        loader.load('assets/emblem.glb', gltf => {
+        loader.load(EMBLEM_GLB, gltf => {
           if (disposed) return;
           const m1 = gltf.scene;
           const box = new THREE.Box3().setFromObject(m1);
@@ -765,7 +768,7 @@ function Cinematique(props) {
         group = new THREE.Group();
         scene.add(group);
         const loader = new GLTFLoader();
-        loader.load('assets/emblem.glb', gltf => {
+        loader.load(EMBLEM_GLB, gltf => {
           if (disposed) return;
           const m1 = gltf.scene;
           const box = new THREE.Box3().setFromObject(m1);

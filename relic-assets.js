@@ -10,7 +10,15 @@
     "cobalt_spring", "onyx_membrane", "jade_circuit", "prism_matrix",
   ];
 
-  function path(type) { return "assets/relics/" + type + ".glb"; }
+  // URL versionnée (FA_ASSET_URL, data.js) : sans elle le CDN sert indéfiniment
+  // l'ancien modèle, y compris après un allègement d'assets.
+  // Garde `typeof` : ce module est aussi chargé en CommonJS par les tests node,
+  // où `window` n'existe pas du tout (et non « vaut undefined »).
+  function path(type) {
+    const brut = "assets/relics/" + type + ".glb";
+    const url = typeof window !== "undefined" && window.FA_ASSET_URL;
+    return url ? url(brut) : brut;
+  }
 
   // Rareté = halo émissif (couleur + intensité). Préserve la couleur du modèle.
   const RARITY_GLOW = {
