@@ -31,6 +31,32 @@
     }).observe({ type: "longtask", buffered: true });
   } catch (e) { /* Safari : pas d'API longtask, le reste du rapport tient */ }
 
+  // Qui bloque ? `longtask` donne la duree, jamais le coupable. `long-animation-frame`
+  // (Chrome 123+) attribue chaque image trop longue aux scripts qui l'ont causee :
+  // fichier, fonction, temps passe. Sans ca, on sait qu'une seconde est perdue mais
+  // pas ou — c'est precisement ce qui manquait pour trancher.
+  const coupables = [];
+  try {
+    new PerformanceObserver(function (l) {
+      for (const e of l.getEntries()) {
+        if (e.duration < 100) continue; // on ne garde que ce qui se voit
+        const scripts = (e.scripts || []).map(function (s) {
+          return {
+            ms: Math.round(s.duration),
+            ou: String(s.sourceURL || s.name || "?").split("/").pop().split("?")[0],
+            quoi: s.sourceFunctionName || s.invoker || s.invokerType || "",
+          };
+        }).sort(function (a, b) { return b.ms - a.ms; });
+        coupables.push({
+          a: Math.round(e.startTime),
+          ms: Math.round(e.duration),
+          rendu: Math.round(e.renderStart ? e.duration - (e.renderStart - e.startTime) : 0),
+          scripts: scripts.slice(0, 3),
+        });
+      }
+    }).observe({ type: "long-animation-frame", buffered: true });
+  } catch (e) { /* navigateur sans LoAF : le rapport le dira */ }
+
   // Jalons de la cinématique. Appelée depuis cinematique.jsx ; sans ?diag=1
   // c'est une fonction vide, donc coût nul en production.
   window.FA_DIAG.marque = function (nom) {
@@ -158,6 +184,18 @@
     L.push("THREAD BLOQUE : " + bloque + " ms au total, " + gels.length + " taches longues");
     L.push("  les pires : " + gels.slice().sort(function (a, b) { return b.ms - a.ms; }).slice(0, 6)
       .map(function (g) { return g.ms + "ms a " + g.a; }).join(", "));
+    L.push("");
+    L.push("QUI BLOQUE (images > 100 ms, script par script)");
+    if (coupables.length === 0) {
+      L.push("  aucune — ou navigateur sans long-animation-frame");
+    } else {
+      const pires = coupables.slice().sort(function (a, b) { return b.ms - a.ms; }).slice(0, 4);
+      for (const c of pires) {
+        L.push("  " + c.ms + " ms a " + c.a + " ms :");
+        if (c.scripts.length === 0) L.push("      (aucun script attribue — rendu ou GPU)");
+        for (const s of c.scripts) L.push("      " + s.ms + " ms  " + s.ou + (s.quoi ? "  ." + s.quoi : ""));
+      }
+    }
     if (performance.memory) L.push("MEMOIRE JS : " + Math.round(performance.memory.usedJSHeapSize / 1048576) + " Mo");
     return L.join("\n");
   }
