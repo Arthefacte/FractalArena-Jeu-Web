@@ -9,6 +9,15 @@ const I18N = window.FA_I18N;
 const EMBLEM_GLB = (typeof window !== 'undefined' && window.FA_ASSET_URL)
   ? window.FA_ASSET_URL('assets/emblem.glb') : 'assets/emblem.glb';
 
+// Rend la main au navigateur, le temps qu'il peigne une image. L'initialisation
+// 3D s'executait d'une traite : 502 ms mesurees sur un Mali-G68 (sonde v3,
+// « 502 ms cinematique.js .import.then »), soit une trentaine d'images sautees
+// pile au moment ou le logo apparait. Un setTimeout(0) ne suffirait pas : il ne
+// garantit aucun rendu entre deux etapes, requestAnimationFrame si.
+function cedeLeThread() {
+  return new Promise((r) => requestAnimationFrame(() => r()));
+}
+
 const CINE_DUR = 20.0;
 
 // Libère TOUTES les ressources GPU d'une scène Three.js au démontage. Sans ça, le GLB
@@ -183,21 +192,24 @@ function Emblem3D(props) {
         renderer.toneMappingExposure = 1.15;
         window.FA_DIAG && window.FA_DIAG.marque('renderer-cree');
 
+        await cedeLeThread();
+        if (disposed) return;
+
         scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
         camera.position.set(0, 0, 6);
 
-        pmrem = new THREE.PMREMGenerator(renderer);
-        envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-        scene.environment = envTex;
-        window.FA_DIAG && window.FA_DIAG.marque('pmrem-pret');
-
+        // Les lumieres d'abord : elles coutent quelques microsecondes et suffisent
+        // a afficher l'embleme. L'environnement PMREM, lui, attend la premiere image.
         const key = new THREE.DirectionalLight(0xffffff, 2.4); key.position.set(2.5, 3, 4); scene.add(key);
         rim = new THREE.DirectionalLight(0x00f0ff, 1.4); rim.position.set(-3, 1.5, -2.5); scene.add(rim);
         scene.add(new THREE.AmbientLight(0xbfd8ff, 0.5));
 
         group = new THREE.Group();
         scene.add(group);
+
+        await cedeLeThread();
+        if (disposed) return;
 
         const loader = new GLTFLoader();
         loader.load(EMBLEM_GLB, (gltf) => {
@@ -231,6 +243,17 @@ function Emblem3D(props) {
           renderer.render(scene, camera);
         };
         render();
+
+        // L'environnement d'eclairage arrive maintenant que quelque chose est a
+        // l'ecran : c'est l'etape la plus chere de l'init (+366 ms mesurees) et
+        // elle n'apporte que des reflets, dont l'absence pendant une image ne se
+        // voit pas. La construire avant, c'etait retarder le premier rendu d'autant.
+        await cedeLeThread();
+        if (disposed || !scene) return;
+        pmrem = new THREE.PMREMGenerator(renderer);
+        envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+        scene.environment = envTex;
+        window.FA_DIAG && window.FA_DIAG.marque('pmrem-pret');
       } catch (e) { console.warn('three init failed', e); }
     })();
     return () => { disposed = true; cancelAnimationFrame(raf); disposeThreeScene({ scene, envTex, pmrem, renderer }); };
@@ -379,21 +402,24 @@ function Cinematique(props) {
         renderer.toneMappingExposure = 1.15;
         window.FA_DIAG && window.FA_DIAG.marque('renderer-cree');
 
+        await cedeLeThread();
+        if (disposed) return;
+
         scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
         camera.position.set(0, 0, 6);
 
-        pmrem = new THREE.PMREMGenerator(renderer);
-        envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-        scene.environment = envTex;
-        window.FA_DIAG && window.FA_DIAG.marque('pmrem-pret');
-
+        // Les lumieres d'abord : elles coutent quelques microsecondes et suffisent
+        // a afficher l'embleme. L'environnement PMREM, lui, attend la premiere image.
         const key = new THREE.DirectionalLight(0xffffff, 2.4); key.position.set(2.5, 3, 4); scene.add(key);
         rim = new THREE.DirectionalLight(0x00f0ff, 1.4); rim.position.set(-3, 1.5, -2.5); scene.add(rim);
         scene.add(new THREE.AmbientLight(0xbfd8ff, 0.5));
 
         group = new THREE.Group();
         scene.add(group);
+
+        await cedeLeThread();
+        if (disposed) return;
 
         const loader = new GLTFLoader();
         loader.load(EMBLEM_GLB, (gltf) => {
@@ -427,6 +453,17 @@ function Cinematique(props) {
           renderer.render(scene, camera);
         };
         render();
+
+        // L'environnement d'eclairage arrive maintenant que quelque chose est a
+        // l'ecran : c'est l'etape la plus chere de l'init (+366 ms mesurees) et
+        // elle n'apporte que des reflets, dont l'absence pendant une image ne se
+        // voit pas. La construire avant, c'etait retarder le premier rendu d'autant.
+        await cedeLeThread();
+        if (disposed || !scene) return;
+        pmrem = new THREE.PMREMGenerator(renderer);
+        envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+        scene.environment = envTex;
+        window.FA_DIAG && window.FA_DIAG.marque('pmrem-pret');
       } catch (e) { console.warn('three init failed', e); }
     })();
     return () => {
