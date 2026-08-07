@@ -161,6 +161,12 @@ function RelicSlot({ beast }) {
   const { g, actions, toast } = useFA();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  // L'écran d'équipe montre des vignettes de reliques : on amorce les modèles ici
+  // plutôt qu'au boot, et seulement quand le navigateur est libre.
+  useEffect(() => {
+    const M = window.FA_RELIC_MODELS;
+    if (M && M.preloadWhenIdle) M.preloadWhenIdle();
+  }, []);
   const equipped = beast.relic_id ? (g.equipment || []).find((e) => e.id === beast.relic_id) : null;
   const eff = equipped ? D.relicEffect(equipped.type, equipped.rarity) : null;
   // reliques équipables = non portées, ou déjà sur CETTE bête

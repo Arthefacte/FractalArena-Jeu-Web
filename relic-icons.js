@@ -86,6 +86,12 @@ import * as THREE from "three";
     } catch (e) { return null; }     // erreur ponctuelle → pastille pour cet appel, ne pas tuer le renderer partagé
   }
 
-  if (window.FA_RELIC_MODELS) window.FA_RELIC_MODELS.preload();
+  // Plus de préchargement ici. Ce module se charge au boot, donc l'appel partait
+  // avant le premier pixel : 8 modèles à télécharger, décoder (meshopt) et
+  // normaliser — 3,1 Mo, 239 970 triangles, 39 Mo de VRAM — pendant que la
+  // cinématique chargeait son emblème et essayait de tenir ses frames. Aucune
+  // relique n'est visible sur cet écran. Les écrans qui en montrent appellent
+  // FA_RELIC_MODELS.preloadWhenIdle() ; à défaut, get() charge à la demande et
+  // affiche un repli en attendant (comportement déjà en place ci-dessus).
   window.FA_RELIC_ICON = { get };
 })();

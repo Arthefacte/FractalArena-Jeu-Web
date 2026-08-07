@@ -344,6 +344,12 @@ function Market() {
   useEffect(() => {
     actions.marketRefresh();
   }, [g.authToken]);
+  // Ici, et pas au boot : c'est le premier écran où une grille de reliques
+  // s'affiche. À l'inactivité, pour ne pas disputer le thread au rendu.
+  useEffect(() => {
+    const M = window.FA_RELIC_MODELS;
+    if (M && M.preloadWhenIdle) M.preloadWhenIdle();
+  }, []);
   return /*#__PURE__*/React.createElement("div", {
     style: {
       maxWidth: 640,
