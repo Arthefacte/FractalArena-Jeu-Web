@@ -922,6 +922,12 @@
     QUIZ_GIVEN:   { FR: "%d FA ajoutés au pool de rachat", EN: "%d FA added to the buyback pool", ZH: "已向回购池注入 %d FA" },
     QUIZ_TICKER_DON:   { FR: "%s a offert %d FA au rachat", EN: "%s gave %d FA to the buyback", ZH: "%s 向回购池捐赠了 %d FA" },
     QUIZ_TICKER_TOTAL: { FR: "Les joueurs ont offert %d FA au rachat", EN: "Players have given %d FA to the buyback", ZH: "玩家已向回购池捐赠 %d FA" },
+    QUIZ_SECONDS: { FR: "%d s", EN: "%d s", ZH: "%d 秒" },
+    QUIZ_TIMEOUT: {
+      FR: "Sans choix, la bulle se ferme et rien n'est offert.",
+      EN: "Without a choice, the bubble closes and nothing is given.",
+      ZH: "未做选择时，气泡关闭，不会捐出任何代币。",
+    },
     QUIZ_TITLE_KNOWLEDGE: { FR: "Savoir", EN: "Knowledge", ZH: "知识" },
     QUIZ_TITLE_CONTRIB:   { FR: "Contribution", EN: "Contribution", ZH: "贡献" },
     QUIZ_PRESTIGE:    { FR: "Prestige", EN: "Prestige", ZH: "威望" },

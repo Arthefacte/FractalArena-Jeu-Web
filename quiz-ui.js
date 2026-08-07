@@ -8,7 +8,11 @@
   "use strict";
 
   const QUIZ_INTERVAL_MS = 30000; // une bulle toutes les 30 s
-  const QUIZ_TOAST_MS = 15000;    // puis elle s'efface toute seule
+  // 30 s à chaque étape, décompte affiché : pour lire la question, puis — le
+  // compteur repart à la réponse — pour lire l'explication et choisir la
+  // destination des FA. Tenu sous les 60 s de DONATE_WINDOW_MS (serveur), sinon
+  // « Offrir » serait un bouton qui échoue.
+  const QUIZ_TOAST_MS = 30000;
 
   // Le joueur n'est jamais interrompu : pas pendant un combat, une cinématique
   // ou une signature UniSat, et jamais deux toasts en même temps.
@@ -22,6 +26,13 @@
     return now + QUIZ_INTERVAL_MS;
   }
 
+  // Secondes affichées par le décompte, et unique déclencheur de la fermeture :
+  // ce que le joueur lit est ce qui ferme la bulle. Arrondi vers le haut, donc
+  // « 0 s » ne s'affiche qu'au moment où elle disparaît vraiment.
+  function restantSecondes(finAt, now) {
+    return Math.max(0, Math.ceil((finAt - now) / 1000));
+  }
+
   // Le bandeau montre un don réel, sinon le cumul communautaire. Jamais de faux
   // joueur : un bandeau qui invente du trafic se repère tout de suite.
   function tickerLine(data, t) {
@@ -32,7 +43,7 @@
     return "";
   }
 
-  const api = { QUIZ_INTERVAL_MS, QUIZ_TOAST_MS, shouldAsk, nextDueAt, tickerLine };
+  const api = { QUIZ_INTERVAL_MS, QUIZ_TOAST_MS, shouldAsk, nextDueAt, tickerLine, restantSecondes };
   if (typeof window === "undefined") { global.window = global.window || {}; }
   window.FA_QUIZ_UI = api;
 })();

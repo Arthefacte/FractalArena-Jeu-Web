@@ -41,10 +41,15 @@ function QuizToast() {
   const [verdict, setVerdict] = useState(null);     // réponse du serveur
   const [envoi, setEnvoi] = useState(false);        // une seule réponse à la fois
   const [donne, setDonne] = useState(false);        // don déjà effectué
+  const [restant, setRestant] = useState(0);       // secondes affichées par le décompte
   const lastAskAt = useRef(0);
-  const effacement = useRef(null);
+  const finAt = useRef(0);
 
   const ouvert = !!question;
+  // Une bonne réponse hors révision rapporte : le joueur doit alors choisir la
+  // destination des FA. Tant que ce choix est à l'écran, la bulle l'attend.
+  const gagne = !!(verdict && verdict.correct && !verdict.revision && verdict.reward > 0);
+  const choixEnAttente = gagne && !donne;
 
   // Minuterie : on regarde chaque seconde s'il est temps de proposer une bulle.
   // shouldAsk() tranche — le composant ne décide rien.
@@ -67,14 +72,22 @@ function QuizToast() {
     return () => clearInterval(id);
   }, [g.wallet, question, actions]);
 
-  // Auto-effacement : une question qu'on ignore n'est PAS consommée — on ferme
-  // sans rien envoyer au serveur, elle pourra revenir plus tard.
+  // Le décompte EST l'horloge de la bulle : ce que le joueur voit descendre est
+  // ce qui la ferme. Il repart à 30 s quand la réponse arrive — lire l'explication
+  // et choisir la destination est une étape à part entière. Une question qu'on
+  // laisse expirer n'est PAS consommée (rien n'est envoyé au serveur) ; un choix
+  // qu'on laisse expirer vaut « garder » : les FA sont déjà crédités, rien n'est
+  // offert au pool.
   useEffect(() => {
-    clearTimeout(effacement.current);
-    if (!ouvert) return undefined;
-    const delai = verdict ? 6000 : QUIZ.QUIZ_TOAST_MS;
-    effacement.current = setTimeout(() => fermer(), delai);
-    return () => clearTimeout(effacement.current);
+    if (!ouvert) { setRestant(0); return undefined; }
+    finAt.current = Date.now() + QUIZ.QUIZ_TOAST_MS;
+    setRestant(QUIZ.restantSecondes(finAt.current, Date.now()));
+    const id = setInterval(() => {
+      const r = QUIZ.restantSecondes(finAt.current, Date.now());
+      setRestant(r);
+      if (r <= 0) fermer();
+    }, 250);
+    return () => clearInterval(id);
   }, [ouvert, verdict]);
 
   function fermer() {
@@ -113,11 +126,20 @@ function QuizToast() {
 
   if (!g.wallet || !question) return null;
 
-  const gagne = verdict && verdict.correct && !verdict.revision && verdict.reward > 0;
-
   return (
     <div className="quiz-toast" role="dialog" aria-live="polite">
-      {question.revision && <div className="quiz-tag">{I18N.t("QUIZ_REVIEW")}</div>}
+      {/* Le décompte : une barre qui se vide et les secondes en clair. La bulle
+          ne disparaît jamais sans que le joueur ait pu la voir venir. */}
+      <div className="quiz-countdown" aria-hidden="true">
+        <div
+          className="quiz-countdown-bar"
+          style={{ width: (restant / (QUIZ.QUIZ_TOAST_MS / 1000)) * 100 + "%" }}
+        />
+      </div>
+      <div className="quiz-head">
+        {question.revision ? <div className="quiz-tag">{I18N.t("QUIZ_REVIEW")}</div> : <span />}
+        <div className="quiz-timer">{I18N.t("QUIZ_SECONDS", restant)}</div>
+      </div>
       <div className="quiz-q">{question.q}</div>
 
       {!verdict && (
@@ -138,15 +160,20 @@ function QuizToast() {
           <div className="quiz-why">{verdict.explanation}</div>
           {/* Les deux destinations, même classe, même largeur : le joueur voit
               deux options équivalentes, jamais une injonction à donner. */}
-          {gagne && !donne && (
-            <div className="quiz-dest">
-              <button className="quiz-choice" onClick={fermer}>
-                <FaText text={I18N.t("QUIZ_KEEP", verdict.reward)} s={12} />
-              </button>
-              <button className="quiz-choice" onClick={offrir}>
-                {I18N.t("QUIZ_GIVE")}
-              </button>
-            </div>
+          {choixEnAttente && (
+            <React.Fragment>
+              <div className="quiz-dest">
+                <button className="quiz-choice" onClick={fermer}>
+                  <FaText text={I18N.t("QUIZ_KEEP", verdict.reward)} s={12} />
+                </button>
+                <button className="quiz-choice" onClick={offrir}>
+                  {I18N.t("QUIZ_GIVE")}
+                </button>
+              </div>
+              {/* Ce qui se passe si le joueur ne tranche pas : dit d'avance, en
+                  clair, sans presser — l'inaction n'offre rien, elle garde. */}
+              <div className="quiz-timeout">{I18N.t("QUIZ_TIMEOUT")}</div>
+            </React.Fragment>
           )}
         </div>
       )}

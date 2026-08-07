@@ -10,6 +10,7 @@ const CLES = [
   "QUIZ_KEEP", "QUIZ_GIVE", "QUIZ_CORRECT", "QUIZ_WRONG", "QUIZ_REVIEW",
   "QUIZ_GIVEN", "QUIZ_TICKER_DON", "QUIZ_TICKER_TOTAL",
   "QUIZ_TITLE_KNOWLEDGE", "QUIZ_TITLE_CONTRIB",
+  "QUIZ_SECONDS", "QUIZ_TIMEOUT",
 ];
 
 test("toutes les cles du quiz existent en FR, EN et ZH", () => {
@@ -34,6 +35,17 @@ test("aucun montant en dur dans les libelles de bouton", () => {
     assert.ok(!/\b10\b/.test(T.QUIZ_KEEP[lang]), `${lang} : montant fige dans QUIZ_KEEP`);
     assert.match(T.QUIZ_KEEP[lang], /%d/, `${lang} : QUIZ_KEEP doit porter %d`);
   }
+});
+
+// Le decompte previent, il ne presse pas : il dit ce qui se passera si le joueur
+// ne repond pas (rien n'est offert), sans injonction a donner ni compte a rebours
+// dramatise. Et le nombre de secondes vient du code, jamais fige dans le libelle.
+test("le message d'expiration annonce le fait, sans pousser au don", () => {
+  for (const lang of LANGS) {
+    const m = T.QUIZ_TIMEOUT[lang];
+    assert.ok(!/vite|hurry|快点|dernière chance|last chance/i.test(m), `${lang} : message pressant`);
+  }
+  assert.match(T.QUIZ_SECONDS.FR, /%d/, "le decompte doit recevoir les secondes du code");
 });
 
 // Convention du depot (components.jsx:30) : un montant s'ecrit « %d FA » dans i18n,
