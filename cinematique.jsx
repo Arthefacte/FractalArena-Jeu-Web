@@ -167,7 +167,15 @@ function cineVals(t, opts) {
     transform: (nu || SANS.has('zoom'))
       ? 'translate(-50%,-50%)'
       : `translate(-50%,-50%) translateY(${settleY}%) scale(${scaleE})`,
-    opacity: (nu || SANS.has('fondu')) ? (t >= 8.2 ? 1 : 0) : opP,
+    // `apparition` : visible DES LE DEBUT, sans jamais basculer de 0 a 1.
+    // Mesure du 08/08 : le gel demarre exactement a l'instant de cette bascule
+    // (t = 8,2 s), et `nu`/`fondu` la conservaient tous les deux — je n'avais
+    // donc jamais teste ce cas, qui est pourtant celui de l'ecran de connexion,
+    // ou le canvas est visible des son montage. Un canvas WebGL laisse invisible
+    // huit secondes puis reintegre par le compositeur est le suspect restant.
+    opacity: SANS.has('apparition') ? 1
+      : (nu || SANS.has('fondu')) ? (t >= 8.2 ? 1 : 0)
+      : opP,
     pointerEvents: 'none',
     ...(nu ? {} : { willChange: 'transform' }),
   };
@@ -584,14 +592,19 @@ function Cinematique(props) {
       style={{ position: 'fixed', inset: 0, overflow: 'hidden', background: '#05070f', fontFamily: "'Chakra Petch',sans-serif", color: '#EAF1FF', zIndex: 1000, userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}
     >
       <img src="assets/BACKGROUND.webp" alt="" draggable={false} style={v.bgStyle} />
+      {/* `deco` : ne laisse que le fond et le canvas. Test symetrique de
+          `sans=3d` — au lieu de retirer la 3D, on retire tout le reste. Si le
+          canvas tourne rond seul, le gel vient d'une combinaison et non de lui. */}
       <div style={v.darkStyle} />
-      <div style={v.scanStyle} />
-      <div style={v.sweepStyle} />
-      <div style={v.lightningStyle} />
+      {!SANS.has('deco') && <div style={v.scanStyle} />}
+      {!SANS.has('deco') && <div style={v.sweepStyle} />}
+      {!SANS.has('deco') && <div style={v.lightningStyle} />}
 
-      <div style={v.convergeStyle}>
-        {v.convergeLines.map((ln) => <span key={ln.id} style={ln.style} />)}
-      </div>
+      {!SANS.has('deco') && (
+        <div style={v.convergeStyle}>
+          {v.convergeLines.map((ln) => <span key={ln.id} style={ln.style} />)}
+        </div>
+      )}
 
       {!SANS.has('halo') && <div className={v.glowClass} style={v.glowStyle} />}
       <div style={v.emblemStyle}>
@@ -604,7 +617,7 @@ function Cinematique(props) {
       </div>
 
       <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
-        {embers.map((e) => <span key={e.id} style={e.style} />)}
+        {!SANS.has('deco') && embers.map((e) => <span key={e.id} style={e.style} />)}
       </div>
 
       <div style={v.burstStyle} />

@@ -274,7 +274,13 @@ function cineVals(t, opts) {
       perspective: '1600px'
     }),
     transform: nu || SANS.has('zoom') ? 'translate(-50%,-50%)' : `translate(-50%,-50%) translateY(${settleY}%) scale(${scaleE})`,
-    opacity: nu || SANS.has('fondu') ? t >= 8.2 ? 1 : 0 : opP,
+    // `apparition` : visible DES LE DEBUT, sans jamais basculer de 0 a 1.
+    // Mesure du 08/08 : le gel demarre exactement a l'instant de cette bascule
+    // (t = 8,2 s), et `nu`/`fondu` la conservaient tous les deux — je n'avais
+    // donc jamais teste ce cas, qui est pourtant celui de l'ecran de connexion,
+    // ou le canvas est visible des son montage. Un canvas WebGL laisse invisible
+    // huit secondes puis reintegre par le compositeur est le suspect restant.
+    opacity: SANS.has('apparition') ? 1 : nu || SANS.has('fondu') ? t >= 8.2 ? 1 : 0 : opP,
     pointerEvents: 'none',
     ...(nu ? {} : {
       willChange: 'transform'
@@ -1022,13 +1028,13 @@ function Cinematique(props) {
     style: v.bgStyle
   }), /*#__PURE__*/React.createElement("div", {
     style: v.darkStyle
-  }), /*#__PURE__*/React.createElement("div", {
+  }), !SANS.has('deco') && /*#__PURE__*/React.createElement("div", {
     style: v.scanStyle
-  }), /*#__PURE__*/React.createElement("div", {
+  }), !SANS.has('deco') && /*#__PURE__*/React.createElement("div", {
     style: v.sweepStyle
-  }), /*#__PURE__*/React.createElement("div", {
+  }), !SANS.has('deco') && /*#__PURE__*/React.createElement("div", {
     style: v.lightningStyle
-  }), /*#__PURE__*/React.createElement("div", {
+  }), !SANS.has('deco') && /*#__PURE__*/React.createElement("div", {
     style: v.convergeStyle
   }, v.convergeLines.map(ln => /*#__PURE__*/React.createElement("span", {
     key: ln.id,
@@ -1063,7 +1069,7 @@ function Cinematique(props) {
       overflow: 'hidden',
       pointerEvents: 'none'
     }
-  }, embers.map(e => /*#__PURE__*/React.createElement("span", {
+  }, !SANS.has('deco') && embers.map(e => /*#__PURE__*/React.createElement("span", {
     key: e.id,
     style: e.style
   }))), /*#__PURE__*/React.createElement("div", {

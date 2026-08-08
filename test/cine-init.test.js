@@ -167,3 +167,21 @@ test("le conteneur par defaut garde son animation d'entree", () => {
   assert.match(SRC, /: `translate\(-50%,-50%\) translateY\(\$\{settleY\}%\) scale\(\$\{scaleE\}\)`/);
   assert.match(SRC, /: opP,/);
 });
+
+// ————————————————————————————————————————————————————————————————
+// Deux angles morts du banc precedent, decouverts en lisant la mesure de
+// `?cine=3d&sans=nu` : le gel demarre exactement a la bascule d'opacite
+// (t = 8,2 s), or `nu` ET `fondu` la conservaient tous les deux — le cas
+// « visible des le debut », qui est celui de l'ecran de connexion, n'avait
+// jamais ete teste. Et `sans=fond,halo` ne retirait que deux calques sur sept.
+test("le canvas peut etre visible des le debut, sans bascule d'opacite", () => {
+  assert.match(SRC, /SANS\.has\('apparition'\) \? 1/,
+    "aucune variante ne teste un canvas visible sans transition 0 -> 1");
+});
+
+test("sans=deco laisse le canvas seul, sans les calques d'ambiance", () => {
+  // Test symetrique de `sans=3d` : au lieu de retirer la 3D, on retire tout le
+  // reste. Doit couvrir scan, sweep, lightning, convergence et embers.
+  const n = (SRC.match(/SANS\.has\('deco'\)/g) || []).length;
+  assert.ok(n >= 5, `deco ne couvre que ${n} calques, il en faut au moins 5`);
+});
