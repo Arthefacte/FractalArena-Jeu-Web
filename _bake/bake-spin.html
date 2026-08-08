@@ -1,0 +1,88 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<style> html,body{margin:0;background:transparent;} #stage canvas{display:block;} </style>
+<script type="importmap">
+  { "imports": { "three":"../vendor/three-0.160.0/three.module.js", "three/addons/":"../vendor/three-0.160.0/addons/" } }
+</script>
+</head>
+<body>
+<div id="stage"></div>
+<script type="module">
+// Reproduit A L'IDENTIQUE la scene de Emblem3D (cinematique.jsx) pour que la
+// sequence bakee soit indiscernable du rendu WebGL qu'elle remplace. Toute
+// divergence ici (exposition, position de lumiere, echelle) se verrait comme un
+// changement d'aspect au moment ou l'embleme apparait.
+import * as THREE from "three";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+
+const params = new URLSearchParams(location.search);
+const SIZE = +(params.get("size") || 512);
+const SPIN = Math.PI * 2 / 11;            // cinematique.jsx : un tour en 11 s
+
+const stage = document.getElementById("stage");
+// preserveDrawingBuffer : sans lui, toDataURL() peut rendre un buffer vide.
+const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, preserveDrawingBuffer: true });
+renderer.setSize(SIZE, SIZE, false);
+renderer.setPixelRatio(1);                // SIZE est deja la resolution finale
+renderer.setClearColor(0x000000, 0);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.15;
+stage.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
+camera.position.set(0, 0, 6);
+
+const key = new THREE.DirectionalLight(0xffffff, 2.4); key.position.set(2.5, 3, 4); scene.add(key);
+const rim = new THREE.DirectionalLight(0x00f0ff, 1.4); rim.position.set(-3, 1.5, -2.5); scene.add(rim);
+scene.add(new THREE.AmbientLight(0xbfd8ff, 0.5));
+
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+const group = new THREE.Group();
+scene.add(group);
+
+window.__ready = false; window.__err = null;
+
+new GLTFLoader().load("../assets/emblem.glb", (gltf) => {
+  try {
+    const m1 = gltf.scene;
+    const box = new THREE.Box3().setFromObject(m1);
+    const size = box.getSize(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3());
+    const maxDim = Math.max(size.x, size.y, size.z) || 1;
+    m1.position.sub(center);
+    const dz = size.z * 0.22;
+    const wrap1 = new THREE.Group(); wrap1.add(m1); wrap1.rotation.y = Math.PI; wrap1.position.z = -dz;
+    const m2 = m1.clone();
+    const wrap2 = new THREE.Group(); wrap2.add(m2); wrap2.position.z = dz;
+    group.add(wrap1); group.add(wrap2);
+    group.scale.setScalar(2.6 / maxDim);
+    window.__ready = true;
+  } catch (e) { window.__err = String(e); }
+}, undefined, (e) => { window.__err = "GLB: " + String(e && e.message || e); });
+
+// t = temps de la timeline de la cinematique, en secondes. La rotation ET la
+// teinte prismatique du rim en dependent — les deux doivent etre bakees, sans
+// quoi l'embleme fige sa couleur au milieu d'une cinematique qui, elle, varie.
+// `teinte` fige la couleur du rim (0 = orange, 1 = cyan d'origine). La teinte
+// prismatique a une periode de 10 s et la rotation de 11 s : elles ne se
+// rebouclent qu'au bout de 110 s. Pour une sequence bouclable il faut donc en
+// figer une — c'est la teinte, car la rotation boucle des le demi-tour
+// (symetrie d'ordre 2 des deux copies : SSIM 0,9976 mesure).
+window.__setT = (t, teinte) => {
+  group.rotation.y = -t * SPIN;
+  const tri = teinte == null ? Math.abs(((t / 5) % 1) * 2 - 1) : teinte;
+  rim.color.setHSL(0.092 + (0.511 - 0.092) * tri, 1, 0.62);
+  renderer.render(scene, camera);
+  renderer.getContext().finish();
+  return renderer.domElement.toDataURL("image/png");
+};
+</script>
+</body>
+</html>

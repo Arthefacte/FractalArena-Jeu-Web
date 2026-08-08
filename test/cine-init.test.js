@@ -95,18 +95,36 @@ test("le banc d'essai n'est actif que sur parametre explicite", () => {
   // le rendu de tous les joueurs serait pire que le bug qu'il diagnostique.
   assert.match(SRC, /\/\[\?&\]sans=\(\[a-z0-9,\]\+\)\/i/,
     "le banc doit se lire depuis l'URL, pas d'un etat global");
-  for (const v of ["3d", "halo", "fond"]) {
+  for (const v of ["halo", "fond"]) {
     assert.ok(SRC.includes(`SANS.has('${v}')`), `variante ${v} absente`);
   }
 });
 
-test("sans=3d ne rend aucun canvas, donc n'initialise aucun contexte WebGL", () => {
-  // L'init 3D commence par `if (!canvas) return` : ne pas rendre le canvas
-  // suffit a la neutraliser entierement.
-  assert.match(SRC, /SANS\.has\('3d'\)\s*\?\s*<img/,
-    "sans=3d doit remplacer le canvas par une image, pas seulement le masquer");
+// ————————————————————————————————————————————————————————————————
+// Le banc a tranche : le canvas WebGL EST la cause. Meme appareil, meme
+// cinematique, seule la 3D changeant — 14 images > 100 ms contre 0, une pire
+// image de 12 161 ms contre 84 ms, 14 083 ms hors JS contre 445 ms, et une
+// cinematique qui atteint enfin sa fin. L'embleme est donc une sequence bakee.
+test("la cinematique ne rend pas de canvas WebGL par defaut", () => {
+  assert.match(SRC, /CINE_3D\s*\n?\s*\?\s*<canvas/,
+    "le canvas ne doit apparaitre que derriere ?cine=3d");
+  assert.match(SRC, /:\s*<img src=\{EMBLEM_SPIN\}/,
+    "le rendu par defaut doit etre la sequence bakee");
   assert.match(SRC, /const canvas = canvasRef\.current;\s*\n\s*if \(!canvas\) return;/,
-    "la garde qui rend sans=3d efficace a disparu");
+    "la garde qui neutralise l'init 3D sans canvas a disparu");
+});
+
+test("la sequence bakee passe par FA_ASSET_URL", () => {
+  // Sans empreinte de contenu, le CDN peut servir une version perimee — et une
+  // URL versionnee par le numero de jeu la retelechargerait a chaque livraison.
+  assert.match(SRC, /window\.FA_ASSET_URL\('assets\/emblem-spin\.webp'\)/);
+});
+
+test("l'ancien rendu 3D reste joignable pour comparaison", () => {
+  // Trois hypotheses fausses ont ete eliminees par comparaison A/B ; garder le
+  // chemin WebGL accessible coute une ligne et evite un redeploiement le jour
+  // ou il faudra remesurer.
+  assert.match(SRC, /\/\[\?&\]cine=3d\\b\/i/);
 });
 
 test("la sonde etiquette la variante mesuree", () => {
