@@ -150,7 +150,27 @@ function cineVals(t, opts) {
   // Le drop-shadow survivait en plus a la fin du flou et plombait tout le reste
   // de la cinematique (44 img/s au lieu de 60). L'entree garde son fondu
   // (`opacity`) et son zoom (`scale`), qui eux sont composites gratuitement.
-  const emblemStyle = { position: 'absolute', left: '50%', top: 'calc(44% - 3cm)', width: 'min(50vmin,540px)', height: 'min(50vmin,540px)', perspective: '1600px', transform: `translate(-50%,-50%) translateY(${settleY}%) scale(${scaleE})`, opacity: opP, pointerEvents: 'none', willChange: 'transform' };
+  // Banc d'essai du CONTENEUR (?sans=nu|perspective|zoom|fondu, avec ?cine=3d).
+  // Le canvas WebGL de l'ecran de connexion tourne a 60 fps ; celui d'ici gele
+  // 11 s, alors qu'ils font la meme taille, executent le meme code et rendent le
+  // meme modele. Retirer le fond filtre et le halo n'y change rien (mesure du
+  // 08/08). La seule difference restante est ce conteneur : l'embleme de
+  // l'onboarding est pose dans un div nu, celui-ci vit dans un contexte 3D CSS
+  // (`perspective`) avec une echelle et une opacite recalculees a chaque image.
+  // Un canvas WebGL peut y perdre son accélération et se faire recopier image
+  // par image — d'ou un cout qui n'apparait ni dans le script ni dans le rendu.
+  const nu = SANS.has('nu');
+  const emblemStyle = {
+    position: 'absolute', left: '50%', top: 'calc(44% - 3cm)',
+    width: 'min(50vmin,540px)', height: 'min(50vmin,540px)',
+    ...(nu || SANS.has('perspective') ? {} : { perspective: '1600px' }),
+    transform: (nu || SANS.has('zoom'))
+      ? 'translate(-50%,-50%)'
+      : `translate(-50%,-50%) translateY(${settleY}%) scale(${scaleE})`,
+    opacity: (nu || SANS.has('fondu')) ? (t >= 8.2 ? 1 : 0) : opP,
+    pointerEvents: 'none',
+    ...(nu ? {} : { willChange: 'transform' }),
+  };
   const glowStyle = { position: 'absolute', left: '50%', top: 'calc(44% - 3cm)', width: 'min(78vmin,820px)', height: 'min(78vmin,820px)', transform: `translate(-50%,-50%) translateY(${settleY}%) scale(${L(0.5, 1.2, S(8.4, 10.6)) + 0.05 * Math.sin(t * 2.2)})`, background: `radial-gradient(circle, ${rgba(0.5)} 0%, ${rgba(0.12)} 38%, transparent 68%)`, opacity: S(8.4, 9.8) * (0.65 + 0.35 * Math.sin(t * 2.0)), mixBlendMode: 'screen', pointerEvents: 'none' };
 
   const loreOut = 1 - S(4.3, 5.1);

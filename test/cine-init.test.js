@@ -21,6 +21,13 @@ const path = require("node:path");
 
 const SRC = fs.readFileSync(path.join(__dirname, "..", "cinematique.jsx"), "utf8");
 
+// emblemStyle s'ecrit sur plusieurs lignes depuis le banc du conteneur : le lire
+// jusqu'a son accolade fermante, sinon les tests ne voient que la premiere ligne.
+function declEmblemStyle() {
+  const i = SRC.indexOf("const emblemStyle = {");
+  return SRC.slice(i, SRC.indexOf("\n  };", i) + 5);
+}
+
 test("l'init 3D cede le thread entre ses etapes", () => {
   assert.match(SRC, /cedeLeThread/, "aucun point de respiration dans l'init");
   // Les deux composants 3D du fichier doivent en beneficier, pas seulement le premier.
@@ -68,10 +75,10 @@ test("les jalons de diagnostic survivent au decoupage", () => {
 // Les trois calques en mixBlendMode: screen actifs de 4 a 8 s tournaient, eux,
 // a 58-60 images/s — c'est ce qui a isole le filtre comme seul coupable.
 test("aucun filtre CSS sur le conteneur du canvas 3D", () => {
-  const decl = /const emblemStyle = .*/.exec(SRC);
-  assert.ok(decl, "emblemStyle introuvable");
+  const decl = declEmblemStyle();
+  assert.ok(decl && decl.length > 20, "emblemStyle introuvable");
   assert.ok(
-    !/filter:/.test(decl[0]),
+    !/filter:/.test(decl),
     "un `filter` est revenu sur emblemStyle : le compositeur doit rapatrier le canvas "
       + "depuis le GPU a chaque image (13,9 s d'ecran gele mesurees sur Mali-G68)",
   );
@@ -80,8 +87,10 @@ test("aucun filtre CSS sur le conteneur du canvas 3D", () => {
 test("l'entree de l'embleme reste animee sans filtre", () => {
   // Retirer le filtre ne doit pas retirer l'effet d'apparition : `opacity` et
   // `scale` sont composites par le GPU sans relecture, eux.
-  const decl = /const emblemStyle = .*/.exec(SRC)[0];
-  assert.match(decl, /opacity: opP/, "l'embleme n'a plus de fondu d'entree");
+  const decl = declEmblemStyle();
+  // `: opP` et non `opacity: opP` : le banc du conteneur place l'opacite
+  // derriere un ternaire, mais le fondu par defaut reste bien `opP`.
+  assert.match(decl, /: opP,/, "l'embleme n'a plus de fondu d'entree");
   assert.match(decl, /scale\(\$\{scaleE\}\)/, "l'embleme n'a plus son zoom d'entree");
 });
 
@@ -131,4 +140,30 @@ test("la sonde etiquette la variante mesuree", () => {
   // Un rapport de banc d'essai sans etiquette ne se rattache a rien.
   const DIAG = fs.readFileSync(path.join(__dirname, "..", "diag.js"), "utf8");
   assert.match(DIAG, /VARIANTE : /);
+});
+
+// ————————————————————————————————————————————————————————————————
+// Banc du CONTENEUR. Le canvas de l'ecran de connexion (app.jsx:2032) tourne a
+// 60 fps ; celui de la cinematique gele 11 s, meme taille, meme code, meme
+// modele. `?cine=3d&sans=fond,halo` a montre que ni le fond filtre ni le halo
+// n'y sont pour rien : la difference restante est le conteneur lui-meme.
+test("le conteneur de l'embleme est demontable propriete par propriete", () => {
+  for (const v of ["nu", "perspective", "zoom", "fondu"]) {
+    assert.ok(SRC.includes(`SANS.has('${v}')`), `variante ${v} absente du banc`);
+  }
+});
+
+test("sans=nu reproduit les conditions de l'ecran de connexion", () => {
+  // Un div sans contexte 3D CSS, sans echelle animee, sans willChange : c'est
+  // exactement le cadre dans lequel le meme composant tourne sans faiblir.
+  assert.match(SRC, /const nu = SANS\.has\('nu'\)/);
+  assert.match(SRC, /nu \|\| SANS\.has\('perspective'\) \? \{\} : \{ perspective/);
+  assert.match(SRC, /\(nu \|\| SANS\.has\('zoom'\)\)/);
+  assert.match(SRC, /\.\.\.\(nu \? \{\} : \{ willChange: 'transform' \}\)/);
+});
+
+test("le conteneur par defaut garde son animation d'entree", () => {
+  // Le banc ne doit rien degrader tant qu'aucun parametre n'est passe.
+  assert.match(SRC, /: `translate\(-50%,-50%\) translateY\(\$\{settleY\}%\) scale\(\$\{scaleE\}\)`/);
+  assert.match(SRC, /: opP,/);
 });
