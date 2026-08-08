@@ -932,6 +932,15 @@
       EN: "Donation not possible: your %d FA stay on your balance",
       ZH: "无法捐赠：你的 %d FA 仍在余额中",
     },
+    // Cause la plus frequente d'un refus : le compte n'a pas encore prouve d'activite
+    // on-chain, et les pools de rachat n'acceptent que les comptes verifies (ils
+    // declenchent des rachats reels). Le joueur a un geste a faire — le bandeau 🔒
+    // le porte — donc on le nomme, sinon « don impossible » ressemble a une panne.
+    QUIZ_GIVE_UNVERIFIED: {
+      FR: "Compte pas encore vérifié on-chain : tes %d FA restent sur ton solde. Vérifie-le depuis le bandeau 🔒 en haut",
+      EN: "Account not verified on-chain yet: your %d FA stay on your balance. Verify it from the 🔒 banner at the top",
+      ZH: "账户尚未完成链上验证：你的 %d FA 仍在余额中。请从顶部的 🔒 横幅完成验证",
+    },
     QUIZ_GIVE_UNSURE: {
       FR: "Don non confirmé — vérifie ton solde dans le portefeuille",
       EN: "Donation unconfirmed — check your balance in the wallet",

@@ -65,6 +65,19 @@ test("un don refuse par le serveur rend le gain visible", () => {
   assert.match(refus, /creditQuizGain/, "un refus laisse les FA au joueur : le solde doit le dire");
 });
 
+// Le refus le plus frequent (compte pas encore verifie on-chain) a sa propre cause
+// et son propre geste : le fondre dans le message generique « don impossible »
+// laissait le joueur sans rien a faire de cette information.
+test("le refus pour compte non verifie a son propre message", () => {
+  const b = quiz.slice(quiz.indexOf("async function offrir("));
+  assert.match(b, /compte_non_verifie/, "le cas doit etre reconnu, pas noye dans le refus generique");
+  assert.match(b, /QUIZ_GIVE_UNVERIFIED/, "message dedie absent");
+  // Et les FA restent au joueur, comme pour tout refus serveur.
+  const iCas = b.indexOf("compte_non_verifie");
+  assert.match(b.slice(Math.max(0, iCas - 400), iCas + 400), /creditQuizGain/,
+    "un refus laisse les FA au joueur : le solde doit le montrer");
+});
+
 test("le doute reseau se leve par une relecture du solde, pas par un pari", () => {
   const b = bloc(app, "async donateQuiz", "async fetchQuizTicker");
   assert.match(b, /catch[\s\S]{0,600}\/save\//,
