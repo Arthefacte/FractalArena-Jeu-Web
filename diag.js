@@ -65,11 +65,15 @@
 
   // Images réellement affichées. Un chiffre honnête seulement si l'onglet est
   // au premier plan — d'où la mention dans le rapport.
+  // Chaque image est HORODATÉE, pas seulement mesurée : la v3 ne gardait que la
+  // durée, si bien qu'un gel de dix secondes disparaissait dans une moyenne
+  // calculée sur toute la fenêtre. C'est la frise seconde par seconde qui le
+  // fait ressortir, et elle a besoin du « quand ».
   const frames = [];
   let dernier = performance.now(), mesureFrames = true;
   (function tic(now) {
     if (!mesureFrames) return;
-    frames.push(now - dernier); dernier = now;
+    frames.push({ a: now, d: now - dernier }); dernier = now;
     requestAnimationFrame(tic);
   })(performance.now());
 
@@ -130,7 +134,7 @@
   function rapport() {
     mesureFrames = false;
     const f = frames.slice(1);
-    const tri = f.slice().sort(function (a, b) { return a - b; });
+    const tri = f.map(function (x) { return x.d; }).sort(function (a, b) { return a - b; });
     const fcp = (performance.getEntriesByName("first-contentful-paint")[0] || {}).startTime;
     const nav = performance.getEntriesByType("navigation")[0] || {};
     const net = reseau();
@@ -165,20 +169,56 @@
     }
     L.push("");
     L.push("CINEMATIQUE (jalons, ms depuis le debut du chargement)");
-    const ordre = ["react-monte", "three-importe", "renderer-cree", "pmrem-pret", "emblème-charge", "1re-image"];
+    const ordre = ["react-monte", "three-importe", "renderer-cree", "1re-image", "pmrem-pret",
+      "emblème-charge", "cine-t0", "cine-embleme", "cine-fin"];
+    // Trié par instant réel, pas par ordre d'écriture : la v3 listait
+    // `1re-image` après `pmrem-pret` alors qu'elle le précède, ce qui produisait
+    // un delta négatif illisible et faussait la lecture de la séquence.
+    const atteints = ordre.filter(function (k) { return etapes[k] !== undefined; })
+      .sort(function (a, b) { return etapes[a] - etapes[b]; });
     let precedent = 0;
-    for (const k of ordre) {
-      if (etapes[k] === undefined) { L.push("  " + k + " : NON ATTEINT"); continue; }
+    for (const k of atteints) {
       L.push("  " + k + " : " + etapes[k] + " ms  (+" + (etapes[k] - precedent) + ")");
       precedent = etapes[k];
+    }
+    for (const k of ordre) if (etapes[k] === undefined) L.push("  " + k + " : NON ATTEINT");
+    // Le pas de temps de la cinématique est plafonné à 50 ms/image : quand le
+    // framerate s'effondre, la timeline n'accélère pas pour rattraper, elle
+    // s'étire. Vingt secondes théoriques peuvent en durer bien plus à l'écran.
+    if (etapes["cine-t0"] !== undefined && etapes["cine-fin"] !== undefined) {
+      const reel = etapes["cine-fin"] - etapes["cine-t0"];
+      L.push("  --> cinematique vecue : " + Math.round(reel / 100) / 10 + " s pour 20 s theoriques"
+        + (reel > 23000 ? "   <<< ETIREE" : ""));
     }
     L.push("");
     L.push("FLUIDITE (" + f.length + " images mesurees)");
     if (f.length > 2) {
-      L.push("  fps moyen         : " + Math.round(1000 / (f.reduce(function (a, b) { return a + b; }, 0) / f.length)));
+      const somme = f.reduce(function (a, x) { return a + x.d; }, 0);
+      L.push("  fps moyen         : " + Math.round(1000 / (somme / f.length)));
       L.push("  image mediane     : " + Math.round(tri[Math.floor(tri.length / 2)]) + " ms");
       L.push("  pire image        : " + Math.round(tri[tri.length - 1]) + " ms");
-      L.push("  images > 100 ms   : " + f.filter(function (x) { return x > 100; }).length);
+      L.push("  images > 100 ms   : " + f.filter(function (x) { return x.d > 100; }).length);
+    }
+    L.push("");
+    // La frise est le coeur du rapport : une moyenne sur vingt-quatre secondes
+    // noie un gel de dix. Ici chaque seconde est jugée seule, et la colonne
+    // « <<< » marque celles qui ont décroché. C'est ce qui situe le gel.
+    L.push("FRISE (par seconde : images affichees, pire image)");
+    if (f.length > 2) {
+      // Seconde ENTIERE seulement : la derniere est coupee par l'affichage du
+      // rapport, elle contiendrait deux ou trois images et serait signalee
+      // comme un gel qui n'existe pas.
+      const fin = Math.floor(f[f.length - 1].a / 1000);
+      for (let s = 0; s < fin; s++) {
+        const dedans = f.filter(function (x) { return x.a >= s * 1000 && x.a < (s + 1) * 1000; });
+        const pire = dedans.reduce(function (m, x) { return Math.max(m, x.d); }, 0);
+        // Le seuil de 24 images/s est bas exprès : au-dessus, l'oeil ne parle
+        // pas de « gel ». Une seconde sous ce seuil, ou avec une image de plus
+        // de 250 ms, est une seconde que le joueur a vue figer.
+        const decroche = dedans.length < 24 || pire > 250;
+        L.push("  " + (s + "s").padEnd(4) + " " + String(dedans.length).padStart(3) + " img   pire "
+          + String(Math.round(pire)).padStart(5) + " ms" + (decroche ? "   <<<" : ""));
+      }
     }
     L.push("");
     L.push("THREAD BLOQUE : " + bloque + " ms au total, " + gels.length + " taches longues");
@@ -189,12 +229,24 @@
     if (coupables.length === 0) {
       L.push("  aucune — ou navigateur sans long-animation-frame");
     } else {
-      const pires = coupables.slice().sort(function (a, b) { return b.ms - a.ms; }).slice(0, 4);
+      const pires = coupables.slice().sort(function (a, b) { return b.ms - a.ms; }).slice(0, 6);
       for (const c of pires) {
-        L.push("  " + c.ms + " ms a " + c.a + " ms :");
-        if (c.scripts.length === 0) L.push("      (aucun script attribue — rendu ou GPU)");
+        // `rendu` était collecté depuis la v3 mais jamais affiché — c'est
+        // pourtant lui qui tranche : une image longue dont le script ne
+        // représente presque rien n'est pas un problème de JavaScript mais de
+        // style, de layout ou de composition GPU, et aucun correctif côté code
+        // JS ne l'aurait touchée.
+        const js = c.scripts.reduce(function (a, s) { return a + s.ms; }, 0);
+        L.push("  " + c.ms + " ms a " + c.a + " ms   (script " + js + " ms | rendu " + c.rendu + " ms)");
+        if (c.scripts.length === 0) L.push("      aucun script attribue — RENDU ou GPU");
         for (const s of c.scripts) L.push("      " + s.ms + " ms  " + s.ou + (s.quoi ? "  ." + s.quoi : ""));
       }
+      const totJs = coupables.reduce(function (a, c) {
+        return a + c.scripts.reduce(function (b, s) { return b + s.ms; }, 0);
+      }, 0);
+      const totMs = coupables.reduce(function (a, c) { return a + c.ms; }, 0);
+      L.push("  cumul images longues : " + totMs + " ms, dont " + totJs + " ms de script"
+        + "  -> " + Math.max(0, totMs - totJs) + " ms hors JS (rendu/GPU)");
     }
     if (performance.memory) L.push("MEMOIRE JS : " + Math.round(performance.memory.usedJSHeapSize / 1048576) + " Mo");
     return L.join("\n");
@@ -228,8 +280,14 @@
     document.body.appendChild(box);
   }
 
-  // 12 secondes : la cinématique dure 20 s, on veut son démarrage — le moment
-  // où ça bloque — pas sa fin.
-  window.addEventListener("load", function () { setTimeout(afficher, 12000); });
+  // 32 secondes. La v3 s'arrêtait à 12 s pour « voir le démarrage », et c'est
+  // exactement ce qui l'a rendue aveugle : l'emblème n'entre qu'à ~8,4 s de
+  // timeline (≈10 s de page) et la cinématique dure 20 s, davantage encore si
+  // le framerate la fait s'étirer. La sonde rendait donc son verdict avant
+  // l'évènement à diagnostiquer, et jurait que tout allait bien.
+  // `&s=N` ajuste la fenêtre sans redéployer, si 32 s ne suffisaient pas.
+  const demande = parseInt((/[?&]s=(\d+)/.exec(location.search) || [])[1], 10);
+  const fenetre = (demande > 0 && demande <= 120 ? demande : 32) * 1000;
+  window.addEventListener("load", function () { setTimeout(afficher, fenetre); });
   window.FA_DIAG.afficher = afficher;
 })();
