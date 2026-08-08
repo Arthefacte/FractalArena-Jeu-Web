@@ -123,3 +123,22 @@ test("la navigation est prechargee en parallele du demarrage du worker", () => {
   assert.match(SW, /navigationPreload/, "navigationPreload doit etre active");
   assert.match(SW, /preloadResponse/, "la reponse prechargee doit etre UTILISEE, sinon elle est perdue");
 });
+
+/* Une livraison doit s'appliquer au chargement suivant, pas quand le joueur
+   ferme tous ses onglets. Le 08/08/2026, un rapport de diagnostic est revenu
+   estampille v135 alors que la v136 etait deployee et verifiee servie : le
+   worker installe restait en attente derriere un client de l'ancienne version.
+   Plusieurs livraisons de la veille ont ete jugees « sans effet » pour cette
+   raison — on mesurait du code qui n'etait pas celui qu'on venait d'ecrire. */
+test("le worker prend la main sans attendre la fermeture des onglets", () => {
+  assert.match(SW, /self\.skipWaiting\(\)/,
+    "sans skipWaiting, une nouvelle version reste en attente derriere l'ancienne");
+  assert.match(SW, /self\.clients\.claim\(\)/,
+    "skipWaiting sans clients.claim laisse les pages ouvertes sans controleur");
+});
+
+test("skipWaiting est appele a l'installation, pas a l'activation", () => {
+  // Appele dans `activate`, il arrive trop tard : le worker a deja attendu.
+  const install = SW.slice(SW.indexOf('addEventListener("install"'), SW.indexOf('addEventListener("activate"'));
+  assert.match(install, /self\.skipWaiting\(\)/);
+});

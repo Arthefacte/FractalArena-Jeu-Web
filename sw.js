@@ -23,6 +23,21 @@ self.addEventListener("install", () => {
      (modèles 3D, illustrations). Les tout télécharger à l'installation ferait
      payer au joueur, d'un coup et sans qu'il l'ait demandé, ce que le premier
      lancement étale déjà. Le cache se remplit de ce qui est réellement lu. */
+
+  /* Prend la main sans attendre la fermeture de tous les onglets. Sans ceci, un
+     worker fraîchement installé reste en attente tant qu'un client de l'ancienne
+     version vit encore : le joueur recharge, voit l'ancienne version, et conclut
+     que la livraison n'a rien changé. Constaté le 08/08/2026 — un rapport de
+     diagnostic est revenu en v135 alors que la v136 était servie et vérifiée,
+     et plusieurs livraisons de la veille ont été jugées « sans effet » pour
+     cette raison.
+
+     Contrepartie assumée : une page déjà ouverte peut voir ses imports tardifs
+     servis par le nouveau worker. Le risque de mélange de versions existait
+     déjà sans lui — `app.js?v=135` et `?v=136` désignent le même fichier sur
+     GitHub Pages, dont le contenu est toujours celui de la dernière livraison ;
+     l'ancien cache ne faisait que retarder l'échéance. */
+  self.skipWaiting();
 });
 
 self.addEventListener("activate", (e) => {
