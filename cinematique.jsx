@@ -299,11 +299,20 @@ function Cinematique(props) {
     tRef.current = 0;
     setT(0); setEnded(false); setLeaving(false); setLoading(false);
     lastRef.current = performance.now();
+    window.FA_DIAG && window.FA_DIAG.marque('cine-t0');
     const loop = (now) => {
       const dt = Math.min(0.05, (now - lastRef.current) / 1000);
       lastRef.current = now;
       const nt = tRef.current + dt;
-      if (nt >= CINE_DUR) { tRef.current = CINE_DUR; setT(CINE_DUR); setEnded(true); return; }
+      // Jalons de timeline : `dt` est plafonne a 50 ms, donc une chute de
+      // framerate n'accelere pas la fin — elle ALLONGE la cinematique en temps
+      // reel. Comparer `cine-fin - cine-t0` aux 20 s theoriques le chiffre.
+      if (nt >= 8.4) window.FA_DIAG && window.FA_DIAG.marque('cine-embleme');
+      if (nt >= CINE_DUR) {
+        tRef.current = CINE_DUR; setT(CINE_DUR); setEnded(true);
+        window.FA_DIAG && window.FA_DIAG.marque('cine-fin');
+        return;
+      }
       tRef.current = nt; setT(nt);
       rafRef.current = requestAnimationFrame(loop);
     };
