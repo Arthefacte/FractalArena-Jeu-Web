@@ -51,3 +51,36 @@ test("les jalons de diagnostic survivent au decoupage", () => {
     assert.ok(SRC.includes(jalon), "jalon perdu : " + jalon);
   }
 });
+
+// ————————————————————————————————————————————————————————————————
+// Mesure du 08/08/2026, meme appareil, sonde v133 (fenetre 32 s) :
+//
+//   cine-embleme : 20304 ms          <- l'embleme devient visible
+//   13931 ms a 20457 ms (script 220 ms | rendu 251 ms)
+//   21s..33s : 0 image
+//
+// Une seule image de 13,9 SECONDES, declenchee 150 ms apres l'apparition de
+// l'embleme, dont 220 ms de script : le blocage n'etait pas dans le JavaScript
+// mais dans le compositeur. Le conteneur du canvas WebGL portait
+// `filter: blur(18px→0) drop-shadow(...)`, recalcule a chaque image ; le
+// drop-shadow survivait au flou et plombait toute la fin de la cinematique.
+//
+// Les trois calques en mixBlendMode: screen actifs de 4 a 8 s tournaient, eux,
+// a 58-60 images/s — c'est ce qui a isole le filtre comme seul coupable.
+test("aucun filtre CSS sur le conteneur du canvas 3D", () => {
+  const decl = /const emblemStyle = .*/.exec(SRC);
+  assert.ok(decl, "emblemStyle introuvable");
+  assert.ok(
+    !/filter:/.test(decl[0]),
+    "un `filter` est revenu sur emblemStyle : le compositeur doit rapatrier le canvas "
+      + "depuis le GPU a chaque image (13,9 s d'ecran gele mesurees sur Mali-G68)",
+  );
+});
+
+test("l'entree de l'embleme reste animee sans filtre", () => {
+  // Retirer le filtre ne doit pas retirer l'effet d'apparition : `opacity` et
+  // `scale` sont composites par le GPU sans relecture, eux.
+  const decl = /const emblemStyle = .*/.exec(SRC)[0];
+  assert.match(decl, /opacity: opP/, "l'embleme n'a plus de fondu d'entree");
+  assert.match(decl, /scale\(\$\{scaleE\}\)/, "l'embleme n'a plus son zoom d'entree");
+});
