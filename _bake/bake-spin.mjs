@@ -5,14 +5,20 @@
 // longue. Composer un canvas WebGL anime est hors budget sur ce GPU ; decoder
 // un WebP anime ne l'est pas — c'est une <img>, decodee hors du thread principal.
 //
-// Calibrage retenu (mesure, pas intuition) : 384 px / 12 fps / q 25 = 355 Ko,
+// Calibrage retenu (mesure, pas intuition) : 384 px / 16 fps / q 16 = 397 Ko,
 // sous le plafond de 400 Ko par image impose par test/asset-budget.test.js.
-// Les etapes qui ont fait descendre le poids, dans l'ordre d'efficacite :
-//   1. demi-tour au lieu du tour complet  : 1185 -> 573 Ko  (symetrie, cf. plus bas)
-//   2. qualite 60 -> 25                   :  573 -> 355 Ko  (ecart invisible a l oeil)
-// Le WebP anime compresse mal une rotation (chaque image change entierement) :
-// VP9 descendait a 564 Ko pour la sequence longue, mais VP9-alpha n'existe pas
-// sur Safari et exigeait un <video> avec repli. Une <img> marche partout.
+// Ce qui marche, et ce qui NE marche PAS — teste, pas suppose :
+//   - demi-tour au lieu du tour complet : 1185 -> 573 Ko. Le seul gros levier.
+//   - baisser la qualite : 60 -> 16 sans difference visible a l'ecran.
+//   - RECADRER NE GAGNE RIEN : 39 % de l'image est transparente, mais WebP ne
+//     paie deja presque rien pour ces pixels (710 Ko avec ou sans crop).
+//   - REDUIRE LA TAILLE AUGMENTE le poids : 288 px = 770 Ko contre 710 a 384 px.
+//     Le reechantillonnage ajoute du detail haute frequence a encoder.
+//   - VP9 compresserait deux fois mieux (265 Ko a 24 fps) mais l'encodeur
+//     libvpx-vp9 de ffmpeg NE SAIT PAS encoder l'alpha : il sort du yuv420p
+//     silencieusement, et la video s'affiche sur fond noir. Il faudrait vpxenc
+//     plus un muxage manuel — une dependance de plus pour un gain esthetique.
+// Monter a 24 fps couterait 619 Ko : il faudrait relever le plafond du depot.
 //
 // Usage : node _bake/bake-spin.mjs [--fps 12] [--size 384] [--q 25] [--extrait] [--garder]
 import http from "node:http";
@@ -29,9 +35,9 @@ const arg = (nom, def) => {
   const i = process.argv.indexOf("--" + nom);
   return i > 0 && process.argv[i + 1] ? Number(process.argv[i + 1]) : def;
 };
-const FPS = arg("fps", 12);
+const FPS = arg("fps", 16);
 const SIZE = arg("size", 384);
-const Q = arg("q", 25);
+const Q = arg("q", 16);
 
 // Deux modes :
 //   --boucle (defaut) : un DEMI-tour, 5,5 s, bouclable a l'infini. L'embleme est
