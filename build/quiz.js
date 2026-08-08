@@ -135,10 +135,11 @@ function QuizToast() {
   }
 
   // Les deux issues se confirment pareil. « Garder » n'a rien à envoyer — les FA
-  // sont crédités par /quiz/answer — mais rester muet le faisait passer pour une
-  // option qui ne donne rien : le gain va dans le solde verrouillé, que le bandeau
-  // du haut n'affiche pas, donc aucun chiffre ne bougeait à l'écran.
+  // sont déjà crédités en base par /quiz/answer — mais c'est ICI que le bandeau
+  // les affiche : tant que le choix est ouvert, le solde ne bouge pas, sinon
+  // « garder » ressemble à un acquis et « offrir » à une reprise.
   function garder() {
+    actions.creditQuizGain(verdict && verdict.reward || 0);
     toast(/*#__PURE__*/React.createElement(FaText, {
       text: I18N.t("QUIZ_KEPT", verdict && verdict.reward || 0),
       s: 12
@@ -171,7 +172,9 @@ function QuizToast() {
       toast(I18N.t("QUIZ_GIVE_UNSURE"), "bad");
     } else {
       // Le serveur a répondu non (fenêtre écoulée, compte non vérifié, 429…) :
-      // là on sait que rien n'est parti. Jamais l'erreur brute au joueur.
+      // là on sait que rien n'est parti — les FA restent au joueur, le bandeau doit
+      // donc les afficher comme s'il avait gardé. Jamais l'erreur brute au joueur.
+      actions.creditQuizGain(verdict && verdict.reward || 0);
       toast(/*#__PURE__*/React.createElement(FaText, {
         text: I18N.t("QUIZ_GIVE_REFUSED", verdict && verdict.reward || 0),
         s: 12
