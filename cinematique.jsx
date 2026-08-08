@@ -102,9 +102,17 @@ function cineVals(t, opts) {
 
   const inP = S(8.2, 10.4), opP = S(8.4, 9.7);
   const scaleE = L(2.5, 1.0, eO(inP));
-  const blurE = L(18, 0, S(8.4, 9.9));
   const settleY = L(0, -5, S(11.0, 12.2)) + (t > 11 ? Math.sin(t * 1.4) * 0.7 : 0);
-  const emblemStyle = { position: 'absolute', left: '50%', top: 'calc(44% - 3cm)', width: 'min(50vmin,540px)', height: 'min(50vmin,540px)', perspective: '1600px', transform: `translate(-50%,-50%) translateY(${settleY}%) scale(${scaleE})`, opacity: opP, filter: `blur(${blurE}px) drop-shadow(0 4px 16px rgba(0,0,0,0.5))`, pointerEvents: 'none', willChange: 'transform' };
+  // AUCUN `filter` ici, et surtout pas anime : ce conteneur porte un canvas
+  // WebGL. Un filtre CSS force le compositeur a rapatrier le canvas depuis le
+  // GPU, appliquer le flou puis reconstruire une ombre depuis le canal alpha,
+  // a chaque image. Mesure du 08/08 sur Mali-G68 (dpr 3) : `blur(18px→0)` +
+  // `drop-shadow` posait UNE image de 13 931 ms — treize secondes d'ecran gele
+  // a l'instant exact ou l'embleme apparait — dont 220 ms seulement de script.
+  // Le drop-shadow survivait en plus a la fin du flou et plombait tout le reste
+  // de la cinematique (44 img/s au lieu de 60). L'entree garde son fondu
+  // (`opacity`) et son zoom (`scale`), qui eux sont composites gratuitement.
+  const emblemStyle = { position: 'absolute', left: '50%', top: 'calc(44% - 3cm)', width: 'min(50vmin,540px)', height: 'min(50vmin,540px)', perspective: '1600px', transform: `translate(-50%,-50%) translateY(${settleY}%) scale(${scaleE})`, opacity: opP, pointerEvents: 'none', willChange: 'transform' };
   const glowStyle = { position: 'absolute', left: '50%', top: 'calc(44% - 3cm)', width: 'min(78vmin,820px)', height: 'min(78vmin,820px)', transform: `translate(-50%,-50%) translateY(${settleY}%) scale(${L(0.5, 1.2, S(8.4, 10.6)) + 0.05 * Math.sin(t * 2.2)})`, background: `radial-gradient(circle, ${rgba(0.5)} 0%, ${rgba(0.12)} 38%, transparent 68%)`, opacity: S(8.4, 9.8) * (0.65 + 0.35 * Math.sin(t * 2.0)), mixBlendMode: 'screen', pointerEvents: 'none' };
 
   const loreOut = 1 - S(4.3, 5.1);
