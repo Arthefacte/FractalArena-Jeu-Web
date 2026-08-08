@@ -23,8 +23,18 @@ const SORTIE = path.join(ROOT, "asset-hashes.js");
 const CHECK = process.argv.includes("--check");
 
 // Les dossiers d'assets binaires servis au navigateur. Les images passent par le CSS et le
-// balisage, qui portent déjà `?v=` ; seuls les `.glb` sont chargés par du code.
+// balisage, qui portent déjà `?v=` ; seuls les fichiers chargés par du code ont besoin d'une
+// empreinte de contenu.
 const DOSSIERS = ["assets", "assets/relics"];
+
+// `emblem-spin.webp` (419 Ko) est référencé depuis `cinematique.jsx` via FA_ASSET_URL, comme les
+// `.glb` : sans empreinte il retomberait sur la version du JEU et se retéléchargerait à chaque
+// livraison — précisément le coût récurrent que ce fichier a été écrit pour supprimer.
+const EXTENSIONS = [".glb", ".webp"];
+const AVEC_EMPREINTE = (f) => EXTENSIONS.some((e) => f.endsWith(e))
+  // Les autres .webp sont posés par le balisage et le CSS, déjà porteurs de `?v=` : les hacher
+  // ne servirait à rien et grossirait le manifeste chargé à chaque démarrage.
+  && (f.endsWith(".glb") || f === "emblem-spin.webp");
 
 function empreinte(fichier) {
   return crypto.createHash("sha256").update(fs.readFileSync(fichier)).digest("hex").slice(0, 10);
@@ -35,7 +45,7 @@ for (const d of DOSSIERS) {
   const abs = path.join(ROOT, d);
   if (!fs.existsSync(abs)) continue;
   for (const f of fs.readdirSync(abs).sort()) {
-    if (!f.endsWith(".glb")) continue;
+    if (!AVEC_EMPREINTE(f)) continue;
     table[`${d}/${f}`] = empreinte(path.join(abs, f));
   }
 }

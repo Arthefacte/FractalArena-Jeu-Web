@@ -45,6 +45,23 @@ const SANS = (() => {
   return new Set(m ? m[1].toLowerCase().split(',') : []);
 })();
 
+// L'embleme de la CINEMATIQUE est une sequence bakee (assets/emblem-spin.webp),
+// plus un canvas WebGL. Mesure du 08/08 sur Mali-G68, meme appareil, meme
+// cinematique, seule la 3D changeant :
+//
+//                        avec canvas WebGL   avec image bakee
+//   images > 100 ms                     14                  0
+//   pire image                   12 161 ms              84 ms
+//   hors JS (rendu/GPU)          14 083 ms             445 ms
+//   fin de la cinematique     jamais atteinte          22 492 ms
+//
+// Composer un canvas WebGL anime est hors budget sur ce GPU ; decoder un WebP
+// anime ne l'est pas — c'est une <img>, decodee hors du thread principal, et le
+// fondu comme le zoom d'entree restent des proprietes composites.
+// `?cine=3d` restaure l'ancien rendu WebGL pour pouvoir comparer les deux.
+const CINE_3D = typeof location !== 'undefined' && /[?&]cine=3d\b/i.test(location.search);
+const EMBLEM_SPIN = typeof window !== 'undefined' && window.FA_ASSET_URL ? window.FA_ASSET_URL('assets/emblem-spin.webp') : 'assets/emblem-spin.webp';
+
 // Libère TOUTES les ressources GPU d'une scène Three.js au démontage. Sans ça, le GLB
 // (12 Mo, cloné ×2), le render target PMREM et les textures fuient en VRAM, et le contexte
 // WebGL reste alloué → sur navigation répétée, perte de contexte (canvas 3D noir) et FPS qui
@@ -1007,22 +1024,22 @@ function Cinematique(props) {
     style: v.glowStyle
   }), /*#__PURE__*/React.createElement("div", {
     style: v.emblemStyle
-  }, SANS.has('3d') ? /*#__PURE__*/React.createElement("img", {
-    src: "assets/LOGO_cut.webp",
+  }, CINE_3D ? /*#__PURE__*/React.createElement("canvas", {
+    ref: canvasRef,
+    draggable: false,
+    style: {
+      width: '100%',
+      height: '100%',
+      display: 'block'
+    }
+  }) : /*#__PURE__*/React.createElement("img", {
+    src: EMBLEM_SPIN,
     alt: "",
     draggable: false,
     style: {
       width: '100%',
       height: '100%',
       objectFit: 'contain',
-      display: 'block'
-    }
-  }) : /*#__PURE__*/React.createElement("canvas", {
-    ref: canvasRef,
-    draggable: false,
-    style: {
-      width: '100%',
-      height: '100%',
       display: 'block'
     }
   })), /*#__PURE__*/React.createElement("div", {
