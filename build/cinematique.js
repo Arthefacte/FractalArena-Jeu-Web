@@ -26,6 +26,25 @@ function cedeLeThread() {
 }
 const CINE_DUR = 20.0;
 
+// ——— Banc d'essai : ?sans=3d / ?sans=halo / ?sans=fond (cumulables : ?sans=3d,halo)
+//
+// Le gel mesure le 08/08 sur Mali-G68 dure ~13,4 s et commence 90 ms apres
+// l'apparition de l'embleme. Il ne vient NI du script (22 ms sur une image de
+// 9279 ms) NI du rendu (13 ms) : les setInterval continuent de tourner pendant
+// que l'ecran est fige, donc c'est le compositeur qui ne rend plus la main.
+// Trois correctifs cibles ont echoue parce qu'ils visaient le JavaScript.
+//
+// Trois suspects apparaissent ou changent a t = 8,4 s. Plutot que d'en deviner
+// un quatrieme, chaque variante en retire UN, sans toucher au comportement par
+// defaut (sans parametre, la cinematique est strictement inchangee) :
+//   3d   — pas de canvas WebGL, embleme en image fixe
+//   halo — pas de halo en mixBlendMode: screen
+//   fond — image de fond sans son filtre anime image par image
+const SANS = (() => {
+  const m = typeof location !== 'undefined' && /[?&]sans=([a-z0-9,]+)/i.exec(location.search);
+  return new Set(m ? m[1].toLowerCase().split(',') : []);
+})();
+
 // Libère TOUTES les ressources GPU d'une scène Three.js au démontage. Sans ça, le GLB
 // (12 Mo, cloné ×2), le render target PMREM et les textures fuient en VRAM, et le contexte
 // WebGL reste alloué → sur navigation répétée, perte de contexte (canvas 3D noir) et FPS qui
@@ -140,8 +159,8 @@ function cineVals(t, opts) {
     objectFit: 'cover',
     transformOrigin: '50% 36%',
     transform: `translate(${Math.sin(t * 0.3) * 0.4}%, 0) scale(${bgScale})`,
-    filter: `brightness(${bright}) saturate(${sat}) contrast(1.06)`,
-    willChange: 'transform,filter'
+    filter: SANS.has('fond') ? 'none' : `brightness(${bright}) saturate(${sat}) contrast(1.06)`,
+    willChange: SANS.has('fond') ? 'transform' : 'transform,filter'
   };
   const dark = t < 4 ? 0.8 : t < 7 ? L(0.8, 0.4, S(4, 7)) : t < 8 ? 0.4 : t < 11.5 ? L(0.4, 0.62, S(8, 11.5)) : 0.62;
   const darkStyle = {
@@ -983,12 +1002,22 @@ function Cinematique(props) {
   }, v.convergeLines.map(ln => /*#__PURE__*/React.createElement("span", {
     key: ln.id,
     style: ln.style
-  }))), /*#__PURE__*/React.createElement("div", {
+  }))), !SANS.has('halo') && /*#__PURE__*/React.createElement("div", {
     className: v.glowClass,
     style: v.glowStyle
   }), /*#__PURE__*/React.createElement("div", {
     style: v.emblemStyle
-  }, /*#__PURE__*/React.createElement("canvas", {
+  }, SANS.has('3d') ? /*#__PURE__*/React.createElement("img", {
+    src: "assets/LOGO_cut.webp",
+    alt: "",
+    draggable: false,
+    style: {
+      width: '100%',
+      height: '100%',
+      objectFit: 'contain',
+      display: 'block'
+    }
+  }) : /*#__PURE__*/React.createElement("canvas", {
     ref: canvasRef,
     draggable: false,
     style: {
