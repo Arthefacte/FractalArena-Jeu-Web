@@ -84,3 +84,33 @@ test("l'entree de l'embleme reste animee sans filtre", () => {
   assert.match(decl, /opacity: opP/, "l'embleme n'a plus de fondu d'entree");
   assert.match(decl, /scale\(\$\{scaleE\}\)/, "l'embleme n'a plus son zoom d'entree");
 });
+
+// ————————————————————————————————————————————————————————————————
+// Banc d'essai ?sans=... . Trois correctifs cibles ont echoue (init 3D
+// decoupee, filtre CSS retire, hypothese des deux contextes WebGL) parce
+// qu'ils visaient le JavaScript, alors que la mesure dit que le blocage n'est
+// ni du script ni du rendu. On isole donc par elimination, en UNE livraison.
+test("le banc d'essai n'est actif que sur parametre explicite", () => {
+  // Le defaut doit rester la cinematique complete : un banc d'essai qui degrade
+  // le rendu de tous les joueurs serait pire que le bug qu'il diagnostique.
+  assert.match(SRC, /\/\[\?&\]sans=\(\[a-z0-9,\]\+\)\/i/,
+    "le banc doit se lire depuis l'URL, pas d'un etat global");
+  for (const v of ["3d", "halo", "fond"]) {
+    assert.ok(SRC.includes(`SANS.has('${v}')`), `variante ${v} absente`);
+  }
+});
+
+test("sans=3d ne rend aucun canvas, donc n'initialise aucun contexte WebGL", () => {
+  // L'init 3D commence par `if (!canvas) return` : ne pas rendre le canvas
+  // suffit a la neutraliser entierement.
+  assert.match(SRC, /SANS\.has\('3d'\)\s*\?\s*<img/,
+    "sans=3d doit remplacer le canvas par une image, pas seulement le masquer");
+  assert.match(SRC, /const canvas = canvasRef\.current;\s*\n\s*if \(!canvas\) return;/,
+    "la garde qui rend sans=3d efficace a disparu");
+});
+
+test("la sonde etiquette la variante mesuree", () => {
+  // Un rapport de banc d'essai sans etiquette ne se rattache a rien.
+  const DIAG = fs.readFileSync(path.join(__dirname, "..", "diag.js"), "utf8");
+  assert.match(DIAG, /VARIANTE : /);
+});

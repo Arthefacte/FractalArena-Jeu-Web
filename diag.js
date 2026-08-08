@@ -145,6 +145,10 @@
       + (navigator.deviceMemory ? navigator.deviceMemory + " Go RAM" : "RAM inconnue")
       + ", dpr " + (window.devicePixelRatio || 1) + ", ecran " + screen.width + "x" + screen.height);
     L.push("mode : " + (matchMedia("(display-mode: standalone)").matches ? "PWA installee" : "navigateur"));
+    // Sans cette ligne, un rapport de banc d'essai est inexploitable : on ne
+    // saurait pas quelle variante il decrit.
+    const variante = (/[?&]sans=([a-z0-9,]+)/i.exec(location.search) || [])[1];
+    L.push("VARIANTE : " + (variante ? "sans " + variante : "aucune (cinematique complete)"));
     L.push("gpu : " + gpu());
     L.push("");
     L.push("BOOT");
