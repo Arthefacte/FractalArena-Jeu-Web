@@ -11,7 +11,7 @@ const CLES = [
   "QUIZ_GIVEN", "QUIZ_TICKER_DON", "QUIZ_TICKER_TOTAL",
   "QUIZ_TITLE_KNOWLEDGE", "QUIZ_TITLE_CONTRIB",
   "QUIZ_SECONDS", "QUIZ_TIMEOUT", "QUIZ_CLOSE",
-  "QUIZ_KEPT", "QUIZ_GIVE_REFUSED", "QUIZ_GIVE_UNSURE",
+  "QUIZ_KEPT", "QUIZ_GIVE_REFUSED", "QUIZ_GIVE_UNSURE", "QUIZ_GIVE_UNVERIFIED",
 ];
 
 test("toutes les cles du quiz existent en FR, EN et ZH", () => {
@@ -72,6 +72,19 @@ test("l'echec d'un don distingue le refus du doute", () => {
   assert.match(T.QUIZ_GIVE_REFUSED.FR, /%d FA/, "le refus doit rappeler le montant conserve");
   assert.ok(!/%d/.test(T.QUIZ_GIVE_UNSURE.FR),
     "le doute ne doit annoncer aucun montant : on ignore si le don est passe");
+});
+
+// Le refus le plus frequent a une cause precise — le compte n'a pas encore prouve
+// d'activite on-chain, et addToBuyback refuse alors le versement au pool. « Don
+// impossible » sans la raison ni le geste a faire laisse le joueur devant un mur :
+// il croit a une panne, ou que le quiz ne marche pas pour lui.
+test("le refus pour compte non verifie dit la cause ET le geste", () => {
+  for (const lang of LANGS) {
+    const m = T.QUIZ_GIVE_UNVERIFIED[lang];
+    assert.ok(!/compte_non_verifie|erreur 4\d\d|400/i.test(m), `${lang} : code technique brut`);
+    assert.match(m, /%d FA\b/, `${lang} : le montant conserve doit suivre la convention FaText`);
+    assert.ok(/🔒/.test(m), `${lang} : le message doit renvoyer au bandeau de verification`);
+  }
 });
 
 test("les montants suivent la convention FaText", () => {

@@ -116,10 +116,11 @@ function QuizToast() {
   }
 
   // Les deux issues se confirment pareil. « Garder » n'a rien à envoyer — les FA
-  // sont crédités par /quiz/answer — mais rester muet le faisait passer pour une
-  // option qui ne donne rien : le gain va dans le solde verrouillé, que le bandeau
-  // du haut n'affiche pas, donc aucun chiffre ne bougeait à l'écran.
+  // sont déjà crédités en base par /quiz/answer — mais c'est ICI que le bandeau
+  // les affiche : tant que le choix est ouvert, le solde ne bouge pas, sinon
+  // « garder » ressemble à un acquis et « offrir » à une reprise.
   function garder() {
+    actions.creditQuizGain((verdict && verdict.reward) || 0);
     toast(<FaText text={I18N.t("QUIZ_KEPT", (verdict && verdict.reward) || 0)} s={12} />, "good");
     fermer();
   }
@@ -145,9 +146,17 @@ function QuizToast() {
       // fois sur deux — on renvoie le joueur à la seule source de vérité.
       toast(I18N.t("QUIZ_GIVE_UNSURE"), "bad");
     } else {
-      // Le serveur a répondu non (fenêtre écoulée, compte non vérifié, 429…) :
-      // là on sait que rien n'est parti. Jamais l'erreur brute au joueur.
-      toast(<FaText text={I18N.t("QUIZ_GIVE_REFUSED", (verdict && verdict.reward) || 0)} s={12} />, "bad");
+      // Le serveur a répondu non (compte non vérifié, fenêtre écoulée, 429…) : là on
+      // sait que rien n'est parti — les FA restent au joueur, le bandeau doit donc
+      // les afficher comme s'il avait gardé. Jamais l'erreur brute au joueur.
+      //
+      // Le compte non vérifié on-chain est LA cause fréquente, et la seule qui
+      // demande un geste au joueur (les pools de rachat déclenchent des rachats
+      // réels : ils n'acceptent que les comptes vérifiés). Le fondre dans « don
+      // impossible » lui laissait croire à une panne du quiz.
+      const cle = r.reason === "compte_non_verifie" ? "QUIZ_GIVE_UNVERIFIED" : "QUIZ_GIVE_REFUSED";
+      actions.creditQuizGain((verdict && verdict.reward) || 0);
+      toast(<FaText text={I18N.t(cle, (verdict && verdict.reward) || 0)} s={12} />, "bad");
     }
     fermer();
   }

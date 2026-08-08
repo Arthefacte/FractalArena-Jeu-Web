@@ -115,7 +115,7 @@ test("l'expiration avec un choix en attente confirme la conservation", () => {
 // Un don qui echoue fermait la bulle sans un mot : le joueur croyait avoir donne
 // alors que rien n'etait parti.
 test("un don qui echoue le dit au joueur", () => {
-  const bloc = src.slice(src.indexOf("async function offrir("), src.indexOf("async function offrir(") + 1400);
+  const bloc = src.slice(src.indexOf("async function offrir("), src.indexOf("async function offrir(") + 1800);
   assert.match(bloc, /QUIZ_GIVE_REFUSED/, "un refus serveur doit etre annonce");
   assert.match(bloc, /QUIZ_GIVE_UNSURE/, "une coupure reseau doit etre annoncee comme incertaine");
   assert.match(bloc, /"bad"/, "l'echec doit se voir comme un echec, pas comme un succes");
@@ -124,7 +124,7 @@ test("un don qui echoue le dit au joueur", () => {
 // Reseau coupe : le serveur a pu commettre le don avant que la reponse se perde.
 // Affirmer « tes FA sont restes » serait un mensonge une fois sur deux.
 test("le doute reseau ne se fait pas passer pour un refus", () => {
-  const bloc = src.slice(src.indexOf("async function offrir("), src.indexOf("async function offrir(") + 1400);
+  const bloc = src.slice(src.indexOf("async function offrir("), src.indexOf("async function offrir(") + 1800);
   assert.match(bloc, /reason\s*===\s*"network"[\s\S]{0,400}QUIZ_GIVE_UNSURE/,
     "seul le cas reseau doit produire le message incertain");
 });

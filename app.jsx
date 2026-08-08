@@ -1258,9 +1258,23 @@ function App() {
         return { ok: false };
       }
     },
+    // Porte au bandeau un gain que le serveur a déjà crédité, au moment où le joueur
+    // décide de le garder (clic « Garder », expiration du décompte, ou don refusé).
+    // N'écrit rien côté serveur : POST /save n'a pas le droit d'y toucher, les soldes
+    // y sont SERVER-OWNED — c'est bien une remise à niveau de l'affichage, pas un don
+    // de FA que le client s'accorderait.
+    creditQuizGain(montant) {
+      const m = Number(montant) || 0;
+      if (m > 0) setG((st) => ({ ...st, locked: (st.locked || 0) + m }));
+    },
     // Répond. La destination ne se choisit pas ici : le serveur crédite toujours
     // le joueur d'abord (il ne peut pas décider avant de savoir s'il a juste), et
     // c'est donateQuiz qui convertit ensuite ce gain en don.
+    // L'AFFICHAGE, lui, ne suit PAS ce calendrier : montrer +10 au chip verrouillé
+    // avant le choix puis −10 dès que le joueur offre faisait de « garder » un
+    // acquis déjà en poche et de « offrir » une reprise — le joueur voyait ses FA
+    // aller chez lui ET dans la poule. Le solde ne bouge donc qu'au choix, via
+    // creditQuizGain, et seulement si le gain lui reste.
     async answerQuiz(questionId, choice) {
       const s = gRef.current;
       if (!s.authToken) return { ok: false, reason: "auth" };
@@ -1280,15 +1294,15 @@ function App() {
           const err = await resp.json().catch(() => ({}));
           return { ok: false, reason: err.error || `Erreur ${resp.status}` };
         }
-        const data = await resp.json();
-        if (data.reward > 0) setG((st) => ({ ...st, locked: (st.locked || 0) + data.reward }));
-        return { ok: true, data };
+        return { ok: true, data: await resp.json() };
       } catch (e) {
         return { ok: false, reason: "network" };
       }
     },
     // Convertit le gain déjà crédité en don au pool de rachat (fenêtre de 60 s
-    // côté serveur). Le solde verrouillé redescend d'autant.
+    // côté serveur). Aucun solde ne bouge à l'écran : les 10 FA n'y ont jamais été
+    // portés (cf. answerQuiz), et les afficher pour les retirer aussitôt était
+    // précisément ce qui donnait au joueur l'impression d'un double flux.
     async donateQuiz(questionId) {
       const s = gRef.current;
       if (!s.authToken) return { ok: false, reason: "auth" };
@@ -1307,11 +1321,22 @@ function App() {
           const err = await resp.json().catch(() => ({}));
           return { ok: false, reason: err.error || `Erreur ${resp.status}` };
         }
-        const data = await resp.json();
-        const donne = data.granted_pool || 0;
-        if (donne > 0) setG((st) => ({ ...st, locked: Math.max(0, (st.locked || 0) - donne) }));
-        return { ok: true, data };
+        return { ok: true, data: await resp.json() };
       } catch (e) {
+        // La requête est partie sans que la réponse revienne : impossible de savoir
+        // si le don a été commis. Plutôt que de parier (créditer = risquer d'afficher
+        // des FA déjà offerts ; ne rien faire = risquer d'en cacher au joueur), on
+        // relit le solde qui fait foi. Best-effort : si le réseau est vraiment coupé
+        // cette lecture échoue aussi, et le prochain chargement remettra tout d'aplomb.
+        try {
+          const sv = await fetch(`${API_URL}/save/${s.wallet}`, svOpts());
+          if (sv.ok) {
+            const { save } = await sv.json();
+            if (save && save.arte_locked != null) {
+              setG((st) => ({ ...st, locked: Number(save.arte_locked) }));
+            }
+          }
+        } catch (e2) { /* solde momentanément non resynchronisé */ }
         return { ok: false, reason: "network" };
       }
     },
