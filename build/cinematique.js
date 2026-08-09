@@ -58,8 +58,17 @@ const SANS = (() => {
 // Composer un canvas WebGL anime est hors budget sur ce GPU ; decoder un WebP
 // anime ne l'est pas — c'est une <img>, decodee hors du thread principal, et le
 // fondu comme le zoom d'entree restent des proprietes composites.
-// `?cine=3d` restaure l'ancien rendu WebGL pour pouvoir comparer les deux.
-const CINE_3D = typeof location !== 'undefined' && /[?&]cine=3d\b/i.test(location.search);
+// Le tableau ci-dessus date d'AVANT le plancher d'opacite (v142) : il explique
+// pourquoi le bake a existe et reste la mesure de reference. Verdict du banc
+// #114/#115 (09/08, meme Mali-G68) : avec la couche composee des la premiere
+// image, la cinematique COMPLETE tient 47 fps, pire image 201 ms, 20,9 s
+// vecues pour 20 s — le gel venait de la bascule d'opacite, pas du canvas.
+// La 3D est donc redevenue LE RENDU PAR DEFAUT (rotation fluide, teinte
+// prismatique vivante, et 397 Ko de WebP en moins au boot). `?cine=bake`
+// force la sequence WebP : repli manuel, outil de comparaison, et destination
+// du repli automatique si la 3D echoue (WebGL ou GLB — voir troisDKo).
+// `?cine=3d` n'est plus lu : le defaut EST la 3D, les URLs des bancs rejouent.
+const CINE_3D = !(typeof location !== 'undefined' && /[?&]cine=bake\b/i.test(location.search));
 const EMBLEM_SPIN = typeof window !== 'undefined' && window.FA_ASSET_URL ? window.FA_ASSET_URL('assets/emblem-spin.webp') : 'assets/emblem-spin.webp';
 
 // Libère TOUTES les ressources GPU d'une scène Three.js au démontage. Sans ça, le GLB
@@ -696,6 +705,10 @@ function Cinematique(props) {
   const [audioMuted, setAudioMuted] = useState(false);
   const [hover, setHover] = useState(false);
   const [replayHover, setReplayHover] = useState(false);
+  // Repli : si la 3D echoue (contexte WebGL refuse, GLB introuvable), on bascule
+  // sur la sequence bakee plutot que de laisser un trou noir a la place de
+  // l'embleme. Meme regle que tout window.FA_* : un echec doit avoir un repli.
+  const [troisDKo, setTroisDKo] = useState(false);
   const tRef = useRef(0);
   const rafRef = useRef(0);
   const lastRef = useRef(0);
@@ -903,6 +916,11 @@ function Cinematique(props) {
           window.FA_DIAG && window.FA_DIAG.marque('emblème-charge');
         }, undefined, err => {
           console.warn('GLB load error', err);
+          // Sans modele il n'y aura jamais rien a montrer : repli sur le bake.
+          if (!disposed) {
+            cancelAnimationFrame(raf);
+            setTroisDKo(true);
+          }
         });
         const clock = new THREE.Clock();
         const render = () => {
@@ -936,6 +954,11 @@ function Cinematique(props) {
         window.FA_DIAG && window.FA_DIAG.marque('pmrem-pret');
       } catch (e) {
         console.warn('three init failed', e);
+        // Contexte WebGL refuse, import three en echec… : repli sur le bake.
+        if (!disposed) {
+          cancelAnimationFrame(raf);
+          setTroisDKo(true);
+        }
       }
     })();
     return () => {
@@ -1053,7 +1076,7 @@ function Cinematique(props) {
     style: v.glowStyle
   }), /*#__PURE__*/React.createElement("div", {
     style: v.emblemStyle
-  }, CINE_3D ? /*#__PURE__*/React.createElement("canvas", {
+  }, CINE_3D && !troisDKo ? /*#__PURE__*/React.createElement("canvas", {
     ref: canvasRef,
     draggable: false,
     style: {

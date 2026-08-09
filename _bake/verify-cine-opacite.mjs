@@ -80,7 +80,7 @@ const dire = (ok, msg) => { console.log((ok ? "OK  " : "ECHEC ") + msg); if (!ok
 // style CALCULE du conteneur reel pendant les premieres secondes — la ou
 // l'ancienne version affichait 0 et laissait le compositeur ignorer la couche.
 {
-  const { rel, erreurs } = await echantillonner(base + "?cine=3d", "canvas", 8000);
+  const { rel, erreurs } = await echantillonner(base, "canvas", 8000);
   const min = Math.min(...rel), max = Math.max(...rel);
   dire(rel.length >= 10, `3D : ${rel.length} echantillons`);
   dire(min > 0, `3D : opacite minimale ${min} — jamais 0, le canvas est compose des la premiere image`);
@@ -88,9 +88,9 @@ const dire = (ok, msg) => { console.log((ok ? "OK  " : "ECHEC ") + msg); if (!ok
   dire(erreurs.length === 0, `3D : aucune erreur page (${erreurs.slice(0, 2).join(" | ") || "—"})`);
 }
 
-// ——— Voie bake (defaut) : le fondu 0 -> 1 reste entier, pas de plancher.
+// ——— Voie bake (?cine=bake, repli) : le fondu 0 -> 1 reste entier, pas de plancher.
 {
-  const { rel, erreurs } = await echantillonner(base, 'img[src*="emblem-spin"]', 12000);
+  const { rel, erreurs } = await echantillonner(base + "?cine=bake", 'img[src*="emblem-spin"]', 12000);
   const min = Math.min(...rel), max = Math.max(...rel);
   dire(min === 0, `bake : opacite minimale ${min} — l'<img> garde son fondu complet depuis 0`);
   dire(max > 0.9, `bake : le fondu atteint ${max}`);
