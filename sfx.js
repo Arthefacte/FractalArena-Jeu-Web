@@ -77,6 +77,13 @@
     // échec de fusion : retombée mate, deux chutes graves
     forge_fizzle: (t) => { tone(t, { type: "sawtooth", f: 220, f2: 70, dur: 0.35, peak: 0.38 });
                            tone(t + 0.12, { type: "sine", f: 160, f2: 60, dur: 0.30, peak: 0.3 }); },
+    // « ka-ching » du rachat (#7 header vivant, différé depuis l'étape 1) :
+    // deux frappes métalliques brillantes (Sol6 puis Do7 + quinte) sur une
+    // assise grave qui retombe — la caisse enregistreuse, version griffe.
+    kaching: (t) => { tone(t, { type: "triangle", f: 1568, dur: 0.07, peak: 0.34 });
+                      tone(t, { type: "sine", f: 196, f2: 98, dur: 0.20, peak: 0.3 });
+                      tone(t + 0.08, { type: "triangle", f: 2093, dur: 0.24, peak: 0.5 });
+                      tone(t + 0.08, { type: "sine", f: 3136, dur: 0.16, peak: 0.16 }); },
   };
 
   function play(name, arg) {

@@ -373,6 +373,16 @@
     BB_TICK_TITLE: { FR: "100% de chaque mise et de chaque forge rachète FRACTALARENA sur le marché, puis le verrouille à vie.",
                      EN: "100% of every bet and forge buys FRACTALARENA on the market, then locks it for life.",
                      ZH: "每次下注和锻造的 100% 都会在市场上回购 FRACTALARENA，然后永久锁定。" },
+    // Tape boursière (#7 header vivant) — les montants suivent la convention
+    // FaText « %s FA » (logo + nombre à l'écran, jamais l'écriture FA).
+    TAPE_RACHAT:   { FR: "RACHAT %s · %s FA", EN: "BUYBACK %s · %s FA", ZH: "回购 %s · %s FA" },
+    TAPE_ENTREE:   { FR: "+%s FA → POOL %s", EN: "+%s FA → POOL %s", ZH: "+%s FA → 池 %s" },
+    TAPE_POOL:     { FR: "POOL %s · %s %", EN: "POOL %s · %s %", ZH: "池 %s · %s %" },
+    TAPE_CUMUL:    { FR: "CUMUL RACHETÉ · %s FA", EN: "TOTAL BOUGHT BACK · %s FA", ZH: "累计回购 · %s FA" },
+    TAPE_AGE_NOW:  { FR: "à l'instant", EN: "just now", ZH: "刚刚" },
+    TAPE_AGE_MIN:  { FR: "il y a %s min", EN: "%s min ago", ZH: "%s 分钟前" },
+    TAPE_AGE_H:    { FR: "il y a %s h", EN: "%s h ago", ZH: "%s 小时前" },
+    TAPE_AGE_J:    { FR: "il y a %s j", EN: "%s d ago", ZH: "%s 天前" },
     RES_MILESTONE: { FR: "MILESTONE — +%d verrouillé", EN: "MILESTONE — +%d locked", ZH: "里程碑 — +%d 锁定" },
     RES_CONTINUE: { FR: "Continuer", EN: "Continue", ZH: "继续" },
     RES_LOCKED_GAIN: { FR: "Gain verrouillé (combat gratuit)", EN: "Locked gain (free fight)", ZH: "锁定收益（免费战斗）" },

@@ -950,6 +950,7 @@ input { font-family: var(--font-mono); }
   border-bottom: 1px solid var(--line);
   font-family: var(--font-mono);
   font-size: 12px;
+  position: relative; /* ancre la pluie d'or (.fa-pluie, absolute) */
 }
 .bb-line { display: flex; align-items: center; gap: 10px; }
 .bb-icon { flex: 0 0 auto; }
@@ -999,11 +1000,55 @@ input { font-family: var(--font-mono); }
 .bb-tx:hover { text-decoration: underline; }
 .bb-sub { color: var(--text-dim); padding-left: 28px; }
 .bb-sub b { color: var(--success); font-weight: 700; }
+
+/* ——— Tape boursière (#7 header vivant) : vraies données qui défilent. ———
+   Transform pur sur une piste dupliquée (translateX -50 % en boucle = couture
+   invisible). Leçon Mali-G68 : jamais de filtre ni de layout animé ici. */
+.fa-tape {
+  height: 16px; overflow: hidden; margin-top: 3px; opacity: 0.78;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+}
+.fa-tape-track { display: inline-flex; white-space: nowrap; will-change: transform; animation: faTapeDefile 40s linear infinite; }
+.fa-tape-run { display: inline-flex; align-items: center; }
+.fa-tape-item { font-size: 10px; letter-spacing: 0.08em; color: var(--text-dim); display: inline-flex; align-items: center; }
+/* Séparateur APRÈS chaque item (pas entre) : le dernier item d'une piste garde
+   le sien, la couture entre les deux pistes est donc identique aux jointures. */
+.fa-tape-item::after { content: "◆"; margin: 0 12px; color: var(--gold); opacity: 0.45; font-size: 6px; }
+@keyframes faTapeDefile { to { transform: translateX(-50%); } }
+
+/* ——— Pluie d'or : un rachat vient d'être exécuté. Transform/opacity only. ——— */
+.fa-pluie { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.fa-or {
+  position: absolute; top: -6px; border-radius: 50%;
+  background: var(--gold);
+  box-shadow: 0 0 6px 1px rgba(255, 230, 0, 0.55);
+  animation: faOrTombe linear forwards;
+}
+@keyframes faOrTombe {
+  from { transform: translateY(0) translateX(0); opacity: 1; }
+  to   { transform: translateY(120px) translateX(var(--drift)); opacity: 0; }
+}
+/* La jauge du pool racheté pulse or (cousine de .bb-gain, autre événement). */
+.bb-rachat .bb-bar { animation: bbRachatPulse 2.2s ease-out both; }
+@keyframes bbRachatPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(255, 230, 0, 0.65); }
+  100% { box-shadow: 0 0 0 10px rgba(255, 230, 0, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fa-tape-track { animation: none; }
+  .fa-or { display: none; }
+}
+
 @media (max-width: 640px) {
   .bb-ticker { font-size: 11px; padding: 5px 10px; }
   .bb-line { gap: 7px; }
   .bb-label { display: none; }
   .bb-sub { padding-left: 0; }
+  /* Mobile : la tape ne s'affiche que quand elle a du neuf à dire (8 s). */
+  .fa-tape { display: none; }
+  .fa-tape.fraiche { display: block; }
 }
 
 /* --- Compte sans wallet --- */
