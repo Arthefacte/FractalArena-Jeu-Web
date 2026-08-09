@@ -185,3 +185,26 @@ test("sans=deco laisse le canvas seul, sans les calques d'ambiance", () => {
   const n = (SRC.match(/SANS\.has\('deco'\)/g) || []).length;
   assert.ok(n >= 5, `deco ne couvre que ${n} calques, il en faut au moins 5`);
 });
+
+// ————————————————————————————————————————————————————————————————
+// Verdict des deux tests du banc #114 (09/08, Mali-G68 du joueur) :
+//   sans=apparition (canvas compose des t0, decor COMPLET) : 54 fps, pire
+//     image 401 ms, cinematique 20,9 s pour 20 s — gel disparu ;
+//   sans=deco (decor retire, bascule 0 -> 1 CONSERVEE) : 0 image pendant 6 s,
+//     pire image 7 451 ms, 8 214 ms hors JS — gel reproduit sans le decor.
+// Le coupable est donc la bascule d'opacite du canvas, pas le decor. Le
+// compositeur ignore une couche a `opacity: 0` ; la reintegrer en cours de
+// cinematique lui coute des secondes. Correctif verrouille ici : en 3D,
+// l'opacite du conteneur a un PLANCHER (jamais 0), le canvas est compose des
+// la premiere image et le fondu opere sur une couche deja vivante.
+test("en 3D, l'opacite du canvas ne descend jamais a 0", () => {
+  assert.match(SRC, /: CINE_3D \? Math\.max\(0\.015, opP\)\r?\n\s+: opP,/,
+    "le plancher d'opacite de la voie 3D a disparu : la bascule 0 -> 1 " +
+    "regele 6 a 13 s sur Mali-G68 (mesures des 08-09/08)");
+});
+
+test("le bake garde son fondu entier, il n'a pas la pathologie du canvas", () => {
+  // L'<img> du bake n'est pas une couche WebGL : son 0 -> 1 est inoffensif et
+  // le plancher ne doit PAS s'y appliquer (le dernier terme reste `: opP`).
+  assert.match(SRC, /: opP,/);
+});

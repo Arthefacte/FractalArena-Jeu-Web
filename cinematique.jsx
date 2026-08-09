@@ -173,8 +173,18 @@ function cineVals(t, opts) {
     // donc jamais teste ce cas, qui est pourtant celui de l'ecran de connexion,
     // ou le canvas est visible des son montage. Un canvas WebGL laisse invisible
     // huit secondes puis reintegre par le compositeur est le suspect restant.
+    // Verdict du banc #114 (09/08, meme Mali-G68) : canvas compose des t0 avec
+    // TOUT le decor = 54 fps, pire image 401 ms, cinematique 20,9 s / 20 s ;
+    // decor entierement retire mais bascule 0 -> 1 conservee = 0 image pendant
+    // 6 s, pire image 7 451 ms, 8 214 ms hors JS. Le compositeur ignore une
+    // couche a `opacity: 0` et s'effondre quand il doit la reintegrer huit
+    // secondes plus tard. Le plancher 0.015 garde le canvas compose des la
+    // premiere image — invisible a l'oeil sur fond sombre — et le fondu vers 1
+    // reste une propriete composite, gratuite sur une couche deja vivante.
+    // L'<img> du bake ne souffre pas de cette pathologie : elle garde son 0 -> 1.
     opacity: SANS.has('apparition') ? 1
       : (nu || SANS.has('fondu')) ? (t >= 8.2 ? 1 : 0)
+      : CINE_3D ? Math.max(0.015, opP)
       : opP,
     pointerEvents: 'none',
     ...(nu ? {} : { willChange: 'transform' }),
