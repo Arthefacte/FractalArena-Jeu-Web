@@ -7,7 +7,8 @@ const {
   useState,
   useEffect,
   useRef,
-  useMemo
+  useMemo,
+  useCallback
 } = React;
 const D = window.FA_DATA,
   I18N = window.FA_I18N;
@@ -445,6 +446,28 @@ function App() {
   // Les deux soldes du bandeau annoncent leurs mouvements de la même façon.
   const liquidPop = useVariationSolde(g.liquid, !!g.wallet);
   const lockedPop = useVariationSolde(g.locked, !!g.wallet);
+  // Toute BAISSE d'un solde = une dépense ou une mise perdue : le serveur a
+  // crédité les pools de rachat dans la même transaction que la réponse. On
+  // réveille donc le ticker (fa:buyback-refresh) au lieu de laisser le joueur
+  // attendre le poll de 60 s — le don du quiz l'avait (v131), pas les achats
+  // ni les combats perdus. La garde du login vit déjà dans useVariationSolde
+  // (pas de réveil sur le premier remplissage). Garde-fou 2,5 s : la boucle de
+  // Fosse enchaîne les combats, un GET /buyback/status par combat n'apprendrait
+  // rien de plus. Les hausses (gains) ne réveillent pas : elles ne nourrissent
+  // pas les pools, et les dépenses des AUTRES joueurs restent au poll.
+  const dernierReveilPools = useRef(0);
+  const reveillePools = useCallback(() => {
+    const t = Date.now();
+    if (t - dernierReveilPools.current < 2500) return;
+    dernierReveilPools.current = t;
+    window.dispatchEvent(new CustomEvent("fa:buyback-refresh"));
+  }, []);
+  useEffect(() => {
+    if (liquidPop.delta < 0) reveillePools();
+  }, [liquidPop.n]);
+  useEffect(() => {
+    if (lockedPop.delta < 0) reveillePools();
+  }, [lockedPop.n]);
 
   // SFX : synchronise le module son avec le toggle options.sound (charge + bascule).
   useEffect(() => {
