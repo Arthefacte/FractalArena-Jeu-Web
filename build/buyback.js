@@ -37,11 +37,12 @@ function TickerRow({
   wallet,
   proofLabel,
   sub,
-  gain
+  gain,
+  rachat
 }) {
   const frac = buybackFraction(total, threshold);
   return /*#__PURE__*/React.createElement("div", {
-    className: "bb-row " + kind + (gain ? " bb-gain" : "")
+    className: "bb-row " + kind + (gain ? " bb-gain" : "") + (rachat ? " bb-rachat" : "")
   }, /*#__PURE__*/React.createElement("div", {
     className: "bb-line"
   }, /*#__PURE__*/React.createElement("span", {
@@ -70,6 +71,81 @@ function TickerRow({
     s: 10
   })));
 }
+
+// ——— Tape boursière (#7 header vivant) : les items structurés de FA_TAPE,
+// formatés via I18N puis FaText (convention : jamais « FA » écrit à côté d'un
+// montant). Piste dupliquée pour un défilement sans couture (translateX -50 %).
+function ageTexte(I, age) {
+  if (age.unite === "min") return I.t("TAPE_AGE_MIN", age.n);
+  if (age.unite === "h") return I.t("TAPE_AGE_H", age.n);
+  if (age.unite === "j") return I.t("TAPE_AGE_J", age.n);
+  return I.t("TAPE_AGE_NOW");
+}
+function texteTape(I, it) {
+  if (it.type === "rachat") return I.t("TAPE_RACHAT", bbFmt(it.tier), bbFmt(it.montant)) + " · " + ageTexte(I, it.age);
+  if (it.type === "entree") return I.t("TAPE_ENTREE", bbFmt(it.montant), bbFmt(it.tier));
+  if (it.type === "pool") return I.t("TAPE_POOL", bbFmt(it.tier), it.pct);
+  if (it.type === "cumul") return I.t("TAPE_CUMUL", bbFmt(it.montant));
+  return "";
+}
+function TapeBoursiere({
+  pools,
+  gainsSession,
+  fraiche
+}) {
+  // Repli : tape-ui.js absent (404 de déploiement) → pas de tape, pas de crash.
+  if (!window.FA_TAPE) return null;
+  const I = window.FA_I18N;
+  const items = window.FA_TAPE.composerTape(pools, gainsSession, Date.now());
+  if (!items.length) return null;
+  const run = cle => /*#__PURE__*/React.createElement("span", {
+    className: "fa-tape-run",
+    "aria-hidden": cle === "b" ? "true" : undefined
+  }, items.map((it, i) => /*#__PURE__*/React.createElement("span", {
+    className: "fa-tape-item",
+    key: cle + i
+  }, /*#__PURE__*/React.createElement(FaText, {
+    text: texteTape(I, it),
+    s: 10
+  }))));
+  return /*#__PURE__*/React.createElement("div", {
+    className: "fa-tape" + (fraiche ? " fraiche" : "")
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "fa-tape-track"
+  }, run("a"), run("b")));
+}
+
+// La pluie d'or d'un rachat exécuté. Spans en transform/opacity uniquement
+// (patron embers de la cinématique) — pas de canvas, pas de filtre : leçon
+// Mali-G68. `graine` remonte les nœuds pour rejouer la chute à chaque rachat.
+function PluieOr({
+  graine
+}) {
+  const gouttes = React.useMemo(() => Array.from({
+    length: 30
+  }, (_, i) => {
+    const s = 2.5 + Math.random() * 2.5;
+    return {
+      id: i,
+      style: {
+        left: Math.random() * 100 + "%",
+        width: s + "px",
+        height: s + "px",
+        animationDuration: 1.1 + Math.random() * 0.9 + "s",
+        animationDelay: Math.random() * 0.5 + "s",
+        "--drift": (Math.random() * 2 - 1) * 26 + "px"
+      }
+    };
+  }), [graine]);
+  return /*#__PURE__*/React.createElement("div", {
+    className: "fa-pluie",
+    "aria-hidden": "true"
+  }, gouttes.map(g => /*#__PURE__*/React.createElement("span", {
+    key: g.id,
+    className: "fa-or",
+    style: g.style
+  })));
+}
 function BuybackTicker() {
   const [bb, setBb] = React.useState(null);
   // Ce qui vient d'entrer, par tier, et un compteur de relevé pour que React
@@ -78,6 +154,17 @@ function BuybackTicker() {
     n: 0,
     par: {}
   });
+  // Un rachat vient d'être exécuté : {tier: montant}, compteur pour rejouer.
+  const [rachat, setRachat] = React.useState({
+    n: 0,
+    tiers: {}
+  });
+  // Mobile : la tape est repliée par défaut ; `on` la déplie quand il y a du
+  // neuf (entrée ou rachat), ~8 s, puis elle se replie.
+  const [fraiche, setFraiche] = React.useState(false);
+  const fraicheTimer = React.useRef(0);
+  // Entrées cumulées de la session, par tier — la matière « en direct » de la tape.
+  const cumulGains = React.useRef({});
   const prevPools = React.useRef([]);
   const poolsPret = React.useRef(false);
   React.useEffect(() => {
@@ -87,10 +174,23 @@ function BuybackTicker() {
       if (!alive) return;
       if (rb && rb.buyback && Array.isArray(rb.buyback.pools)) {
         const par = window.FA_JUICE_UI.gainsPools(prevPools.current, rb.buyback.pools, poolsPret.current);
+        // AVANT d'écraser prevPools : la détection compare l'ancien relevé au
+        // nouveau. Même garde d'initialisation que gainsPools — pas de pluie
+        // d'or à la connexion pour des rachats passés.
+        const rachats = window.FA_TAPE ? window.FA_TAPE.rachatsDetectes(prevPools.current, rb.buyback.pools, poolsPret.current) : {};
         prevPools.current = rb.buyback.pools;
         poolsPret.current = true;
         setBb(rb.buyback);
+        // La tape se nourrit du neuf : on déplie (mobile) sur entrée OU rachat.
+        function reveille() {
+          setFraiche(true);
+          clearTimeout(fraicheTimer.current);
+          fraicheTimer.current = setTimeout(() => {
+            if (alive) setFraiche(false);
+          }, 8000);
+        }
         if (Object.keys(par).length) {
+          for (const t of Object.keys(par)) cumulGains.current[t] = (cumulGains.current[t] || 0) + par[t];
           setGains(g => ({
             n: g.n + 1,
             par
@@ -104,6 +204,22 @@ function BuybackTicker() {
               par: {}
             }));
           }, 1900);
+          reveille();
+        }
+        if (Object.keys(rachats).length) {
+          // Le moment fort de l'économie : pluie d'or + ka-ching + jauge qui pulse.
+          setRachat(r => ({
+            n: r.n + 1,
+            tiers: rachats
+          }));
+          if (window.FA_SFX) window.FA_SFX.play("kaching");
+          setTimeout(() => {
+            if (alive) setRachat(r => ({
+              n: r.n,
+              tiers: {}
+            }));
+          }, 2400);
+          reveille();
         }
       }
     }
@@ -116,6 +232,7 @@ function BuybackTicker() {
     return () => {
       alive = false;
       clearInterval(id);
+      clearTimeout(fraicheTimer.current);
       window.removeEventListener("fa:buyback-refresh", load);
     };
   }, []);
@@ -129,8 +246,9 @@ function BuybackTicker() {
     className: "bb-ticker",
     title: I.t("BB_TICK_TITLE")
   }, bb.pools.map((p, i) => /*#__PURE__*/React.createElement(TickerRow, {
-    key: p.tier + ":" + (gains.par[p.tier] ? gains.n : 0),
+    key: p.tier + ":" + (gains.par[p.tier] ? gains.n : 0) + ":" + (rachat.tiers[p.tier] ? rachat.n : 0),
     gain: gains.par[p.tier] || 0,
+    rachat: rachat.tiers[p.tier] || 0,
     kind: "buy",
     icon: "",
     label: I.t("BB_POOL_LABEL", bbFmt(p.tier)),
@@ -139,7 +257,13 @@ function BuybackTicker() {
     wallet: i === 0 ? bb.buyback_wallet : null,
     proofLabel: I.t("BB_PROOF"),
     sub: i === last ? I.t("BB_BOUGHT_SUB", bbFmt(totalBought)) : null
-  })));
+  })), /*#__PURE__*/React.createElement(TapeBoursiere, {
+    pools: bb.pools,
+    gainsSession: cumulGains.current,
+    fraiche: fraiche
+  }), rachat.n > 0 && Object.keys(rachat.tiers).length > 0 && /*#__PURE__*/React.createElement(PluieOr, {
+    graine: rachat.n
+  }));
 }
 Object.assign(window, {
   BuybackTicker,
