@@ -110,15 +110,18 @@ test("le banc d'essai n'est actif que sur parametre explicite", () => {
 });
 
 // ————————————————————————————————————————————————————————————————
-// Le banc a tranche : le canvas WebGL EST la cause. Meme appareil, meme
-// cinematique, seule la 3D changeant — 14 images > 100 ms contre 0, une pire
-// image de 12 161 ms contre 84 ms, 14 083 ms hors JS contre 445 ms, et une
-// cinematique qui atteint enfin sa fin. L'embleme est donc une sequence bakee.
-test("la cinematique ne rend pas de canvas WebGL par defaut", () => {
-  assert.match(SRC, /CINE_3D\s*\n?\s*\?\s*<canvas/,
-    "le canvas ne doit apparaitre que derriere ?cine=3d");
+// Le banc du 08/08 avait accuse le canvas WebGL (14 images > 100 ms, pire
+// image 12 161 ms) et impose la sequence bakee. MAJ 09/08 : le banc #114 a
+// innocente le canvas — le coupable etait la bascule d'opacite, corrigee par
+// le plancher (v142) — et la 3D est redevenue le defaut. Ce qui reste
+// verrouille : le canvas vit derriere son repli, le bake reste l'alternative
+// rendue, et la garde `if (!canvas) return` neutralise toute l'init 3D quand
+// le canvas n'est pas monte (mode bake).
+test("le canvas 3D est rendu derriere son repli, bake en alternative", () => {
+  assert.match(SRC, /CINE_3D && !troisDKo\s*\r?\n?\s*\?\s*<canvas/,
+    "le canvas doit passer par CINE_3D et le repli troisDKo");
   assert.match(SRC, /:\s*<img src=\{EMBLEM_SPIN\}/,
-    "le rendu par defaut doit etre la sequence bakee");
+    "la sequence bakee doit rester le rendu alternatif");
   assert.match(SRC, /const canvas = canvasRef\.current;\s*\n\s*if \(!canvas\) return;/,
     "la garde qui neutralise l'init 3D sans canvas a disparu");
 });
@@ -129,11 +132,12 @@ test("la sequence bakee passe par FA_ASSET_URL", () => {
   assert.match(SRC, /window\.FA_ASSET_URL\('assets\/emblem-spin\.webp'\)/);
 });
 
-test("l'ancien rendu 3D reste joignable pour comparaison", () => {
+test("l'ancien rendu bake reste joignable pour comparaison", () => {
   // Trois hypotheses fausses ont ete eliminees par comparaison A/B ; garder le
-  // chemin WebGL accessible coute une ligne et evite un redeploiement le jour
-  // ou il faudra remesurer.
-  assert.match(SRC, /\/\[\?&\]cine=3d\\b\/i/);
+  // chemin alternatif accessible coute une ligne et evite un redeploiement le
+  // jour ou il faudra remesurer. Depuis la bascule de la 3D en defaut, c'est
+  // le bake qui se force par parametre.
+  assert.match(SRC, /\/\[\?&\]cine=bake\\b\/i/);
 });
 
 test("la sonde etiquette la variante mesuree", () => {
@@ -207,4 +211,22 @@ test("le bake garde son fondu entier, il n'a pas la pathologie du canvas", () =>
   // L'<img> du bake n'est pas une couche WebGL : son 0 -> 1 est inoffensif et
   // le plancher ne doit PAS s'y appliquer (le dernier terme reste `: opP`).
   assert.match(SRC, /: opP,/);
+});
+
+// ————————————————————————————————————————————————————————————————
+// Depuis le re-test telephone de la v142 (09/08 : cinematique complete en 3D,
+// 47 fps, pire image 201 ms, 20,9 s vecues pour 20 s), la 3D est LE RENDU PAR
+// DEFAUT. Le bake reste un repli : force par ?cine=bake, ou automatique si la
+// 3D echoue en route (contexte WebGL refuse, GLB introuvable) — plutot un
+// embleme a 16 img/s qu'un trou noir au centre de la cinematique.
+test("la 3D est le rendu par defaut, le bake se force par ?cine=bake", () => {
+  assert.match(SRC, /const CINE_3D = !\(typeof location !== 'undefined' && \/\[\?&\]cine=bake\\b\/i\.test\(location\.search\)\)/,
+    "le defaut n'est plus la 3D : les joueurs retombent sur le bake fige a 16 img/s");
+});
+
+test("l'echec de la 3D bascule automatiquement sur le bake", () => {
+  const nb = (SRC.match(/setTroisDKo\(true\)/g) || []).length;
+  assert.ok(nb >= 2, `le repli doit couvrir l'init (catch) ET le chargement du GLB — ${nb} appel(s) trouve(s)`);
+  assert.match(SRC, /\{CINE_3D && !troisDKo\r?\n/,
+    "le rendu n'ecoute pas troisDKo : un echec 3D laisserait un canvas noir");
 });
