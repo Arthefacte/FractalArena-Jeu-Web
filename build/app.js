@@ -477,11 +477,24 @@ function App() {
   // rien de plus. Les hausses (gains) ne réveillent pas : elles ne nourrissent
   // pas les pools, et les dépenses des AUTRES joueurs restent au poll.
   const dernierReveilPools = useRef(0);
-  const reveillePools = useCallback(() => {
+  const reveilDiffere = useRef(false);
+  const emetReveil = useCallback(() => {
     const t = Date.now();
     if (t - dernierReveilPools.current < 2500) return;
     dernierReveilPools.current = t;
     window.dispatchEvent(new CustomEvent("fa:buyback-refresh"));
+  }, []);
+  const reveillePools = useCallback(() => {
+    // Un replay de Fosse est en cours (la mise vient de partir du solde) : le
+    // serveur a déjà réglé le combat et crédité les pools sur une défaite, mais
+    // le joueur, lui, regarde encore les échanges. Réveiller le ticker ici fait
+    // monter les jauges PENDANT le combat — l'écran annonce la défaite avant la
+    // fin du replay. On retient le réveil ; resolveFight l'émet au règlement.
+    if (gRef.current.serverFight !== null) {
+      reveilDiffere.current = true;
+      return;
+    }
+    emetReveil();
   }, []);
   useEffect(() => {
     if (liquidPop.delta < 0) reveillePools();
@@ -1581,6 +1594,14 @@ function App() {
         ...st,
         serverFight: null
       }));
+      // Le réveil des pools retenu pendant le replay part maintenant que le combat
+      // est réglé — seulement si une mise a réellement nourri les pools (défaite
+      // payante) ; une victoire n'y verse rien, inutile de relire /buyback/status.
+      // emetReveil directement : gRef n'a pas encore vu serverFight repasser à null.
+      if (reveilDiffere.current) {
+        reveilDiffere.current = false;
+        if (!win && !free) emetReveil();
+      }
       return summary;
     },
     async buyBoost(key) {
