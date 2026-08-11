@@ -7,7 +7,8 @@
 
 const API_URL = window.FA_API_URL;
 const {
-  FaText
+  FaText,
+  Modal
 } = window;
 
 // Lien « preuve » = page du DEX InSwap (paire FractalArena / sFB) — même cible que la vitrine arthefacte.com.
@@ -146,8 +147,105 @@ function PluieOr({
     style: g.style
   })));
 }
+
+// Rangée DEX : prix spot InSwap + accès aux rachats vérifiés. Ne s'affiche que si
+// /dex/status a répondu — pas de valeur fabriquée quand le serveur ou UniSat manque.
+function RangeeDex({
+  dex,
+  onVoirRachats
+}) {
+  const I = window.FA_I18N,
+    FDX = window.FA_DEX;
+  if (!dex || !dex.pool || !FDX) return null;
+  const prix = FDX.prixTexte(dex.pool.price_fb);
+  if (!prix) return null;
+  const chg = Number(dex.pool.price_change_24h) || 0;
+  const count = dex.buyback_totals && dex.buyback_totals.count || 0;
+  return /*#__PURE__*/React.createElement("div", {
+    className: "bb-dex mono"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "bb-dex-prix"
+  }, /*#__PURE__*/React.createElement(FaText, {
+    text: I.t("DEX_PRICE", prix),
+    s: 10
+  })), /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: chg >= 0 ? "var(--success)" : "var(--alert)"
+    }
+  }, I.t("DEX_CHANGE", FDX.variationTexte(chg))), /*#__PURE__*/React.createElement("span", {
+    style: {
+      flex: 1
+    }
+  }), count > 0 && /*#__PURE__*/React.createElement("button", {
+    className: "bb-dex-btn",
+    onClick: onVoirRachats
+  }, I.t("DEX_VERIFIED_BTN", count)));
+}
+
+// Panneau de preuve : la liste des achats DEX des adresses officielles de rachat,
+// telle que renvoyée par le serveur (lecture on-chain via l'Open API InSwap).
+function PanneauRachats({
+  dex,
+  onClose
+}) {
+  const I = window.FA_I18N;
+  const t = dex.buyback_totals || {
+    count: 0,
+    fa: 0,
+    fb: 0
+  };
+  return /*#__PURE__*/React.createElement(Modal, {
+    onClose: onClose
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "h2",
+    style: {
+      fontSize: 14,
+      marginBottom: 6,
+      textAlign: "center"
+    }
+  }, I.t("DEX_MODAL_TITLE")), /*#__PURE__*/React.createElement("p", {
+    className: "muted",
+    style: {
+      fontSize: 12,
+      margin: "0 0 10px"
+    }
+  }, I.t("DEX_MODAL_SUB")), /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      marginBottom: 10,
+      textAlign: "center"
+    }
+  }, /*#__PURE__*/React.createElement(FaText, {
+    text: I.t("DEX_MODAL_TOTALS", bbFmt(t.fa), (t.fb || 0).toFixed(2)),
+    s: 12
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "bb-dex-liste"
+  }, (dex.buybacks || []).map(b => /*#__PURE__*/React.createElement("div", {
+    key: b.id,
+    className: "bb-dex-item mono"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "muted"
+  }, new Date(b.ts * 1000).toLocaleDateString()), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement(FaText, {
+    text: bbFmt(b.fa) + " FA",
+    s: 11
+  })), /*#__PURE__*/React.createElement("span", {
+    className: "muted"
+  }, "\u2190 ", (b.fb || 0).toFixed(2), " FB")))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "center",
+      marginTop: 10
+    }
+  }, /*#__PURE__*/React.createElement("a", {
+    className: "btn sm",
+    href: DEX_URL,
+    target: "_blank",
+    rel: "noreferrer"
+  }, I.t("DEX_OPEN_INSWAP"), " \u2197")));
+}
 function BuybackTicker() {
   const [bb, setBb] = React.useState(null);
+  const [dex, setDex] = React.useState(null);
+  const [voirRachats, setVoirRachats] = React.useState(false);
   // Ce qui vient d'entrer, par tier, et un compteur de relevé pour que React
   // remonte les nœuds et rejoue l'animation même si le montant est identique.
   const [gains, setGains] = React.useState({
@@ -170,8 +268,11 @@ function BuybackTicker() {
   React.useEffect(() => {
     let alive = true;
     async function load() {
-      const rb = await fetch(API_URL + "/buyback/status").then(r => r.json()).catch(() => null);
+      // /dex/status en parallèle : cache serveur 60 s, donc les réveils fréquents
+      // (fa:buyback-refresh à chaque dépense) ne coûtent aucun appel UniSat de plus.
+      const [rb, dx] = await Promise.all([fetch(API_URL + "/buyback/status").then(r => r.json()).catch(() => null), fetch(API_URL + "/dex/status").then(r => r.ok ? r.json() : null).catch(() => null)]);
       if (!alive) return;
+      if (dx && dx.dex) setDex(dx.dex);
       if (rb && rb.buyback && Array.isArray(rb.buyback.pools)) {
         const par = window.FA_JUICE_UI.gainsPools(prevPools.current, rb.buyback.pools, poolsPret.current);
         // AVANT d'écraser prevPools : la détection compare l'ancien relevé au
@@ -257,12 +358,18 @@ function BuybackTicker() {
     wallet: i === 0 ? bb.buyback_wallet : null,
     proofLabel: I.t("BB_PROOF"),
     sub: i === last ? I.t("BB_BOUGHT_SUB", bbFmt(totalBought)) : null
-  })), /*#__PURE__*/React.createElement(TapeBoursiere, {
+  })), /*#__PURE__*/React.createElement(RangeeDex, {
+    dex: dex,
+    onVoirRachats: () => setVoirRachats(true)
+  }), /*#__PURE__*/React.createElement(TapeBoursiere, {
     pools: bb.pools,
     gainsSession: cumulGains.current,
     fraiche: fraiche
   }), rachat.n > 0 && Object.keys(rachat.tiers).length > 0 && /*#__PURE__*/React.createElement(PluieOr, {
     graine: rachat.n
+  }), voirRachats && dex && /*#__PURE__*/React.createElement(PanneauRachats, {
+    dex: dex,
+    onClose: () => setVoirRachats(false)
   }));
 }
 Object.assign(window, {
