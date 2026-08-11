@@ -1033,7 +1033,12 @@ input { font-family: var(--font-mono); }
 }
 .fa-tape-track { display: inline-flex; white-space: nowrap; will-change: transform; animation: faTapeDefile 40s linear infinite; }
 .fa-tape-run { display: inline-flex; align-items: center; }
-.fa-tape-item { font-size: 10px; letter-spacing: 0.08em; color: var(--text-dim); display: inline-flex; align-items: center; }
+/* white-space: pre — l'item est un conteneur flex : chaque run de texte devient
+   un item anonyme et perd ses espaces de bord. Quand FaText coupe la phrase
+   autour du montant (« a offert [icône] 150 » / « au rachat »), l'espace entre
+   les deux disparaissait. pre les préserve ; pas de retour à la ligne ici de
+   toute façon, la tape est une ligne qui défile. */
+.fa-tape-item { font-size: 10px; letter-spacing: 0.08em; color: var(--text-dim); display: inline-flex; align-items: center; white-space: pre; }
 /* Séparateur APRÈS chaque item (pas entre) : le dernier item d'une piste garde
    le sien, la couture entre les deux pistes est donc identique aux jointures. */
 .fa-tape-item::after { content: "◆"; margin: 0 12px; color: var(--gold); opacity: 0.45; font-size: 6px; }

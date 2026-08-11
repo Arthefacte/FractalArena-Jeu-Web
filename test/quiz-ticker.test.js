@@ -30,6 +30,17 @@ test("un seul item : ligne fixe, rien a faire defiler", () => {
   assert.match(bloc, /items\.length === 1/);
 });
 
+// Constat joueur (11/08) : « a offert 150au rachat » — l'item de tape est un
+// conteneur flex, chaque run de texte devient un item anonyme et perd ses
+// espaces de bord quand FaText coupe la phrase autour du montant.
+test("les espaces autour du montant survivent au flex (white-space: pre)", () => {
+  const css = lire("styles.css");
+  const i = css.indexOf(".fa-tape-item {");
+  assert.ok(i > 0, ".fa-tape-item introuvable");
+  assert.match(css.slice(i, css.indexOf("}", i)), /white-space: pre/,
+    "sans pre, l'espace entre le montant et la suite de la phrase disparait");
+});
+
 test("le bandeau ne fabrique jamais de nom de joueur", () => {
   assert.ok(!/Joueur \$\{|nom \|\| "/.test(src), "aucun nom inventé côté client");
 });
