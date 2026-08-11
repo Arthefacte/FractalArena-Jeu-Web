@@ -11,7 +11,8 @@ const {
   useCallback
 } = React;
 const D = window.FA_DATA,
-  I18N = window.FA_I18N;
+  I18N = window.FA_I18N,
+  LOOP = window.FA_LOOP;
 const {
   FA_Ctx,
   useFA,
@@ -89,6 +90,24 @@ function nestProgress(flat) {
   }
   return out;
 }
+
+// Quotas quotidiens (combats gratuits + loops Or/Argent) : le serveur ne les tranche
+// qu'au /fight — GET /save renvoie les compteurs bruts, qui peuvent dater d'HIER. On
+// applique donc côté client la même règle que lui (minuit UTC, LOOP.resolveDaily)
+// pour que les quotas s'affichent disponibles sans devoir lancer un combat. /save
+// ignore ces champs (SERVER-OWNED) : aucun risque d'écrire une valeur fabriquée.
+function resolveDailyState(s, now) {
+  return LOOP.resolveDaily(s, now, D.ECON.FREE_FIGHTS_PER_DAY);
+}
+function dailyPatch(q) {
+  return {
+    freeFights: q.freeFights,
+    freeResetTs: q.freeResetTs,
+    loopSilverToday: q.loopSilverToday,
+    loopGoldToday: q.loopGoldToday,
+    loopResetTs: q.loopResetTs
+  };
+}
 function serverToState(save, addr, s) {
   // Le roster vient du serveur, toujours : il le génère à la création du compte
   // (accounts.js et server.js, « creatures SERVER-OWNED ») et le client ne doit pas
@@ -98,16 +117,20 @@ function serverToState(save, addr, s) {
   // Une collection vide est un symptôme lisible ; une équipe fantôme ne l'est pas.
   const roster = Array.isArray(save.creatures) ? save.creatures : [];
   const rosterIds = new Set(roster.map(b => b.id));
+  const q = resolveDailyState({
+    freeFights: save.free_fights_remaining ?? D.ECON.FREE_FIGHTS_PER_DAY,
+    freeResetTs: save.free_fights_reset_timestamp,
+    loopSilverToday: save.loop_silver_today ?? 0,
+    loopGoldToday: save.loop_gold_today ?? 0,
+    loopResetTs: save.loop_reset_timestamp
+  }, Date.now());
   return {
     ...s,
     wallet: addr,
     liquid: save.arte_liquid ?? 0,
     locked: save.arte_locked ?? 0,
-    freeFights: save.free_fights_remaining ?? D.ECON.FREE_FIGHTS_PER_DAY,
-    freeResetTs: Number(save.free_fights_reset_timestamp) || Date.now(),
+    ...dailyPatch(q),
     totalFights: save.total_combat_count ?? 0,
-    loopSilverToday: save.loop_silver_today ?? 0,
-    loopGoldToday: save.loop_gold_today ?? 0,
     ticketsSilver: save.tickets_silver ?? 0,
     ticketsGold: save.tickets_gold ?? 0,
     campaignProgress: nestProgress(save.campaign_progress),
@@ -178,6 +201,7 @@ function freshState() {
     totalFights: 0,
     loopSilverToday: 0,
     loopGoldToday: 0,
+    loopResetTs: Date.now(),
     ticketsSilver: 0,
     ticketsGold: 0,
     session: {
@@ -409,39 +433,36 @@ function App() {
     }, 1500);
   }, [g.liquid, g.locked, g.roster, g.freeFights, g.totalFights, g.ticketsSilver, g.ticketsGold, g.session.wins, g.session.losses, g.playerName, g.ordinalName, g.playerTitle, g.lang, g.authToken]);
 
-  // daily reset
+  // daily reset — même règle que le serveur (minuit UTC), plus 24 h glissantes :
+  // l'ancienne fenêtre laissait des loops épuisés à l'écran jusqu'au prochain combat.
   useEffect(() => {
     if (!g.wallet) return;
-    if (Date.now() - g.freeResetTs >= 86400000) {
-      setG(s => ({
-        ...s,
-        freeFights: D.ECON.FREE_FIGHTS_PER_DAY,
-        loopSilverToday: 0,
-        loopGoldToday: 0,
-        freeResetTs: Date.now()
-      }));
-    }
+    const q = resolveDailyState(g, Date.now());
+    if (q.changed) setG(s => ({
+      ...s,
+      ...dailyPatch(q)
+    }));
   }, [g.wallet]);
 
-  // Tic 1s UNIQUEMENT quand le compteur est à 0 : met à jour le compte à rebours
-  // et recrédite les combats en direct quand les 24 h sont écoulées (sans reload).
+  // Tic 1s UNIQUEMENT quand un quota est épuisé (combats gratuits à 0 ou un loop au
+  // cap) : met à jour le compte à rebours et recrédite en direct au passage de minuit
+  // UTC (sans reload).
   useEffect(() => {
-    if (!g.wallet || g.freeFights > 0) return;
+    const capped = g.loopSilverToday >= D.ECON.LOOP_SILVER_MAX || g.loopGoldToday >= D.ECON.LOOP_GOLD_MAX;
+    if (!g.wallet || g.freeFights > 0 && !capped) return;
     const t = setInterval(() => {
-      if (Date.now() - gRef.current.freeResetTs >= 86400000) {
+      const q = resolveDailyState(gRef.current, Date.now());
+      if (q.changed) {
         setG(s => ({
           ...s,
-          freeFights: D.ECON.FREE_FIGHTS_PER_DAY,
-          loopSilverToday: 0,
-          loopGoldToday: 0,
-          freeResetTs: Date.now()
+          ...dailyPatch(q)
         }));
       } else {
         setNow(Date.now());
       }
     }, 1000);
     return () => clearInterval(t);
-  }, [g.wallet, g.freeFights]);
+  }, [g.wallet, g.freeFights, g.loopSilverToday, g.loopGoldToday]);
 
   // Les deux soldes du bandeau annoncent leurs mouvements de la même façon.
   const liquidPop = useVariationSolde(g.liquid, !!g.wallet);
@@ -1442,9 +1463,11 @@ function App() {
             }
           }
           // Compteurs loop : SERVER-OWNED (plafond + reset quotidien tranchés par le
-          // serveur, infalsifiables). On reflète simplement les valeurs renvoyées.
+          // serveur, infalsifiables). On reflète simplement les valeurs renvoyées,
+          // et on date le reset local : le serveur vient de trancher pour aujourd'hui.
           if (!free && data.loop_silver_today !== undefined) patch.loopSilverToday = data.loop_silver_today;
           if (!free && data.loop_gold_today !== undefined) patch.loopGoldToday = data.loop_gold_today;
+          if (!free && data.loop_silver_today !== undefined) patch.loopResetTs = Date.now();
           return patch;
         });
         return {
