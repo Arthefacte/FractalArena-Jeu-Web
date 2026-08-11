@@ -764,7 +764,7 @@ function Fosse() {
       fontSize: 12,
       color: g.freeFights > 0 ? "var(--success)" : "var(--text-dim)"
     }
-  }, g.freeFights > 0 ? I18N.t("AR_FREE_LEFT", g.freeFights) : I18N.t("AR_FREE_NEXT", fmtFreeCountdown(g.freeResetTs + 86400000 - Date.now())))), /*#__PURE__*/React.createElement("div", {
+  }, g.freeFights > 0 ? I18N.t("AR_FREE_LEFT", g.freeFights) : I18N.t("AR_FREE_NEXT", fmtFreeCountdown(86400000 - Date.now() % 86400000)))), /*#__PURE__*/React.createElement("div", {
     className: "flex gap8 arena-bet-row"
   }, /*#__PURE__*/React.createElement("button", {
     className: cx("btn sm", betTier === "" && "on"),

@@ -35,7 +35,32 @@
     return solvent ? { go: true } : { go: false, reason: "funds" };
   }
 
-  const api = { loopDecision };
+  // Miroir CLIENT de resolveLoopBet/resolveFreeFights (fight.js serveur) : les quotas
+  // quotidiens se réinitialisent à MINUIT UTC (resetTs antérieur au jour courant →
+  // compteurs remis à neuf). Le serveur ne tranche qu'au /fight suivant et GET /save
+  // renvoie les compteurs bruts d'hier — sans ce calcul, l'écran affiche des loops
+  // épuisés jusqu'au prochain combat. Pur AFFICHAGE/état local : /save ignore ces
+  // champs (SERVER-OWNED), le serveur refera le même calcul, infalsifiable, au combat.
+  const ONE_DAY_MS = 86_400_000;
+  function resolveDaily(s, now, freeMax) {
+    const dayStart = now - (now % ONE_DAY_MS);
+    const freeStale = (Number(s.freeResetTs) || 0) < dayStart;
+    const loopStale = (Number(s.loopResetTs) || 0) < dayStart;
+    const freeFights = freeStale ? freeMax : Math.min(Math.max(s.freeFights | 0, 0), freeMax);
+    const loopSilverToday = loopStale ? 0 : s.loopSilverToday | 0;
+    const loopGoldToday = loopStale ? 0 : s.loopGoldToday | 0;
+    return {
+      changed: freeStale || loopStale || freeFights !== s.freeFights,
+      freeFights,
+      freeResetTs: freeStale ? now : Number(s.freeResetTs) || 0,
+      loopSilverToday,
+      loopGoldToday,
+      loopResetTs: loopStale ? now : Number(s.loopResetTs) || 0,
+      nextResetAt: dayStart + ONE_DAY_MS,
+    };
+  }
+
+  const api = { loopDecision, resolveDaily };
   if (typeof window !== "undefined") window.FA_LOOP = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })();
