@@ -1001,6 +1001,28 @@ input { font-family: var(--font-mono); }
 .bb-sub { color: var(--text-dim); padding-left: 28px; }
 .bb-sub b { color: var(--success); font-weight: 700; }
 
+/* ——— Rangée DEX : prix spot InSwap + accès aux rachats vérifiés. ——— */
+.bb-dex {
+  display: flex; align-items: center; gap: 10px;
+  margin-top: 3px; font-size: 10.5px; letter-spacing: 0.04em;
+}
+.bb-dex-prix { color: var(--gold); font-weight: 700; white-space: nowrap; }
+.bb-dex-btn {
+  background: none; border: none; padding: 0; cursor: pointer;
+  font-family: var(--font-mono); font-size: 10.5px;
+  color: var(--elec); white-space: nowrap;
+}
+.bb-dex-btn::after { content: " ↗"; }
+.bb-dex-btn:hover { text-decoration: underline; }
+.bb-dex-liste {
+  max-height: 260px; overflow-y: auto;
+  border: 1px solid var(--line-soft); border-radius: 6px; padding: 6px 10px;
+}
+.bb-dex-item {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; font-size: 12px; padding: 3px 0;
+}
+
 /* ——— Tape boursière (#7 header vivant) : vraies données qui défilent. ———
    Transform pur sur une piste dupliquée (translateX -50 % en boucle = couture
    invisible). Leçon Mali-G68 : jamais de filtre ni de layout animé ici. */
