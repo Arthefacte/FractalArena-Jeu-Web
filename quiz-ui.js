@@ -33,17 +33,28 @@
     return Math.max(0, Math.ceil((finAt - now) / 1000));
   }
 
-  // Le bandeau montre un don réel, sinon le cumul communautaire. Jamais de faux
-  // joueur : un bandeau qui invente du trafic se repère tout de suite.
-  function tickerLine(data, t) {
-    if (!data) return "";
-    const dons = data.dons || [];
-    if (dons.length > 0) return t("QUIZ_TICKER_DON", dons[0].nom, dons[0].amount);
-    if (data.total > 0) return t("QUIZ_TICKER_TOTAL", data.total);
-    return "";
+  // La matière de la tape des dons. L'ancien tickerLine figeait le bandeau sur
+  // dons[0] : la ligne ne changeait jamais entre deux dons (constat joueur,
+  // 11/08). Ici : dons agrégés PAR DONATEUR (somme, ordre de première
+  // apparition — le serveur renvoie les plus récents d'abord), au plus 8, puis
+  // le cumul communautaire en fin de cycle. Jamais de faux joueur : un bandeau
+  // qui invente du trafic se repère tout de suite.
+  function tickerItems(data) {
+    if (!data) return [];
+    const parNom = new Map();
+    for (const d of data.dons || []) {
+      const nom = d && typeof d.nom === "string" ? d.nom : "";
+      const amount = Number(d && d.amount);
+      if (!nom || !Number.isFinite(amount) || amount <= 0) continue;
+      parNom.set(nom, (parNom.get(nom) || 0) + amount);
+    }
+    const items = [...parNom.entries()].slice(0, 8)
+      .map(([nom, amount]) => ({ type: "don", nom, amount }));
+    if (Number(data.total) > 0) items.push({ type: "total", total: Number(data.total) });
+    return items;
   }
 
-  const api = { QUIZ_INTERVAL_MS, QUIZ_TOAST_MS, shouldAsk, nextDueAt, tickerLine, restantSecondes };
+  const api = { QUIZ_INTERVAL_MS, QUIZ_TOAST_MS, shouldAsk, nextDueAt, tickerItems, restantSecondes };
   if (typeof window === "undefined") { global.window = global.window || {}; }
   window.FA_QUIZ_UI = api;
 })();
