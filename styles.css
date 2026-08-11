@@ -1176,3 +1176,10 @@ input { font-family: var(--font-mono); }
   color: var(--text-dim);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+/* La tape des dons occupe le bandeau seule : pas de marge héritée de la tape
+   boursière, et elle reste visible sur mobile (elle EST le contenu du bandeau,
+   la règle mobile de .fa-tape ne doit pas l'éteindre). */
+.quiz-ticker .fa-tape { margin-top: 0; }
+@media (max-width: 640px) {
+  .fa-tape.toujours { display: block; }
+}

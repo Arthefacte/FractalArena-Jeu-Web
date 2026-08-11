@@ -244,9 +244,15 @@ function QuizToast() {
 
 // ---- le bandeau des dons ----
 
-// Une ligne, un don réel — ou, à défaut, le cumul communautaire. tickerLine()
-// tranche (quiz-ui.js) : le composant ne met rien en forme lui-même, et
-// n'invente jamais de joueur pour remplir la barre.
+function texteDon(it) {
+  return it.type === "don" ? I18N.t("QUIZ_TICKER_DON", it.nom, it.amount) : I18N.t("QUIZ_TICKER_TOTAL", it.total);
+}
+
+// Les dons réels — agrégés par donateur — défilent comme la tape boursière du
+// dessus (mêmes classes .fa-tape : piste dupliquée, couture invisible), avec le
+// cumul communautaire en fin de cycle. tickerItems() tranche (quiz-ui.js) : le
+// composant n'invente jamais de joueur pour remplir la barre. Un seul item
+// n'aurait rien à faire défiler : il s'affiche en ligne fixe, comme avant.
 function QuizTicker() {
   const {
     actions
@@ -266,16 +272,35 @@ function QuizTicker() {
       clearInterval(id);
     };
   }, [actions]);
-  const ligne = QUIZ.tickerLine(data, (k, ...a) => I18N.t(k, ...a));
+  const items = QUIZ.tickerItems(data);
   // Pas de don, pas de cumul : pas de barre. Une barre vide serait un bandeau
   // qui occupe l'écran pour ne rien dire.
-  if (!ligne) return null;
+  if (!items.length) return null;
+  if (items.length === 1) {
+    return /*#__PURE__*/React.createElement("div", {
+      className: "quiz-ticker"
+    }, /*#__PURE__*/React.createElement(FaText, {
+      text: texteDon(items[0]),
+      s: 11
+    }));
+  }
+  const piste = cle => /*#__PURE__*/React.createElement("span", {
+    className: "fa-tape-run",
+    "aria-hidden": cle === "b" ? "true" : undefined
+  }, items.map((it, i) => /*#__PURE__*/React.createElement("span", {
+    className: "fa-tape-item",
+    key: cle + i
+  }, /*#__PURE__*/React.createElement(FaText, {
+    text: texteDon(it),
+    s: 10
+  }))));
   return /*#__PURE__*/React.createElement("div", {
     className: "quiz-ticker"
-  }, /*#__PURE__*/React.createElement(FaText, {
-    text: ligne,
-    s: 11
-  }));
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "fa-tape toujours"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "fa-tape-track"
+  }, piste("a"), piste("b"))));
 }
 Object.assign(window, {
   QuizToast,

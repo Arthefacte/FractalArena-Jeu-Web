@@ -6,7 +6,7 @@ globalThis.window = {};
 require("../quiz-ui.js");
 const {
   QUIZ_INTERVAL_MS, QUIZ_TOAST_MS,
-  shouldAsk, nextDueAt, tickerLine, restantSecondes,
+  shouldAsk, nextDueAt, tickerItems, restantSecondes,
 } = globalThis.window.FA_QUIZ_UI;
 
 const base = { lastAskAt: 0, toastOpen: false, busy: false, wallet: "w1" };
@@ -61,19 +61,39 @@ test("la bulle se ferme avant l'expiration de la fenetre de don du serveur", () 
   assert.ok(QUIZ_TOAST_MS < 60000, "au-dela de 60 s, offrir echoue cote serveur");
 });
 
-test("le ticker montre les dons quand il y en a", () => {
-  const t = (k, ...a) => (k === "QUIZ_TICKER_DON" ? `${a[0]} a offert ${a[1]} FA` : `total ${a[0]}`);
-  assert.strictEqual(tickerLine({ dons: [{ nom: "Kevin", amount: 10 }], total: 500 }, t),
-    "Kevin a offert 10 FA");
+// ---- tickerItems : la matière de la tape des dons (remplace tickerLine, qui
+// figeait le bandeau sur dons[0] — constat joueur du 11/08). Items structurés,
+// le rendu (quiz.jsx) formate via i18n.
+
+test("les dons d'un meme joueur s'agregent (somme), ordre de premiere apparition", () => {
+  const items = tickerItems({ dons: [
+    { nom: "Kevin", amount: 10 }, { nom: "Ana", amount: 20 }, { nom: "Kevin", amount: 30 },
+  ], total: 0 });
+  assert.deepStrictEqual(items, [
+    { type: "don", nom: "Kevin", amount: 40 },
+    { type: "don", nom: "Ana", amount: 20 },
+  ]);
 });
 
-test("aucun don : cumul communautaire, jamais un faux joueur", () => {
-  const t = (k, ...a) => (k === "QUIZ_TICKER_DON" ? `${a[0]} a offert ${a[1]} FA` : `total ${a[0]}`);
-  assert.strictEqual(tickerLine({ dons: [], total: 12340 }, t), "total 12340");
+test("le cumul communautaire ferme le cycle quand il est positif", () => {
+  const items = tickerItems({ dons: [{ nom: "Kevin", amount: 10 }], total: 500 });
+  assert.deepStrictEqual(items[items.length - 1], { type: "total", total: 500 });
 });
 
-test("donnees absentes : chaine vide, jamais une exception", () => {
-  const t = () => "x";
-  assert.strictEqual(tickerLine(null, t), "");
-  assert.strictEqual(tickerLine({ dons: [], total: 0 }, t), "");
+test("aucun don : le cumul seul, jamais un faux joueur", () => {
+  assert.deepStrictEqual(tickerItems({ dons: [], total: 12340 }),
+    [{ type: "total", total: 12340 }]);
+});
+
+test("au plus 8 donateurs sur la tape", () => {
+  const dons = Array.from({ length: 12 }, (_, i) => ({ nom: "J" + i, amount: 5 }));
+  const items = tickerItems({ dons, total: 0 });
+  assert.strictEqual(items.length, 8);
+});
+
+test("donnees absentes ou degenerees : liste vide, jamais une exception", () => {
+  assert.deepStrictEqual(tickerItems(null), []);
+  assert.deepStrictEqual(tickerItems({ dons: [], total: 0 }), []);
+  assert.deepStrictEqual(tickerItems({ dons: [{ nom: "", amount: 10 }, { nom: "Ana", amount: "x" }], total: 0 }),
+    [], "nom vide ou montant non numerique : ignores, pas affiches");
 });
