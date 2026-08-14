@@ -2099,13 +2099,13 @@ function Header({ liquidPop, lockedPop }) {
   );
 }
 
-// Un logement de la nav mobile : socket hexagonal à ratio fixe (jamais étiré —
-// c'est la tranche métallique du fond qui absorbe la largeur, pas l'hexagone).
+// Un logement de la nav mobile : socket hexagonal à ratio fixe, entièrement
+// dessiné en CSS (clip-path + dégradés) — aucun bitmap, rien qui puisse
+// s'étirer ou pixelliser.
 function MnavSlot({ active, icon, glyph, label, badge, onClick }) {
   return (
     <button className={cx("fa-mnav-slot", active && "on")} onClick={onClick}>
       <span className="fa-mnav-socket">
-        <img className="fa-mnav-socket-img" src="assets/ui/socket.webp?v=151" alt="" aria-hidden="true" draggable="false" />
         {icon
           ? <img className="fa-mnav-ico" src={icon} alt="" aria-hidden="true" draggable="false" />
           : <span className="fa-mnav-glyph" aria-hidden="true">{glyph}</span>}
@@ -2144,7 +2144,6 @@ function Nav() {
         ))}
       </nav>
       <nav className="fa-mnav">
-        <span className="fa-mnav-metal" aria-hidden="true" />
         <span className="fa-mnav-liseret" aria-hidden="true" />
         {MAIN.map((k) => {
           const key = tabs.find(([t]) => t === k)[1];

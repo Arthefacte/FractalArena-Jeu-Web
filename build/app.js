@@ -3685,8 +3685,9 @@ function Header({
   }, poolsOpen ? "▲" : "▼"))));
 }
 
-// Un logement de la nav mobile : socket hexagonal à ratio fixe (jamais étiré —
-// c'est la tranche métallique du fond qui absorbe la largeur, pas l'hexagone).
+// Un logement de la nav mobile : socket hexagonal à ratio fixe, entièrement
+// dessiné en CSS (clip-path + dégradés) — aucun bitmap, rien qui puisse
+// s'étirer ou pixelliser.
 function MnavSlot({
   active,
   icon,
@@ -3700,13 +3701,7 @@ function MnavSlot({
     onClick: onClick
   }, /*#__PURE__*/React.createElement("span", {
     className: "fa-mnav-socket"
-  }, /*#__PURE__*/React.createElement("img", {
-    className: "fa-mnav-socket-img",
-    src: "assets/ui/socket.webp?v=151",
-    alt: "",
-    "aria-hidden": "true",
-    draggable: "false"
-  }), icon ? /*#__PURE__*/React.createElement("img", {
+  }, icon ? /*#__PURE__*/React.createElement("img", {
     className: "fa-mnav-ico",
     src: icon,
     alt: "",
@@ -3765,9 +3760,6 @@ function Nav() {
   }, areneBadge)))), /*#__PURE__*/React.createElement("nav", {
     className: "fa-mnav"
   }, /*#__PURE__*/React.createElement("span", {
-    className: "fa-mnav-metal",
-    "aria-hidden": "true"
-  }), /*#__PURE__*/React.createElement("span", {
     className: "fa-mnav-liseret",
     "aria-hidden": "true"
   }), MAIN.map(k => {
