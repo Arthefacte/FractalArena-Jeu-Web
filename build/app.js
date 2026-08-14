@@ -3455,7 +3455,7 @@ function App() {
   }), g.wallet && /*#__PURE__*/React.createElement(LockedBanner, null), g.wallet && /*#__PURE__*/React.createElement(window.PwaInstallBanner, {
     prompt: pwaPrompt,
     onInstalled: () => setPwaPrompt(null)
-  }), /*#__PURE__*/React.createElement(BuybackTicker, null), /*#__PURE__*/React.createElement(window.QuizTicker, null), /*#__PURE__*/React.createElement(Nav, null), /*#__PURE__*/React.createElement("div", {
+  }), /*#__PURE__*/React.createElement(PoolsFold, null, /*#__PURE__*/React.createElement(BuybackTicker, null), /*#__PURE__*/React.createElement(window.QuizTicker, null)), /*#__PURE__*/React.createElement(Nav, null), /*#__PURE__*/React.createElement("div", {
     className: "view-anim",
     key: g.view
   }, /*#__PURE__*/React.createElement(View, null))), /*#__PURE__*/React.createElement(ChatFab, null), /*#__PURE__*/React.createElement(RoomFab, null), /*#__PURE__*/React.createElement(Toasts, {
@@ -3531,6 +3531,40 @@ function ChipDelta({
     className: cx("chip-delta", delta > 0 ? "up" : "down")
   }, delta > 0 ? "+" : "−", fmt(Math.abs(delta)));
 }
+
+// Le sélecteur de langue vit à deux endroits : header (desktop) et bottom
+// sheet « Plus » (mobile) — même rendu, extrait pour ne pas diverger.
+function LangSwitch() {
+  const {
+    g,
+    actions
+  } = useFA();
+  return /*#__PURE__*/React.createElement("div", {
+    className: "lang-switch"
+  }, [["FR", "FR"], ["EN", "EN"], ["ZH", "中文"]].map(([code, lbl]) => /*#__PURE__*/React.createElement("button", {
+    key: code,
+    className: g.lang === code ? "on" : "",
+    onClick: () => actions.setLang(code)
+  }, lbl)));
+}
+
+// Coquille mobile : le bandeau économie (jauges, cours DEX, tape, quiz) se
+// replie derrière le header, le caret du Header pilote. L'état voyage par
+// événement — Header et ce pli sont frères, et App a des early-returns qui
+// interdisent d'y ajouter un hook sans risquer l'ordre des hooks.
+function PoolsFold({
+  children
+}) {
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    const h = e => setOpen(!!e.detail);
+    window.addEventListener("fa:pools-open", h);
+    return () => window.removeEventListener("fa:pools-open", h);
+  }, []);
+  return /*#__PURE__*/React.createElement("div", {
+    className: cx("fa-pools", open && "open")
+  }, children);
+}
 function Header({
   liquidPop,
   lockedPop
@@ -3539,6 +3573,23 @@ function Header({
     g,
     actions
   } = useFA();
+  // Mobile : les deux chats deviennent des boutons du header (les bulles
+  // flottantes recouvraient stats et boutons « Réclamer ») ; le badge de
+  // non-lus du salon arrive par événement depuis RoomFab.
+  const [poolsOpen, setPoolsOpen] = useState(false);
+  const [roomUnread, setRoomUnread] = useState(0);
+  useEffect(() => {
+    const h = e => setRoomUnread(e.detail || 0);
+    window.addEventListener("fa:room-unread", h);
+    return () => window.removeEventListener("fa:room-unread", h);
+  }, []);
+  const togglePools = () => setPoolsOpen(o => {
+    const n = !o;
+    window.dispatchEvent(new CustomEvent("fa:pools-open", {
+      detail: n
+    }));
+    return n;
+  });
   return /*#__PURE__*/React.createElement("header", {
     className: "hdr"
   }, window.Emblem3D ? /*#__PURE__*/React.createElement("span", {
@@ -3601,36 +3652,97 @@ function Header({
     }
   }), /*#__PURE__*/React.createElement("b", {
     className: "chip-amount"
-  }, fmt(g.locked)), " ", I18N.t("LOCKED_CHIP"), /*#__PURE__*/React.createElement(ChipDelta, {
+  }, fmt(g.locked)), /*#__PURE__*/React.createElement("span", {
+    className: "chip-lbl"
+  }, " ", I18N.t("LOCKED_CHIP")), /*#__PURE__*/React.createElement(ChipDelta, {
     delta: lockedPop.delta
-  })), /*#__PURE__*/React.createElement("div", {
-    className: "lang-switch"
-  }, [["FR", "FR"], ["EN", "EN"], ["ZH", "中文"]].map(([code, lbl]) => /*#__PURE__*/React.createElement("button", {
-    key: code,
-    className: g.lang === code ? "on" : "",
-    onClick: () => actions.setLang(code)
-  }, lbl))), /*#__PURE__*/React.createElement("button", {
+  })), /*#__PURE__*/React.createElement(LangSwitch, null), /*#__PURE__*/React.createElement("button", {
     className: "btn ghost sm tut-help",
     title: I18N.t("TUT_HELP"),
     "aria-label": I18N.t("TUT_HELP"),
     onClick: () => window.dispatchEvent(new Event("fa-open-tutorial"))
-  }, "?")));
+  }, "?"), /*#__PURE__*/React.createElement("div", {
+    className: "hdr-mtools"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "hdr-mbtn",
+    "aria-label": I18N.t("CHAT_FAB_LABEL"),
+    onClick: () => window.dispatchEvent(new Event("fa:open-chat"))
+  }, /*#__PURE__*/React.createElement("span", {
+    "aria-hidden": "true"
+  }, "\uD83D\uDCAC")), /*#__PURE__*/React.createElement("button", {
+    className: "hdr-mbtn",
+    "aria-label": I18N.t("ROOM_FAB_LABEL"),
+    onClick: () => window.dispatchEvent(new Event("fa:open-room"))
+  }, /*#__PURE__*/React.createElement("span", {
+    "aria-hidden": "true"
+  }, "\uD83D\uDC65"), roomUnread > 0 && /*#__PURE__*/React.createElement("span", {
+    className: "hdr-mbadge"
+  }, roomUnread > 9 ? "9+" : roomUnread)), /*#__PURE__*/React.createElement("button", {
+    className: cx("hdr-mbtn", "hdr-mcaret", poolsOpen && "on"),
+    "aria-label": I18N.t("BB_TICK_TITLE"),
+    "aria-expanded": poolsOpen,
+    onClick: togglePools
+  }, poolsOpen ? "▲" : "▼"))));
+}
+
+// Un logement de la nav mobile : socket hexagonal à ratio fixe (jamais étiré —
+// c'est la tranche métallique du fond qui absorbe la largeur, pas l'hexagone).
+function MnavSlot({
+  active,
+  icon,
+  glyph,
+  label,
+  badge,
+  onClick
+}) {
+  return /*#__PURE__*/React.createElement("button", {
+    className: cx("fa-mnav-slot", active && "on"),
+    onClick: onClick
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "fa-mnav-socket"
+  }, /*#__PURE__*/React.createElement("img", {
+    className: "fa-mnav-socket-img",
+    src: "assets/ui/socket.webp?v=151",
+    alt: "",
+    "aria-hidden": "true",
+    draggable: "false"
+  }), icon ? /*#__PURE__*/React.createElement("img", {
+    className: "fa-mnav-ico",
+    src: icon,
+    alt: "",
+    "aria-hidden": "true",
+    draggable: "false"
+  }) : /*#__PURE__*/React.createElement("span", {
+    className: "fa-mnav-glyph",
+    "aria-hidden": "true"
+  }, glyph), badge > 0 && /*#__PURE__*/React.createElement("span", {
+    className: "fa-mnav-badge"
+  }, badge)), /*#__PURE__*/React.createElement("span", {
+    className: "fa-mnav-label"
+  }, label));
 }
 function Nav() {
   const {
     g,
     actions
   } = useFA();
+  // Mobile : 4 onglets principaux + « Plus » (bottom sheet avec le reste).
+  const [sheetOpen, setSheetOpen] = useState(false);
   const tabs = [["team", "NAV_TEAM"], ["fosse", "NAV_FOSSE"], ["arene", "NAV_ARENE"], ["campaign", "NAV_CAMPAIGN"], ["tour", "NAV_TOUR"], ["quests", "NAV_QUESTS"], ["forge", "NAV_FORGE"], ["market", "NAV_MARKET"], ["wallet", "NAV_WALLET"], ["boosts", "NAV_BOOSTS"], ["perso", "NAV_PERSO"], ["leaderboard", "NAV_LEADERBOARD"], ["options", "NAV_OPTIONS"]];
-  return /*#__PURE__*/React.createElement("nav", {
+  const MAIN = ["team", "fosse", "arene", "campaign"];
+  const more = tabs.filter(([k]) => !MAIN.includes(k));
+  const go = k => {
+    if (window.FA_SFX) window.FA_SFX.play("tab");
+    actions.setView(k);
+    setSheetOpen(false);
+  };
+  const areneBadge = g.pvp && g.pvp.attacksUnseen > 0 ? g.pvp.attacksUnseen : 0;
+  return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("nav", {
     className: "nav"
   }, tabs.map(([k, key]) => /*#__PURE__*/React.createElement("button", {
     key: k,
     className: cx("nav-tab", g.view === k && "on"),
-    onClick: () => {
-      if (window.FA_SFX) window.FA_SFX.play("tab");
-      actions.setView(k);
-    }
+    onClick: () => go(k)
   }, /*#__PURE__*/React.createElement("img", {
     className: "nav-icon",
     src: `assets/nav-icons/${k}.png?v=74`,
@@ -3639,7 +3751,7 @@ function Nav() {
     draggable: "false"
   }), /*#__PURE__*/React.createElement("span", {
     className: "nav-label"
-  }, I18N.t(key)), k === "arene" && g.pvp && g.pvp.attacksUnseen > 0 && /*#__PURE__*/React.createElement("span", {
+  }, I18N.t(key)), k === "arene" && areneBadge > 0 && /*#__PURE__*/React.createElement("span", {
     className: "nav-badge",
     style: {
       marginLeft: 4,
@@ -3650,7 +3762,66 @@ function Nav() {
       padding: "0 5px",
       fontWeight: 700
     }
-  }, g.pvp.attacksUnseen))));
+  }, areneBadge)))), /*#__PURE__*/React.createElement("nav", {
+    className: "fa-mnav"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "fa-mnav-metal",
+    "aria-hidden": "true"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "fa-mnav-liseret",
+    "aria-hidden": "true"
+  }), MAIN.map(k => {
+    const key = tabs.find(([t]) => t === k)[1];
+    return /*#__PURE__*/React.createElement(MnavSlot, {
+      key: k,
+      active: g.view === k,
+      icon: `assets/nav-icons/${k}.png?v=74`,
+      label: I18N.t(key),
+      badge: k === "arene" ? areneBadge : 0,
+      onClick: () => go(k)
+    });
+  }), /*#__PURE__*/React.createElement(MnavSlot, {
+    active: more.some(([k]) => g.view === k),
+    glyph: "\u2630",
+    label: I18N.t("NAV_MORE"),
+    onClick: () => {
+      if (window.FA_SFX) window.FA_SFX.play("tab");
+      setSheetOpen(true);
+    }
+  })), sheetOpen && /*#__PURE__*/React.createElement("div", {
+    className: "fa-sheet-overlay",
+    onClick: () => setSheetOpen(false)
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "fa-sheet",
+    onClick: e => e.stopPropagation()
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "fa-sheet-head"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "fa-sheet-eyebrow"
+  }, I18N.t("NAV_MORE")), /*#__PURE__*/React.createElement("button", {
+    className: "fa-sheet-close",
+    onClick: () => setSheetOpen(false),
+    "aria-label": I18N.t("CLOSE")
+  }, "\u2715")), /*#__PURE__*/React.createElement("div", {
+    className: "fa-sheet-grid"
+  }, more.map(([k, key]) => /*#__PURE__*/React.createElement("button", {
+    key: k,
+    className: cx("fa-sheet-item", g.view === k && "on"),
+    onClick: () => go(k)
+  }, /*#__PURE__*/React.createElement("img", {
+    src: `assets/nav-icons/${k}.png?v=74`,
+    alt: "",
+    "aria-hidden": "true",
+    draggable: "false"
+  }), /*#__PURE__*/React.createElement("span", null, I18N.t(key))))), /*#__PURE__*/React.createElement("div", {
+    className: "fa-sheet-foot"
+  }, /*#__PURE__*/React.createElement(LangSwitch, null), /*#__PURE__*/React.createElement("button", {
+    className: "btn ghost sm",
+    onClick: () => {
+      setSheetOpen(false);
+      window.dispatchEvent(new Event("fa-open-tutorial"));
+    }
+  }, "? ", I18N.t("TUT_HELP"))))));
 }
 function Onboarding({
   onAccountCreated

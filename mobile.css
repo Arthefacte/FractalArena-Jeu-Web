@@ -8,40 +8,202 @@
   .container,
   .container.wide { max-width: 100%; padding: 18px 14px 104px; }
 
-  /* ---- Header ---- */
-  .hdr { gap: 10px; padding: 9px 13px; }
-  .hdr-logo { width: 36px; height: 36px; }
-  .hdr-title { font-size: 15px; letter-spacing: 2.5px; }
-  .hdr-sub { display: none; }
-  .chip { font-size: 11.5px; padding: 6px 9px; gap: 5px; }
-  .hdr .lang-switch button { padding: 5px 6px; font-size: 10.5px; }
+  /* ============================================================
+     Coquille v151 — header une ligne sur plaque 9-slice.
+     La plaque ne s'étire JAMAIS sur ses deux axes : border-image
+     découpe les bords (slices 10 12 sur l'image ×0,5), seul le
+     centre plat absorbe largeur et safe-area.
+     ============================================================ */
+  .hdr {
+    gap: clamp(6px, 2vw, 12px);
+    padding: 0 clamp(4px, 1.6vw, 8px);
+    padding-top: env(safe-area-inset-top, 0px);
+    min-height: clamp(48px, 13vw, 56px);
+    border-bottom: none;
+    border-style: solid; border-color: transparent;
+    border-width: clamp(6px, 2vw, 9px) clamp(10px, 3vw, 14px);
+    border-image: url("assets/ui/plate-header.webp?v=151") 10 12 fill stretch;
+    background: linear-gradient(180deg, rgba(3,6,14,.2), rgba(3,6,14,.4));
+    backdrop-filter: none;
+    box-shadow: none;
+  }
+  .hdr-logo { width: clamp(26px, 7.4vw, 32px); height: clamp(26px, 7.4vw, 32px); }
+  .hdr-word { display: none; }
+  .chip { font-size: clamp(10px, 2.9vw, 12px); padding: 3px clamp(5px, 1.8vw, 8px); gap: 4px; white-space: nowrap; }
+  .chip img { width: 13px; height: 13px; }
+  /* Une ligne de header : les chips se réduisent à icône + montant */
+  .chip .chip-lbl { display: none; }
+  /* Le badge LOCAL (dev) a un style inline : display gagne quand même */
+  .hdr .pill { display: none; }
+  .hdr .wrap { min-width: 0; }
+  .hdr .wrap { flex-wrap: nowrap; gap: 5px; }
+  /* Langue et aide migrent dans le bottom sheet « Plus » */
+  .hdr .lang-switch { display: none; }
+  .hdr .tut-help { display: none; }
+  .hdr-mtools { display: flex; align-items: center; gap: 4px; }
+  .hdr-mbtn {
+    position: relative;
+    width: clamp(30px, 8.6vw, 36px); height: clamp(30px, 8.6vw, 36px);
+    display: grid; place-items: center; padding: 0;
+    background: var(--bg-panel); border: 1px solid var(--line);
+    color: var(--text-dim); font-size: 14px; cursor: pointer;
+  }
+  .hdr-mbtn.hdr-mcaret { color: var(--elec); font-size: 11px; }
+  .hdr-mbadge {
+    position: absolute; top: -5px; right: -5px;
+    min-width: 16px; height: 16px; padding: 0 3px;
+    display: grid; place-items: center;
+    background: var(--alert); color: #fff;
+    font-size: 9px; font-weight: 700; border-radius: 8px;
+  }
 
-  /* ---- Bottom tab bar (native pattern) ---- */
-  .nav {
-    position: fixed; top: auto; bottom: 0; left: 0; right: 0;
-    justify-content: flex-start; gap: 0; flex-wrap: nowrap;
-    overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
-    padding: 0 2px; padding-bottom: env(safe-area-inset-bottom, 0);
-    border-top: 1px solid var(--line); border-bottom: none;
-    background: linear-gradient(0deg, rgba(7,10,18,0.98), rgba(7,10,18,0.92));
-    box-shadow: 0 -6px 24px rgba(0,0,0,0.5);
+  /* ---- Pli des pools : replié derrière le header, tap sur le caret ---- */
+  .fa-pools { display: none; }
+  .fa-pools.open {
+    display: block;
+    background: #070c16 url("assets/ui/plate-hex.webp?v=151") center / 260px repeat;
+    box-shadow: inset 0 0 0 2000px rgba(4, 8, 16, .55);
+    border-top: 1px solid rgba(247, 147, 26, .28);
+    border-bottom: 1px solid rgba(247, 147, 26, .26);
+    animation: faSheetUp .22s ease-out;
   }
-  .nav::-webkit-scrollbar { display: none; }
-  .nav-tab {
-    flex: 0 0 auto; min-width: 72px; padding: 7px 10px 6px;
-    flex-direction: column; gap: 3px;
-    font-size: 10px; letter-spacing: 0.4px; text-align: center;
-    white-space: nowrap;
+  .fa-pools.open .bb-ticker,
+  .fa-pools.open .quiz-ticker { background: transparent; border-bottom: none; }
+  .fa-pools.open .bb-label { display: inline; }
+  /* Dans le panneau déplié, la tape se lit en continu */
+  .fa-pools.open .fa-tape { display: block; }
+
+  /* ---- Nav basse : 5 logements hexagonaux sur tranche métallique ----
+     Les sockets sont des éléments isolés à ratio fixe (196/224) — la
+     largeur est absorbée par la tranche répétée, jamais par l'hexagone. */
+  .nav { display: none; }
+  .fa-mnav {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 45;
+    display: grid; grid-template-columns: repeat(5, minmax(0, 1fr));
+    background: #070b12;
+    border-top: 1px solid rgba(247, 147, 26, .45);
+    box-shadow: inset 0 1px 0 rgba(247, 147, 26, .28), inset 0 10px 20px rgba(0, 0, 0, .55), 0 -6px 24px rgba(0, 0, 0, .5);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
-  .nav-icon { width: 26px; height: 26px; }
-  .nav-tab::after { top: 0; bottom: auto; left: 22%; right: 22%; }
+  .fa-mnav-metal {
+    position: absolute; top: 0; left: 0; right: 0; bottom: env(safe-area-inset-bottom, 0px);
+    background: url("assets/ui/nav-metal.webp?v=151") center / auto 100% repeat-x;
+    opacity: .85; pointer-events: none;
+  }
+  .fa-mnav-liseret {
+    position: absolute; top: 1px; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(247, 147, 26, .65) 18%, rgba(247, 147, 26, .65) 82%, transparent);
+    pointer-events: none;
+  }
+  .fa-mnav-slot {
+    position: relative; z-index: 1;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: clamp(2px, .8vw, 4px);
+    min-height: clamp(62px, 17.5vw, 72px);
+    padding: clamp(8px, 2.4vw, 11px) 2px clamp(4px, 1.4vw, 6px);
+    min-width: 0; background: none; border: none; cursor: pointer;
+  }
+  .fa-mnav-socket {
+    position: relative; display: grid; place-items: center;
+    width: clamp(30px, 8.6vw, 40px); aspect-ratio: 196 / 224; flex: none;
+  }
+  .fa-mnav-socket-img {
+    position: absolute; inset: -6%; width: 112%; height: 112%; object-fit: contain;
+    filter: brightness(.62) saturate(.75);
+  }
+  .fa-mnav-slot.on .fa-mnav-socket-img {
+    filter: brightness(1.18) saturate(1.2) drop-shadow(0 0 7px rgba(247, 147, 26, .55));
+  }
+  .fa-mnav-socket::after {
+    content: ""; position: absolute; inset: 14%;
+    clip-path: polygon(0 50%, 25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%);
+    background: radial-gradient(circle at 50% 45%, rgba(255, 170, 64, .55), rgba(200, 80, 10, .32) 70%, transparent 92%);
+    box-shadow: 0 0 12px rgba(247, 147, 26, .5);
+    opacity: 0; transition: opacity .15s;
+  }
+  .fa-mnav-slot.on .fa-mnav-socket::after { opacity: 1; }
+  .fa-mnav-ico {
+    position: relative; z-index: 1; width: 58%; height: auto;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .8));
+  }
+  .fa-mnav-glyph {
+    position: relative; z-index: 1;
+    font-family: var(--font-mono); font-size: clamp(13px, 3.6vw, 15px);
+    color: var(--text-dim); text-shadow: 0 0 6px rgba(0, 0, 0, .7);
+  }
+  .fa-mnav-slot.on .fa-mnav-glyph { color: #ffd6a3; }
+  .fa-mnav-label {
+    font-family: var(--font-mono); font-size: clamp(9px, 2.5vw, 10px); letter-spacing: .4px;
+    color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, .8);
+  }
+  .fa-mnav-slot.on .fa-mnav-label { color: #ffd6a3; }
+  .fa-mnav-badge {
+    position: absolute; top: -4px; right: -8px; z-index: 2;
+    min-width: 15px; height: 15px; padding: 0 3px;
+    display: grid; place-items: center;
+    background: var(--alert); color: #fff;
+    font-size: 9px; font-weight: 700; border-radius: 8px;
+  }
+
+  /* ---- Bottom sheet « Plus » : cadre 9-slice à poignée ---- */
+  .fa-sheet-overlay {
+    display: flex; position: fixed; inset: 0; z-index: 70;
+    flex-direction: column; justify-content: flex-end;
+    background: rgba(3, 5, 11, .72);
+  }
+  .fa-sheet {
+    position: relative;
+    display: flex; flex-direction: column; gap: clamp(9px, 3vw, 14px);
+    padding: clamp(4px, 1.4vw, 8px) clamp(6px, 2vw, 10px) calc(clamp(8px, 2.6vw, 12px) + env(safe-area-inset-bottom, 0px));
+    background-color: #070b16;
+    border-style: solid; border-color: transparent;
+    border-width: clamp(32px, 8.6vw, 42px) clamp(28px, 7.6vw, 36px) clamp(38px, 10vw, 48px);
+    border-image: url("assets/ui/plate-sheet.webp?v=151") 45 44 52 44 fill stretch;
+    box-shadow: 0 -18px 40px rgba(0, 0, 0, .6);
+    animation: faSheetUp .2s ease-out;
+  }
+  .fa-sheet-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+  .fa-sheet-eyebrow {
+    font-family: var(--font-mono); font-size: clamp(9px, 2.5vw, 10px);
+    letter-spacing: 2px; text-transform: uppercase; color: var(--fire);
+  }
+  .fa-sheet-close {
+    background: none; border: none; padding: 4px 6px; cursor: pointer;
+    font-family: var(--font-mono); font-size: clamp(11px, 3vw, 13px); color: var(--text-dim);
+  }
+  .fa-sheet-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(clamp(76px, 22vw, 98px), 1fr));
+    gap: clamp(6px, 2vw, 10px);
+  }
+  .fa-sheet-item {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+    min-height: 66px; padding: clamp(7px, 2.4vw, 11px) 4px; min-width: 0;
+    background: var(--bg-panel); border: 1px solid var(--line); cursor: pointer;
+  }
+  .fa-sheet-item img { width: 24px; height: 24px; }
+  .fa-sheet-item span {
+    font-family: var(--font-mono); font-size: clamp(9px, 2.5vw, 11px);
+    color: var(--text-dim); white-space: nowrap;
+  }
+  .fa-sheet-item.on { border-color: rgba(247, 147, 26, .6); }
+  .fa-sheet-item.on span { color: #ffd6a3; }
+  .fa-sheet-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+
+  /* ---- Plus de bulles flottantes : le header porte chat et social ---- */
+  .chat-fab, .room-fab { display: none; }
+
+  /* ---- vh → dvh : la barre d'URL mobile ne fait plus sauter les listes ---- */
+  .app-shell { min-height: 100dvh; }
+  .chat-list { height: 52dvh; }
+  .room-list { height: 50dvh; }
 
   /* ---- Section heads ---- */
   .h1 { font-size: 24px; }
   .h2 { font-size: 16px; }
 
-  /* ---- Collection / card grids ---- */
-  .grid-cards { grid-template-columns: repeat(2, 1fr); gap: 11px; }
+  /* ---- Collection / card grids : fluide, plus de coupe sous 400px ---- */
+  .grid-cards { grid-template-columns: repeat(auto-fit, minmax(clamp(130px, 42vw, 168px), 1fr)); gap: 11px; }
   .card .cname { font-size: 12.5px; }
   .stat .v { font-size: 12px; }
   .stat .k { font-size: 8px; }
@@ -102,19 +264,21 @@
   .btn.sm { min-height: 38px; }
 
   /* ---- Toasts above the bottom bar ---- */
-  .toast-wrap { bottom: calc(78px + env(safe-area-inset-bottom, 0)); }
+  .toast-wrap { bottom: calc(84px + env(safe-area-inset-bottom, 0)); }
 
   /* ---- Quiz : pleine largeur au-dessus de la barre de nav ----
-     À 320 px fixes, la bulle débordait sous la nav fixe et sous les fabs. */
+     Plus de fabs empilés : juste au-dessus de la nav 5 slots. */
   .quiz-toast {
     left: 12px; right: 12px; width: auto;
-    bottom: calc(140px + env(safe-area-inset-bottom, 0));
+    bottom: calc(96px + env(safe-area-inset-bottom, 0));
   }
 }
 
 /* Extra squeeze for very narrow phones */
 @media (max-width: 380px) {
-  .nav-tab { font-size: 9px; }
-  .hdr-title { font-size: 13.5px; letter-spacing: 2px; }
   .chip { font-size: 11px; padding: 5px 8px; }
+  .fa-mnav-label { font-size: 8.5px; }
+  /* Les 5 puces de stats passent en 3 + 2 au lieu de s'écraser sur une ligne */
+  .stat-row { gap: 4px; }
+  .stat { flex: 1 1 30%; }
 }

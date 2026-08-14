@@ -112,6 +112,14 @@ function ChatFab() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState(() => loadChat(g.wallet));
   const [busy, setBusy] = useState(false);
+
+  // Coquille mobile : la bulle flottante disparaît, un bouton du header ouvre
+  // le même panneau via cet événement.
+  useEffect(() => {
+    const h = () => setOpen(true);
+    window.addEventListener("fa:open-chat", h);
+    return () => window.removeEventListener("fa:open-chat", h);
+  }, []);
   async function send(text) {
     if (busy) return;
     if (text.length > CHAT_MAXLEN) {

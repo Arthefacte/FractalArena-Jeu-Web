@@ -119,6 +119,17 @@ function RoomFab() {
   useEffect(() => { setMuted(loadMuted(g.wallet)); }, [g.wallet]);
   useEffect(() => { seenIdRef.current = loadSeenId(g.wallet); }, [g.wallet]);
 
+  // Coquille mobile : la bulle flottante disparaît, un bouton du header ouvre
+  // le panneau via cet événement ; le badge de non-lus lui est renvoyé.
+  useEffect(() => {
+    const h = () => setOpen(true);
+    window.addEventListener("fa:open-room", h);
+    return () => window.removeEventListener("fa:open-room", h);
+  }, []);
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent("fa:room-unread", { detail: unread }));
+  }, [unread]);
+
   const ingest = useCallback((incoming) => {
     if (!incoming || incoming.length === 0) return;
     setMessages((prev) => {
