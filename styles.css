@@ -1188,3 +1188,19 @@ input { font-family: var(--font-mono); }
 @media (max-width: 640px) {
   .fa-tape.toujours { display: block; }
 }
+
+/* ============================================================
+   Coquille mobile (v151) — les éléments sont rendus partout mais
+   n'existent visuellement qu'en ≤640px (mobile.css). En desktop :
+   outils du header, nav 5 slots et sheet masqués ; le pli des pools
+   est transparent (display: contents = aucune boîte, rien ne change).
+   ============================================================ */
+.hdr-mtools { display: none; }
+.fa-mnav { display: none; }
+.fa-sheet-overlay { display: none; }
+.fa-pools { display: contents; }
+
+@keyframes faSheetUp {
+  0% { transform: translateY(18px); opacity: .4; }
+  100% { transform: translateY(0); opacity: 1; }
+}

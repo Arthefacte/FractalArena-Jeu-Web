@@ -1931,10 +1931,12 @@ function App() {
             sur mobile, sous la barre de nav fixe (audit IMPORTANT 5, 2026-07-27). */}
         {g.wallet && <LockedBanner />}
         {g.wallet && <window.PwaInstallBanner prompt={pwaPrompt} onInstalled={() => setPwaPrompt(null)} />}
-        <BuybackTicker />
-        {/* Les dons du quiz alimentent les mêmes pools : le bandeau se lit juste
-            sous les jauges de rachat, là où le joueur regarde déjà. */}
-        <window.QuizTicker />
+        <PoolsFold>
+          <BuybackTicker />
+          {/* Les dons du quiz alimentent les mêmes pools : le bandeau se lit juste
+              sous les jauges de rachat, là où le joueur regarde déjà. */}
+          <window.QuizTicker />
+        </PoolsFold>
         <Nav />
         <div className="view-anim" key={g.view}><View /></div>
       </div>
@@ -2001,8 +2003,50 @@ function ChipDelta({ delta }) {
   );
 }
 
+// Le sélecteur de langue vit à deux endroits : header (desktop) et bottom
+// sheet « Plus » (mobile) — même rendu, extrait pour ne pas diverger.
+function LangSwitch() {
+  const { g, actions } = useFA();
+  return (
+    <div className="lang-switch">
+      {[["FR", "FR"], ["EN", "EN"], ["ZH", "中文"]].map(([code, lbl]) => (
+        <button key={code} className={g.lang === code ? "on" : ""} onClick={() => actions.setLang(code)}>{lbl}</button>
+      ))}
+    </div>
+  );
+}
+
+// Coquille mobile : le bandeau économie (jauges, cours DEX, tape, quiz) se
+// replie derrière le header, le caret du Header pilote. L'état voyage par
+// événement — Header et ce pli sont frères, et App a des early-returns qui
+// interdisent d'y ajouter un hook sans risquer l'ordre des hooks.
+function PoolsFold({ children }) {
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    const h = (e) => setOpen(!!e.detail);
+    window.addEventListener("fa:pools-open", h);
+    return () => window.removeEventListener("fa:pools-open", h);
+  }, []);
+  return <div className={cx("fa-pools", open && "open")}>{children}</div>;
+}
+
 function Header({ liquidPop, lockedPop }) {
   const { g, actions } = useFA();
+  // Mobile : les deux chats deviennent des boutons du header (les bulles
+  // flottantes recouvraient stats et boutons « Réclamer ») ; le badge de
+  // non-lus du salon arrive par événement depuis RoomFab.
+  const [poolsOpen, setPoolsOpen] = useState(false);
+  const [roomUnread, setRoomUnread] = useState(0);
+  useEffect(() => {
+    const h = (e) => setRoomUnread(e.detail || 0);
+    window.addEventListener("fa:room-unread", h);
+    return () => window.removeEventListener("fa:room-unread", h);
+  }, []);
+  const togglePools = () => setPoolsOpen((o) => {
+    const n = !o;
+    window.dispatchEvent(new CustomEvent("fa:pools-open", { detail: n }));
+    return n;
+  });
   return (
     <header className="hdr">
       {window.Emblem3D
@@ -2024,46 +2068,132 @@ function Header({ liquidPop, lockedPop }) {
         {g.locked > 0 && (
           <span key={"lk" + lockedPop.n} className={cx("chip", "locked", lockedPop.n > 0 && "pop")}>
             <img src="assets/TOKEN.png" alt="" width="16" height="16" style={{ borderRadius: 3, border: "1px solid var(--line)" }} />
-            <b className="chip-amount">{fmt(g.locked)}</b> {I18N.t("LOCKED_CHIP")}
+            <b className="chip-amount">{fmt(g.locked)}</b><span className="chip-lbl"> {I18N.t("LOCKED_CHIP")}</span>
             <ChipDelta delta={lockedPop.delta} />
           </span>
         )}
-        <div className="lang-switch">
-          {[["FR", "FR"], ["EN", "EN"], ["ZH", "中文"]].map(([code, lbl]) => (
-            <button key={code} className={g.lang === code ? "on" : ""} onClick={() => actions.setLang(code)}>{lbl}</button>
-          ))}
-        </div>
+        <LangSwitch />
         <button
           className="btn ghost sm tut-help"
           title={I18N.t("TUT_HELP")}
           aria-label={I18N.t("TUT_HELP")}
           onClick={() => window.dispatchEvent(new Event("fa-open-tutorial"))}
         >?</button>
+        <div className="hdr-mtools">
+          <button className="hdr-mbtn" aria-label={I18N.t("CHAT_FAB_LABEL")} onClick={() => window.dispatchEvent(new Event("fa:open-chat"))}>
+            <span aria-hidden="true">💬</span>
+          </button>
+          <button className="hdr-mbtn" aria-label={I18N.t("ROOM_FAB_LABEL")} onClick={() => window.dispatchEvent(new Event("fa:open-room"))}>
+            <span aria-hidden="true">👥</span>
+            {roomUnread > 0 && <span className="hdr-mbadge">{roomUnread > 9 ? "9+" : roomUnread}</span>}
+          </button>
+          <button
+            className={cx("hdr-mbtn", "hdr-mcaret", poolsOpen && "on")}
+            aria-label={I18N.t("BB_TICK_TITLE")}
+            aria-expanded={poolsOpen}
+            onClick={togglePools}
+          >{poolsOpen ? "▲" : "▼"}</button>
+        </div>
       </div>
     </header>
   );
 }
 
+// Un logement de la nav mobile : socket hexagonal à ratio fixe (jamais étiré —
+// c'est la tranche métallique du fond qui absorbe la largeur, pas l'hexagone).
+function MnavSlot({ active, icon, glyph, label, badge, onClick }) {
+  return (
+    <button className={cx("fa-mnav-slot", active && "on")} onClick={onClick}>
+      <span className="fa-mnav-socket">
+        <img className="fa-mnav-socket-img" src="assets/ui/socket.webp?v=151" alt="" aria-hidden="true" draggable="false" />
+        {icon
+          ? <img className="fa-mnav-ico" src={icon} alt="" aria-hidden="true" draggable="false" />
+          : <span className="fa-mnav-glyph" aria-hidden="true">{glyph}</span>}
+        {badge > 0 && <span className="fa-mnav-badge">{badge}</span>}
+      </span>
+      <span className="fa-mnav-label">{label}</span>
+    </button>
+  );
+}
+
 function Nav() {
   const { g, actions } = useFA();
+  // Mobile : 4 onglets principaux + « Plus » (bottom sheet avec le reste).
+  const [sheetOpen, setSheetOpen] = useState(false);
   const tabs = [
     ["team", "NAV_TEAM"], ["fosse", "NAV_FOSSE"], ["arene", "NAV_ARENE"], ["campaign", "NAV_CAMPAIGN"], ["tour", "NAV_TOUR"], ["quests", "NAV_QUESTS"], ["forge", "NAV_FORGE"], ["market", "NAV_MARKET"],
     ["wallet", "NAV_WALLET"], ["boosts", "NAV_BOOSTS"], ["perso", "NAV_PERSO"], ["leaderboard", "NAV_LEADERBOARD"], ["options", "NAV_OPTIONS"],
   ];
+  const MAIN = ["team", "fosse", "arene", "campaign"];
+  const more = tabs.filter(([k]) => !MAIN.includes(k));
+  const go = (k) => { if (window.FA_SFX) window.FA_SFX.play("tab"); actions.setView(k); setSheetOpen(false); };
+  const areneBadge = g.pvp && g.pvp.attacksUnseen > 0 ? g.pvp.attacksUnseen : 0;
   return (
-    <nav className="nav">
-      {tabs.map(([k, key]) => (
-        <button key={k} className={cx("nav-tab", g.view === k && "on")} onClick={() => { if (window.FA_SFX) window.FA_SFX.play("tab"); actions.setView(k); }}>
-          <img className="nav-icon" src={`assets/nav-icons/${k}.png?v=74`} alt="" aria-hidden="true" draggable="false" />
-          <span className="nav-label">{I18N.t(key)}</span>
-          {k === "arene" && g.pvp && g.pvp.attacksUnseen > 0 && (
-            <span className="nav-badge" style={{ marginLeft: 4, background: "var(--alert)", color: "#fff", borderRadius: 9, fontSize: 10, padding: "0 5px", fontWeight: 700 }}>
-              {g.pvp.attacksUnseen}
-            </span>
-          )}
-        </button>
-      ))}
-    </nav>
+    <>
+      <nav className="nav">
+        {tabs.map(([k, key]) => (
+          <button key={k} className={cx("nav-tab", g.view === k && "on")} onClick={() => go(k)}>
+            <img className="nav-icon" src={`assets/nav-icons/${k}.png?v=74`} alt="" aria-hidden="true" draggable="false" />
+            <span className="nav-label">{I18N.t(key)}</span>
+            {k === "arene" && areneBadge > 0 && (
+              <span className="nav-badge" style={{ marginLeft: 4, background: "var(--alert)", color: "#fff", borderRadius: 9, fontSize: 10, padding: "0 5px", fontWeight: 700 }}>
+                {areneBadge}
+              </span>
+            )}
+          </button>
+        ))}
+      </nav>
+      <nav className="fa-mnav">
+        <span className="fa-mnav-metal" aria-hidden="true" />
+        <span className="fa-mnav-liseret" aria-hidden="true" />
+        {MAIN.map((k) => {
+          const key = tabs.find(([t]) => t === k)[1];
+          return (
+            <MnavSlot
+              key={k}
+              active={g.view === k}
+              icon={`assets/nav-icons/${k}.png?v=74`}
+              label={I18N.t(key)}
+              badge={k === "arene" ? areneBadge : 0}
+              onClick={() => go(k)}
+            />
+          );
+        })}
+        <MnavSlot
+          active={more.some(([k]) => g.view === k)}
+          glyph="☰"
+          label={I18N.t("NAV_MORE")}
+          onClick={() => { if (window.FA_SFX) window.FA_SFX.play("tab"); setSheetOpen(true); }}
+        />
+      </nav>
+      {sheetOpen && (
+        <div className="fa-sheet-overlay" onClick={() => setSheetOpen(false)}>
+          <div className="fa-sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="fa-sheet-head">
+              <span className="fa-sheet-eyebrow">{I18N.t("NAV_MORE")}</span>
+              <button className="fa-sheet-close" onClick={() => setSheetOpen(false)} aria-label={I18N.t("CLOSE")}>✕</button>
+            </div>
+            <div className="fa-sheet-grid">
+              {more.map(([k, key]) => (
+                <button key={k} className={cx("fa-sheet-item", g.view === k && "on")} onClick={() => go(k)}>
+                  <img src={`assets/nav-icons/${k}.png?v=74`} alt="" aria-hidden="true" draggable="false" />
+                  <span>{I18N.t(key)}</span>
+                </button>
+              ))}
+            </div>
+            {/* En mobile, langue et aide n'ont plus de place dans le header une
+                ligne : elles vivent ici, dans le tiroir « Plus ». */}
+            <div className="fa-sheet-foot">
+              <LangSwitch />
+              <button
+                className="btn ghost sm"
+                onClick={() => { setSheetOpen(false); window.dispatchEvent(new Event("fa-open-tutorial")); }}
+              >? {I18N.t("TUT_HELP")}</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 

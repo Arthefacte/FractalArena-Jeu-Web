@@ -18,6 +18,7 @@
     NAV_LEADERBOARD: { FR: "Classement", EN: "Ranking", ZH: "排行榜" },
     NAV_QUESTS: { FR: "Quêtes", EN: "Quests", ZH: "任务" },
     NAV_CAMPAIGN: { FR: "Campagne", EN: "Campaign", ZH: "战役" },
+    NAV_MORE: { FR: "Plus", EN: "More", ZH: "更多" },
     Q_TITLE: { FR: "Quêtes du jour", EN: "Daily quests", ZH: "每日任务" },
     Q_STREAK: { FR: "Série : %d jours", EN: "Streak: %d days", ZH: "连续 %d 天" },
     Q_RESET_IN: { FR: "Reset dans %s", EN: "Resets in %s", ZH: "%s 后重置" },
