@@ -946,6 +946,71 @@ function Perso() {
 }
 
 /* ---------------- OPTIONS ---------------- */
+/* « Connecter un téléphone » : émet un code de liaison bref (serveur) et le
+   montre en QR + en clair. Le téléphone qui scanne devient une session du même
+   compte — c'est le SEUL chemin mobile pour un compte au wallet lié, UniSat ne
+   sachant pas signer pour une web app mobile (voir device-link-ui.js). */
+function DeviceLinkPanel() {
+  const { g, actions, toast } = useFA();
+  const [link, setLink] = useState(null); // { code, expiresAt }
+  const [restant, setRestant] = useState(0);
+  const [busy, setBusy] = useState(false);
+
+  // Le décompte affiché est ce qui retire le QR de l'écran : un code mort ne
+  // doit pas rester scannable en silence.
+  useEffect(() => {
+    if (!link) return undefined;
+    const id = setInterval(() => {
+      const r = Math.max(0, Math.ceil((link.expiresAt - Date.now()) / 1000));
+      setRestant(r);
+      if (r <= 0) setLink(null);
+    }, 500);
+    return () => clearInterval(id);
+  }, [link]);
+
+  const generer = async () => {
+    setBusy(true);
+    const r = await actions.createDeviceLink();
+    setBusy(false);
+    if (!r.ok) { toast(I18N.t("OP_DEVLINK_ERROR"), "bad"); return; }
+    setLink({ code: r.code, expiresAt: Date.now() + r.expires_in * 1000 });
+    setRestant(r.expires_in);
+  };
+
+  const copier = async () => {
+    try {
+      await navigator.clipboard.writeText(window.FA_DEVICE_LINK.linkUrl(window.location.origin, link.code));
+      toast(I18N.t("OP_DEVLINK_COPIED"), "good");
+    } catch (e) { /* presse-papier refusé : le code reste lisible à l'écran */ }
+  };
+
+  if (!g.authToken) return null;
+  const svg = link && window.FA_DEVICE_LINK
+    ? window.FA_DEVICE_LINK.svgQr(window.FA_DEVICE_LINK.linkUrl(window.location.origin, link.code))
+    : null;
+
+  return (
+    <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 20, marginBottom: 16 }}>
+      <div className="eyebrow" style={{ color: "var(--elec)", marginBottom: 8 }}>📱 {I18N.t("OP_DEVLINK_TITLE")}</div>
+      <div className="mono" style={{ fontSize: 11, color: "var(--text-dim)", marginBottom: 12 }}>{I18N.t("OP_DEVLINK_HINT")}</div>
+      {!link && (
+        <button className="btn btn-elec block" disabled={busy} onClick={generer}>{I18N.t("OP_DEVLINK_BTN")}</button>
+      )}
+      {link && (
+        <div style={{ textAlign: "center" }}>
+          {/* Fond blanc obligatoire : un QR sur le fond sombre du jeu ne se
+              scanne pas. SVG produit par notre lib vendorisée depuis notre
+              propre URL — aucun contenu tiers. */}
+          {svg && <div style={{ background: "#fff", padding: 10, width: 208, margin: "0 auto", borderRadius: 6 }} dangerouslySetInnerHTML={{ __html: svg }} />}
+          <div className="mono" style={{ fontSize: 15, fontWeight: 700, letterSpacing: 1, margin: "10px 0 2px", userSelect: "all" }}>{link.code}</div>
+          <div className="mono" style={{ fontSize: 10.5, color: "var(--text-dim)", marginBottom: 10 }}>{I18N.t("OP_DEVLINK_TTL", restant)}</div>
+          <button className="btn ghost sm" onClick={copier}>⧉ {I18N.t("OP_DEVLINK_COPY")}</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Options() {
   const { g, actions, toast } = useFA();
   const [scanState, setScanState] = useState("idle"); // idle | scanning | done
@@ -1080,6 +1145,8 @@ function Options() {
           {g.wallet ? <CopyAddr addr={g.wallet} /> : <span className="mono muted" style={{ fontSize: 12 }}>—</span>}
         </div>
       </div>
+
+      <DeviceLinkPanel />
 
       <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 22, display: "flex", flexDirection: "column", gap: 20 }}>
         <Row label={I18N.t("OP_LANG")}>

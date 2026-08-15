@@ -1944,6 +1944,113 @@ function Perso() {
 }
 
 /* ---------------- OPTIONS ---------------- */
+/* « Connecter un téléphone » : émet un code de liaison bref (serveur) et le
+   montre en QR + en clair. Le téléphone qui scanne devient une session du même
+   compte — c'est le SEUL chemin mobile pour un compte au wallet lié, UniSat ne
+   sachant pas signer pour une web app mobile (voir device-link-ui.js). */
+function DeviceLinkPanel() {
+  const {
+    g,
+    actions,
+    toast
+  } = useFA();
+  const [link, setLink] = useState(null); // { code, expiresAt }
+  const [restant, setRestant] = useState(0);
+  const [busy, setBusy] = useState(false);
+
+  // Le décompte affiché est ce qui retire le QR de l'écran : un code mort ne
+  // doit pas rester scannable en silence.
+  useEffect(() => {
+    if (!link) return undefined;
+    const id = setInterval(() => {
+      const r = Math.max(0, Math.ceil((link.expiresAt - Date.now()) / 1000));
+      setRestant(r);
+      if (r <= 0) setLink(null);
+    }, 500);
+    return () => clearInterval(id);
+  }, [link]);
+  const generer = async () => {
+    setBusy(true);
+    const r = await actions.createDeviceLink();
+    setBusy(false);
+    if (!r.ok) {
+      toast(I18N.t("OP_DEVLINK_ERROR"), "bad");
+      return;
+    }
+    setLink({
+      code: r.code,
+      expiresAt: Date.now() + r.expires_in * 1000
+    });
+    setRestant(r.expires_in);
+  };
+  const copier = async () => {
+    try {
+      await navigator.clipboard.writeText(window.FA_DEVICE_LINK.linkUrl(window.location.origin, link.code));
+      toast(I18N.t("OP_DEVLINK_COPIED"), "good");
+    } catch (e) {/* presse-papier refusé : le code reste lisible à l'écran */}
+  };
+  if (!g.authToken) return null;
+  const svg = link && window.FA_DEVICE_LINK ? window.FA_DEVICE_LINK.svgQr(window.FA_DEVICE_LINK.linkUrl(window.location.origin, link.code)) : null;
+  return /*#__PURE__*/React.createElement("div", {
+    className: "panel oct",
+    style: {
+      border: "1px solid var(--line)",
+      padding: 20,
+      marginBottom: 16
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "eyebrow",
+    style: {
+      color: "var(--elec)",
+      marginBottom: 8
+    }
+  }, "\uD83D\uDCF1 ", I18N.t("OP_DEVLINK_TITLE")), /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      fontSize: 11,
+      color: "var(--text-dim)",
+      marginBottom: 12
+    }
+  }, I18N.t("OP_DEVLINK_HINT")), !link && /*#__PURE__*/React.createElement("button", {
+    className: "btn btn-elec block",
+    disabled: busy,
+    onClick: generer
+  }, I18N.t("OP_DEVLINK_BTN")), link && /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "center"
+    }
+  }, svg && /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "#fff",
+      padding: 10,
+      width: 208,
+      margin: "0 auto",
+      borderRadius: 6
+    },
+    dangerouslySetInnerHTML: {
+      __html: svg
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      fontSize: 15,
+      fontWeight: 700,
+      letterSpacing: 1,
+      margin: "10px 0 2px",
+      userSelect: "all"
+    }
+  }, link.code), /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      fontSize: 10.5,
+      color: "var(--text-dim)",
+      marginBottom: 10
+    }
+  }, I18N.t("OP_DEVLINK_TTL", restant)), /*#__PURE__*/React.createElement("button", {
+    className: "btn ghost sm",
+    onClick: copier
+  }, "\u29C9 ", I18N.t("OP_DEVLINK_COPY"))));
+}
 function Options() {
   const {
     g,
@@ -2224,7 +2331,7 @@ function Options() {
     style: {
       fontSize: 12
     }
-  }, "\u2014"))), /*#__PURE__*/React.createElement("div", {
+  }, "\u2014"))), /*#__PURE__*/React.createElement(DeviceLinkPanel, null), /*#__PURE__*/React.createElement("div", {
     className: "panel oct",
     style: {
       border: "1px solid var(--line)",

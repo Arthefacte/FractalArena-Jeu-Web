@@ -60,7 +60,16 @@ function RecoverScreen({ onClose }) {
   const submit = async () => {
     setBusy(true);
     let r;
-    try { r = await actions.recoverAccount(code); } finally { setBusy(false); }
+    // Un seul champ pour deux codes : celui de RÉCUPÉRATION (compte généré) et
+    // celui de LIAISON D'APPAREIL (affiché sous le QR, écran Options du PC).
+    // Le format tranche — 16 caractères Crockford = liaison ; le joueur n'a
+    // pas à savoir lequel il tient.
+    const DL = window.FA_DEVICE_LINK;
+    try {
+      r = DL && DL.isLinkCode(code)
+        ? await actions.claimDeviceLink(code)
+        : await actions.recoverAccount(code);
+    } finally { setBusy(false); }
     if (r.ok) { onClose && onClose(); return; }
     if (r.reason === "seed") { toast(I18N.t("ACC_RECOVER_SEED_REFUSED"), "bad"); setCode(""); return; }
     if (r.reason === "rate") { toast(I18N.t("ACC_RECOVER_RATE"), "bad"); return; }

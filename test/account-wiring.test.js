@@ -65,7 +65,10 @@ const ACCJSX = read("account.jsx");
 test("l'ecran de recuperation ne suggere jamais la seed", () => {
   const i = ACCJSX.indexOf("function RecoverScreen");
   assert.ok(i > 0, "RecoverScreen introuvable");
-  const bloc = ACCJSX.slice(i, i + 1800);
+  // Toute la fonction, pas une plage fixe : un commentaire ajoute en tete la
+  // decalait hors fenetre et le test echouait sans defaut reel (2026-08-15).
+  const fin = ACCJSX.indexOf("function LinkWalletButton");
+  const bloc = ACCJSX.slice(i, fin > i ? fin : i + 4000);
   assert.match(bloc, /ACC_RECOVER_PLACEHOLDER/, "le champ doit annoncer un CODE");
   assert.ok(!/ACC_SEED_LABEL|12 mots|mnemonic/i.test(bloc),
     "l'ecran de recuperation ne doit ni demander ni evoquer une saisie de seed");
@@ -148,7 +151,7 @@ test("account.jsx est charge apres components.jsx et avant app.jsx", () => {
 test("cache-bust homogene : aucune balise ne reste sur l'ancienne version", () => {
   const versions = [...HTML.matchAll(/\?v=(\d+)/g)].map((m) => m[1]).filter((v) => v !== "1");
   const uniques = [...new Set(versions)];
-  assert.deepStrictEqual(uniques, ["155"],
+  assert.deepStrictEqual(uniques, ["156"],
     `versions heterogenes trouvees : ${uniques.join(", ")} — une seule balise oubliee sert du code perime`);
 });
 
