@@ -245,9 +245,15 @@
   /* arena board padding */
   .container.wide > .panel.oct { padding: 14px 12px 14px; }
 
-  /* lower section: log over controls */
-  .arena-lower { grid-template-columns: 1fr !important; }
+  /* lower section: log over controls.
+     minmax(0,1fr) et pas 1fr : 1fr = minmax(auto,1fr), la piste s'élargit à la
+     min-content de son contenu (rangées nowrap) et tout le panneau déborde. */
+  .arena-lower { grid-template-columns: minmax(0, 1fr) !important; }
   .arena-lower .log { max-height: 230px !important; }
+  /* En-têtes de panneau (Adversaires · Entrée : Gratuit/50/Tickets) et rangées
+     d'infos adversaire : autorisées à passer à la ligne plutôt que déborder. */
+  .arena-lower .flex.between.center,
+  .arena-lower .flex.gap8.center { flex-wrap: wrap; }
 
   /* Combat card: stack name/preset so the preset label can't spill out of the card */
   .arena-board-row .card .body > .flex.between { flex-direction: column; align-items: flex-start; gap: 2px; }
@@ -261,7 +267,9 @@
 
   /* Bet tier buttons: wrap and tighten so the row never spills out at 360px */
   .arena-bet-row { flex-wrap: wrap; }
-  .arena-bet-row .btn.sm { letter-spacing: 0.4px; padding-left: 7px; padding-right: 7px; min-width: 0; }
+  /* flex none : sans lui les boutons se compressent au lieu de wrapper et
+     « Bronze 10 » / « Argent 25 » se font rogner le libellé. */
+  .arena-bet-row .btn.sm { letter-spacing: 0.4px; padding-left: 7px; padding-right: 7px; min-width: 0; flex: 0 0 auto; }
 
   /* ---- Forge / Wallet two-column grids → stack ---- */
   .summon-grid { grid-template-columns: 1fr !important; }
@@ -270,7 +278,12 @@
   /* ---- Sub-tabs scroll if needed ---- */
   .subtabs { overflow-x: auto; scrollbar-width: none; }
   .subtabs::-webkit-scrollbar { display: none; }
-  .subtab { white-space: nowrap; flex: none; }
+  /* Resserrés pour que les 4 onglets de la Forge tiennent sans couper « Reliques ». */
+  .subtab { white-space: nowrap; flex: none; padding: 9px 10px; font-size: 12px; letter-spacing: 0.8px; }
+
+  /* Cartes du plateau de combat (Fosse/Campagne, ~110px de large en rangée de 3) :
+     4 puces ATK/DEF/SPD/MAG écrasées sur une ligne = chiffres superposés → 2×2. */
+  .arena-board-row .stat { flex: 1 1 40%; }
 
   /* ---- Modals ---- */
   .overlay { padding: 16px; align-items: flex-end; }
