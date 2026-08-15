@@ -277,11 +277,11 @@
   .arena-log-head .h2 { flex: 0 0 auto; }
   .arena-log-head .mono { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; }
 
-  /* Bet tier buttons: wrap and tighten so the row never spills out at 360px */
-  .arena-bet-row { flex-wrap: wrap; }
-  /* flex none : sans lui les boutons se compressent au lieu de wrapper et
-     « Bronze 10 » / « Argent 25 » se font rogner le libellé. */
-  .arena-bet-row .btn.sm { letter-spacing: 0.4px; padding-left: 7px; padding-right: 7px; min-width: 0; flex: 0 0 auto; }
+  /* Boutons de mise : en grille 2×2. Les boutons portent des `flex: 1/1.3`
+     INLINE (proportions voulues sur la ligne desktop) qui gagnent sur toute
+     règle flex d'ici et les compressaient jusqu'à rogner « Bronze 10 » ;
+     en grid ces flex inline sont inertes — pas de !important nécessaire. */
+  .arena-bet-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
   /* ---- Forge / Wallet two-column grids → stack ---- */
   .summon-grid { grid-template-columns: 1fr !important; }
