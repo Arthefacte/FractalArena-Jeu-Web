@@ -16,6 +16,17 @@ const readToken = () => ACC.readToken();
 const writeToken = (t, kind) => ACC.writeToken(t, kind);
 const clearToken = () => ACC.clearToken();
 const API_URL = window.FA_API_URL;
+// Lien de liaison d'appareil (#link=XXXX-…, QR affiché sur le PC) : lu UNE fois
+// au chargement, avant le premier rendu, puis purgé de la barre — il vaut un
+// accès au compte et ne doit survivre ni dans l'historique ni dans un partage
+// d'URL. Consommé par DeviceLinkClaimGate ; fait aussi sauter la cinématique
+// (le code expire en 2 minutes).
+const BOOT_LINK_CODE = (() => {
+  const DL = window.FA_DEVICE_LINK;
+  const c = DL ? DL.parseLinkHash(window.location.hash) : null;
+  if (c) window.history.replaceState(null, "", window.location.pathname + window.location.search);
+  return c;
+})();
 // Toujours via ACC : `window.unisat` peut être un portefeuille FORKÉ qui a squatté
 // le global. Voir ACC.provider() dans account-ui.js.
 const HAS_UNISAT = () => ACC.hasProvider();
@@ -225,7 +236,10 @@ function App() {
   const [g, setG] = useState(() => { const s = loadState() || freshState(); I18N.setLang(s.lang); return s; });
   const [toasts, setToasts] = useState([]);
   const [, setNow] = useState(Date.now()); // tic 1s pour le compte à rebours combats gratuits
-  const [cineDone, setCineDone] = useState(false); // cinématique d'ouverture : jouée à chaque visite déconnecté
+  // Cinématique d'ouverture : jouée à chaque visite déconnecté — SAUF quand on
+  // arrive par un lien de liaison d'appareil : le joueur vient de scanner un QR
+  // dont le code expire en 2 minutes, la modale de connexion passe devant.
+  const [cineDone, setCineDone] = useState(!!BOOT_LINK_CODE);
   // Secrets d'un compte tout juste créé (seed + code de récupération). Vit ICI, au niveau du
   // shell, et pas dans Onboarding : createAccount() pose g.wallet AVANT que playNow() ait fini,
   // donc App bascule hors d'Onboarding au rendu suivant et démonterait tout état local qui y
@@ -687,6 +701,59 @@ function App() {
         // authToken encore vide -> clearToken() efface le jeton tout juste ecrit.
         writeToken(d.token, ACC.KIND_GENERATED);
         setG((s) => ({ ...s, accountKind: ACC.KIND_GENERATED, authToken: d.token }));
+        await actions.connectWallet(d.wallet, d.token);
+        return { ok: true };
+      } catch (e) {
+        return { ok: false, reason: "network" };
+      }
+    },
+    // Liaison d'appareil — côté ÉMETTEUR (PC connecté) : demande un code bref
+    // au serveur ; l'écran Options en fait un QR. Le code EST un accès au
+    // compte : il ne s'obtient qu'avec un jeton de session valide.
+    async createDeviceLink() {
+      const s = gRef.current;
+      if (!s.authToken) return { ok: false, reason: "auth" };
+      try {
+        const r = await fetch(`${API_URL}/auth/device-link`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
+          body: "{}",
+        });
+        if (r.status === 429) return { ok: false, reason: "rate" };
+        if (!r.ok) return { ok: false, reason: "server" };
+        const d = await r.json();
+        if (!d.code) return { ok: false, reason: "server" };
+        return { ok: true, code: d.code, expires_in: d.expires_in || 120 };
+      } catch (e) {
+        return { ok: false, reason: "network" };
+      }
+    },
+    // Liaison d'appareil — côté RÉCEPTEUR (téléphone) : même mécanique que
+    // recoverAccount, à une différence près : le compte rejoint peut être un
+    // compte venu-avec-UniSat, et c'est le serveur qui dit le genre (kind) —
+    // le client ne devine jamais l'UX de compte à partir de rien.
+    async claimDeviceLink(code) {
+      const DL = window.FA_DEVICE_LINK;
+      if (!DL || !DL.isLinkCode(code)) return { ok: false, reason: "invalid" };
+      try {
+        const r = await fetch(`${API_URL}/auth/device-claim`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: DL.normalizeLinkCode(code) }),
+        });
+        if (r.status === 429) return { ok: false, reason: "rate" };
+        // Même partage 4xx/5xx que recoverAccount : un 500 passager n'est pas
+        // un verdict sur le code (IMPORTANT 7).
+        if (!r.ok) return { ok: false, reason: r.status >= 500 ? "server" : "invalid" };
+        const d = await r.json();
+        if (!d.wallet || !d.token) return { ok: false, reason: "server" };
+        const kind = d.kind === "generated" ? ACC.KIND_GENERATED : ACC.KIND_UNISAT;
+        // AVANT writeToken : le marqueur décide du stockage (localStorage) —
+        // sans lui, un compte UniSat rejoint en onglet mobile perdrait son
+        // jeton à la fermeture et devrait re-scanner un QR à chaque session.
+        ACC.markDeviceLinked();
+        // kind + authToken en UN SEUL setG (même raison que recoverAccount).
+        writeToken(d.token, kind);
+        setG((s) => ({ ...s, accountKind: kind, authToken: d.token }));
         await actions.connectWallet(d.wallet, d.token);
         return { ok: true };
       } catch (e) {
@@ -1900,6 +1967,11 @@ function App() {
         <FA_Ctx.Provider value={ctx}>
           <Cinematique onEnter={() => setCineDone(true)} />
           {accSecrets && <window.SecretsGate secrets={accSecrets} onDone={() => setAccSecrets(null)} />}
+          {/* Un téléphone vierge qui scanne le QR du PC arrive ICI, avant tout
+              compte : la liaison doit passer devant la cinématique. Toasts
+              montés avec — la gate confirme ou échoue par toast. */}
+          <DeviceLinkClaimGate />
+          <Toasts toasts={toasts} />
         </FA_Ctx.Provider>
       );
     }
@@ -1912,6 +1984,7 @@ function App() {
             compte — le dire tout de suite vaut mieux qu'un bouton qui échoue. */}
         <window.PwaOfflineGate etat={etatReseau} onReessayer={() => setEnLigne(navigator.onLine !== false)} />
         {accSecrets && <window.SecretsGate secrets={accSecrets} onDone={() => setAccSecrets(null)} />}
+        <DeviceLinkClaimGate />
       </FA_Ctx.Provider>
     );
   }
@@ -1946,6 +2019,7 @@ function App() {
       <window.PwaOfflineGate etat={etatReseau} onReessayer={() => setEnLigne(navigator.onLine !== false)} />
       {g.wallet && <TutorialGate />}
       {g.wallet && <LoginGate />}
+      <DeviceLinkClaimGate />
       {g.wallet && <window.QuizToast />}
       {accSecrets && <window.SecretsGate secrets={accSecrets} onDone={() => setAccSecrets(null)} />}
       {(() => {
@@ -2028,6 +2102,41 @@ function PoolsFold({ children }) {
     return () => window.removeEventListener("fa:pools-open", h);
   }, []);
   return <div className={cx("fa-pools", open && "open")}>{children}</div>;
+}
+
+/* Réception d'un lien de liaison d'appareil (#link=XXXX-…) : le téléphone qui
+   scanne le QR du PC arrive ici. Le hash est lu UNE fois puis effacé de la
+   barre (il vaut un accès au compte : il ne doit pas survivre dans
+   l'historique). Rien n'est réclamé sans un geste du joueur — et si ce
+   navigateur porte déjà une session, on lui dit laquelle il remplace. */
+function DeviceLinkClaimGate() {
+  const { g, actions, toast } = useFA();
+  const [code, setCode] = useState(BOOT_LINK_CODE);
+  const [busy, setBusy] = useState(false);
+  if (!code) return null;
+
+  const claim = async () => {
+    setBusy(true);
+    const r = await actions.claimDeviceLink(code);
+    setBusy(false);
+    setCode(null);
+    if (r.ok) { toast(I18N.t("DEVLINK_DONE"), "good"); return; }
+    if (r.reason === "invalid") { toast(I18N.t("DEVLINK_FAIL"), "bad"); return; }
+    // réseau / serveur / rate : le code n'a pas été jugé faux — le dire tel quel.
+    toast(I18N.t("DEVLINK_ERROR"), "bad");
+  };
+
+  return (
+    <window.Modal onClose={() => setCode(null)} accent="var(--elec)">
+      <window.SectionHead eyebrow="📱 LINK" title={I18N.t("DEVLINK_CLAIM_TITLE")} />
+      <div className="muted mono" style={{ fontSize: 13, marginBottom: 14 }}>
+        {g.wallet ? I18N.t("DEVLINK_CLAIM_REPLACE", g.playerName || g.wallet) : I18N.t("DEVLINK_CLAIM_SUB")}
+      </div>
+      <button className="btn btn-elec block lg" disabled={busy} onClick={claim}>
+        {I18N.t("DEVLINK_CLAIM_BTN")}
+      </button>
+    </window.Modal>
+  );
 }
 
 function Header({ liquidPop, lockedPop }) {

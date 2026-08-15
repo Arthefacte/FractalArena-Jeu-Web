@@ -41,6 +41,27 @@ test("un compte genere persiste en localStorage", () => {
   assert.strictEqual(A.readKind(), A.KIND_GENERATED);
 });
 
+test("un appareil lie (QR) persiste le jeton UniSat en localStorage", () => {
+  // Sans le marqueur, un telephone rejoint par QR perdait son jeton a la
+  // fermeture de l'onglet et devait re-scanner a chaque session — le motif du
+  // sessionStorage (« peut re-signer ») n'existe pas sans extension.
+  const { A, win } = load();
+  A.markDeviceLinked();
+  A.writeToken("tok-unisat", A.KIND_UNISAT);
+  assert.strictEqual(win.localStorage.getItem("fa_auth_token"), "tok-unisat");
+  assert.strictEqual(A.readToken(), "tok-unisat");
+});
+
+test("clearToken retire aussi le marqueur d'appareil lie", () => {
+  const { A, win } = load();
+  A.markDeviceLinked();
+  A.writeToken("tok-unisat", A.KIND_UNISAT);
+  A.clearToken();
+  assert.strictEqual(A.estAppareilLie(), false,
+    "apres deconnexion, un futur token UniSat d'extension doit retrouver sessionStorage");
+  assert.strictEqual(win.localStorage.getItem("fa_device_linked"), null);
+});
+
 test("changer de type purge l'autre stockage (jamais deux tokens en vie)", () => {
   const { A, win } = load();
   A.writeToken("tok-gen", A.KIND_GENERATED);

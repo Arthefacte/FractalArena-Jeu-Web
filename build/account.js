@@ -87,8 +87,13 @@ function RecoverScreen({
   const submit = async () => {
     setBusy(true);
     let r;
+    // Un seul champ pour deux codes : celui de RÉCUPÉRATION (compte généré) et
+    // celui de LIAISON D'APPAREIL (affiché sous le QR, écran Options du PC).
+    // Le format tranche — 16 caractères Crockford = liaison ; le joueur n'a
+    // pas à savoir lequel il tient.
+    const DL = window.FA_DEVICE_LINK;
     try {
-      r = await actions.recoverAccount(code);
+      r = DL && DL.isLinkCode(code) ? await actions.claimDeviceLink(code) : await actions.recoverAccount(code);
     } finally {
       setBusy(false);
     }

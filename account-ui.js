@@ -40,9 +40,18 @@
   // `session` — IL NE PERMET PAS DE RETIRER DES FONDS, un retrait exige une
   // signature separee en portee `withdraw`. C'est deja le traitement des
   // comptes generes. En onglet, ou la popup fonctionne, rien ne change.
+  // Appareil rejoint par liaison (QR depuis le PC) : il n'a PAS d'extension
+  // UniSat, donc « peut re-signer a tout moment » y est faux au meme titre
+  // qu'en fenetre installee — sessionStorage y condamnerait le joueur a
+  // re-scanner un QR a chaque ouverture. Le marqueur persiste avec le jeton
+  // et part avec lui (clearToken).
+  const DEVICE_LINKED_KEY = "fa_device_linked";
+  function markDeviceLinked() { set(window.localStorage, DEVICE_LINKED_KEY, "1"); }
+  function estAppareilLie() { return get(window.localStorage, DEVICE_LINKED_KEY) === "1"; }
+
   function store(kind) {
     if (kind === KIND_GENERATED) return window.localStorage;
-    return estAppInstallee() ? window.localStorage : window.sessionStorage;
+    return (estAppInstallee() || estAppareilLie()) ? window.localStorage : window.sessionStorage;
   }
   function get(s, k) { try { return s.getItem(k) || ""; } catch (e) { return ""; } }
   function set(s, k, v) { try { s.setItem(k, v); } catch (e) {} }
@@ -72,6 +81,7 @@
     del(window.sessionStorage, TOKEN_KEY);
     del(window.localStorage, TOKEN_KEY);
     del(window.localStorage, KIND_KEY);
+    del(window.localStorage, DEVICE_LINKED_KEY);
   }
 
   // makeRecoveryCode() serveur : randomBytes(24).toString("base64url") → 32
@@ -225,8 +235,8 @@
   }
 
   window.FA_ACCOUNT = {
-    KIND_GENERATED, KIND_UNISAT, TOKEN_KEY, KIND_KEY, BANNER_SNOOZE_MS,
-    readToken, writeToken, clearToken, readKind,
+    KIND_GENERATED, KIND_UNISAT, TOKEN_KEY, KIND_KEY, DEVICE_LINKED_KEY, BANNER_SNOOZE_MS,
+    readToken, writeToken, clearToken, readKind, markDeviceLinked, estAppareilLie,
     isValidRecoveryCode, looksLikeSeed, shouldShowLockedBanner, discoveryNextAction,
     withdrawSigner, withdrawDestination, linkHintKey, authFailure, estAppInstallee,
     provider, hasProvider, localDisplayName,
