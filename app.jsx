@@ -2037,10 +2037,18 @@ function Header({ liquidPop, lockedPop }) {
   // non-lus du salon arrive par événement depuis RoomFab.
   const [poolsOpen, setPoolsOpen] = useState(false);
   const [roomUnread, setRoomUnread] = useState(0);
+  // Un quiz attend : point orange pulsant sur la pastille ❓. L'état vient de
+  // QuizToast (fa:quiz-ready) — plus aucune bulle ne s'ouvre toute seule.
+  const [quizReady, setQuizReady] = useState(false);
   useEffect(() => {
     const h = (e) => setRoomUnread(e.detail || 0);
     window.addEventListener("fa:room-unread", h);
-    return () => window.removeEventListener("fa:room-unread", h);
+    const q = (e) => setQuizReady(!!e.detail);
+    window.addEventListener("fa:quiz-ready", q);
+    return () => {
+      window.removeEventListener("fa:room-unread", h);
+      window.removeEventListener("fa:quiz-ready", q);
+    };
   }, []);
   const togglePools = () => setPoolsOpen((o) => {
     const n = !o;
@@ -2080,6 +2088,12 @@ function Header({ liquidPop, lockedPop }) {
           onClick={() => window.dispatchEvent(new Event("fa-open-tutorial"))}
         >?</button>
         <div className="hdr-mtools">
+          {g.wallet && (
+            <button className="hdr-mbtn" aria-label={I18N.t("QUIZ_FAB_LABEL")} onClick={() => window.dispatchEvent(new Event("fa:open-quiz"))}>
+              <span aria-hidden="true">❓</span>
+              {quizReady && <span className="hdr-mdot" aria-hidden="true" />}
+            </button>
+          )}
           <button className="hdr-mbtn" aria-label={I18N.t("CHAT_FAB_LABEL")} onClick={() => window.dispatchEvent(new Event("fa:open-chat"))}>
             <span aria-hidden="true">💬</span>
           </button>

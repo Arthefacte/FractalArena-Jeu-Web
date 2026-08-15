@@ -53,6 +53,18 @@
     background: var(--alert); color: #fff;
     font-size: 9px; font-weight: 700; border-radius: 8px;
   }
+  /* Point orange pulsant sur la pastille ❓ : un quiz attend d'être ouvert. */
+  .hdr-mdot {
+    position: absolute; top: -3px; right: -3px;
+    width: 9px; height: 9px; border-radius: 50%;
+    background: var(--fire);
+    box-shadow: 0 0 6px rgba(247, 147, 26, .8);
+    animation: faQuizDot 1.6s ease-in-out infinite;
+  }
+  @keyframes faQuizDot {
+    0%, 100% { opacity: .55; transform: scale(.85); }
+    50% { opacity: 1; transform: scale(1.15); }
+  }
 
   /* ---- Pli des pools : replié derrière le header, tap sur le caret ---- */
   .fa-pools { display: none; }
@@ -209,7 +221,7 @@
   .fa-sheet-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 
   /* ---- Plus de bulles flottantes : le header porte chat et social ---- */
-  .chat-fab, .room-fab { display: none; }
+  .chat-fab, .room-fab, .quiz-fab { display: none; }
 
   /* ---- vh → dvh : la barre d'URL mobile ne fait plus sauter les listes ---- */
   .app-shell { min-height: 100dvh; }

@@ -1102,6 +1102,27 @@ input { font-family: var(--font-mono); }
    Bulle discrète en bas à droite, AU-DESSUS des fabs (chat/salon) mais SOUS les
    modales (.overlay est à 100) : une question ne doit jamais recouvrir un écran
    que le joueur a ouvert lui-même. */
+/* La pastille ❓ (desktop) : le quiz ne s'ouvre plus tout seul, cette bulle
+   apparaît quand une question attend et c'est le joueur qui l'ouvre. Plus
+   petite que les fabs chat/salon : c'est une invitation, pas un canal. */
+.quiz-fab {
+  position: fixed; right: 28px; bottom: 158px; z-index: 55;
+  width: 44px; height: 44px; border-radius: 50%;
+  display: grid; place-items: center; cursor: pointer;
+  font-size: 17px; line-height: 1; padding: 0;
+  color: #05070f; border: none;
+  background: radial-gradient(circle at 32% 28%, #ffc46b, var(--fire));
+  box-shadow: 0 6px 20px rgba(0,0,0,.45), 0 0 14px rgba(247,147,26,.4);
+  animation: quiz-fab-pulse 1.8s ease-in-out infinite;
+  transition: transform .15s ease;
+}
+.quiz-fab:hover { transform: translateY(-2px) scale(1.05); }
+.quiz-fab:active { transform: scale(.97); }
+@keyframes quiz-fab-pulse {
+  0%, 100% { box-shadow: 0 6px 20px rgba(0,0,0,.45), 0 0 10px rgba(247,147,26,.3); }
+  50% { box-shadow: 0 6px 20px rgba(0,0,0,.45), 0 0 22px rgba(247,147,26,.7); }
+}
+
 .quiz-toast {
   position: fixed; right: 22px; bottom: 154px; z-index: 55;
   width: min(320px, calc(100vw - 44px));

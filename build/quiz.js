@@ -56,6 +56,7 @@ function QuizToast() {
   const [envoi, setEnvoi] = useState(false); // une seule réponse à la fois
   const [donne, setDonne] = useState(false); // don déjà effectué
   const [restant, setRestant] = useState(0); // secondes affichées par le décompte
+  const [pret, setPret] = useState(false); // un quiz attend d'être ouvert
   const lastAskAt = useRef(0);
   const finAt = useRef(0);
   const ouvert = !!question;
@@ -69,26 +70,51 @@ function QuizToast() {
   const choixRef = useRef(false);
   choixRef.current = choixEnAttente;
 
-  // Minuterie : on regarde chaque seconde s'il est temps de proposer une bulle.
-  // shouldAsk() tranche — le composant ne décide rien.
+  // Plus aucune bulle spontanée (retour joueur, 15/08 : « les notifications qui
+  // popent, c'est relou ») : la minuterie ne fait qu'allumer la pastille ❓.
+  // shouldAsk() tranche toujours — même logique pure, seul le geste d'ouvrir
+  // a changé de main : il appartient au joueur.
   useEffect(() => {
-    const id = setInterval(async () => {
+    const id = setInterval(() => {
       const etat = {
         lastAskAt: lastAskAt.current,
         toastOpen: !!question,
         busy: estOccupe(),
         wallet: g.wallet
       };
-      if (!QUIZ.shouldAsk(etat, Date.now())) return;
-      lastAskAt.current = Date.now();
-      const r = await actions.fetchQuizQuestion();
-      if (!r.ok || !r.data || !r.data.question) return;
-      setVerdict(null);
-      setDonne(false);
-      setQuestion(r.data.question);
+      setPret(QUIZ.shouldAsk(etat, Date.now()));
     }, 1000);
     return () => clearInterval(id);
-  }, [g.wallet, question, actions]);
+  }, [g.wallet, question]);
+
+  // Le header mobile peint la pastille : il apprend l'état par événement,
+  // comme le badge de non-lus du salon (fa:room-unread).
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent("fa:quiz-ready", {
+      detail: pret
+    }));
+  }, [pret]);
+
+  // Ouverture à la demande : pastille du header (fa:open-quiz) ou bulle
+  // flottante desktop. La question n'est fetchée qu'à ce moment-là.
+  const ouvrirRef = useRef(null);
+  ouvrirRef.current = async () => {
+    if (question || envoi || !pret) return;
+    lastAskAt.current = Date.now(); // le cooldown repart, même si le fetch échoue
+    setPret(false);
+    const r = await actions.fetchQuizQuestion();
+    if (!r.ok || !r.data || !r.data.question) return;
+    setVerdict(null);
+    setDonne(false);
+    setQuestion(r.data.question);
+  };
+  useEffect(() => {
+    const h = () => {
+      if (ouvrirRef.current) ouvrirRef.current();
+    };
+    window.addEventListener("fa:open-quiz", h);
+    return () => window.removeEventListener("fa:open-quiz", h);
+  }, []);
 
   // Le décompte EST l'horloge de la bulle : ce que le joueur voit descendre est
   // ce qui la ferme. Il repart à 30 s quand la réponse arrive — lire l'explication
@@ -188,7 +214,21 @@ function QuizToast() {
     }
     fermer();
   }
-  if (!g.wallet || !question) return null;
+  if (!g.wallet) return null;
+
+  // Desktop : une petite bulle ❓ apparaît quand un quiz est prêt (le header
+  // mobile a sa propre pastille, cette bulle y est masquée par mobile.css).
+  if (!question) {
+    return pret ? /*#__PURE__*/React.createElement("button", {
+      className: "quiz-fab",
+      "aria-label": I18N.t("QUIZ_FAB_LABEL"),
+      onClick: () => {
+        if (ouvrirRef.current) ouvrirRef.current();
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      "aria-hidden": "true"
+    }, "\u2753")) : null;
+  }
   return /*#__PURE__*/React.createElement("div", {
     className: "quiz-toast",
     role: "dialog",

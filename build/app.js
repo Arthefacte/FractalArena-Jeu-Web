@@ -3578,10 +3578,18 @@ function Header({
   // non-lus du salon arrive par événement depuis RoomFab.
   const [poolsOpen, setPoolsOpen] = useState(false);
   const [roomUnread, setRoomUnread] = useState(0);
+  // Un quiz attend : point orange pulsant sur la pastille ❓. L'état vient de
+  // QuizToast (fa:quiz-ready) — plus aucune bulle ne s'ouvre toute seule.
+  const [quizReady, setQuizReady] = useState(false);
   useEffect(() => {
     const h = e => setRoomUnread(e.detail || 0);
     window.addEventListener("fa:room-unread", h);
-    return () => window.removeEventListener("fa:room-unread", h);
+    const q = e => setQuizReady(!!e.detail);
+    window.addEventListener("fa:quiz-ready", q);
+    return () => {
+      window.removeEventListener("fa:room-unread", h);
+      window.removeEventListener("fa:quiz-ready", q);
+    };
   }, []);
   const togglePools = () => setPoolsOpen(o => {
     const n = !o;
@@ -3663,7 +3671,16 @@ function Header({
     onClick: () => window.dispatchEvent(new Event("fa-open-tutorial"))
   }, "?"), /*#__PURE__*/React.createElement("div", {
     className: "hdr-mtools"
-  }, /*#__PURE__*/React.createElement("button", {
+  }, g.wallet && /*#__PURE__*/React.createElement("button", {
+    className: "hdr-mbtn",
+    "aria-label": I18N.t("QUIZ_FAB_LABEL"),
+    onClick: () => window.dispatchEvent(new Event("fa:open-quiz"))
+  }, /*#__PURE__*/React.createElement("span", {
+    "aria-hidden": "true"
+  }, "\u2753"), quizReady && /*#__PURE__*/React.createElement("span", {
+    className: "hdr-mdot",
+    "aria-hidden": "true"
+  })), /*#__PURE__*/React.createElement("button", {
     className: "hdr-mbtn",
     "aria-label": I18N.t("CHAT_FAB_LABEL"),
     onClick: () => window.dispatchEvent(new Event("fa:open-chat"))
