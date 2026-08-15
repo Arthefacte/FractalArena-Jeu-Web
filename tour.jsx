@@ -371,7 +371,10 @@ function Tour() {
         {!st.score.free_run_used && <span className="pill" style={{ color: "var(--success)" }}>{I18N.t("TOUR_FREE_BADGE")}</span>}
       </div>
 
-      <div style={{ display: "grid", gap: 14, marginBottom: 14 }}>
+      {/* minmax(0,1fr) : une piste auto prendrait la min-content du bandeau de
+          paliers (~900px, l'overflow-x:auto n'y change rien) et pousserait les
+          deux bandes hors de l'écran en mobile. */}
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 14, marginBottom: 14 }}>
         <TourMutatorBand mutators={st.mutators} />
         <TourTierBand score={st.score} />
       </div>

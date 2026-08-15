@@ -821,6 +821,7 @@ function Tour() {
   }, I18N.t("TOUR_FREE_BADGE"))), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "grid",
+      gridTemplateColumns: "minmax(0, 1fr)",
       gap: 14,
       marginBottom: 14
     }
