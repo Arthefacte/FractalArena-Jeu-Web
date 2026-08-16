@@ -207,6 +207,7 @@
     gap: clamp(6px, 2vw, 10px);
   }
   .fa-sheet-item {
+    position: relative; /* ancre la pastille .fa-sheet-dot (Expéditions prêtes) */
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
     min-height: 66px; padding: clamp(7px, 2.4vw, 11px) 4px; min-width: 0;
     background: var(--bg-panel); border: 1px solid var(--line); cursor: pointer;

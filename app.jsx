@@ -2356,6 +2356,12 @@ function Nav() {
   const more = tabs.filter(([k]) => !MAIN.includes(k));
   const go = (k) => { if (window.FA_SFX) window.FA_SFX.play("tab"); actions.setView(k); setSheetOpen(false); };
   const areneBadge = g.pvp && g.pvp.attacksUnseen > 0 ? g.pvp.attacksUnseen : 0;
+  // Pastille Expéditions : dérivée des ends_at connus (aucun poll réseau) — un
+  // tick de 30 s suffit pour qu'elle s'allume pendant qu'on joue ailleurs.
+  const [, setExpTick] = useState(0);
+  useEffect(() => { const t = setInterval(() => setExpTick((n) => n + 1), 30000); return () => clearInterval(t); }, []);
+  const expNow = Date.now() + (g.expNowOffset || 0);
+  const expReady = (g.expeditions || []).filter((e) => new Date(e.ends_at).getTime() <= expNow).length;
   return (
     <>
       <nav className="nav">
@@ -2368,6 +2374,7 @@ function Nav() {
                 {areneBadge}
               </span>
             )}
+            {k === "expeditions" && expReady > 0 && <span className="fa-sheet-dot" aria-hidden="true" style={{ position: "static", marginLeft: 4 }} />}
           </button>
         ))}
       </nav>
@@ -2390,6 +2397,7 @@ function Nav() {
           active={more.some(([k]) => g.view === k)}
           glyph="☰"
           label={I18N.t("NAV_MORE")}
+          badge={expReady}
           onClick={() => { if (window.FA_SFX) window.FA_SFX.play("tab"); setSheetOpen(true); }}
         />
       </nav>
@@ -2405,6 +2413,7 @@ function Nav() {
                 <button key={k} className={cx("fa-sheet-item", g.view === k && "on")} onClick={() => go(k)}>
                   <img src={`assets/nav-icons/${k}.png?v=74`} alt="" aria-hidden="true" draggable="false" />
                   <span>{I18N.t(key)}</span>
+                  {k === "expeditions" && expReady > 0 && <span className="fa-sheet-dot" aria-hidden="true" />}
                 </button>
               ))}
             </div>

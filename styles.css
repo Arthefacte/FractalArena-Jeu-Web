@@ -1313,6 +1313,10 @@ input { font-family: var(--font-mono); }
 .exq-farow { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 12px;
   background: linear-gradient(90deg, rgba(247,147,26,.08), rgba(10,15,30,.4)); border: 1px solid rgba(247,147,26,.3); }
 
+/* Pastille « expédition prête » — sheet « Plus » (absolue) et nav desktop (statique inline). */
+.fa-sheet-dot { position: absolute; top: 6px; right: 6px; width: 8px; height: 8px; border-radius: 50%;
+  background: var(--fire); box-shadow: 0 0 8px var(--fire); animation: exqPulse 1.6s ease-in-out infinite; }
+
 /* --- Overlay de lancement : portail hexagonal --- */
 .exq-fx { position: fixed; inset: 0; z-index: 60; overflow: hidden; background: rgba(3,5,11,.95);
   animation: exqFadeIn .18s ease-out both; cursor: pointer; }

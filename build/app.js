@@ -4151,6 +4151,15 @@ function Nav() {
     setSheetOpen(false);
   };
   const areneBadge = g.pvp && g.pvp.attacksUnseen > 0 ? g.pvp.attacksUnseen : 0;
+  // Pastille Expéditions : dérivée des ends_at connus (aucun poll réseau) — un
+  // tick de 30 s suffit pour qu'elle s'allume pendant qu'on joue ailleurs.
+  const [, setExpTick] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setExpTick(n => n + 1), 30000);
+    return () => clearInterval(t);
+  }, []);
+  const expNow = Date.now() + (g.expNowOffset || 0);
+  const expReady = (g.expeditions || []).filter(e => new Date(e.ends_at).getTime() <= expNow).length;
   return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("nav", {
     className: "nav"
   }, tabs.map(([k, key]) => /*#__PURE__*/React.createElement("button", {
@@ -4176,7 +4185,14 @@ function Nav() {
       padding: "0 5px",
       fontWeight: 700
     }
-  }, areneBadge)))), /*#__PURE__*/React.createElement("nav", {
+  }, areneBadge), k === "expeditions" && expReady > 0 && /*#__PURE__*/React.createElement("span", {
+    className: "fa-sheet-dot",
+    "aria-hidden": "true",
+    style: {
+      position: "static",
+      marginLeft: 4
+    }
+  })))), /*#__PURE__*/React.createElement("nav", {
     className: "fa-mnav"
   }, /*#__PURE__*/React.createElement("span", {
     className: "fa-mnav-liseret",
@@ -4195,6 +4211,7 @@ function Nav() {
     active: more.some(([k]) => g.view === k),
     glyph: "\u2630",
     label: I18N.t("NAV_MORE"),
+    badge: expReady,
     onClick: () => {
       if (window.FA_SFX) window.FA_SFX.play("tab");
       setSheetOpen(true);
@@ -4224,7 +4241,10 @@ function Nav() {
     alt: "",
     "aria-hidden": "true",
     draggable: "false"
-  }), /*#__PURE__*/React.createElement("span", null, I18N.t(key))))), /*#__PURE__*/React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("span", null, I18N.t(key)), k === "expeditions" && expReady > 0 && /*#__PURE__*/React.createElement("span", {
+    className: "fa-sheet-dot",
+    "aria-hidden": "true"
+  })))), /*#__PURE__*/React.createElement("div", {
     className: "fa-sheet-foot"
   }, /*#__PURE__*/React.createElement(LangSwitch, null), /*#__PURE__*/React.createElement("button", {
     className: "btn ghost sm",
