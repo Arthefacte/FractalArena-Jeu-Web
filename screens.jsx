@@ -558,6 +558,49 @@ function ForgeSummon() {
   );
 }
 
+// Fragments d'expédition → relique (rang du fragment = rareté de la relique).
+// Compteurs dans g.expFragments (GET /expeditions/state), coût 0 FA.
+function ForgeFragments({ onForged }) {
+  const { g, actions, toast } = useFA();
+  const XU = window.FA_EXPEDITIONS_UI;
+  const [crafting, setCrafting] = useState(false);
+  const frags = g.expFragments || { C: 0, B: 0, A: 0, S: 0 };
+  async function doCraft(rk) {
+    if (crafting) return;
+    setCrafting(true);
+    const r = await actions.expeditionsCraftRelic(rk);
+    setCrafting(false);
+    if (!r.ok) { toast(I18N.t(r.reason === "fragments_insuffisants" ? "EXP_ERR_fragments_insuffisants" : "EXP_ERR_generic"), "bad"); return; }
+    toast(I18N.t("FG_SUMMON_OK", I18N.t("RELIC_" + r.relic.type.toUpperCase()), rarityLabel(r.relic.rarity)), "good");
+    if (onForged) onForged(r.relic);
+  }
+  return (
+    <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 22, marginTop: 26 }}>
+      <div className="eyebrow" style={{ marginBottom: 4 }}>{I18N.t("EXP_FORGE_TITLE")}</div>
+      <div className="mono muted" style={{ fontSize: 12, marginBottom: 14 }}>{I18N.t("EXP_FORGE_SUB")}</div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {["C", "B", "A", "S"].map((rk) => {
+          const have = frags[rk] || 0;
+          const need = XU.FRAGMENT_COSTS[rk];
+          const col = D.RANK_COLORS[rk];
+          return (
+            <div key={rk} style={{ display: "grid", gridTemplateColumns: "28px minmax(0,1fr) auto", gap: 12, alignItems: "center" }}>
+              <b style={{ color: col, fontSize: 16, textAlign: "center" }}>{rk}</b>
+              <div style={{ minWidth: 0 }}>
+                <Bar frac={Math.min(1, have / need)} kind="xp" />
+              </div>
+              <button className="btn sm" disabled={have < need || crafting} onClick={() => doCraft(rk)}
+                style={have >= need ? { borderColor: col, color: col, fontWeight: 700 } : {}}>
+                {I18N.t("EXP_FORGE_BTN")} <span className="mono">{have}/{need}</span>
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function ForgeReliques() {
   const { g, actions, toast } = useFA();
   const [last, setLast] = useState(null);
@@ -620,6 +663,16 @@ function ForgeReliques() {
           )}
         </div>
       </div>
+      <ForgeFragments onForged={(relic) => {
+        setLast(relic);
+        if (window.FA_FORGE_CINE) {
+          window.FA_FORGE_CINE.play({
+            mode: "summon", success: true, tier: relic.rarity,
+            color: D.RARITY_COLORS[relic.rarity] || "#46e6ff",
+            onDone: () => {},
+          });
+        }
+      }} />
       <div style={{ marginTop: 26 }}>
         <div className="eyebrow" style={{ marginBottom: 10 }}>{I18N.t("RELIC_INVENTORY")}</div>
         {(g.equipment || []).length === 0 ? (
