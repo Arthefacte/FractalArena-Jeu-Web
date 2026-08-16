@@ -734,7 +734,6 @@
     EXP_STATUS_FREE: { FR: "Disponible", EN: "Available", ZH: "可派遣" },
     EXP_STATUS_RUNNING: { FR: "En cours", EN: "In progress", ZH: "进行中" },
     EXP_STATUS_READY: { FR: "À réclamer", EN: "Ready to claim", ZH: "可领取" },
-    EXP_SUMMARY: { FR: "%d en cours · %d à réclamer", EN: "%d in progress · %d to claim", ZH: "%d进行中·%d可领取" },
     EXP_FA_WEEK: { FR: "FA verrouillés cette semaine", EN: "Locked FA this week", ZH: "本周锁定FA" },
     EXP_SELECT_3: { FR: "Choisis 3 bêtes disponibles", EN: "Pick 3 available beasts", ZH: "选择3只可用战兽" },
     EXP_TEAM_WARN: {
@@ -767,7 +766,6 @@
     EXP_CLAIM: { FR: "Réclamer le butin", EN: "Claim loot", ZH: "领取战利品" },
     EXP_VICTORY: { FR: "La meute revient victorieuse", EN: "The pack returns victorious", ZH: "战群凯旋而归" },
     EXP_HARD_RETURN: { FR: "Retour difficile", EN: "A hard return", ZH: "艰难归来" },
-    EXP_XP_EACH: { FR: "+%d XP par bête", EN: "+%d XP per beast", ZH: "每只战兽+%d经验" },
     EXP_FA_LOCKED_GAIN: { FR: "+%d FA verrouillés", EN: "+%d locked FA", ZH: "+%d锁定FA" },
     EXP_FA_CAP: { FR: "plafond hebdo %d/%d", EN: "weekly cap %d/%d", ZH: "周上限%d/%d" },
     EXP_FRAG_LINE: { FR: "Fragments %s ×%d", EN: "%s fragments ×%d", ZH: "%s碎片×%d" },

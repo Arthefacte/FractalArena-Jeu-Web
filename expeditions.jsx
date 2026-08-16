@@ -52,8 +52,16 @@ function Expeditions() {
   const [, setTick] = useState(0);
   const fxTimer = useRef(null);
 
-  useEffect(() => { const t = setInterval(() => setTick((n) => n + 1), 1000); return () => clearInterval(t); }, []);
-  useEffect(() => { if (g.authToken) actions.expeditionsState(); }, [g.authToken]);
+  // Tick 1 s seulement là où un compte à rebours est visible (dest, track).
+  const ticking = view === "dest" || view === "track";
+  useEffect(() => {
+    if (!ticking) return undefined;
+    const t = setInterval(() => setTick((n) => n + 1), 1000);
+    return () => clearInterval(t);
+  }, [ticking]);
+  // Rafraîchit à l'OUVERTURE de l'écran ; le changement de jeton est déjà
+  // couvert par l'effet global d'app.jsx (sinon double requête au boot).
+  useEffect(() => { if (g.authToken) actions.expeditionsState(); }, []);
   useEffect(() => () => { if (fxTimer.current) clearTimeout(fxTimer.current); }, []);
 
   const now = Date.now() + (g.expNowOffset || 0);
@@ -63,6 +71,12 @@ function Expeditions() {
   const busyIds = new Set(exps.flatMap((e) => (Array.isArray(e.beast_ids) ? e.beast_ids : [])));
   const roster = Array.isArray(g.roster) ? g.roster : [];
   const beastById = (id) => roster.find((b) => b && b.id === id);
+
+  // Une vue orpheline (expédition rappelée/réclamée ailleurs, butin absent)
+  // retombe sur les destinations — via un effet, jamais en plein rendu.
+  const trackOrphan = view === "track" && !byDest[selWorld];
+  const lootOrphan = view === "loot" && !loot;
+  useEffect(() => { if (trackOrphan || lootOrphan) setView("dest"); }, [trackOrphan, lootOrphan]);
 
   if (!g.wallet || !g.authToken) {
     return (
@@ -93,7 +107,7 @@ function Expeditions() {
       setView("dest"); setSel([]);
       return;
     }
-    setFx({ worldId: selWorld, ids: sel.slice(), endsAt: new Date(r.expedition.ends_at), durS: dur });
+    setFx({ worldId: selWorld, ids: sel.slice(), endsAt: new Date(r.expedition.ends_at) });
     fxTimer.current = setTimeout(endFx, 2300);
   }
 
@@ -104,8 +118,8 @@ function Expeditions() {
     let r = await actions.expeditionsClaim(e.id);
     if (!r.ok && r.reason === "retry") r = await actions.expeditionsClaim(e.id);
     setBusyCall(false);
-    setTimeout(() => setClaiming(false), 750);
     if (!r.ok) { setClaiming(false); toast(expErr(r.reason), "bad"); return; }
+    setTimeout(() => setClaiming(false), 750);   // laisse le burst se jouer
     setLoot({ success: r.success, rewards: r.rewards, fa_week: r.fa_week, worldId: e.destination, beastIds: e.beast_ids || [] });
     setSelWorld(e.destination);
     setView("loot");
@@ -120,6 +134,18 @@ function Expeditions() {
 
   const world = XU.worldOf(selWorld) || XU.WORLDS[0];
   const wName = (w) => I18N.t(w.i18nKey);
+
+  function WorldHead() {
+    return (
+      <div className="exq-headworld">
+        <span style={{ width: 6, height: 22, background: world.color, flex: "none" }} />
+        <div style={{ minWidth: 0 }}>
+          <div className="eyebrow" style={{ fontSize: 10, color: world.color }}>{I18N.t("EXP_AFFINITY")} {world.type}</div>
+          <b style={{ fontSize: 19 }}>{wName(world)}</b>
+        </div>
+      </div>
+    );
+  }
 
   // ============ VUE DESTINATIONS ============
   function renderDest() {
@@ -201,13 +227,7 @@ function Expeditions() {
     return (
       <div className="exq-col">
         <BackRow />
-        <div className="exq-headworld">
-          <span style={{ width: 6, height: 22, background: world.color, flex: "none" }} />
-          <div style={{ minWidth: 0 }}>
-            <div className="eyebrow" style={{ fontSize: 10, color: world.color }}>{I18N.t("EXP_AFFINITY")} {world.type}</div>
-            <b style={{ fontSize: 19 }}>{wName(world)}</b>
-          </div>
-        </div>
+        <WorldHead />
         <div className="exq-steprow">
           <span className="eyebrow" style={{ fontSize: 10 }}>1 · {I18N.t("EXP_SELECT_3")}</span>
           <b className="exq-mono" style={{ color: ready3 ? "var(--success)" : "var(--text-dim)" }}>{sel.length} / 3</b>
@@ -300,7 +320,7 @@ function Expeditions() {
   // ============ VUE SUIVI ============
   function renderTrack() {
     const e = byDest[selWorld];
-    if (!e) { setView("dest"); return null; }
+    if (!e) return null;   // l'effet trackOrphan ramène sur les destinations
     const endsAt = new Date(e.ends_at).getTime();
     const startedAt = new Date(e.started_at).getTime();
     const remain = Math.max(0, endsAt - now);
@@ -310,13 +330,7 @@ function Expeditions() {
     return (
       <div className="exq-col">
         <BackRow />
-        <div className="exq-headworld">
-          <span style={{ width: 6, height: 22, background: world.color, flex: "none" }} />
-          <div style={{ minWidth: 0 }}>
-            <div className="eyebrow" style={{ fontSize: 10, color: world.color }}>{I18N.t("EXP_AFFINITY")} {world.type}</div>
-            <b style={{ fontSize: 19 }}>{wName(world)}</b>
-          </div>
-        </div>
+        <WorldHead />
         <div className="exq-trackbox">
           <div className="eyebrow" style={{ fontSize: 10, color: "var(--elec)" }}>{I18N.t("EXP_STATUS_RUNNING")}</div>
           <b className="exq-mono exq-bigtime">{XU.fmtCountdown(remain)}</b>
@@ -368,7 +382,7 @@ function Expeditions() {
 
   // ============ VUE BUTIN ============
   function renderLoot() {
-    if (!loot) { setView("dest"); return null; }
+    if (!loot) return null;   // l'effet lootOrphan ramène sur les destinations
     const rw = loot.rewards || {};
     const frags = rw.frags || {};
     const fragRanks = ["C", "B", "A"].filter((rk) => (frags[rk] || 0) > 0);
@@ -459,7 +473,6 @@ function Expeditions() {
     if (!fx) return null;
     const w = XU.worldOf(fx.worldId) || XU.WORLDS[0];
     const cards = fx.ids.map(beastById);
-    const flights = ["exqFlightL", "exqFlightC", "exqFlightR"];
     return (
       <div className="exq-fx" onClick={endFx} role="button">
         <div className="exq-fx-shake">
@@ -479,7 +492,7 @@ function Expeditions() {
             {cards.map((b, i) => {
               const tm = b ? typeMeta(b.type) : { color: "var(--elec)", rgb: "0,240,255" };
               return (
-                <div key={i} className="exq-fx-card" style={{ borderColor: tm.color, boxShadow: `0 0 16px rgba(${tm.rgb},.4)`, animationName: flights[i], animationDelay: (0.35 + i * 0.12) + "s" }}>
+                <div key={i} className="exq-fx-card" style={{ borderColor: tm.color, boxShadow: `0 0 16px rgba(${tm.rgb},.4)`, "--fx-x": i - 1, animationDelay: (0.35 + i * 0.12) + "s" }}>
                   <span className="exq-streak" style={{ background: `linear-gradient(0deg, ${tm.color}, transparent)`, animationDelay: (0.83 + i * 0.12) + "s" }} />
                   <span className="exq-hex" style={{ color: tm.color, borderColor: tm.color, background: `linear-gradient(150deg, rgba(${tm.rgb},.22), rgba(6,9,18,.7))` }}>{EXP_GLYPH[b && b.type] || "✦"}</span>
                   <span style={{ fontSize: 9, fontWeight: 700, maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", padding: "0 4px" }}>{b ? D.displayName(b) : ""}</span>

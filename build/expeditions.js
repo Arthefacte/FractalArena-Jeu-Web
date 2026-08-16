@@ -85,13 +85,19 @@ function Expeditions() {
   const [confirmRecall, setConfirmRecall] = useState(false);
   const [, setTick] = useState(0);
   const fxTimer = useRef(null);
+
+  // Tick 1 s seulement là où un compte à rebours est visible (dest, track).
+  const ticking = view === "dest" || view === "track";
   useEffect(() => {
+    if (!ticking) return undefined;
     const t = setInterval(() => setTick(n => n + 1), 1000);
     return () => clearInterval(t);
-  }, []);
+  }, [ticking]);
+  // Rafraîchit à l'OUVERTURE de l'écran ; le changement de jeton est déjà
+  // couvert par l'effet global d'app.jsx (sinon double requête au boot).
   useEffect(() => {
     if (g.authToken) actions.expeditionsState();
-  }, [g.authToken]);
+  }, []);
   useEffect(() => () => {
     if (fxTimer.current) clearTimeout(fxTimer.current);
   }, []);
@@ -104,6 +110,14 @@ function Expeditions() {
   const busyIds = new Set(exps.flatMap(e => Array.isArray(e.beast_ids) ? e.beast_ids : []));
   const roster = Array.isArray(g.roster) ? g.roster : [];
   const beastById = id => roster.find(b => b && b.id === id);
+
+  // Une vue orpheline (expédition rappelée/réclamée ailleurs, butin absent)
+  // retombe sur les destinations — via un effet, jamais en plein rendu.
+  const trackOrphan = view === "track" && !byDest[selWorld];
+  const lootOrphan = view === "loot" && !loot;
+  useEffect(() => {
+    if (trackOrphan || lootOrphan) setView("dest");
+  }, [trackOrphan, lootOrphan]);
   if (!g.wallet || !g.authToken) {
     return /*#__PURE__*/React.createElement("div", {
       className: "container"
@@ -159,8 +173,7 @@ function Expeditions() {
     setFx({
       worldId: selWorld,
       ids: sel.slice(),
-      endsAt: new Date(r.expedition.ends_at),
-      durS: dur
+      endsAt: new Date(r.expedition.ends_at)
     });
     fxTimer.current = setTimeout(endFx, 2300);
   }
@@ -173,12 +186,12 @@ function Expeditions() {
     let r = await actions.expeditionsClaim(e.id);
     if (!r.ok && r.reason === "retry") r = await actions.expeditionsClaim(e.id);
     setBusyCall(false);
-    setTimeout(() => setClaiming(false), 750);
     if (!r.ok) {
       setClaiming(false);
       toast(expErr(r.reason), "bad");
       return;
     }
+    setTimeout(() => setClaiming(false), 750); // laisse le burst se jouer
     setLoot({
       success: r.success,
       rewards: r.rewards,
@@ -200,6 +213,32 @@ function Expeditions() {
   }
   const world = XU.worldOf(selWorld) || XU.WORLDS[0];
   const wName = w => I18N.t(w.i18nKey);
+  function WorldHead() {
+    return /*#__PURE__*/React.createElement("div", {
+      className: "exq-headworld"
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        width: 6,
+        height: 22,
+        background: world.color,
+        flex: "none"
+      }
+    }), /*#__PURE__*/React.createElement("div", {
+      style: {
+        minWidth: 0
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "eyebrow",
+      style: {
+        fontSize: 10,
+        color: world.color
+      }
+    }, I18N.t("EXP_AFFINITY"), " ", world.type), /*#__PURE__*/React.createElement("b", {
+      style: {
+        fontSize: 19
+      }
+    }, wName(world))));
+  }
 
   // ============ VUE DESTINATIONS ============
   function renderDest() {
@@ -353,30 +392,7 @@ function Expeditions() {
     const allEpic = ready3 && team.every(b => b.rarity === "Epic");
     return /*#__PURE__*/React.createElement("div", {
       className: "exq-col"
-    }, /*#__PURE__*/React.createElement(BackRow, null), /*#__PURE__*/React.createElement("div", {
-      className: "exq-headworld"
-    }, /*#__PURE__*/React.createElement("span", {
-      style: {
-        width: 6,
-        height: 22,
-        background: world.color,
-        flex: "none"
-      }
-    }), /*#__PURE__*/React.createElement("div", {
-      style: {
-        minWidth: 0
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "eyebrow",
-      style: {
-        fontSize: 10,
-        color: world.color
-      }
-    }, I18N.t("EXP_AFFINITY"), " ", world.type), /*#__PURE__*/React.createElement("b", {
-      style: {
-        fontSize: 19
-      }
-    }, wName(world)))), /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/React.createElement(BackRow, null), /*#__PURE__*/React.createElement(WorldHead, null), /*#__PURE__*/React.createElement("div", {
       className: "exq-steprow"
     }, /*#__PURE__*/React.createElement("span", {
       className: "eyebrow",
@@ -587,10 +603,7 @@ function Expeditions() {
   // ============ VUE SUIVI ============
   function renderTrack() {
     const e = byDest[selWorld];
-    if (!e) {
-      setView("dest");
-      return null;
-    }
+    if (!e) return null; // l'effet trackOrphan ramène sur les destinations
     const endsAt = new Date(e.ends_at).getTime();
     const startedAt = new Date(e.started_at).getTime();
     const remain = Math.max(0, endsAt - now);
@@ -599,30 +612,7 @@ function Expeditions() {
     const crew = (e.beast_ids || []).map(beastById).filter(Boolean);
     return /*#__PURE__*/React.createElement("div", {
       className: "exq-col"
-    }, /*#__PURE__*/React.createElement(BackRow, null), /*#__PURE__*/React.createElement("div", {
-      className: "exq-headworld"
-    }, /*#__PURE__*/React.createElement("span", {
-      style: {
-        width: 6,
-        height: 22,
-        background: world.color,
-        flex: "none"
-      }
-    }), /*#__PURE__*/React.createElement("div", {
-      style: {
-        minWidth: 0
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "eyebrow",
-      style: {
-        fontSize: 10,
-        color: world.color
-      }
-    }, I18N.t("EXP_AFFINITY"), " ", world.type), /*#__PURE__*/React.createElement("b", {
-      style: {
-        fontSize: 19
-      }
-    }, wName(world)))), /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/React.createElement(BackRow, null), /*#__PURE__*/React.createElement(WorldHead, null), /*#__PURE__*/React.createElement("div", {
       className: "exq-trackbox"
     }, /*#__PURE__*/React.createElement("div", {
       className: "eyebrow",
@@ -760,10 +750,7 @@ function Expeditions() {
 
   // ============ VUE BUTIN ============
   function renderLoot() {
-    if (!loot) {
-      setView("dest");
-      return null;
-    }
+    if (!loot) return null; // l'effet lootOrphan ramène sur les destinations
     const rw = loot.rewards || {};
     const frags = rw.frags || {};
     const fragRanks = ["C", "B", "A"].filter(rk => (frags[rk] || 0) > 0);
@@ -975,7 +962,6 @@ function Expeditions() {
     if (!fx) return null;
     const w = XU.worldOf(fx.worldId) || XU.WORLDS[0];
     const cards = fx.ids.map(beastById);
-    const flights = ["exqFlightL", "exqFlightC", "exqFlightR"];
     return /*#__PURE__*/React.createElement("div", {
       className: "exq-fx",
       onClick: endFx,
@@ -1034,7 +1020,7 @@ function Expeditions() {
         style: {
           borderColor: tm.color,
           boxShadow: `0 0 16px rgba(${tm.rgb},.4)`,
-          animationName: flights[i],
+          "--fx-x": i - 1,
           animationDelay: 0.35 + i * 0.12 + "s"
         }
       }, /*#__PURE__*/React.createElement("span", {

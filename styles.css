@@ -1331,7 +1331,7 @@ input { font-family: var(--font-mono); }
 .exq-fx-card { position: relative; width: 86px; height: 112px; display: flex; flex-direction: column; align-items: center;
   justify-content: center; gap: 6px; background: linear-gradient(160deg, rgba(14,20,38,.96), rgba(6,9,18,.96));
   border: 1px solid; will-change: transform, opacity;
-  animation-duration: 1s; animation-timing-function: cubic-bezier(.42,0,.72,.25); animation-fill-mode: both; }
+  animation-name: exqFlight; animation-duration: 1s; animation-timing-function: cubic-bezier(.42,0,.72,.25); animation-fill-mode: both; }
 .exq-streak { position: absolute; left: 50%; bottom: 100%; width: 2px; height: 170px; margin-left: -1px;
   transform-origin: 50% 100%; animation: exqStreak .52s ease-out both; }
 .exq-shock { position: absolute; top: 50%; left: 50%; width: 170px; height: 170px; margin: -85px 0 0 -85px;
@@ -1365,26 +1365,12 @@ input { font-family: var(--font-mono); }
   72% { transform: scale(1.03) rotate(8deg); opacity: 1; }
   80%, 100% { transform: scale(1.55) rotate(13deg); opacity: 0; }
 }
-@keyframes exqFlightL {
+@keyframes exqFlight {
   0% { opacity: 0; transform: translate3d(0,70px,0) scale(.86); }
   28% { opacity: 1; transform: translate3d(0,0,0) scale(1); }
   48% { opacity: 1; transform: translate3d(0,0,0) scale(1); }
-  70% { opacity: 1; transform: translate3d(52%,-72%,0) scale(.78) scaleY(1.22); }
-  100% { opacity: 0; transform: translate3d(114%,-155%,0) scale(.1) scaleY(1.9); }
-}
-@keyframes exqFlightC {
-  0% { opacity: 0; transform: translate3d(0,70px,0) scale(.86); }
-  28% { opacity: 1; transform: translate3d(0,0,0) scale(1); }
-  48% { opacity: 1; transform: translate3d(0,0,0) scale(1); }
-  70% { opacity: 1; transform: translate3d(0,-72%,0) scale(.78) scaleY(1.22); }
-  100% { opacity: 0; transform: translate3d(0,-155%,0) scale(.1) scaleY(1.9); }
-}
-@keyframes exqFlightR {
-  0% { opacity: 0; transform: translate3d(0,70px,0) scale(.86); }
-  28% { opacity: 1; transform: translate3d(0,0,0) scale(1); }
-  48% { opacity: 1; transform: translate3d(0,0,0) scale(1); }
-  70% { opacity: 1; transform: translate3d(-52%,-72%,0) scale(.78) scaleY(1.22); }
-  100% { opacity: 0; transform: translate3d(-114%,-155%,0) scale(.1) scaleY(1.9); }
+  70% { opacity: 1; transform: translate3d(calc(var(--fx-x, 0) * 52%),-72%,0) scale(.78) scaleY(1.22); }
+  100% { opacity: 0; transform: translate3d(calc(var(--fx-x, 0) * 114%),-155%,0) scale(.1) scaleY(1.9); }
 }
 @keyframes exqStreak { 0% { transform: scaleY(0); opacity: 0; } 25% { opacity: .9; } 100% { transform: scaleY(1); opacity: 0; } }
 @keyframes exqFlash { 0% { opacity: 0; } 40% { opacity: .92; } 100% { opacity: 0; } }

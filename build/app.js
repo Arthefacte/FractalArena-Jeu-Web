@@ -2280,14 +2280,14 @@ function App() {
           ok: false,
           reason: data.error || "generic"
         };
-        const sv = await fetch(`${API_URL}/save/${s.wallet}`, svOpts());
+        // Les deux GET sont indépendants : en parallèle (latence mobile ÷ 2).
+        const [sv] = await Promise.all([fetch(`${API_URL}/save/${s.wallet}`, svOpts()), actions.expeditionsState()]);
         if (sv.ok) {
           const {
             save
           } = await sv.json();
           setG(st => serverToState(save, s.wallet, st));
         }
-        await actions.expeditionsState();
         return {
           ok: true,
           success: data.success,
@@ -2358,14 +2358,13 @@ function App() {
           ok: false,
           reason: data.error || "generic"
         };
-        const sv = await fetch(`${API_URL}/save/${s.wallet}`, svOpts());
+        const [sv] = await Promise.all([fetch(`${API_URL}/save/${s.wallet}`, svOpts()), actions.expeditionsState()]);
         if (sv.ok) {
           const {
             save
           } = await sv.json();
           setG(st => serverToState(save, s.wallet, st));
         }
-        await actions.expeditionsState();
         return {
           ok: true,
           relic: data.relic,
@@ -4152,12 +4151,15 @@ function Nav() {
   };
   const areneBadge = g.pvp && g.pvp.attacksUnseen > 0 ? g.pvp.attacksUnseen : 0;
   // Pastille Expéditions : dérivée des ends_at connus (aucun poll réseau) — un
-  // tick de 30 s suffit pour qu'elle s'allume pendant qu'on joue ailleurs.
+  // tick de 30 s suffit pour qu'elle s'allume pendant qu'on joue ailleurs, et
+  // il ne tourne que s'il y a au moins une expédition en cours.
   const [, setExpTick] = useState(0);
+  const hasExps = (g.expeditions || []).length > 0;
   useEffect(() => {
+    if (!hasExps) return undefined;
     const t = setInterval(() => setExpTick(n => n + 1), 30000);
     return () => clearInterval(t);
-  }, []);
+  }, [hasExps]);
   const expNow = Date.now() + (g.expNowOffset || 0);
   const expReady = (g.expeditions || []).filter(e => new Date(e.ends_at).getTime() <= expNow).length;
   return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("nav", {
