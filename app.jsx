@@ -187,6 +187,11 @@ function freshState() {
     pvpPrizes: [],
     towerPrizes: [],
     market: { listings: [], mine: null },
+    // Expéditions : état serveur (GET /expeditions/state) — actives + compteurs.
+    expeditions: [],
+    expFragments: { C: 0, B: 0, A: 0, S: 0 },
+    expFaWeek: null,       // { granted, cap, week_ends_in_s }
+    expNowOffset: 0,       // horloge serveur - horloge locale (compte à rebours honnêtes)
   };
 }
 
@@ -291,6 +296,7 @@ function App() {
   // Fetch non-vu des prix PvP dès que le token est établi
   useEffect(() => { if (g.authToken) actions.pvpPrizes(); }, [g.authToken]);
   useEffect(() => { if (g.authToken) actions.towerPrizes(); }, [g.authToken]);
+  useEffect(() => { if (g.authToken) actions.expeditionsState(); }, [g.authToken]);
 
   // language
   useEffect(() => { I18N.setLang(g.lang); }, [g.lang]);
@@ -1258,6 +1264,105 @@ function App() {
         if (Array.isArray(data.creatures)) setG((st) => ({ ...st, roster: data.creatures }));
         return { ok: true };
       } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
+    },
+
+    // ---- Expéditions (idle) — le serveur fait foi, résolution au claim ----
+    // Rafraîchit l'état local (actives + fragments + plafond FA). Silencieux en
+    // échec : la pastille et l'écran vivent sur le dernier état connu.
+    async expeditionsState() {
+      const s = gRef.current;
+      if (!s.authToken) return { ok: false };
+      try {
+        const resp = await fetch(`${API_URL}/expeditions/state`, {
+          headers: { "Authorization": `Bearer ${s.authToken}` },
+        });
+        if (!resp.ok) return { ok: false };
+        const data = await resp.json();
+        if (!data.ok) return { ok: false };
+        setG((st) => ({ ...st,
+          expeditions: Array.isArray(data.expeditions) ? data.expeditions : [],
+          expFragments: data.fragments || { C: 0, B: 0, A: 0, S: 0 },
+          expFaWeek: data.fa_week || null,
+          expNowOffset: (data.now || Date.now()) - Date.now(),
+        }));
+        return { ok: true };
+      } catch (e) { return { ok: false }; }
+    },
+
+    async expeditionsStart({ destination, beast_ids, mode, duration_s }) {
+      const s = gRef.current;
+      if (!s.wallet || !s.authToken) return { ok: false, reason: "auth" };
+      try {
+        const resp = await fetch(`${API_URL}/expeditions/start`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
+          body: JSON.stringify({ destination, beast_ids, mode, duration_s }),
+        });
+        const data = await resp.json();
+        if (!data.ok) return { ok: false, reason: data.error || "generic" };
+        await actions.expeditionsState();
+        return { ok: true, expedition: data.expedition };
+      } catch (e) { return { ok: false, reason: "generic" }; }
+    },
+
+    // Le claim crédite XP / FA verrouillés / tickets / fragments côté serveur →
+    // re-fetch /save complet en plus de l'état expéditions.
+    async expeditionsClaim(id) {
+      const s = gRef.current;
+      if (!s.wallet || !s.authToken) return { ok: false, reason: "auth" };
+      try {
+        const resp = await fetch(`${API_URL}/expeditions/claim`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
+          body: JSON.stringify({ id }),
+        });
+        if (resp.status === 401) {
+          const re = await actions.authenticate(gRef.current.wallet);
+          if (!re) { toast(I18N.t("AUTH_EXPIRED"), "bad"); return { ok: false, reason: "auth" }; }
+          return { ok: false, reason: "retry" };
+        }
+        const data = await resp.json();
+        if (!data.ok) return { ok: false, reason: data.error || "generic" };
+        const sv = await fetch(`${API_URL}/save/${s.wallet}`, svOpts());
+        if (sv.ok) { const { save } = await sv.json(); setG((st) => serverToState(save, s.wallet, st)); }
+        await actions.expeditionsState();
+        return { ok: true, success: data.success, rewards: data.rewards, fa_week: data.fa_week, level_events: data.level_events };
+      } catch (e) { return { ok: false, reason: "generic" }; }
+    },
+
+    async expeditionsRecall(id) {
+      const s = gRef.current;
+      if (!s.authToken) return { ok: false, reason: "auth" };
+      try {
+        const resp = await fetch(`${API_URL}/expeditions/recall`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
+          body: JSON.stringify({ id }),
+        });
+        const data = await resp.json();
+        if (!data.ok) return { ok: false, reason: data.error || "generic" };
+        await actions.expeditionsState();
+        return { ok: true };
+      } catch (e) { return { ok: false, reason: "generic" }; }
+    },
+
+    // Fragments → relique : l'equipment change côté serveur → re-fetch /save.
+    async expeditionsCraftRelic(rank) {
+      const s = gRef.current;
+      if (!s.wallet || !s.authToken) return { ok: false, reason: "auth" };
+      try {
+        const resp = await fetch(`${API_URL}/expeditions/craft-relic`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
+          body: JSON.stringify({ rank }),
+        });
+        const data = await resp.json();
+        if (!data.ok) return { ok: false, reason: data.error || "generic" };
+        const sv = await fetch(`${API_URL}/save/${s.wallet}`, svOpts());
+        if (sv.ok) { const { save } = await sv.json(); setG((st) => serverToState(save, s.wallet, st)); }
+        await actions.expeditionsState();
+        return { ok: true, relic: data.relic, fragments_left: data.fragments_left };
+      } catch (e) { return { ok: false, reason: "generic" }; }
     },
 
     // Talents : choix / respec d'un talent de palier. Le serveur renvoie creatures
