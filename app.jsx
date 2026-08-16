@@ -4,7 +4,7 @@
 const { useState, useEffect, useRef, useMemo, useCallback } = React;
 const D = window.FA_DATA, I18N = window.FA_I18N, LOOP = window.FA_LOOP;
 const { FA_Ctx, useFA, cx, fmt, Coin, Bar } = window;
-const { Team, Fosse, Arene, Forge, Wallet, Boosts, Perso, Options, ChatFab, RoomFab, Leaderboard, Quests, Campaign, Tour, LoginGate, TutorialGate, Link, Cinematique, Market, LockedBanner } = window;
+const { Team, Fosse, Arene, Forge, Wallet, Boosts, Perso, Options, ChatFab, RoomFab, Leaderboard, Quests, Campaign, Tour, LoginGate, TutorialGate, Link, Cinematique, Market, LockedBanner, Expeditions } = window;
 const SAVE_KEY = "fractal_arena_v1";
 // Stockage du bearer : delegue a FA_ACCOUNT (account-ui.js), qui applique la regle
 // decidee le 2026-07-27 — sessionStorage pour un compte UniSat (efface a la fermeture
@@ -2094,7 +2094,7 @@ function App() {
     );
   }
 
-  const VIEWS = { team: Team, fosse: Fosse, arene: Arene, campaign: Campaign, tour: Tour, quests: Quests, forge: Forge, market: Market, wallet: Wallet, boosts: Boosts, perso: Perso, leaderboard: Leaderboard, options: Options, lien: Link };
+  const VIEWS = { team: Team, fosse: Fosse, arene: Arene, campaign: Campaign, tour: Tour, expeditions: Expeditions, quests: Quests, forge: Forge, market: Market, wallet: Wallet, boosts: Boosts, perso: Perso, leaderboard: Leaderboard, options: Options, lien: Link };
 
   const View = VIEWS[g.view] || Team;
 
@@ -2349,7 +2349,7 @@ function Nav() {
   // Mobile : 4 onglets principaux + « Plus » (bottom sheet avec le reste).
   const [sheetOpen, setSheetOpen] = useState(false);
   const tabs = [
-    ["team", "NAV_TEAM"], ["fosse", "NAV_FOSSE"], ["arene", "NAV_ARENE"], ["campaign", "NAV_CAMPAIGN"], ["tour", "NAV_TOUR"], ["quests", "NAV_QUESTS"], ["forge", "NAV_FORGE"], ["market", "NAV_MARKET"],
+    ["team", "NAV_TEAM"], ["fosse", "NAV_FOSSE"], ["arene", "NAV_ARENE"], ["campaign", "NAV_CAMPAIGN"], ["tour", "NAV_TOUR"], ["expeditions", "NAV_EXPEDITIONS"], ["quests", "NAV_QUESTS"], ["forge", "NAV_FORGE"], ["market", "NAV_MARKET"],
     ["wallet", "NAV_WALLET"], ["boosts", "NAV_BOOSTS"], ["perso", "NAV_PERSO"], ["leaderboard", "NAV_LEADERBOARD"], ["options", "NAV_OPTIONS"],
   ];
   const MAIN = ["team", "fosse", "arene", "campaign"];

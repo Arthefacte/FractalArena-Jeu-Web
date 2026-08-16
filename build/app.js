@@ -41,7 +41,8 @@ const {
   Link,
   Cinematique,
   Market,
-  LockedBanner
+  LockedBanner,
+  Expeditions
 } = window;
 const SAVE_KEY = "fractal_arena_v1";
 // Stockage du bearer : delegue a FA_ACCOUNT (account-ui.js), qui applique la regle
@@ -3785,6 +3786,7 @@ function App() {
     arene: Arene,
     campaign: Campaign,
     tour: Tour,
+    expeditions: Expeditions,
     quests: Quests,
     forge: Forge,
     market: Market,
@@ -4140,7 +4142,7 @@ function Nav() {
   } = useFA();
   // Mobile : 4 onglets principaux + « Plus » (bottom sheet avec le reste).
   const [sheetOpen, setSheetOpen] = useState(false);
-  const tabs = [["team", "NAV_TEAM"], ["fosse", "NAV_FOSSE"], ["arene", "NAV_ARENE"], ["campaign", "NAV_CAMPAIGN"], ["tour", "NAV_TOUR"], ["quests", "NAV_QUESTS"], ["forge", "NAV_FORGE"], ["market", "NAV_MARKET"], ["wallet", "NAV_WALLET"], ["boosts", "NAV_BOOSTS"], ["perso", "NAV_PERSO"], ["leaderboard", "NAV_LEADERBOARD"], ["options", "NAV_OPTIONS"]];
+  const tabs = [["team", "NAV_TEAM"], ["fosse", "NAV_FOSSE"], ["arene", "NAV_ARENE"], ["campaign", "NAV_CAMPAIGN"], ["tour", "NAV_TOUR"], ["expeditions", "NAV_EXPEDITIONS"], ["quests", "NAV_QUESTS"], ["forge", "NAV_FORGE"], ["market", "NAV_MARKET"], ["wallet", "NAV_WALLET"], ["boosts", "NAV_BOOSTS"], ["perso", "NAV_PERSO"], ["leaderboard", "NAV_LEADERBOARD"], ["options", "NAV_OPTIONS"]];
   const MAIN = ["team", "fosse", "arene", "campaign"];
   const more = tabs.filter(([k]) => !MAIN.includes(k));
   const go = k => {

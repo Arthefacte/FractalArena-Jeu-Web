@@ -779,6 +779,11 @@
       ZH: "战兽力竭——归来时间后30分钟内无法出战。",
     },
     EXP_BACK: { FR: "← Expéditions", EN: "← Expeditions", ZH: "← 远征" },
+    EXP_LOGIN: {
+      FR: "Connecte-toi pour envoyer ta meute en expédition.",
+      EN: "Log in to send your pack on expeditions.",
+      ZH: "登录后即可派遣战群远征。",
+    },
     EXP_FORGE_TITLE: { FR: "Forger avec des fragments", EN: "Forge with fragments", ZH: "用碎片锻造" },
     EXP_FORGE_SUB: {
       FR: "Les fragments rapportés d'expédition se forgent en relique — le rang du fragment fait la rareté.",
