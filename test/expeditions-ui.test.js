@@ -46,6 +46,16 @@ test("previewSuccessRate : clamp [40, 98], formule serveur", () => {
   assert.ok(XU.previewSuccessRate(strong, "coeur") <= 98);
 });
 
+test("previewSuccessRate : plafonds par mode, miroir serveur (prudente 90, risquee 70)", () => {
+  // Même équipe forte : 97 brut sur blocs → plafonné selon le mode passé.
+  const strong = [beast("HASH", "Epic", 20, 100), beast("HASH", "Epic", 20, 100), beast("HASH", "Epic", 20, 100)];
+  assert.equal(XU.previewSuccessRate(strong, "blocs", "prudente"), 90);
+  assert.equal(XU.previewSuccessRate(strong, "blocs", "risquee"), 70);
+  // Équipe faible sous les plafonds : le mode ne change rien.
+  const weak = [beast("LEDGER", "Common", 1, 50), beast("LEDGER", "Common", 1, 50), beast("LEDGER", "Common", 1, 50)];
+  assert.equal(XU.previewSuccessRate(weak, "coeur", "prudente"), XU.previewSuccessRate(weak, "coeur", "risquee"));
+});
+
 test("fmtCountdown", () => {
   assert.equal(XU.fmtCountdown(3661000), "1:01:01");
   assert.equal(XU.fmtCountdown(59000), "00:59");

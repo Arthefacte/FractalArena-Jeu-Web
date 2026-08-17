@@ -47,12 +47,16 @@
     var n = (team || []).filter(function (b) { return b && b.type === w.type; }).length;
     return Math.min(n * 5, 15);
   }
-  function previewSuccessRate(team, destKey) {
+  // Plafonds PAR MODE — miroir du serveur (décision user 2026-08-17) : sans eux
+  // la Risquée serait dominante pour les équipes fortes. Prudente tire aussi.
+  var RATE_CAP = { prudente: 90, risquee: 70 };
+  function previewSuccessRate(team, destKey, mode) {
     var w = worldOf(destKey);
     if (!w) return 40;
     var P = collectionPower(team);
     var base = Math.round((110 * P) / (P + w.ref));
-    return Math.max(40, Math.min(98, base + affinityBonus(team, destKey)));
+    var raw = Math.max(40, Math.min(98, base + affinityBonus(team, destKey)));
+    return Math.min(raw, RATE_CAP[mode] || 98);
   }
 
   function fmtCountdown(ms) {

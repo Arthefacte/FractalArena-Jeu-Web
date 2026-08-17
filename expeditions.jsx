@@ -251,7 +251,9 @@ function Expeditions() {
     const ready3 = sel.length === 3;
     const pow = XU.collectionPower(team);
     const affBonus = XU.affinityBonus(team, selWorld);
-    const pct = XU.previewSuccessRate(team, selWorld);
+    // Le taux affiché est celui du MODE sélectionné (plafonds 90/70) — il
+    // change quand on bascule Prudente/Risquée, comme le vrai taux du /start.
+    const pct = XU.previewSuccessRate(team, selWorld, mode);
     const successColor = rateColor(pct);
     const warnTeam = sel.some((id) => (g.selected || []).includes(id));
     const allEpic = ready3 && team.every((b) => b.rarity === "Epic");
