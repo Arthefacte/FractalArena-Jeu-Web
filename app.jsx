@@ -630,7 +630,14 @@ function App() {
         });
         if (!vr.ok) return echec("verify", null, vr.status);
         const { token } = await vr.json();
-        if (token) { lastAuthReason = null; setG((s) => ({ ...s, authToken: token })); }
+        if (token) {
+          lastAuthReason = null;
+          // gRef n'est réassigné qu'au RENDU, or le retry après un 401 repart
+          // dans la même chaîne de microtâches, AVANT le re-rendu : sans cette
+          // écriture directe il renverrait le jeton expiré (double signature).
+          gRef.current = { ...gRef.current, authToken: token };
+          setG((s) => ({ ...s, authToken: token }));
+        }
         return token || echec("verify", null, 0);
       } catch (e) {
         // C'est ici que tout se perdait : l'erreur de signMessage (verrouillé,
