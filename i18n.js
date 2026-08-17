@@ -370,7 +370,6 @@
     BB_RESERVE:    { FR: "Buyback", EN: "Buyback", ZH: "回购" },
     BB_POOL_LABEL: { FR: "Rachat · %s", EN: "Buyback · %s", ZH: "回购 · %s" },
     BB_BOUGHT_SUB: { FR: "· %s FA rachetés depuis le lancement", EN: "· %s FA bought back since launch", ZH: "· 自上线累计回购 %s FA" },
-    BB_PROOF:      { FR: "Preuve",             EN: "Proof",         ZH: "凭证" },
     BB_TICK_TITLE: { FR: "100% de chaque mise et de chaque forge rachète FRACTALARENA sur le marché, puis le verrouille à vie.",
                      EN: "100% of every bet and forge buys FRACTALARENA on the market, then locks it for life.",
                      ZH: "每次下注和锻造的 100% 都会在市场上回购 FRACTALARENA，然后永久锁定。" },

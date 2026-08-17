@@ -35,8 +35,6 @@ function TickerRow({
   label,
   total,
   threshold,
-  wallet,
-  proofLabel,
   sub,
   gain,
   rachat
@@ -60,12 +58,7 @@ function TickerRow({
     className: "bb-delta"
   }, "+", bbFmt(gain)), /*#__PURE__*/React.createElement("span", {
     className: "bb-nums"
-  }, bbFmt(total), " / ", bbFmt(threshold)), wallet && /*#__PURE__*/React.createElement("a", {
-    className: "bb-tx",
-    href: DEX_URL,
-    target: "_blank",
-    rel: "noreferrer"
-  }, proofLabel, " \u2197")), sub && /*#__PURE__*/React.createElement("div", {
+  }, bbFmt(total), " / ", bbFmt(threshold))), sub && /*#__PURE__*/React.createElement("div", {
     className: "bb-sub"
   }, /*#__PURE__*/React.createElement(FaText, {
     text: sub,
@@ -355,8 +348,6 @@ function BuybackTicker() {
     label: I.t("BB_POOL_LABEL", bbFmt(p.tier)),
     total: p.total,
     threshold: p.threshold,
-    wallet: i === 0 ? bb.buyback_wallet : null,
-    proofLabel: I.t("BB_PROOF"),
     sub: i === last ? I.t("BB_BOUGHT_SUB", bbFmt(totalBought)) : null
   })), /*#__PURE__*/React.createElement(RangeeDex, {
     dex: dex,
