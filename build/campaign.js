@@ -304,7 +304,8 @@ function CampaignCombat({
     const resp = await actions.campaignFight(worldIndex, floorIndex, g.selected.slice(0, 3), posture);
     if (!resp.ok) {
       setPlaying(false);
-      toast(resp.reason, "bad");
+      // bete_en_expedition : garde serveur des Expéditions — code traduit, pas brut.
+      toast(resp.reason === "bete_en_expedition" ? I18N.t("EXP_ERR_bete_en_expedition") : resp.reason, "bad");
       return;
     }
     const enemies = resp.enemy;

@@ -13,17 +13,13 @@ const XU = window.FA_EXPEDITIONS_UI;
 const { useFA, SectionHead, Bar } = window;
 
 const EXP_GLYPH = { HASH: "#", MINING: "⛏", LEDGER: "▤", NETWORK: "❖", GENESIS: "✦", BLOCK: "▣" };
-const EXP_ERRK = {
-  bete_en_expedition: "EXP_ERR_bete_en_expedition",
-  destination_occupee: "EXP_ERR_destination_occupee",
-  expedition_en_cours: "EXP_ERR_expedition_en_cours",
-  deja_reclame: "EXP_ERR_deja_reclame",
-  expedition_rappelee: "EXP_ERR_expedition_rappelee",
-  expedition_non_rappelable: "EXP_ERR_expedition_non_rappelable",
-  fragments_insuffisants: "EXP_ERR_fragments_insuffisants",
-  betes_invalides: "EXP_ERR_betes_invalides",
-};
-function expErr(code) { return I18N.t(EXP_ERRK[code] || "EXP_ERR_generic"); }
+const expErr = XU.errText;
+function modeLabel(mode) { return mode === "risquee" ? I18N.t("EXP_MODE_RISKY") : I18N.t("EXP_MODE_PRUDENT"); }
+function rateColor(pct) { return pct >= 75 ? "var(--success)" : pct >= 55 ? "var(--gold)" : "var(--alert)"; }
+function durLabel(durationS) {
+  const d = XU.DURATIONS.find((x) => x.s === durationS) || XU.DURATIONS[1];
+  return I18N.t(d.i18nKey);
+}
 function typeMeta(type) {
   const w = XU.WORLDS.find((x) => x.type === type);
   return w || { color: "var(--elec)", rgb: "0,240,255" };
@@ -49,6 +45,10 @@ function Expeditions() {
   const [claiming, setClaiming] = useState(false);
   const [loot, setLoot] = useState(null);          // { success, rewards, fa_week, worldId, beastIds }
   const [confirmRecall, setConfirmRecall] = useState(false);
+  // Fenêtre d'épuisement locale (échec Risquée : +30 min après ends_at). Le
+  // serveur garde de toute façon ; ceci rend l'indisponibilité VISIBLE dans le
+  // sélecteur au lieu d'un 409 sec (perdu au rechargement — acceptable v1).
+  const [exhausted, setExhausted] = useState(null);   // { ids: [], until: ms }
   const [, setTick] = useState(0);
   const fxTimer = useRef(null);
 
@@ -69,6 +69,7 @@ function Expeditions() {
   const byDest = {};
   exps.forEach((e) => { byDest[e.destination] = e; });
   const busyIds = new Set(exps.flatMap((e) => (Array.isArray(e.beast_ids) ? e.beast_ids : [])));
+  const exhaustedIds = new Set(exhausted && exhausted.until > now ? exhausted.ids : []);
   const roster = Array.isArray(g.roster) ? g.roster : [];
   const beastById = (id) => roster.find((b) => b && b.id === id);
 
@@ -99,9 +100,11 @@ function Expeditions() {
   async function launch() {
     if (busyCall || sel.length !== 3) return;
     setBusyCall(true);
-    const r = await actions.expeditionsStart({ destination: selWorld, beast_ids: sel, mode, duration_s: dur });
+    let r = await actions.expeditionsStart({ destination: selWorld, beast_ids: sel, mode, duration_s: dur });
+    if (!r.ok && r.reason === "retry") r = await actions.expeditionsStart({ destination: selWorld, beast_ids: sel, mode, duration_s: dur });
     setBusyCall(false);
-    if (!r.ok) { toast(expErr(r.reason), "bad"); return; }
+    // reason "auth" : app.jsx a déjà affiché AUTH_EXPIRED — pas de second toast.
+    if (!r.ok) { if (r.reason !== "auth") toast(expErr(r.reason), "bad"); return; }
     if (reducedMotion()) {
       toast(I18N.t("EXP_STATUS_RUNNING") + " · " + r.expedition.success_rate + " %", "good");
       setView("dest"); setSel([]);
@@ -118,17 +121,23 @@ function Expeditions() {
     let r = await actions.expeditionsClaim(e.id);
     if (!r.ok && r.reason === "retry") r = await actions.expeditionsClaim(e.id);
     setBusyCall(false);
-    if (!r.ok) { setClaiming(false); toast(expErr(r.reason), "bad"); return; }
+    if (!r.ok) { setClaiming(false); if (r.reason !== "auth") toast(expErr(r.reason), "bad"); return; }
     setTimeout(() => setClaiming(false), 750);   // laisse le burst se jouer
+    if (r.success === false && e.mode === "risquee") {
+      // Échec Risquée : le serveur tient les bêtes indisponibles jusqu'à
+      // ends_at + 30 min — on rend cette fenêtre visible dans le sélecteur.
+      setExhausted({ ids: e.beast_ids || [], until: new Date(e.ends_at).getTime() + 30 * 60e3 });
+    }
     setLoot({ success: r.success, rewards: r.rewards, fa_week: r.fa_week, worldId: e.destination, beastIds: e.beast_ids || [] });
     setSelWorld(e.destination);
     setView("loot");
   }
 
   async function doRecall(e) {
-    const r = await actions.expeditionsRecall(e.id);
+    let r = await actions.expeditionsRecall(e.id);
+    if (!r.ok && r.reason === "retry") r = await actions.expeditionsRecall(e.id);
     setConfirmRecall(false);
-    if (!r.ok) { toast(expErr(r.reason), "bad"); return; }
+    if (!r.ok) { if (r.reason !== "auth") toast(expErr(r.reason), "bad"); return; }
     setView("dest");
   }
 
@@ -196,7 +205,7 @@ function Expeditions() {
                 {s === "free" && <span className="exq-mono exq-dim">{I18N.t("EXP_STATUS_FREE")} · ›</span>}
                 {s === "running" && (
                   <span className="exq-worldrow">
-                    <span className="exq-mono exq-dim">{e.mode === "risquee" ? I18N.t("EXP_MODE_RISKY") : I18N.t("EXP_MODE_PRUDENT")}</span>
+                    <span className="exq-mono exq-dim">{modeLabel(e.mode)}</span>
                     <b className="exq-mono" style={{ color: "var(--elec)", fontVariantNumeric: "tabular-nums" }}>{XU.fmtCountdown(new Date(e.ends_at).getTime() - now)}</b>
                   </span>
                 )}
@@ -221,7 +230,7 @@ function Expeditions() {
     const pow = XU.collectionPower(team);
     const affBonus = XU.affinityBonus(team, selWorld);
     const pct = XU.previewSuccessRate(team, selWorld);
-    const successColor = pct >= 75 ? "var(--success)" : pct >= 55 ? "var(--gold)" : "var(--alert)";
+    const successColor = rateColor(pct);
     const warnTeam = sel.some((id) => (g.selected || []).includes(id));
     const allEpic = ready3 && team.every((b) => b.rarity === "Epic");
     return (
@@ -234,7 +243,8 @@ function Expeditions() {
         </div>
         <div className="exq-roster">
           {roster.map((b) => {
-            const isBusy = busyIds.has(b.id);
+            const isTired = exhaustedIds.has(b.id);
+            const isBusy = busyIds.has(b.id) || isTired;
             const selected = sel.includes(b.id);
             const tm = typeMeta(b.type);
             const toggle = () => {
@@ -253,8 +263,8 @@ function Expeditions() {
                   {selected && <span className="exq-check">✓</span>}
                 </span>
                 <span className="exq-beastname" style={{ color: isBusy ? "var(--text-dim)" : "var(--text)" }}>{D.displayName(b)}</span>
-                <span className="exq-mono exq-beasttag" style={{ color: isBusy ? "var(--text-dim)" : (g.selected || []).includes(b.id) ? "var(--fire)" : "var(--text-dim)" }}>
-                  {isBusy ? I18N.t("EXP_IN_EXPEDITION") : (g.selected || []).includes(b.id) ? I18N.t("EXP_ACTIVE_TEAM") : b.type + " · " + b.rarity}
+                <span className="exq-mono exq-beasttag" style={{ color: isTired ? "var(--alert)" : isBusy ? "var(--text-dim)" : (g.selected || []).includes(b.id) ? "var(--fire)" : "var(--text-dim)" }}>
+                  {isTired ? I18N.t("EXP_EXHAUSTED_TAG") : isBusy ? I18N.t("EXP_IN_EXPEDITION") : (g.selected || []).includes(b.id) ? I18N.t("EXP_ACTIVE_TEAM") : b.type + " · " + b.rarity}
                 </span>
               </button>
             );
@@ -338,9 +348,9 @@ function Expeditions() {
           <div className="exq-prog"><div style={{ width: progPct + "%" }} /></div>
         </div>
         <div className="exq-statrow">
-          <div><span className="exq-mono exq-cap">MODE</span><b style={{ color: e.mode === "risquee" ? "var(--alert)" : "var(--elec)" }}>{e.mode === "risquee" ? I18N.t("EXP_MODE_RISKY") : I18N.t("EXP_MODE_PRUDENT")}</b></div>
-          <div><span className="exq-mono exq-cap">⏱</span><b>{e.duration_s === 3600 ? I18N.t("EXP_D_1H") : e.duration_s === 28800 ? I18N.t("EXP_D_8H") : I18N.t("EXP_D_2H")}</b></div>
-          <div><span className="exq-mono exq-cap">%</span><b style={{ color: rate >= 75 ? "var(--success)" : rate >= 55 ? "var(--gold)" : "var(--alert)" }}>{rate} %</b></div>
+          <div><span className="exq-mono exq-cap">MODE</span><b style={{ color: e.mode === "risquee" ? "var(--alert)" : "var(--elec)" }}>{modeLabel(e.mode)}</b></div>
+          <div><span className="exq-mono exq-cap">⏱</span><b>{durLabel(e.duration_s)}</b></div>
+          <div><span className="exq-mono exq-cap">%</span><b style={{ color: rateColor(rate) }}>{rate} %</b></div>
         </div>
         <span className="exq-mono" style={{ fontSize: 10, color: "var(--text-faint)", marginTop: -8 }}>{I18N.t("EXP_RATE_LOCKED")}</span>
         <div className="eyebrow" style={{ fontSize: 10 }}>{I18N.t("EXP_CREW")}</div>

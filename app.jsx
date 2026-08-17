@@ -1279,6 +1279,9 @@ function App() {
         if (!resp.ok) return { ok: false };
         const data = await resp.json();
         if (!data.ok) return { ok: false };
+        // Réponse arrivée APRÈS une déconnexion : ne pas repeupler l'état vierge
+        // avec les expéditions de l'ancien compte (pastille fantôme).
+        if (!gRef.current.authToken) return { ok: false };
         setG((st) => ({ ...st,
           expeditions: Array.isArray(data.expeditions) ? data.expeditions : [],
           expFragments: data.fragments || { C: 0, B: 0, A: 0, S: 0 },
@@ -1298,15 +1301,24 @@ function App() {
           headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
           body: JSON.stringify({ destination, beast_ids, mode, duration_s }),
         });
+        if (resp.status === 401) {
+          const re = await actions.authenticate(gRef.current.wallet);
+          if (!re) { toast(I18N.t("AUTH_EXPIRED"), "bad"); return { ok: false, reason: "auth" }; }
+          return { ok: false, reason: "retry" };
+        }
         const data = await resp.json();
         if (!data.ok) return { ok: false, reason: data.error || "generic" };
-        await actions.expeditionsState();
+        // La réponse contient l'expédition complète : fusion locale, pas de GET
+        // bloquant derrière le bouton LANCER (fragments/plafond inchangés au start).
+        setG((st) => ({ ...st, expeditions: [...(st.expeditions || []), data.expedition] }));
         return { ok: true, expedition: data.expedition };
       } catch (e) { return { ok: false, reason: "generic" }; }
     },
 
     // Le claim crédite XP / FA verrouillés / tickets / fragments côté serveur →
-    // re-fetch /save complet en plus de l'état expéditions.
+    // re-fetch /save complet en plus de l'état expéditions. Le rafraîchissement
+    // est POST-succès : s'il échoue (réseau mobile), le claim reste un succès —
+    // sinon un butin déjà crédité s'afficherait « Erreur serveur ».
     async expeditionsClaim(id) {
       const s = gRef.current;
       if (!s.wallet || !s.authToken) return { ok: false, reason: "auth" };
@@ -1323,9 +1335,11 @@ function App() {
         }
         const data = await resp.json();
         if (!data.ok) return { ok: false, reason: data.error || "generic" };
-        // Les deux GET sont indépendants : en parallèle (latence mobile ÷ 2).
-        const [sv] = await Promise.all([fetch(`${API_URL}/save/${s.wallet}`, svOpts()), actions.expeditionsState()]);
-        if (sv.ok) { const { save } = await sv.json(); setG((st) => serverToState(save, s.wallet, st)); }
+        try {
+          // Les deux GET sont indépendants : en parallèle (latence mobile ÷ 2).
+          const [sv] = await Promise.all([fetch(`${API_URL}/save/${s.wallet}`, svOpts()), actions.expeditionsState()]);
+          if (sv.ok) { const { save } = await sv.json(); setG((st) => serverToState(save, s.wallet, st)); }
+        } catch (e2) { /* rafraîchissement raté ≠ claim raté */ }
         return { ok: true, success: data.success, rewards: data.rewards, fa_week: data.fa_week, level_events: data.level_events };
       } catch (e) { return { ok: false, reason: "generic" }; }
     },
@@ -1339,14 +1353,22 @@ function App() {
           headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
           body: JSON.stringify({ id }),
         });
+        if (resp.status === 401) {
+          const re = await actions.authenticate(gRef.current.wallet);
+          if (!re) { toast(I18N.t("AUTH_EXPIRED"), "bad"); return { ok: false, reason: "auth" }; }
+          return { ok: false, reason: "retry" };
+        }
         const data = await resp.json();
         if (!data.ok) return { ok: false, reason: data.error || "generic" };
-        await actions.expeditionsState();
+        // Fusion locale : la ligne rappelée disparaît, aucun GET bloquant.
+        setG((st) => ({ ...st, expeditions: (st.expeditions || []).filter((e) => e.id !== id) }));
         return { ok: true };
       } catch (e) { return { ok: false, reason: "generic" }; }
     },
 
     // Fragments → relique : l'equipment change côté serveur → re-fetch /save.
+    // Même règle que le claim : le rafraîchissement post-succès ne requalifie
+    // jamais un craft réussi (fragments déjà consommés, relique déjà créée).
     async expeditionsCraftRelic(rank) {
       const s = gRef.current;
       if (!s.wallet || !s.authToken) return { ok: false, reason: "auth" };
@@ -1356,10 +1378,17 @@ function App() {
           headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
           body: JSON.stringify({ rank }),
         });
+        if (resp.status === 401) {
+          const re = await actions.authenticate(gRef.current.wallet);
+          if (!re) { toast(I18N.t("AUTH_EXPIRED"), "bad"); return { ok: false, reason: "auth" }; }
+          return { ok: false, reason: "retry" };
+        }
         const data = await resp.json();
         if (!data.ok) return { ok: false, reason: data.error || "generic" };
-        const [sv] = await Promise.all([fetch(`${API_URL}/save/${s.wallet}`, svOpts()), actions.expeditionsState()]);
-        if (sv.ok) { const { save } = await sv.json(); setG((st) => serverToState(save, s.wallet, st)); }
+        try {
+          const [sv] = await Promise.all([fetch(`${API_URL}/save/${s.wallet}`, svOpts()), actions.expeditionsState()]);
+          if (sv.ok) { const { save } = await sv.json(); setG((st) => serverToState(save, s.wallet, st)); }
+        } catch (e2) { /* rafraîchissement raté ≠ craft raté */ }
         return { ok: true, relic: data.relic, fragments_left: data.fragments_left };
       } catch (e) { return { ok: false, reason: "generic" }; }
     },
@@ -2365,8 +2394,10 @@ function Nav() {
     const t = setInterval(() => setExpTick((n) => n + 1), 30000);
     return () => clearInterval(t);
   }, [hasExps]);
+  // Même prédicat que l'écran (statusOf) : une seule définition de « prête ».
+  const XU = window.FA_EXPEDITIONS_UI;
   const expNow = Date.now() + (g.expNowOffset || 0);
-  const expReady = (g.expeditions || []).filter((e) => new Date(e.ends_at).getTime() <= expNow).length;
+  const expReady = (g.expeditions || []).filter((e) => XU.statusOf(e, expNow) === "ready").length;
   return (
     <>
       <nav className="nav">
@@ -2379,7 +2410,11 @@ function Nav() {
                 {areneBadge}
               </span>
             )}
-            {k === "expeditions" && expReady > 0 && <span className="fa-sheet-dot" aria-hidden="true" style={{ position: "static", marginLeft: 4 }} />}
+            {k === "expeditions" && expReady > 0 && (
+              <span className="nav-badge" style={{ marginLeft: 4, background: "var(--fire)", color: "#180a02", borderRadius: 9, fontSize: 10, padding: "0 5px", fontWeight: 700 }}>
+                {expReady}
+              </span>
+            )}
           </button>
         ))}
       </nav>

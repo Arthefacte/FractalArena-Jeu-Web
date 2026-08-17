@@ -68,10 +68,21 @@
     return new Date(exp.ends_at).getTime() > now ? "running" : "ready";
   }
 
+  // Traduction d'un code d'erreur serveur des Expéditions (codes 1:1 avec les
+  // clés EXP_ERR_<code>). I18N résolu à l'appel — absent dans les tests Node,
+  // on renvoie alors le code brut. Partagé par l'écran ET la Forge (fragments).
+  function errText(code) {
+    var I = typeof window !== "undefined" && window.FA_I18N;
+    if (!I) return String(code);
+    var k = "EXP_ERR_" + code;
+    var s = I.t(k);
+    return s === k ? I.t("EXP_ERR_generic") : s;
+  }
+
   window.FA_EXPEDITIONS_UI = {
     WORLDS: WORLDS, DURATIONS: DURATIONS, FRAGMENT_COSTS: FRAGMENT_COSTS,
     beastPower: beastPower, collectionPower: collectionPower, worldOf: worldOf,
     affinityBonus: affinityBonus, previewSuccessRate: previewSuccessRate,
-    fmtCountdown: fmtCountdown, statusOf: statusOf,
+    fmtCountdown: fmtCountdown, statusOf: statusOf, errText: errText,
   };
 })();

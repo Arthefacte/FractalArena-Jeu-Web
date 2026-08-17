@@ -771,6 +771,7 @@
     EXP_FRAG_LINE: { FR: "Fragments %s ×%d", EN: "%s fragments ×%d", ZH: "%s碎片×%d" },
     EXP_TICKET: { FR: "TICKET OR — fusion garantie", EN: "GOLD TICKET — guaranteed fusion", ZH: "金券——保底融合" },
     EXP_DUST: { FR: "POUSSIÈRE DE FB — vrais sats on-chain", EN: "FB DUST — real on-chain sats", ZH: "FB尘埃——真实链上聪" },
+    EXP_EXHAUSTED_TAG: { FR: "Épuisée · 30 min", EN: "Exhausted · 30 min", ZH: "力竭·30分钟" },
     EXP_EXHAUSTED: {
       FR: "Bêtes épuisées — indisponibles jusqu'à 30 min après l'heure de retour.",
       EN: "Beasts exhausted — unavailable until 30 min after the return time.",

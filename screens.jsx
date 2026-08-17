@@ -330,7 +330,8 @@ function ForgeFusion() {
     setFuseBusy(true);
     const r = await actions.fuse(sel[0], sel[1], gold);
     setFuseBusy(false);
-    if (!r.ok) { toast(r.reason, "bad"); return; }
+    // bete_en_expedition : garde serveur des Expéditions — code traduit, pas brut.
+    if (!r.ok) { toast(r.reason === "bete_en_expedition" ? I18N.t("EXP_ERR_bete_en_expedition") : r.reason, "bad"); return; }
     const showFuseResult = () => {
       if (r.success) {
         if (r.result?.premium) toast(I18N.t("FG_FUSE_PREMIUM", rarityLabel(r.result?.rarity)), "good");
@@ -568,9 +569,11 @@ function ForgeFragments({ onForged }) {
   async function doCraft(rk) {
     if (crafting) return;
     setCrafting(true);
-    const r = await actions.expeditionsCraftRelic(rk);
+    let r = await actions.expeditionsCraftRelic(rk);
+    if (!r.ok && r.reason === "retry") r = await actions.expeditionsCraftRelic(rk);
     setCrafting(false);
-    if (!r.ok) { toast(I18N.t(r.reason === "fragments_insuffisants" ? "EXP_ERR_fragments_insuffisants" : "EXP_ERR_generic"), "bad"); return; }
+    // reason "auth" : app.jsx a déjà affiché AUTH_EXPIRED — pas de second toast.
+    if (!r.ok) { if (r.reason !== "auth") toast(XU.errText(r.reason), "bad"); return; }
     toast(I18N.t("FG_SUMMON_OK", I18N.t("RELIC_" + r.relic.type.toUpperCase()), rarityLabel(r.relic.rarity)), "good");
     if (onForged) onForged(r.relic);
   }
