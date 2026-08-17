@@ -302,7 +302,9 @@ function Fosse() {
       isLoop: isLoopRun
     });
     if (!bet.ok) {
-      toast(bet.reason || I18N.t("AR_INSUFF"), "bad");
+      // bete_en_expedition : garde serveur des Expéditions — code traduit, pas brut.
+      const msg = bet.reason === "bete_en_expedition" ? I18N.t("EXP_ERR_bete_en_expedition") : bet.reason || I18N.t("AR_INSUFF");
+      toast(msg, "bad");
       if (isLoopRun) {
         loopRef.current = false;
         setLoop(false);

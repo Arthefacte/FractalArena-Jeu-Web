@@ -4,7 +4,7 @@
 const { useState, useEffect, useRef, useMemo, useCallback } = React;
 const D = window.FA_DATA, I18N = window.FA_I18N, LOOP = window.FA_LOOP;
 const { FA_Ctx, useFA, cx, fmt, Coin, Bar } = window;
-const { Team, Fosse, Arene, Forge, Wallet, Boosts, Perso, Options, ChatFab, RoomFab, Leaderboard, Quests, Campaign, Tour, LoginGate, TutorialGate, Link, Cinematique, Market, LockedBanner } = window;
+const { Team, Fosse, Arene, Forge, Wallet, Boosts, Perso, Options, ChatFab, RoomFab, Leaderboard, Quests, Campaign, Tour, LoginGate, TutorialGate, Link, Cinematique, Market, LockedBanner, Expeditions } = window;
 const SAVE_KEY = "fractal_arena_v1";
 // Stockage du bearer : delegue a FA_ACCOUNT (account-ui.js), qui applique la regle
 // decidee le 2026-07-27 — sessionStorage pour un compte UniSat (efface a la fermeture
@@ -187,6 +187,11 @@ function freshState() {
     pvpPrizes: [],
     towerPrizes: [],
     market: { listings: [], mine: null },
+    // Expéditions : état serveur (GET /expeditions/state) — actives + compteurs.
+    expeditions: [],
+    expFragments: { C: 0, B: 0, A: 0, S: 0 },
+    expFaWeek: null,       // { granted, cap, week_ends_in_s }
+    expNowOffset: 0,       // horloge serveur - horloge locale (compte à rebours honnêtes)
   };
 }
 
@@ -291,6 +296,7 @@ function App() {
   // Fetch non-vu des prix PvP dès que le token est établi
   useEffect(() => { if (g.authToken) actions.pvpPrizes(); }, [g.authToken]);
   useEffect(() => { if (g.authToken) actions.towerPrizes(); }, [g.authToken]);
+  useEffect(() => { if (g.authToken) actions.expeditionsState(); }, [g.authToken]);
 
   // language
   useEffect(() => { I18N.setLang(g.lang); }, [g.lang]);
@@ -624,7 +630,14 @@ function App() {
         });
         if (!vr.ok) return echec("verify", null, vr.status);
         const { token } = await vr.json();
-        if (token) { lastAuthReason = null; setG((s) => ({ ...s, authToken: token })); }
+        if (token) {
+          lastAuthReason = null;
+          // gRef n'est réassigné qu'au RENDU, or le retry après un 401 repart
+          // dans la même chaîne de microtâches, AVANT le re-rendu : sans cette
+          // écriture directe il renverrait le jeton expiré (double signature).
+          gRef.current = { ...gRef.current, authToken: token };
+          setG((s) => ({ ...s, authToken: token }));
+        }
         return token || echec("verify", null, 0);
       } catch (e) {
         // C'est ici que tout se perdait : l'erreur de signMessage (verrouillé,
@@ -1258,6 +1271,149 @@ function App() {
         if (Array.isArray(data.creatures)) setG((st) => ({ ...st, roster: data.creatures }));
         return { ok: true };
       } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
+    },
+
+    // ---- Expéditions (idle) — le serveur fait foi, résolution au claim ----
+    // Rafraîchit l'état local (actives + fragments + plafond FA). Silencieux en
+    // échec : la pastille et l'écran vivent sur le dernier état connu.
+    async expeditionsState() {
+      const s = gRef.current;
+      if (!s.authToken) return { ok: false };
+      try {
+        const resp = await fetch(`${API_URL}/expeditions/state`, {
+          headers: { "Authorization": `Bearer ${s.authToken}` },
+        });
+        if (!resp.ok) return { ok: false };
+        const data = await resp.json();
+        if (!data.ok) return { ok: false };
+        // Réponse arrivée APRÈS une déconnexion ou un changement de compte : ne
+        // pas repeupler l'état avec les expéditions de l'ancien compte (pastille
+        // fantôme) — le jeton doit être CELUI qui a signé la requête.
+        if (gRef.current.authToken !== s.authToken) return { ok: false };
+        setG((st) => ({ ...st,
+          expeditions: Array.isArray(data.expeditions) ? data.expeditions : [],
+          expFragments: data.fragments || { C: 0, B: 0, A: 0, S: 0 },
+          expFaWeek: data.fa_week || null,
+          expNowOffset: (data.now || Date.now()) - Date.now(),
+        }));
+        return { ok: true };
+      } catch (e) { return { ok: false }; }
+    },
+
+    async expeditionsStart({ destination, beast_ids, mode, duration_s }) {
+      const s = gRef.current;
+      if (!s.wallet || !s.authToken) return { ok: false, reason: "auth" };
+      try {
+        const resp = await fetch(`${API_URL}/expeditions/start`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
+          body: JSON.stringify({ destination, beast_ids, mode, duration_s }),
+        });
+        if (resp.status === 401) {
+          const re = await actions.authenticate(gRef.current.wallet);
+          if (!re) { toast(I18N.t("AUTH_EXPIRED"), "bad"); return { ok: false, reason: "auth" }; }
+          return { ok: false, reason: "retry" };
+        }
+        const data = await resp.json();
+        if (!data.ok) return { ok: false, reason: data.error || "generic" };
+        // La réponse contient l'expédition complète : fusion locale, pas de GET
+        // bloquant derrière le bouton LANCER (fragments/plafond inchangés au start).
+        // Même garde d'identité de jeton que expeditionsState.
+        if (gRef.current.authToken === s.authToken) {
+          setG((st) => ({ ...st, expeditions: [...(st.expeditions || []), data.expedition] }));
+        }
+        return { ok: true, expedition: data.expedition };
+      } catch (e) { return { ok: false, reason: "generic" }; }
+    },
+
+    // Le claim crédite XP / FA verrouillés / tickets / fragments côté serveur →
+    // re-fetch /save complet en plus de l'état expéditions. Le rafraîchissement
+    // est POST-succès : s'il échoue (réseau mobile), le claim reste un succès —
+    // sinon un butin déjà crédité s'afficherait « Erreur serveur ».
+    async expeditionsClaim(id) {
+      const s = gRef.current;
+      if (!s.wallet || !s.authToken) return { ok: false, reason: "auth" };
+      try {
+        const resp = await fetch(`${API_URL}/expeditions/claim`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
+          body: JSON.stringify({ id }),
+        });
+        if (resp.status === 401) {
+          const re = await actions.authenticate(gRef.current.wallet);
+          if (!re) { toast(I18N.t("AUTH_EXPIRED"), "bad"); return { ok: false, reason: "auth" }; }
+          return { ok: false, reason: "retry" };
+        }
+        const data = await resp.json();
+        if (!data.ok) return { ok: false, reason: data.error || "generic" };
+        // Fusion locale IMMÉDIATE : la ligne réclamée disparaît même si le
+        // rafraîchissement ci-dessous échoue (sinon carte « prête » fantôme
+        // → second claim → deja_reclame).
+        if (gRef.current.authToken === s.authToken) {
+          setG((st) => ({ ...st, expeditions: (st.expeditions || []).filter((e) => e.id !== id) }));
+        }
+        try {
+          // Les deux GET sont indépendants : en parallèle (latence mobile ÷ 2).
+          const [sv] = await Promise.all([fetch(`${API_URL}/save/${s.wallet}`, svOpts()), actions.expeditionsState()]);
+          // Garde d'identité de jeton : une /save de l'ancien compte arrivée
+          // après un changement ne doit pas réécrire toute la session.
+          if (sv.ok && gRef.current.authToken === s.authToken) { const { save } = await sv.json(); setG((st) => serverToState(save, s.wallet, st)); }
+        } catch (e2) { /* rafraîchissement raté ≠ claim raté */ }
+        return { ok: true, success: data.success, rewards: data.rewards, fa_week: data.fa_week, level_events: data.level_events };
+      } catch (e) { return { ok: false, reason: "generic" }; }
+    },
+
+    async expeditionsRecall(id) {
+      const s = gRef.current;
+      if (!s.authToken) return { ok: false, reason: "auth" };
+      try {
+        const resp = await fetch(`${API_URL}/expeditions/recall`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
+          body: JSON.stringify({ id }),
+        });
+        if (resp.status === 401) {
+          const re = await actions.authenticate(gRef.current.wallet);
+          if (!re) { toast(I18N.t("AUTH_EXPIRED"), "bad"); return { ok: false, reason: "auth" }; }
+          return { ok: false, reason: "retry" };
+        }
+        const data = await resp.json();
+        if (!data.ok) return { ok: false, reason: data.error || "generic" };
+        // Fusion locale : la ligne rappelée disparaît, aucun GET bloquant.
+        // Même garde d'identité de jeton que expeditionsState.
+        if (gRef.current.authToken === s.authToken) {
+          setG((st) => ({ ...st, expeditions: (st.expeditions || []).filter((e) => e.id !== id) }));
+        }
+        return { ok: true };
+      } catch (e) { return { ok: false, reason: "generic" }; }
+    },
+
+    // Fragments → relique : l'equipment change côté serveur → re-fetch /save.
+    // Même règle que le claim : le rafraîchissement post-succès ne requalifie
+    // jamais un craft réussi (fragments déjà consommés, relique déjà créée).
+    async expeditionsCraftRelic(rank) {
+      const s = gRef.current;
+      if (!s.wallet || !s.authToken) return { ok: false, reason: "auth" };
+      try {
+        const resp = await fetch(`${API_URL}/expeditions/craft-relic`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
+          body: JSON.stringify({ rank }),
+        });
+        if (resp.status === 401) {
+          const re = await actions.authenticate(gRef.current.wallet);
+          if (!re) { toast(I18N.t("AUTH_EXPIRED"), "bad"); return { ok: false, reason: "auth" }; }
+          return { ok: false, reason: "retry" };
+        }
+        const data = await resp.json();
+        if (!data.ok) return { ok: false, reason: data.error || "generic" };
+        try {
+          const [sv] = await Promise.all([fetch(`${API_URL}/save/${s.wallet}`, svOpts()), actions.expeditionsState()]);
+          // Même garde d'identité de jeton que le claim.
+          if (sv.ok && gRef.current.authToken === s.authToken) { const { save } = await sv.json(); setG((st) => serverToState(save, s.wallet, st)); }
+        } catch (e2) { /* rafraîchissement raté ≠ craft raté */ }
+        return { ok: true, relic: data.relic, fragments_left: data.fragments_left };
+      } catch (e) { return { ok: false, reason: "generic" }; }
     },
 
     // Talents : choix / respec d'un talent de palier. Le serveur renvoie creatures
@@ -1989,7 +2145,7 @@ function App() {
     );
   }
 
-  const VIEWS = { team: Team, fosse: Fosse, arene: Arene, campaign: Campaign, tour: Tour, quests: Quests, forge: Forge, market: Market, wallet: Wallet, boosts: Boosts, perso: Perso, leaderboard: Leaderboard, options: Options, lien: Link };
+  const VIEWS = { team: Team, fosse: Fosse, arene: Arene, campaign: Campaign, tour: Tour, expeditions: Expeditions, quests: Quests, forge: Forge, market: Market, wallet: Wallet, boosts: Boosts, perso: Perso, leaderboard: Leaderboard, options: Options, lien: Link };
 
   const View = VIEWS[g.view] || Team;
 
@@ -2244,13 +2400,27 @@ function Nav() {
   // Mobile : 4 onglets principaux + « Plus » (bottom sheet avec le reste).
   const [sheetOpen, setSheetOpen] = useState(false);
   const tabs = [
-    ["team", "NAV_TEAM"], ["fosse", "NAV_FOSSE"], ["arene", "NAV_ARENE"], ["campaign", "NAV_CAMPAIGN"], ["tour", "NAV_TOUR"], ["quests", "NAV_QUESTS"], ["forge", "NAV_FORGE"], ["market", "NAV_MARKET"],
+    ["team", "NAV_TEAM"], ["fosse", "NAV_FOSSE"], ["arene", "NAV_ARENE"], ["campaign", "NAV_CAMPAIGN"], ["tour", "NAV_TOUR"], ["expeditions", "NAV_EXPEDITIONS"], ["quests", "NAV_QUESTS"], ["forge", "NAV_FORGE"], ["market", "NAV_MARKET"],
     ["wallet", "NAV_WALLET"], ["boosts", "NAV_BOOSTS"], ["perso", "NAV_PERSO"], ["leaderboard", "NAV_LEADERBOARD"], ["options", "NAV_OPTIONS"],
   ];
   const MAIN = ["team", "fosse", "arene", "campaign"];
   const more = tabs.filter(([k]) => !MAIN.includes(k));
   const go = (k) => { if (window.FA_SFX) window.FA_SFX.play("tab"); actions.setView(k); setSheetOpen(false); };
   const areneBadge = g.pvp && g.pvp.attacksUnseen > 0 ? g.pvp.attacksUnseen : 0;
+  // Pastille Expéditions : dérivée des ends_at connus (aucun poll réseau) — un
+  // tick de 30 s suffit pour qu'elle s'allume pendant qu'on joue ailleurs, et
+  // il ne tourne que s'il y a au moins une expédition en cours.
+  const [, setExpTick] = useState(0);
+  const hasExps = (g.expeditions || []).length > 0;
+  useEffect(() => {
+    if (!hasExps) return undefined;
+    const t = setInterval(() => setExpTick((n) => n + 1), 30000);
+    return () => clearInterval(t);
+  }, [hasExps]);
+  // Même prédicat que l'écran (statusOf) : une seule définition de « prête ».
+  const XU = window.FA_EXPEDITIONS_UI;
+  const expNow = Date.now() + (g.expNowOffset || 0);
+  const expReady = (g.expeditions || []).filter((e) => XU.statusOf(e, expNow) === "ready").length;
   return (
     <>
       <nav className="nav">
@@ -2261,6 +2431,11 @@ function Nav() {
             {k === "arene" && areneBadge > 0 && (
               <span className="nav-badge" style={{ marginLeft: 4, background: "var(--alert)", color: "#fff", borderRadius: 9, fontSize: 10, padding: "0 5px", fontWeight: 700 }}>
                 {areneBadge}
+              </span>
+            )}
+            {k === "expeditions" && expReady > 0 && (
+              <span className="nav-badge" style={{ marginLeft: 4, background: "var(--fire)", color: "#180a02", borderRadius: 9, fontSize: 10, padding: "0 5px", fontWeight: 700 }}>
+                {expReady}
               </span>
             )}
           </button>
@@ -2285,6 +2460,7 @@ function Nav() {
           active={more.some(([k]) => g.view === k)}
           glyph="☰"
           label={I18N.t("NAV_MORE")}
+          badge={expReady}
           onClick={() => { if (window.FA_SFX) window.FA_SFX.play("tab"); setSheetOpen(true); }}
         />
       </nav>
@@ -2300,6 +2476,7 @@ function Nav() {
                 <button key={k} className={cx("fa-sheet-item", g.view === k && "on")} onClick={() => go(k)}>
                   <img src={`assets/nav-icons/${k}.png?v=74`} alt="" aria-hidden="true" draggable="false" />
                   <span>{I18N.t(key)}</span>
+                  {k === "expeditions" && expReady > 0 && <span className="fa-sheet-dot" aria-hidden="true" />}
                 </button>
               ))}
             </div>

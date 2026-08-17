@@ -161,7 +161,11 @@ function Fosse() {
     if (betTier === "" && g.freeFights <= 0) { toast(I18N.t("AR_PICK_BET"), "bad"); return; }
 
     const bet = await actions.callFight({ free, betTier, isLoop: isLoopRun });
-    if (!bet.ok) { toast(bet.reason || I18N.t("AR_INSUFF"), "bad"); if (isLoopRun) { loopRef.current = false; setLoop(false); } return; }
+    if (!bet.ok) {
+      // bete_en_expedition : garde serveur des Expéditions — code traduit, pas brut.
+      const msg = bet.reason === "bete_en_expedition" ? I18N.t("EXP_ERR_bete_en_expedition") : (bet.reason || I18N.t("AR_INSUFF"));
+      toast(msg, "bad"); if (isLoopRun) { loopRef.current = false; setLoop(false); } return;
+    }
     if (bet.note) toast(bet.note, "info");
     const effTier = bet.betTier;
 

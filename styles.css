@@ -57,6 +57,7 @@ body[data-view="tour"]     { --accent: var(--r-rare); }      /* Tour infinie, bl
 body[data-view="forge"]    { --accent: var(--forge); }       /* alchimie, violet */
 body[data-view="market"]   { --accent: var(--gold); }        /* Marché, doré */
 body[data-view="quests"]   { --accent: var(--gold); }        /* Quêtes, doré */
+body[data-view="expeditions"] { --accent: var(--sunset); }   /* Expéditions, orange couchant */
 
 * { box-sizing: border-box; }
 
@@ -1224,4 +1225,166 @@ input { font-family: var(--font-mono); }
 @keyframes faSheetUp {
   0% { transform: translateY(18px); opacity: .4; }
   100% { transform: translateY(0); opacity: 1; }
+}
+
+/* ============================================================
+   EXPÉDITIONS — écran idle (port du proto Expeditions.dc.html)
+   Structure en classes, couleurs dérivées des données en inline
+   (convention du dépôt). Animations transform/opacity seulement.
+   ============================================================ */
+.exq-col { display: flex; flex-direction: column; gap: 13px; animation: exqUp .22s ease-out; }
+.exq-mono { font-family: var(--font-mono); }
+.exq-dim { color: var(--text-dim); font-size: 11px; }
+.exq-cap { font-size: 9px; color: var(--text-dim); letter-spacing: .5px; }
+.exq-summary { display: flex; align-items: center; gap: 11px; padding: 10px 12px; font-size: 12px;
+  background: linear-gradient(90deg, rgba(0,240,255,.07), rgba(10,15,30,.35)); border: 1px solid rgba(0,240,255,.22); }
+.exq-vline { width: 1px; height: 16px; background: var(--line); flex: none; }
+.exq-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--fire); box-shadow: 0 0 10px var(--fire);
+  animation: exqPulse 1.4s ease-in-out infinite; flex: none; }
+.exq-worlds { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
+.exq-world { position: relative; display: flex; flex-direction: column; gap: 9px; padding: 12px 12px 12px 16px;
+  background: linear-gradient(160deg, rgba(14,20,38,.9), rgba(6,9,18,.92)); cursor: pointer; overflow: hidden;
+  min-width: 0; text-align: left; color: var(--text); font: inherit; }
+.exq-worldbar { position: absolute; top: 0; left: 0; bottom: 0; width: 4px; }
+.exq-fresh { position: absolute; inset: 0; border: 2px solid; pointer-events: none; animation: exqPopGlow .65s ease-out both; }
+.exq-worldhead { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; min-width: 0; font-size: 15px; }
+.exq-worldrow { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.exq-aff { flex: none; padding: 2px 6px; font-size: 9px; font-weight: 700; letter-spacing: .6px; border: 1px solid; }
+.exq-headworld { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.exq-steprow { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.exq-roster { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
+.exq-beast { position: relative; display: flex; flex-direction: column; gap: 5px; padding: 7px;
+  background: var(--bg-panel); min-width: 0; overflow: hidden; color: var(--text); font: inherit; text-align: left; }
+.exq-beastart { position: relative; aspect-ratio: 1 / 1; display: grid; place-items: center;
+  border: 1px solid var(--line-soft); overflow: hidden; }
+.exq-beastart img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.exq-lvl { position: absolute; bottom: 2px; right: 3px; font-size: 9px; color: var(--text); background: rgba(3,5,11,.7); padding: 0 3px; }
+.exq-check { position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; display: grid; place-items: center;
+  background: var(--fire); color: #10040a; font-size: 10px; font-weight: 700;
+  clip-path: polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%); }
+.exq-beastname { font-size: 11px; font-weight: 700; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.exq-beasttag { font-size: 9px; letter-spacing: .3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.exq-warn { display: flex; align-items: center; gap: 7px; padding: 8px 11px; font-size: 11px; line-height: 1.4;
+  color: var(--text-dim); background: rgba(247,147,26,.09); border: 1px solid rgba(247,147,26,.35); }
+.exq-durs { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; }
+.exq-modes { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; }
+.exq-toggle { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 10px 8px;
+  border: 1px solid var(--line); cursor: pointer; min-width: 0; font: inherit; }
+.exq-epicbox { display: flex; align-items: center; gap: 8px; margin-top: 8px; padding: 9px 11px;
+  color: rgba(255,230,168,.9); background: linear-gradient(90deg, rgba(255,230,0,.14), rgba(247,147,26,.06));
+  border: 1px solid rgba(255,230,0,.45); }
+.exq-launch { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 50px; margin-top: 2px;
+  background: var(--bg-panel); border: 1px solid var(--line); color: var(--text-dim);
+  font: inherit; font-size: 14px; font-weight: 700; letter-spacing: 1px; cursor: pointer; }
+.exq-launch:disabled { cursor: not-allowed; }
+.exq-back { align-self: flex-start; padding: 6px 10px; background: none; border: 1px solid var(--line);
+  color: var(--text-dim); font-size: 11px; cursor: pointer; }
+.exq-trackbox { display: flex; flex-direction: column; gap: 9px; padding: 16px 14px;
+  background: linear-gradient(180deg, rgba(0,240,255,.07), rgba(6,9,18,.65)); border: 1px solid rgba(0,240,255,.3); }
+.exq-bigtime { font-size: clamp(40px, 12vw, 58px); font-weight: 700; line-height: .95; letter-spacing: -1px;
+  color: var(--elec); font-variant-numeric: tabular-nums; text-shadow: 0 0 22px rgba(0,240,255,.45); }
+.exq-prog { height: 6px; margin-top: 2px; background: #0d1424; border: 1px solid var(--line-soft); overflow: hidden; }
+.exq-prog > div { height: 100%; background: linear-gradient(90deg, var(--elec), rgba(0,240,255,.35)); }
+.exq-statrow { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; }
+.exq-statrow > div { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 10px 4px;
+  background: var(--bg-panel); border: 1px solid var(--line); min-width: 0; }
+.exq-crewrow { display: grid; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: 10px;
+  padding: 9px 10px; background: var(--bg-panel); border: 1px solid var(--line); min-width: 0; }
+.exq-crewart { width: 42px; height: 42px; display: grid; place-items: center; border: 1px solid var(--line-soft);
+  overflow: hidden; flex: none; }
+.exq-crewart img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.exq-recall { display: flex; align-items: center; justify-content: center; min-height: 46px; margin-top: 6px;
+  background: transparent; border: 1px solid rgba(255,59,92,.45); color: var(--alert);
+  font: inherit; font-size: 12px; font-weight: 700; letter-spacing: .6px; cursor: pointer; }
+.exq-recall:hover { background: rgba(255,59,92,.08); border-color: var(--alert); }
+.exq-recallbox { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; padding: 12px;
+  background: rgba(255,59,92,.08); border: 1px solid var(--alert); animation: exqUp .18s ease-out; }
+.exq-dustbox { position: relative; display: flex; flex-direction: column; gap: 9px; padding: 14px;
+  background: linear-gradient(135deg, rgba(255,230,0,.2), rgba(247,147,26,.12) 45%, rgba(10,15,30,.66));
+  border: 2px solid var(--gold); box-shadow: 0 0 34px rgba(255,230,0,.28), inset 0 0 24px rgba(255,230,0,.08); overflow: hidden; }
+.exq-goldchip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 7px; font-size: 9px; font-weight: 700;
+  letter-spacing: 1.4px; color: var(--gold); background: rgba(255,230,0,.16); border: 1px solid var(--gold); white-space: nowrap; }
+.exq-ticketbox { display: flex; align-items: center; gap: 12px; padding: 12px 13px;
+  background: linear-gradient(100deg, rgba(255,230,0,.13), rgba(10,15,30,.5)); border: 1px solid var(--gold); }
+.exq-hex { width: 38px; height: 38px; display: grid; place-items: center; border: 1px solid; font-size: 17px; flex: none;
+  clip-path: polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%); }
+.exq-xprow { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px;
+  font-size: 12px; background: var(--bg-panel); border: 1px solid var(--line); min-width: 0; }
+.exq-farow { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 12px;
+  background: linear-gradient(90deg, rgba(247,147,26,.08), rgba(10,15,30,.4)); border: 1px solid rgba(247,147,26,.3); }
+
+/* Pastille « expédition prête » — sheet « Plus » (absolue) et nav desktop (statique inline). */
+.fa-sheet-dot { position: absolute; top: 6px; right: 6px; width: 8px; height: 8px; border-radius: 50%;
+  background: var(--fire); box-shadow: 0 0 8px var(--fire); animation: exqPulse 1.6s ease-in-out infinite; }
+
+/* --- Overlay de lancement : portail hexagonal --- */
+.exq-fx { position: fixed; inset: 0; z-index: 60; overflow: hidden; background: rgba(3,5,11,.95);
+  animation: exqFadeIn .18s ease-out both; cursor: pointer; }
+.exq-fx-shake { position: absolute; inset: 0; animation: exqShake .26s ease-in-out 1.74s both; }
+.exq-fil { position: absolute; top: 50%; left: 50%; width: 48%; height: 1px; transform-origin: 0 50%; }
+.exq-fil > span { display: block; width: 100%; height: 100%; transform-origin: 100% 50%;
+  animation: exqFilament .8s ease-out both; }
+.exq-fx-glow { position: absolute; top: 50%; left: 50%; width: 300px; height: 300px; margin: -150px 0 0 -150px;
+  animation: exqPortalGlow 2s ease-in-out both; }
+.exq-ring { position: absolute; top: 50%; left: 50%; animation: exqRingOpen 2s cubic-bezier(.2,.8,.25,1) both; }
+.exq-fx-cards { position: absolute; left: 0; right: 0; top: calc(50% + 120px); display: flex; justify-content: center; gap: 12px; }
+.exq-fx-card { position: relative; width: 86px; height: 112px; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 6px; background: linear-gradient(160deg, rgba(14,20,38,.96), rgba(6,9,18,.96));
+  border: 1px solid; will-change: transform, opacity;
+  animation-name: exqFlight; animation-duration: 1s; animation-timing-function: cubic-bezier(.42,0,.72,.25); animation-fill-mode: both; }
+.exq-streak { position: absolute; left: 50%; bottom: 100%; width: 2px; height: 170px; margin-left: -1px;
+  transform-origin: 50% 100%; animation: exqStreak .52s ease-out both; }
+.exq-shock { position: absolute; top: 50%; left: 50%; width: 170px; height: 170px; margin: -85px 0 0 -85px;
+  animation: exqShock .6s cubic-bezier(.2,.7,.3,1) 1.62s both; }
+.exq-flash { position: absolute; inset: 0; background: #fff; opacity: 0; animation: exqFlash .24s ease-out 1.6s both; }
+.exq-fx-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 10px; padding: 0 16px; text-align: center; }
+.exq-stamp { font-size: clamp(26px, 8vw, 38px); font-weight: 700; letter-spacing: 3px; line-height: 1.05; color: #fff;
+  animation: exqStamp .42s cubic-bezier(.2,1.5,.3,1) 1.72s both; }
+.exq-eta { font-size: 12px; color: var(--text-dim); animation: exqRiseIn .32s ease-out 1.98s both; }
+.exq-skip { position: absolute; left: 0; right: 0; bottom: 20px; text-align: center; font-size: 10px; letter-spacing: 1px;
+  color: var(--text-dim); animation: exqFadeIn .3s ease-out .5s both; }
+.exq-claimfx { position: fixed; inset: 0; z-index: 55; display: grid; place-items: center; pointer-events: none;
+  background: radial-gradient(60% 40% at 50% 45%, rgba(247,147,26,.28), rgba(3,5,11,.5)); }
+.exq-burst { position: absolute; width: 150px; height: 150px; border: 2px solid; border-radius: 50%;
+  animation: exqBurst .7s ease-out forwards; }
+
+@keyframes exqUp { from { transform: translateY(14px); opacity: .2; } to { transform: translateY(0); opacity: 1; } }
+@keyframes exqPulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .3; transform: scale(.55); } }
+@keyframes exqPopGlow { 0% { opacity: 0; transform: scale(1.05); } 25% { opacity: 1; } 100% { opacity: 0; transform: scale(1); } }
+@keyframes exqFadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes exqFilament { 0% { transform: scaleX(0); opacity: 0; } 30% { opacity: 1; } 100% { transform: scaleX(1); opacity: .45; } }
+@keyframes exqPortalGlow {
+  0% { transform: scale(.3); opacity: 0; } 18% { transform: scale(1); opacity: .75; }
+  40% { transform: scale(1.12); opacity: .45; } 60% { transform: scale(.98); opacity: .8; }
+  76% { transform: scale(1.3); opacity: .5; } 82% { transform: scale(.2); opacity: 0; } 100% { opacity: 0; }
+}
+@keyframes exqRingOpen {
+  0% { transform: scale(.14) rotate(-30deg); opacity: 0; } 12% { opacity: 1; }
+  22% { transform: scale(1.07) rotate(3deg); } 28% { transform: scale(1) rotate(0deg); }
+  72% { transform: scale(1.03) rotate(8deg); opacity: 1; }
+  80%, 100% { transform: scale(1.55) rotate(13deg); opacity: 0; }
+}
+@keyframes exqFlight {
+  0% { opacity: 0; transform: translate3d(0,70px,0) scale(.86); }
+  28% { opacity: 1; transform: translate3d(0,0,0) scale(1); }
+  48% { opacity: 1; transform: translate3d(0,0,0) scale(1); }
+  70% { opacity: 1; transform: translate3d(calc(var(--fx-x, 0) * 52%),-72%,0) scale(.78) scaleY(1.22); }
+  100% { opacity: 0; transform: translate3d(calc(var(--fx-x, 0) * 114%),-155%,0) scale(.1) scaleY(1.9); }
+}
+@keyframes exqStreak { 0% { transform: scaleY(0); opacity: 0; } 25% { opacity: .9; } 100% { transform: scaleY(1); opacity: 0; } }
+@keyframes exqFlash { 0% { opacity: 0; } 40% { opacity: .92; } 100% { opacity: 0; } }
+@keyframes exqShock { 0% { transform: scale(.15); opacity: 0; } 15% { opacity: 1; } 100% { transform: scale(4.6); opacity: 0; } }
+@keyframes exqStamp { 0% { transform: scale(1.9); opacity: 0; } 55% { transform: scale(.95); opacity: 1; } 78% { transform: scale(1.03); } 100% { transform: scale(1); opacity: 1; } }
+@keyframes exqRiseIn { from { transform: translate3d(0,10px,0); opacity: 0; } to { transform: translate3d(0,0,0); opacity: 1; } }
+@keyframes exqShake {
+  0% { transform: translate3d(0,0,0); } 20% { transform: translate3d(-4px,2px,0); }
+  40% { transform: translate3d(4px,-2px,0); } 60% { transform: translate3d(-3px,-1px,0); }
+  80% { transform: translate3d(2px,1px,0); } 100% { transform: translate3d(0,0,0); }
+}
+@keyframes exqBurst { 0% { transform: scale(.3); opacity: 0; } 25% { opacity: 1; } 100% { transform: scale(2.1); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .exq-fx, .exq-claimfx { display: none !important; }
+  .exq-col { animation: none; }
+  .exq-dot { animation: none; }
 }
