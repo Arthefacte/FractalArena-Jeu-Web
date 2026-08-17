@@ -1054,7 +1054,8 @@ function ForgeFragments({
       if (r.reason !== "auth") toast(XU.errText(r.reason), "bad");
       return;
     }
-    toast(I18N.t("FG_SUMMON_OK", I18N.t("RELIC_" + r.relic.type.toUpperCase()), rarityLabel(r.relic.rarity)), "good");
+    // Le reveal (toast + panneau) appartient au parent, DANS le onDone de la
+    // cinématique — même séquencement que doSummon.
     if (onForged) onForged(r.relic);
   }
   return /*#__PURE__*/React.createElement("div", {
@@ -1275,16 +1276,21 @@ function ForgeReliques() {
     }
   }, "\u2B21", /*#__PURE__*/React.createElement("br", null), I18N.t("RELIC_SUMMON")))), /*#__PURE__*/React.createElement(ForgeFragments, {
     onForged: relic => {
-      setLast(relic);
+      // Reveal APRÈS la cinématique (même séquencement que doSummon) : le
+      // panneau et le toast n'apparaissent pas sous l'animation.
+      const reveal = () => {
+        setLast(relic);
+        toast(I18N.t("FG_SUMMON_OK", I18N.t("RELIC_" + relic.type.toUpperCase()), rarityLabel(relic.rarity)), "good");
+      };
       if (window.FA_FORGE_CINE) {
         window.FA_FORGE_CINE.play({
           mode: "summon",
           success: true,
           tier: relic.rarity,
           color: D.RARITY_COLORS[relic.rarity] || "#46e6ff",
-          onDone: () => {}
+          onDone: reveal
         });
-      }
+      } else reveal();
     }
   }), /*#__PURE__*/React.createElement("div", {
     style: {

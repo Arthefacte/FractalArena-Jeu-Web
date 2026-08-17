@@ -89,9 +89,15 @@ function Expeditions() {
   const [exhausted, setExhausted] = useState([]); // [{ ids: [], until: ms }]
   const [, setTick] = useState(0);
   const fxTimer = useRef(null);
+  const fxWorldRef = useRef(null); // monde de l'anim en cours (lu par endFx, jamais périmé)
+  const flashTimer = useRef(null); // pulse justLaunched 800 ms
+  const claimTimer = useRef(null); // burst claiming 750 ms
 
-  // Tick 1 s seulement là où un compte à rebours est visible (dest, track).
-  const ticking = view === "dest" || view === "track";
+  // Tick 1 s seulement là où un compte à rebours est VISIBLE ET VIVANT :
+  // dest/track avec au moins une expédition qui court encore.
+  const nowPre = Date.now() + (g.expNowOffset || 0);
+  const anyRunning = (Array.isArray(g.expeditions) ? g.expeditions : []).some(e => XU.statusOf(e, nowPre) === "running");
+  const ticking = (view === "dest" || view === "track") && anyRunning;
   useEffect(() => {
     if (!ticking) return undefined;
     const t = setInterval(() => setTick(n => n + 1), 1000);
@@ -104,6 +110,8 @@ function Expeditions() {
   }, []);
   useEffect(() => () => {
     if (fxTimer.current) clearTimeout(fxTimer.current);
+    if (flashTimer.current) clearTimeout(flashTimer.current);
+    if (claimTimer.current) clearTimeout(claimTimer.current);
   }, []);
   const now = Date.now() + (g.expNowOffset || 0);
   const exps = Array.isArray(g.expeditions) ? g.expeditions : [];
@@ -145,13 +153,15 @@ function Expeditions() {
       clearTimeout(fxTimer.current);
       fxTimer.current = null;
     }
-    setFx(f => {
-      if (f) {
-        setJustLaunched(f.worldId);
-        setTimeout(() => setJustLaunched(null), 800);
-      }
-      return null;
-    });
+    // Le monde vient d'une ref (jamais périmée dans la closure du setTimeout) ;
+    // l'updater de setFx reste PUR — pas de setState imbriqué dedans.
+    const wid = fxWorldRef.current;
+    fxWorldRef.current = null;
+    setFx(null);
+    if (wid) {
+      setJustLaunched(wid);
+      flashTimer.current = setTimeout(() => setJustLaunched(null), 800);
+    }
     setView("dest");
     setSel([]);
   }
@@ -182,6 +192,7 @@ function Expeditions() {
       setSel([]);
       return;
     }
+    fxWorldRef.current = selWorld;
     setFx({
       worldId: selWorld,
       ids: sel.slice(),
@@ -203,7 +214,7 @@ function Expeditions() {
       if (r.reason !== "auth") toast(expErr(r.reason), "bad");
       return;
     }
-    setTimeout(() => setClaiming(false), 750); // laisse le burst se jouer
+    claimTimer.current = setTimeout(() => setClaiming(false), 750); // laisse le burst se jouer
     if (r.success === false && e.mode === "risquee") {
       // Échec Risquée : le serveur tient les bêtes indisponibles jusqu'à
       // ends_at + 30 min — on AJOUTE cette fenêtre (les fenêtres échues sortent).
@@ -224,8 +235,11 @@ function Expeditions() {
     setView("loot");
   }
   async function doRecall(e) {
+    if (busyCall) return;
+    setBusyCall(true);
     let r = await actions.expeditionsRecall(e.id);
     if (!r.ok && r.reason === "retry") r = await actions.expeditionsRecall(e.id);
+    setBusyCall(false);
     setConfirmRecall(false);
     if (!r.ok) {
       if (r.reason !== "auth") toast(expErr(r.reason), "bad");
@@ -414,7 +428,7 @@ function Expeditions() {
     const allEpic = ready3 && team.every(b => b.rarity === "Epic");
     return /*#__PURE__*/React.createElement("div", {
       className: "exq-col"
-    }, /*#__PURE__*/React.createElement(BackRow, null), /*#__PURE__*/React.createElement(WorldHead, null), /*#__PURE__*/React.createElement("div", {
+    }, BackRow(), WorldHead(), /*#__PURE__*/React.createElement("div", {
       className: "exq-steprow"
     }, /*#__PURE__*/React.createElement("span", {
       className: "eyebrow",
@@ -630,20 +644,23 @@ function Expeditions() {
     const endsAt = new Date(e.ends_at).getTime();
     const startedAt = new Date(e.started_at).getTime();
     const remain = Math.max(0, endsAt - now);
+    // À 00:00 la vue bascule : RÉCLAMER remplace Rappeler (qui 409-erait,
+    // le serveur refuse le rappel d'une expédition déjà arrivée à terme).
+    const isReady = XU.statusOf(e, now) === "ready";
     const progPct = Math.round(Math.min(100, Math.max(0, (1 - remain / Math.max(1, endsAt - startedAt)) * 100)));
     const rate = e.success_rate;
     const crew = (e.beast_ids || []).map(beastById).filter(Boolean);
     return /*#__PURE__*/React.createElement("div", {
       className: "exq-col"
-    }, /*#__PURE__*/React.createElement(BackRow, null), /*#__PURE__*/React.createElement(WorldHead, null), /*#__PURE__*/React.createElement("div", {
+    }, BackRow(), WorldHead(), /*#__PURE__*/React.createElement("div", {
       className: "exq-trackbox"
     }, /*#__PURE__*/React.createElement("div", {
       className: "eyebrow",
       style: {
         fontSize: 10,
-        color: "var(--elec)"
+        color: isReady ? "var(--fire)" : "var(--elec)"
       }
-    }, I18N.t("EXP_STATUS_RUNNING")), /*#__PURE__*/React.createElement("b", {
+    }, I18N.t(isReady ? "EXP_STATUS_READY" : "EXP_STATUS_RUNNING")), /*#__PURE__*/React.createElement("b", {
       className: "exq-mono exq-bigtime"
     }, XU.fmtCountdown(remain)), /*#__PURE__*/React.createElement("span", {
       className: "exq-mono exq-dim"
@@ -734,7 +751,17 @@ function Expeditions() {
           fontSize: 12
         }
       }, "NIV ", b.level));
-    })), !confirmRecall ? /*#__PURE__*/React.createElement("button", {
+    })), isReady ? /*#__PURE__*/React.createElement("button", {
+      className: "exq-launch",
+      disabled: busyCall,
+      onClick: () => claim(e),
+      style: {
+        background: "linear-gradient(180deg, #ffb64d, #f7931a)",
+        border: "1px solid #ffd08a",
+        color: "#180a02",
+        boxShadow: "0 0 22px rgba(247,147,26,.5)"
+      }
+    }, "\u25C8 ", I18N.t("EXP_CLAIM")) : !confirmRecall ? /*#__PURE__*/React.createElement("button", {
       className: "exq-recall",
       onClick: () => setConfirmRecall(true)
     }, I18N.t("EXP_RECALL")) : /*#__PURE__*/React.createElement("div", {
@@ -761,6 +788,7 @@ function Expeditions() {
       onClick: () => setConfirmRecall(false)
     }, I18N.t("CANCEL")), /*#__PURE__*/React.createElement("button", {
       className: "btn",
+      disabled: busyCall,
       style: {
         background: "var(--alert)",
         borderColor: "#ff8ba4",
@@ -776,7 +804,7 @@ function Expeditions() {
     if (!loot) return null; // l'effet lootOrphan ramène sur les destinations
     const rw = loot.rewards || {};
     const frags = rw.frags || {};
-    const fragRanks = ["C", "B", "A"].filter(rk => (frags[rk] || 0) > 0);
+    const fragRanks = Object.keys(XU.FRAGMENT_COSTS).filter(rk => (frags[rk] || 0) > 0);
     const failed = loot.success === false;
     const crew = (loot.beastIds || []).map(beastById).filter(Boolean);
     const fa = loot.fa_week || g.expFaWeek || {
@@ -1033,10 +1061,7 @@ function Expeditions() {
     }))), /*#__PURE__*/React.createElement("div", {
       className: "exq-fx-cards"
     }, cards.map((b, i) => {
-      const tm = b ? typeMeta(b.type) : {
-        color: "var(--elec)",
-        rgb: "0,240,255"
-      };
+      const tm = typeMeta(b && b.type);
       return /*#__PURE__*/React.createElement("div", {
         key: i,
         className: "exq-fx-card",

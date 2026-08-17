@@ -2409,16 +2409,17 @@ function Nav() {
   const areneBadge = g.pvp && g.pvp.attacksUnseen > 0 ? g.pvp.attacksUnseen : 0;
   // Pastille Expéditions : dérivée des ends_at connus (aucun poll réseau) — un
   // tick de 30 s suffit pour qu'elle s'allume pendant qu'on joue ailleurs, et
-  // il ne tourne que s'il y a au moins une expédition en cours.
+  // il ne tourne que si une expédition COURT encore (déjà prêtes = compte figé,
+  // rien à re-calculer).
   const [, setExpTick] = useState(0);
-  const hasExps = (g.expeditions || []).length > 0;
+  const XU = window.FA_EXPEDITIONS_UI;
+  const hasRunning = (g.expeditions || []).some((e) => XU.statusOf(e, Date.now() + (g.expNowOffset || 0)) === "running");
   useEffect(() => {
-    if (!hasExps) return undefined;
+    if (!hasRunning) return undefined;
     const t = setInterval(() => setExpTick((n) => n + 1), 30000);
     return () => clearInterval(t);
-  }, [hasExps]);
+  }, [hasRunning]);
   // Même prédicat que l'écran (statusOf) : une seule définition de « prête ».
-  const XU = window.FA_EXPEDITIONS_UI;
   const expNow = Date.now() + (g.expNowOffset || 0);
   const expReady = (g.expeditions || []).filter((e) => XU.statusOf(e, expNow) === "ready").length;
   return (
