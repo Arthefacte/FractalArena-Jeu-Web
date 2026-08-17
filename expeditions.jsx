@@ -53,9 +53,15 @@ function Expeditions() {
   const [exhausted, setExhausted] = useState([]);   // [{ ids: [], until: ms }]
   const [, setTick] = useState(0);
   const fxTimer = useRef(null);
+  const fxWorldRef = useRef(null);   // monde de l'anim en cours (lu par endFx, jamais périmé)
+  const flashTimer = useRef(null);   // pulse justLaunched 800 ms
+  const claimTimer = useRef(null);   // burst claiming 750 ms
 
-  // Tick 1 s seulement là où un compte à rebours est visible (dest, track).
-  const ticking = view === "dest" || view === "track";
+  // Tick 1 s seulement là où un compte à rebours est VISIBLE ET VIVANT :
+  // dest/track avec au moins une expédition qui court encore.
+  const nowPre = Date.now() + (g.expNowOffset || 0);
+  const anyRunning = (Array.isArray(g.expeditions) ? g.expeditions : []).some((e) => XU.statusOf(e, nowPre) === "running");
+  const ticking = (view === "dest" || view === "track") && anyRunning;
   useEffect(() => {
     if (!ticking) return undefined;
     const t = setInterval(() => setTick((n) => n + 1), 1000);
@@ -64,7 +70,11 @@ function Expeditions() {
   // Rafraîchit à l'OUVERTURE de l'écran ; le changement de jeton est déjà
   // couvert par l'effet global d'app.jsx (sinon double requête au boot).
   useEffect(() => { if (g.authToken) actions.expeditionsState(); }, []);
-  useEffect(() => () => { if (fxTimer.current) clearTimeout(fxTimer.current); }, []);
+  useEffect(() => () => {
+    if (fxTimer.current) clearTimeout(fxTimer.current);
+    if (flashTimer.current) clearTimeout(flashTimer.current);
+    if (claimTimer.current) clearTimeout(claimTimer.current);
+  }, []);
 
   const now = Date.now() + (g.expNowOffset || 0);
   const exps = Array.isArray(g.expeditions) ? g.expeditions : [];
@@ -93,10 +103,15 @@ function Expeditions() {
   // ---- Lancement : serveur d'abord (taux figé), animation ensuite ----
   function endFx() {
     if (fxTimer.current) { clearTimeout(fxTimer.current); fxTimer.current = null; }
-    setFx((f) => {
-      if (f) { setJustLaunched(f.worldId); setTimeout(() => setJustLaunched(null), 800); }
-      return null;
-    });
+    // Le monde vient d'une ref (jamais périmée dans la closure du setTimeout) ;
+    // l'updater de setFx reste PUR — pas de setState imbriqué dedans.
+    const wid = fxWorldRef.current;
+    fxWorldRef.current = null;
+    setFx(null);
+    if (wid) {
+      setJustLaunched(wid);
+      flashTimer.current = setTimeout(() => setJustLaunched(null), 800);
+    }
     setView("dest"); setSel([]);
   }
   async function launch() {
@@ -112,6 +127,7 @@ function Expeditions() {
       setView("dest"); setSel([]);
       return;
     }
+    fxWorldRef.current = selWorld;
     setFx({ worldId: selWorld, ids: sel.slice(), endsAt: new Date(r.expedition.ends_at) });
     fxTimer.current = setTimeout(endFx, 2300);
   }
@@ -124,7 +140,7 @@ function Expeditions() {
     if (!r.ok && r.reason === "retry") r = await actions.expeditionsClaim(e.id);
     setBusyCall(false);
     if (!r.ok) { setClaiming(false); if (r.reason !== "auth") toast(expErr(r.reason), "bad"); return; }
-    setTimeout(() => setClaiming(false), 750);   // laisse le burst se jouer
+    claimTimer.current = setTimeout(() => setClaiming(false), 750);   // laisse le burst se jouer
     if (r.success === false && e.mode === "risquee") {
       // Échec Risquée : le serveur tient les bêtes indisponibles jusqu'à
       // ends_at + 30 min — on AJOUTE cette fenêtre (les fenêtres échues sortent).
@@ -137,8 +153,11 @@ function Expeditions() {
   }
 
   async function doRecall(e) {
+    if (busyCall) return;
+    setBusyCall(true);
     let r = await actions.expeditionsRecall(e.id);
     if (!r.ok && r.reason === "retry") r = await actions.expeditionsRecall(e.id);
+    setBusyCall(false);
     setConfirmRecall(false);
     if (!r.ok) { if (r.reason !== "auth") toast(expErr(r.reason), "bad"); return; }
     setView("dest");
@@ -232,14 +251,16 @@ function Expeditions() {
     const ready3 = sel.length === 3;
     const pow = XU.collectionPower(team);
     const affBonus = XU.affinityBonus(team, selWorld);
-    const pct = XU.previewSuccessRate(team, selWorld);
+    // Le taux affiché est celui du MODE sélectionné (plafonds 90/70) — il
+    // change quand on bascule Prudente/Risquée, comme le vrai taux du /start.
+    const pct = XU.previewSuccessRate(team, selWorld, mode);
     const successColor = rateColor(pct);
     const warnTeam = sel.some((id) => (g.selected || []).includes(id));
     const allEpic = ready3 && team.every((b) => b.rarity === "Epic");
     return (
       <div className="exq-col">
-        <BackRow />
-        <WorldHead />
+        {BackRow()}
+        {WorldHead()}
         <div className="exq-steprow">
           <span className="eyebrow" style={{ fontSize: 10 }}>1 · {I18N.t("EXP_SELECT_3")}</span>
           <b className="exq-mono" style={{ color: ready3 ? "var(--success)" : "var(--text-dim)" }}>{sel.length} / 3</b>
@@ -337,15 +358,18 @@ function Expeditions() {
     const endsAt = new Date(e.ends_at).getTime();
     const startedAt = new Date(e.started_at).getTime();
     const remain = Math.max(0, endsAt - now);
+    // À 00:00 la vue bascule : RÉCLAMER remplace Rappeler (qui 409-erait,
+    // le serveur refuse le rappel d'une expédition déjà arrivée à terme).
+    const isReady = XU.statusOf(e, now) === "ready";
     const progPct = Math.round(Math.min(100, Math.max(0, (1 - remain / Math.max(1, endsAt - startedAt)) * 100)));
     const rate = e.success_rate;
     const crew = (e.beast_ids || []).map(beastById).filter(Boolean);
     return (
       <div className="exq-col">
-        <BackRow />
-        <WorldHead />
+        {BackRow()}
+        {WorldHead()}
         <div className="exq-trackbox">
-          <div className="eyebrow" style={{ fontSize: 10, color: "var(--elec)" }}>{I18N.t("EXP_STATUS_RUNNING")}</div>
+          <div className="eyebrow" style={{ fontSize: 10, color: isReady ? "var(--fire)" : "var(--elec)" }}>{I18N.t(isReady ? "EXP_STATUS_READY" : "EXP_STATUS_RUNNING")}</div>
           <b className="exq-mono exq-bigtime">{XU.fmtCountdown(remain)}</b>
           <span className="exq-mono exq-dim">{I18N.t("EXP_BACK_AT", fmtClock(new Date(endsAt)))}</span>
           <div className="exq-prog"><div style={{ width: progPct + "%" }} /></div>
@@ -377,7 +401,12 @@ function Expeditions() {
             );
           })}
         </div>
-        {!confirmRecall ? (
+        {isReady ? (
+          <button className="exq-launch" disabled={busyCall} onClick={() => claim(e)}
+            style={{ background: "linear-gradient(180deg, #ffb64d, #f7931a)", border: "1px solid #ffd08a", color: "#180a02", boxShadow: "0 0 22px rgba(247,147,26,.5)" }}>
+            ◈ {I18N.t("EXP_CLAIM")}
+          </button>
+        ) : !confirmRecall ? (
           <button className="exq-recall" onClick={() => setConfirmRecall(true)}>{I18N.t("EXP_RECALL")}</button>
         ) : (
           <div className="exq-recallbox">
@@ -385,7 +414,7 @@ function Expeditions() {
             <span style={{ fontSize: 12, lineHeight: 1.45, color: "var(--text-dim)" }}>{I18N.t("EXP_RECALL_CONFIRM")}</span>
             <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 8 }}>
               <button className="btn" onClick={() => setConfirmRecall(false)}>{I18N.t("CANCEL")}</button>
-              <button className="btn" style={{ background: "var(--alert)", borderColor: "#ff8ba4", color: "#14030a", fontWeight: 700 }} onClick={() => doRecall(e)}>{I18N.t("EXP_RECALL_YES")}</button>
+              <button className="btn" disabled={busyCall} style={{ background: "var(--alert)", borderColor: "#ff8ba4", color: "#14030a", fontWeight: 700 }} onClick={() => doRecall(e)}>{I18N.t("EXP_RECALL_YES")}</button>
             </div>
           </div>
         )}
@@ -398,7 +427,7 @@ function Expeditions() {
     if (!loot) return null;   // l'effet lootOrphan ramène sur les destinations
     const rw = loot.rewards || {};
     const frags = rw.frags || {};
-    const fragRanks = ["C", "B", "A"].filter((rk) => (frags[rk] || 0) > 0);
+    const fragRanks = Object.keys(XU.FRAGMENT_COSTS).filter((rk) => (frags[rk] || 0) > 0);
     const failed = loot.success === false;
     const crew = (loot.beastIds || []).map(beastById).filter(Boolean);
     const fa = loot.fa_week || g.expFaWeek || { granted: 0, cap: 500 };
@@ -503,7 +532,7 @@ function Expeditions() {
           ))}
           <div className="exq-fx-cards">
             {cards.map((b, i) => {
-              const tm = b ? typeMeta(b.type) : { color: "var(--elec)", rgb: "0,240,255" };
+              const tm = typeMeta(b && b.type);
               return (
                 <div key={i} className="exq-fx-card" style={{ borderColor: tm.color, boxShadow: `0 0 16px rgba(${tm.rgb},.4)`, "--fx-x": i - 1, animationDelay: (0.35 + i * 0.12) + "s" }}>
                   <span className="exq-streak" style={{ background: `linear-gradient(0deg, ${tm.color}, transparent)`, animationDelay: (0.83 + i * 0.12) + "s" }} />

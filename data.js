@@ -20,7 +20,7 @@ window.FA_API_URL = (typeof location !== "undefined" &&
 // À BUMPER AVEC LES BALISES ?v= D'index.html — un test le vérifie.
 // Ne sert plus que de REPLI : un asset absent du manifeste doit rester cache-busté
 // plutôt que servi indéfiniment par le CDN.
-window.FA_ASSET_V = "157";
+window.FA_ASSET_V = "158";
 
 // L'URL porte l'empreinte du CONTENU du fichier (asset-hashes.js, généré au build),
 // et non la version du jeu. Versionner par la version du jeu — ce que faisait la
