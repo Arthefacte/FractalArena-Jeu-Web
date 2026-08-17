@@ -997,8 +997,6 @@ input { font-family: var(--font-mono); }
 .bb-nums { font-weight: 700; white-space: nowrap; color: var(--text-dim); }
 .bb-row.liq .bb-nums { color: var(--elec); }
 .bb-row.buy .bb-nums { color: var(--fire); }
-.bb-tx { color: var(--elec); text-decoration: none; white-space: nowrap; }
-.bb-tx:hover { text-decoration: underline; }
 .bb-sub { color: var(--text-dim); padding-left: 28px; }
 .bb-sub b { color: var(--success); font-weight: 700; }
 

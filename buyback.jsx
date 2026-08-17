@@ -24,7 +24,7 @@ function bbFmt(n) {
 // `gain` : ce qui vient d'entrer dans ce pool, à annoncer une fois. La rangée
 // s'allume et le montant s'affiche — sinon un don part sans que rien ne bouge à
 // l'écran, et « Offrir » redevient un bouton qui ne produit rien de visible.
-function TickerRow({ kind, icon, label, total, threshold, wallet, proofLabel, sub, gain, rachat }) {
+function TickerRow({ kind, icon, label, total, threshold, sub, gain, rachat }) {
   const frac = buybackFraction(total, threshold);
   return (
     <div className={"bb-row " + kind + (gain ? " bb-gain" : "") + (rachat ? " bb-rachat" : "")}>
@@ -36,9 +36,6 @@ function TickerRow({ kind, icon, label, total, threshold, wallet, proofLabel, su
             remplissage, le montant y serait rogné. */}
         {gain > 0 && <span className="bb-delta">+{bbFmt(gain)}</span>}
         <span className="bb-nums">{bbFmt(total)} / {bbFmt(threshold)}</span>
-        {wallet && (
-          <a className="bb-tx" href={DEX_URL} target="_blank" rel="noreferrer">{proofLabel} ↗</a>
-        )}
       </div>
       {sub && <div className="bb-sub"><FaText text={sub} s={10} /></div>}
     </div>
@@ -249,8 +246,6 @@ function BuybackTicker() {
           label={I.t("BB_POOL_LABEL", bbFmt(p.tier))}
           total={p.total}
           threshold={p.threshold}
-          wallet={i === 0 ? bb.buyback_wallet : null}
-          proofLabel={I.t("BB_PROOF")}
           sub={i === last ? I.t("BB_BOUGHT_SUB", bbFmt(totalBought)) : null}
         />
       ))}
