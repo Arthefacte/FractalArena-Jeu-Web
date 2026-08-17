@@ -81,10 +81,12 @@ function Expeditions() {
   const [claiming, setClaiming] = useState(false);
   const [loot, setLoot] = useState(null); // { success, rewards, fa_week, worldId, beastIds }
   const [confirmRecall, setConfirmRecall] = useState(false);
-  // Fenêtre d'épuisement locale (échec Risquée : +30 min après ends_at). Le
-  // serveur garde de toute façon ; ceci rend l'indisponibilité VISIBLE dans le
-  // sélecteur au lieu d'un 409 sec (perdu au rechargement — acceptable v1).
-  const [exhausted, setExhausted] = useState(null); // { ids: [], until: ms }
+  // Fenêtres d'épuisement locales (échec Risquée : +30 min après ends_at),
+  // CUMULÉES — deux échecs successifs sur des destinations différentes gardent
+  // chacun leur fenêtre. Le serveur garde de toute façon ; ceci rend
+  // l'indisponibilité VISIBLE dans le sélecteur au lieu d'un 409 sec (perdu au
+  // rechargement ou au changement d'écran — acceptable v1).
+  const [exhausted, setExhausted] = useState([]); // [{ ids: [], until: ms }]
   const [, setTick] = useState(0);
   const fxTimer = useRef(null);
 
@@ -110,7 +112,7 @@ function Expeditions() {
     byDest[e.destination] = e;
   });
   const busyIds = new Set(exps.flatMap(e => Array.isArray(e.beast_ids) ? e.beast_ids : []));
-  const exhaustedIds = new Set(exhausted && exhausted.until > now ? exhausted.ids : []);
+  const exhaustedIds = new Set(exhausted.flatMap(x => x.until > now ? x.ids : []));
   const roster = Array.isArray(g.roster) ? g.roster : [];
   const beastById = id => roster.find(b => b && b.id === id);
 
@@ -204,11 +206,12 @@ function Expeditions() {
     setTimeout(() => setClaiming(false), 750); // laisse le burst se jouer
     if (r.success === false && e.mode === "risquee") {
       // Échec Risquée : le serveur tient les bêtes indisponibles jusqu'à
-      // ends_at + 30 min — on rend cette fenêtre visible dans le sélecteur.
-      setExhausted({
+      // ends_at + 30 min — on AJOUTE cette fenêtre (les fenêtres échues sortent).
+      const until = new Date(e.ends_at).getTime() + 30 * 60e3;
+      setExhausted(xs => [...xs.filter(x => x.until > Date.now()), {
         ids: e.beast_ids || [],
-        until: new Date(e.ends_at).getTime() + 30 * 60e3
-      });
+        until
+      }]);
     }
     setLoot({
       success: r.success,

@@ -2179,9 +2179,10 @@ function App() {
         if (!data.ok) return {
           ok: false
         };
-        // Réponse arrivée APRÈS une déconnexion : ne pas repeupler l'état vierge
-        // avec les expéditions de l'ancien compte (pastille fantôme).
-        if (!gRef.current.authToken) return {
+        // Réponse arrivée APRÈS une déconnexion ou un changement de compte : ne
+        // pas repeupler l'état avec les expéditions de l'ancien compte (pastille
+        // fantôme) — le jeton doit être CELUI qui a signé la requête.
+        if (gRef.current.authToken !== s.authToken) return {
           ok: false
         };
         setG(st => ({
@@ -2251,10 +2252,13 @@ function App() {
         };
         // La réponse contient l'expédition complète : fusion locale, pas de GET
         // bloquant derrière le bouton LANCER (fragments/plafond inchangés au start).
-        setG(st => ({
-          ...st,
-          expeditions: [...(st.expeditions || []), data.expedition]
-        }));
+        // Même garde d'identité de jeton que expeditionsState.
+        if (gRef.current.authToken === s.authToken) {
+          setG(st => ({
+            ...st,
+            expeditions: [...(st.expeditions || []), data.expedition]
+          }));
+        }
         return {
           ok: true,
           expedition: data.expedition
@@ -2306,10 +2310,21 @@ function App() {
           ok: false,
           reason: data.error || "generic"
         };
+        // Fusion locale IMMÉDIATE : la ligne réclamée disparaît même si le
+        // rafraîchissement ci-dessous échoue (sinon carte « prête » fantôme
+        // → second claim → deja_reclame).
+        if (gRef.current.authToken === s.authToken) {
+          setG(st => ({
+            ...st,
+            expeditions: (st.expeditions || []).filter(e => e.id !== id)
+          }));
+        }
         try {
           // Les deux GET sont indépendants : en parallèle (latence mobile ÷ 2).
           const [sv] = await Promise.all([fetch(`${API_URL}/save/${s.wallet}`, svOpts()), actions.expeditionsState()]);
-          if (sv.ok) {
+          // Garde d'identité de jeton : une /save de l'ancien compte arrivée
+          // après un changement ne doit pas réécrire toute la session.
+          if (sv.ok && gRef.current.authToken === s.authToken) {
             const {
               save
             } = await sv.json();
@@ -2367,10 +2382,13 @@ function App() {
           reason: data.error || "generic"
         };
         // Fusion locale : la ligne rappelée disparaît, aucun GET bloquant.
-        setG(st => ({
-          ...st,
-          expeditions: (st.expeditions || []).filter(e => e.id !== id)
-        }));
+        // Même garde d'identité de jeton que expeditionsState.
+        if (gRef.current.authToken === s.authToken) {
+          setG(st => ({
+            ...st,
+            expeditions: (st.expeditions || []).filter(e => e.id !== id)
+          }));
+        }
         return {
           ok: true
         };
@@ -2422,7 +2440,8 @@ function App() {
         };
         try {
           const [sv] = await Promise.all([fetch(`${API_URL}/save/${s.wallet}`, svOpts()), actions.expeditionsState()]);
-          if (sv.ok) {
+          // Même garde d'identité de jeton que le claim.
+          if (sv.ok && gRef.current.authToken === s.authToken) {
             const {
               save
             } = await sv.json();
