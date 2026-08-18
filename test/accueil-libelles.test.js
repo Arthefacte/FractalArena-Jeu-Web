@@ -25,11 +25,26 @@ test("le libelle de creation ne depend pas d'un etat partage", () => {
     "le libelle doit etre conditionne a l'action de creation elle-meme");
 });
 
-test("le libelle de verification manuelle est conditionne a SON action", () => {
-  const i = APP.indexOf('I18N.t("OB_CHECKING")');
-  assert.ok(i > 0, "libelle de verification absent");
-  const bloc = APP.slice(Math.max(0, i - 300), i + 80);
-  assert.match(bloc, /busy\s*===\s*"manual"/);
+test("la saisie manuelle d'adresse n'existe plus", () => {
+  // Retiree le 2026-08-18 : une adresse tapee ne peut PAS connecter (sans
+  // signature, /save repond 401 — anti-IDOR voulu), et l'echec d'auth tombait
+  // dans le repli reseau de connectWallet qui FABRIQUAIT un compte local
+  // fantome (starter + soldes de bienvenue) sur l'adresse tapee. Vecu par le
+  // user avec son wallet principal. Avec extension, le chemin ne faisait rien
+  // de plus que « J'ai deja un wallet ».
+  assert.ok(!/connectManual|OB_MANUAL_TOGGLE/.test(APP), "le chemin manuel est revenu");
+  assert.ok(!/OB_MANUAL_TOGGLE/.test(I18N), "cle morte restee dans i18n");
+});
+
+test("connectUnisat n'appelle JAMAIS connectWallet sans jeton", () => {
+  // Sans jeton, /save repond 401 et le repli reseau fabrique le meme compte
+  // fantome : l'echec d'auth doit sortir AVANT connectWallet.
+  const i = APP.indexOf("async connectUnisat");
+  const bloc = APP.slice(i, i + 1600);
+  const garde = bloc.indexOf("if (!token) return");
+  const appel = bloc.indexOf("actions.connectWallet(");
+  assert.ok(garde > 0, "garde anti-fantome absente de connectUnisat");
+  assert.ok(garde < appel, "la garde doit preceder l'appel a connectWallet");
 });
 
 test("une action en cours desactive toujours les autres boutons", () => {

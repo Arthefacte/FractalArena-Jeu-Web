@@ -92,15 +92,6 @@
     // onboarding
     OB_TAG: { FR: "AUTO-BATTLER ON-CHAIN", EN: "ON-CHAIN AUTO-BATTLER", ZH: "链上自动战斗" },
     OB_CONNECT: { FR: "Connecte ton wallet", EN: "Connect your wallet", ZH: "连接你的钱包" },
-    OB_SUB: {
-      FR: "Entre ton adresse Fractal Bitcoin (UniSat) pour recevoir ton cadeau de bienvenue de 1 000 FRACTALARENA verrouillés.",
-      EN: "Enter your Fractal Bitcoin (UniSat) address to receive your 1,000 locked FRACTALARENA welcome gift.",
-      ZH: "输入你的 Fractal Bitcoin（UniSat）地址，领取 1,000 锁定 FRACTALARENA 欢迎礼物。",
-    },
-    OB_PLACEHOLDER: { FR: "bc1p… ou bc1q…", EN: "bc1p… or bc1q…", ZH: "bc1p… 或 bc1q…" },
-    OB_BTN: { FR: "Connecter", EN: "Connect", ZH: "连接" },
-    OB_INVALID: { FR: "Adresse invalide — vérifie ton wallet UniSat", EN: "Invalid address — check your UniSat wallet", ZH: "地址无效 — 请检查你的 UniSat 钱包" },
-    OB_CHECKING: { FR: "Vérification on-chain…", EN: "Checking on-chain…", ZH: "链上验证中…" },
     OB_GIFT: { FR: "1 000 verrouillés + 5 combats gratuits/jour", EN: "1,000 locked + 5 free fights/day", ZH: "1,000 锁定 + 每日 5 场免费战斗" },
     OB_WALLET_REQUIRED: { FR: "Wallet obligatoire pour jouer", EN: "Wallet required to play", ZH: "游玩需连接钱包" },
     OB_CONNECT_FAIL: { FR: "Connexion UniSat refusée ou échouée", EN: "UniSat connection refused or failed", ZH: "UniSat 连接被拒绝或失败" },
@@ -254,7 +245,6 @@
     // (flux openDapp officiel) — on y emmène le joueur au lieu de ne rien afficher.
     OB_OPEN_UNISAT_BTN: { FR: "Ouvrir dans l'app UniSat", EN: "Open in the UniSat app", ZH: "在 UniSat 应用中打开" },
     OB_OPEN_UNISAT_SUB: { FR: "Tu as déjà un wallet ? Sur téléphone, le jeu se connecte depuis l'app UniSat.", EN: "Already have a wallet? On mobile, the game connects from inside the UniSat app.", ZH: "已有钱包？在手机上，游戏需从 UniSat 应用内连接。" },
-    OB_MANUAL_TOGGLE: { FR: "Saisir une adresse manuellement", EN: "Enter an address manually", ZH: "手动输入地址" },
 
     // team
     TEAM_TITLE: { FR: "Ma collection", EN: "My collection", ZH: "我的收藏" },
