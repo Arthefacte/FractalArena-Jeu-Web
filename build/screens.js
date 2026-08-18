@@ -2638,7 +2638,7 @@ function Options() {
       color: "var(--text-dim)",
       marginBottom: 20
     }
-  }, I18N.t("ACC_DISCONNECT_CONFIRM_BODY")), /*#__PURE__*/React.createElement("div", {
+  }, I18N.t(g.linkedWallet ? "ACC_DISCONNECT_CONFIRM_BODY_LINKED" : "ACC_DISCONNECT_CONFIRM_BODY")), /*#__PURE__*/React.createElement("div", {
     className: "flex gap8",
     style: {
       flexWrap: "wrap"
