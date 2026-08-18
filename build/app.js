@@ -1169,6 +1169,33 @@ function App() {
         };
       }
     },
+    // Historique des mouvements on-chain (dépôts + retraits) du compte : le
+    // serveur rend les 50 derniers, le client ne fait qu'afficher.
+    async fetchWalletHistory() {
+      const s = gRef.current;
+      if (!s.authToken) return {
+        ok: false
+      };
+      try {
+        const r = await fetch(`${API_URL}/wallet/history`, {
+          headers: {
+            "Authorization": `Bearer ${s.authToken}`
+          }
+        });
+        if (!r.ok) return {
+          ok: false
+        };
+        const d = await r.json();
+        return {
+          ok: true,
+          entries: d.entries || []
+        };
+      } catch (e) {
+        return {
+          ok: false
+        };
+      }
+    },
     // Demande au serveur de constater une activité on-chain (solde FB > 0). Le
     // client ne décide jamais : il ne fait que déclencher la vérification.
     async verifyOnchain() {

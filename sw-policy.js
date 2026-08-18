@@ -7,7 +7,7 @@
   /* Suit le cache-bust d'index.html (?v=N) : chaque déploiement repart d'un
      cache neuf, et l'ancien est purgé à l'activation. Un test vérifie que les
      deux nombres ne divergent pas. */
-  const CACHE = "fa-v164";
+  const CACHE = "fa-v165";
 
   /* Deux routes seulement. Une première version mettait aussi en cache tous les
    * assets same-origin ; elle a été retirée après mesure, pour deux raisons :

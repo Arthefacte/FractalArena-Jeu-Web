@@ -514,6 +514,14 @@
     WL_WD_NOT_LINKED: { FR: "Lie d'abord ton portefeuille : c'est là que partiront tes retraits. Rendez-vous dans « Comment débloquer mes gains ».", EN: "Link your wallet first — that's where your withdrawals will go. See “How to unlock my earnings”.", ZH: "请先绑定你的钱包：提现将发往该地址。详见“如何解锁我的收益”。" },
     WL_WD_DEST: { FR: "Destination des retraits", EN: "Withdrawals go to", ZH: "提现发往" },
     WL_WD_DEST_NONE: { FR: "Aucun portefeuille lié — retrait indisponible", EN: "No wallet linked — withdrawal unavailable", ZH: "未绑定钱包，暂不可提现" },
+    // Historique des mouvements on-chain : montant, date, statut, txid → Uniscan.
+    WL_HISTORY: { FR: "Historique", EN: "History", ZH: "历史记录" },
+    WL_H_EMPTY: { FR: "Aucun dépôt ni retrait pour l'instant.", EN: "No deposits or withdrawals yet.", ZH: "暂无充值或提现记录。" },
+    WL_H_ERROR: { FR: "Historique indisponible. Réessaie dans un moment.", EN: "History unavailable. Try again shortly.", ZH: "历史记录暂不可用，请稍后再试。" },
+    WL_H_PENDING: { FR: "en cours", EN: "in progress", ZH: "处理中" },
+    WL_H_SENT: { FR: "envoyé ✓", EN: "sent ✓", ZH: "已发送 ✓" },
+    WL_H_FAILED: { FR: "échoué — remboursé", EN: "failed — refunded", ZH: "失败——已退款" },
+    WL_H_NO_TXID: { FR: "txid à venir", EN: "txid coming", ZH: "txid 稍后可见" },
     AUTH_EXPIRED: { FR: "Session expirée — reconnecte-toi.", EN: "Session expired — please reconnect.", ZH: "会话已过期，请重新连接。" },
     // Diagnostic d'authentification : chaque cause appelle un geste DIFFÉRENT du
     // joueur. Les confondre dans un message unique le laisse sans solution —

@@ -1609,7 +1609,13 @@ function Wallet() {
       flex: 1
     },
     onClick: () => setModal("withdraw")
-  }, "\u2191 ", I18N.t("WL_WITHDRAW"))), /*#__PURE__*/React.createElement("div", {
+  }, "\u2191 ", I18N.t("WL_WITHDRAW"))), /*#__PURE__*/React.createElement("button", {
+    className: "btn block",
+    style: {
+      marginTop: 10
+    },
+    onClick: () => setModal("history")
+  }, "\uD83E\uDDFE ", I18N.t("WL_HISTORY")), /*#__PURE__*/React.createElement("div", {
     className: "panel oct",
     style: {
       border: "1px solid var(--line)",
@@ -1639,7 +1645,132 @@ function Wallet() {
     onClose: () => setModal(null)
   }), modal === "withdraw" && /*#__PURE__*/React.createElement(WithdrawModal, {
     onClose: () => setModal(null)
+  }), modal === "history" && /*#__PURE__*/React.createElement(HistoryModal, {
+    onClose: () => setModal(null)
   }));
+}
+
+/* L'historique des mouvements on-chain — pour que le joueur VÉRIFIE lui-même :
+   montant, date/heure locale, statut du retrait, et le txid qui mène à
+   l'explorateur. Chargé à l'ouverture seulement : la liste ne concerne que qui
+   la demande. */
+const UNISCAN_TX = "https://uniscan.cc/fractal/tx/"; // le réseau Fractal, PAS /tx/ (qui cherche sur Bitcoin)
+const WL_H_STATUS = {
+  pending: "WL_H_PENDING",
+  pending_send: "WL_H_PENDING",
+  completed: "WL_H_SENT",
+  failed: "WL_H_FAILED"
+};
+function HistoryModal({
+  onClose
+}) {
+  const {
+    actions
+  } = useFA();
+  const [st, setSt] = useState({
+    loading: true,
+    entries: null
+  });
+  useEffect(() => {
+    let vivant = true;
+    actions.fetchWalletHistory().then(r => {
+      if (vivant) setSt({
+        loading: false,
+        entries: r.ok ? r.entries : null
+      });
+    });
+    return () => {
+      vivant = false;
+    };
+  }, []);
+  return /*#__PURE__*/React.createElement(Modal, {
+    onClose: onClose,
+    accent: "var(--elec)"
+  }, /*#__PURE__*/React.createElement(SectionHead, {
+    eyebrow: "\uD83E\uDDFE LEDGER",
+    title: I18N.t("WL_HISTORY")
+  }), st.loading && /*#__PURE__*/React.createElement("div", {
+    className: "muted",
+    style: {
+      textAlign: "center",
+      padding: 18
+    }
+  }, "\u2026"), !st.loading && !st.entries && /*#__PURE__*/React.createElement("div", {
+    className: "muted",
+    style: {
+      fontSize: 12,
+      textAlign: "center",
+      padding: 18
+    }
+  }, I18N.t("WL_H_ERROR")), !st.loading && st.entries && st.entries.length === 0 && /*#__PURE__*/React.createElement("div", {
+    className: "muted",
+    style: {
+      fontSize: 12,
+      textAlign: "center",
+      padding: 18
+    }
+  }, I18N.t("WL_H_EMPTY")), !st.loading && st.entries && st.entries.length > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      maxHeight: "55vh",
+      overflowY: "auto"
+    }
+  }, st.entries.map((e, i) => {
+    const retrait = e.type === "withdraw";
+    const echoue = e.status === "failed";
+    return /*#__PURE__*/React.createElement("div", {
+      key: i,
+      style: {
+        borderBottom: "1px solid var(--line)",
+        padding: "9px 2px"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex between center",
+      style: {
+        gap: 8
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "mono",
+      style: {
+        fontSize: 13,
+        fontWeight: 700,
+        color: retrait ? "var(--gold)" : "var(--elec)",
+        textDecoration: echoue ? "line-through" : "none"
+      }
+    }, retrait ? "↑ −" : "↓ +", fmt(e.amount), " ", /*#__PURE__*/React.createElement(TokenIcon, {
+      s: 11
+    })), retrait && /*#__PURE__*/React.createElement("span", {
+      className: "mono",
+      style: {
+        fontSize: 11,
+        color: echoue ? "var(--alert)" : e.status === "completed" ? "var(--success)" : "var(--text-dim)"
+      }
+    }, I18N.t(WL_H_STATUS[e.status] || "WL_H_PENDING"))), /*#__PURE__*/React.createElement("div", {
+      className: "flex between center",
+      style: {
+        gap: 8,
+        marginTop: 3
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "mono muted",
+      style: {
+        fontSize: 11
+      }
+    }, new Date(e.at).toLocaleString()), e.txid ? /*#__PURE__*/React.createElement("a", {
+      className: "mono",
+      style: {
+        fontSize: 11,
+        color: "var(--elec)"
+      },
+      href: UNISCAN_TX + e.txid,
+      target: "_blank",
+      rel: "noopener"
+    }, e.txid.slice(0, 8), "\u2026", e.txid.slice(-6), " \u2197") : retrait && !echoue && /*#__PURE__*/React.createElement("span", {
+      className: "mono muted",
+      style: {
+        fontSize: 11
+      }
+    }, I18N.t("WL_H_NO_TXID"))));
+  })));
 }
 function CopyAddr({
   addr
