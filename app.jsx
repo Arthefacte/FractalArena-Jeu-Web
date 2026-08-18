@@ -667,9 +667,16 @@ function App() {
         // Authentifier D'ABORD (obtenir le token) puis charger la save AVEC le token :
         // la lecture /save est auth-gatée côté serveur (anti-IDOR).
         const token = await actions.authenticate(addr);
+        // JAMAIS connectWallet sans jeton : la lecture /save répondrait 401, et
+        // le repli générique fabriquerait un compte local fantôme sur l'adresse
+        // (starter, soldes de bienvenue) — le joueur croirait avoir un compte
+        // neuf alors que RIEN n'existe côté serveur (constaté le 2026-08-18 via
+        // la saisie manuelle d'adresse ; même règle que « pas de repli client
+        // sur une donnée serveur », incident roster du 2026-07-28).
+        if (!token) return { ok: false, reason: "auth" };
         const isNew = await actions.connectWallet(addr, token);
         await actions.claimAirdropIfNew(addr, token, isNew);
-        return token ? { ok: true } : { ok: false, reason: "auth" };
+        return { ok: true };
       } catch (e) {
         return { ok: false, reason: "rejected" };
       }
@@ -2527,15 +2534,19 @@ function Nav() {
 
 function Onboarding({ onAccountCreated }) {
   const { actions, toast } = useFA();
-  const [addr, setAddr] = useState("");
-  // Quelle action est en cours : null | "create" | "connect" | "manual".
-  // Un booléen partagé ne suffit pas — il bloque bien les trois boutons, mais il
+  // Quelle action est en cours : null | "create" | "connect".
+  // Un booléen partagé ne suffit pas — il bloque bien les boutons, mais il
   // ne dit pas LAQUELLE tourne, et « Création… » s'affichait alors sur « Jouer
   // maintenant » quand le joueur cliquait « J'ai déjà un wallet » (constaté en
   // prod le 28/07). Voir aussi que tout bouton reste gardé par `busy`, sinon un
   // double-clic créerait deux comptes dont un orphelin.
+  //
+  // « Saisir une adresse manuellement » n'existe plus (2026-08-18) : une
+  // adresse tapée ne peut PAS connecter — sans signature le serveur refuse
+  // (anti-IDOR), et le chemin fabriquait alors un compte local fantôme. Avec
+  // extension il ne faisait rien de plus que « J'ai déjà un wallet ». Le user
+  // l'a vécu avec son wallet principal : « ça m'a créé un compte ».
   const [busy, setBusy] = useState(null);
-  const [manual, setManual] = useState(false);
   const [recovering, setRecovering] = useState(false);
   const hasWallet = HAS_UNISAT();
   const mobile = IS_MOBILE();
@@ -2545,18 +2556,6 @@ function Onboarding({ onAccountCreated }) {
     let r;
     try { r = await actions.connectUnisat(); } finally { setBusy(null); }
     if (!r.ok) toast(I18N.t("OB_CONNECT_FAIL"), "bad");
-  }
-  async function connectManual() {
-    const a = addr.trim();
-    if (a.length < 20 || !/^bc1/i.test(a)) { toast(I18N.t("OB_INVALID"), "bad"); return; }
-    setBusy("manual");
-    try {
-      const token = await actions.authenticate(a);
-      const isNew = await actions.connectWallet(a, token);
-      await actions.claimAirdropIfNew(a, token, isNew);
-    } finally {
-      setBusy(null);
-    }
   }
   // Entrée sans friction : on crée le compte, puis on remonte les secrets vers App —
   // createAccount() pose déjà g.wallet, donc Onboarding peut être démonté au rendu
@@ -2612,16 +2611,6 @@ function Onboarding({ onAccountCreated }) {
           <button className="btn-link" style={{ background: "none", border: "none", color: "var(--text-dim)", fontSize: 11, cursor: "pointer", textDecoration: "underline" }}
                   onClick={() => setRecovering(true)}>{I18N.t("ACC_RECOVER_LINK")}</button>
         </div>
-
-        <div style={{ marginTop: 16 }}>
-          <button className="btn-link" style={{ background: "none", border: "none", color: "var(--text-dim)", fontSize: 11, cursor: "pointer", textDecoration: "underline" }} onClick={() => setManual(!manual)}>{I18N.t("OB_MANUAL_TOGGLE")}</button>
-        </div>
-        {manual && (
-          <div style={{ marginTop: 10 }}>
-            <input className="field" style={{ textAlign: "center", marginBottom: 10 }} value={addr} onChange={(e) => setAddr(e.target.value)} placeholder={I18N.t("OB_PLACEHOLDER")} onKeyDown={(e) => e.key === "Enter" && connectManual()} />
-            <button className="btn block" disabled={!!busy} onClick={connectManual}>{busy === "manual" ? I18N.t("OB_CHECKING") : I18N.t("OB_BTN")}</button>
-          </div>
-        )}
 
         <div className="lang-switch" style={{ margin: "16px auto 0", width: "fit-content" }}>
           {[["FR", "Français"], ["EN", "English"], ["ZH", "中文"]].map(([code, lbl]) => (
