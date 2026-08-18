@@ -105,7 +105,7 @@
     OB_WALLET_REQUIRED: { FR: "Wallet obligatoire pour jouer", EN: "Wallet required to play", ZH: "游玩需连接钱包" },
     OB_CONNECT_FAIL: { FR: "Connexion UniSat refusée ou échouée", EN: "UniSat connection refused or failed", ZH: "UniSat 连接被拒绝或失败" },
     OB_MOBILE_TITLE: { FR: "Jouer sur mobile", EN: "Play on mobile", ZH: "在移动端游玩" },
-    OB_MOBILE_MSG: { FR: "Sur mobile, joue avec un compte créé par le jeu. La connexion par extension UniSat reste réservée à l'ordinateur.", EN: "On mobile, play with an account created by the game. Connecting via the UniSat extension remains desktop-only.", ZH: "在移动端可使用游戏创建的账号游玩。UniSat 扩展登录仍仅限电脑。" },
+    OB_MOBILE_MSG: { FR: "Sur mobile, joue avec un compte créé par le jeu — ou ouvre le jeu dans l'app UniSat Mobile pour te connecter avec ton wallet, comme sur ordinateur.", EN: "On mobile, play with an account created by the game — or open the game inside the UniSat Mobile app to connect your wallet, just like on desktop.", ZH: "在移动端可使用游戏创建的账号游玩——也可在 UniSat 移动端应用内打开游戏，用你的钱包登录，与电脑端相同。" },
 
     // --- Compte sans wallet ---
     ACC_PLAY_NOW: { FR: "Jouer maintenant", EN: "Play now", ZH: "立即游玩" },
@@ -497,7 +497,7 @@
     // joueur. Les confondre dans un message unique le laisse sans solution —
     // c'est ce qui nous a coûté un aller-retour v111/v112.
     AUTHDIAG_TITLE:        { FR: "Connexion UniSat requise pour jouer.", EN: "UniSat connection required to play.", ZH: "需要连接 UniSat 才能游戏。" },
-    AUTHDIAG_NO_EXTENSION: { FR: "Aucune extension UniSat détectée. Sur ordinateur, installe-la puis relance le jeu ; sur mobile, la signature n'est pas possible.", EN: "No UniSat extension detected. On desktop, install it then restart the game; on mobile, signing is not possible.", ZH: "未检测到 UniSat 扩展。电脑端请先安装并重启游戏；手机端无法签名。" },
+    AUTHDIAG_NO_EXTENSION: { FR: "Aucun wallet UniSat détecté. Sur ordinateur, installe l'extension puis relance le jeu ; sur téléphone, ouvre le jeu dans l'app UniSat Mobile pour pouvoir signer.", EN: "No UniSat wallet detected. On desktop, install the extension then restart the game; on mobile, open the game inside the UniSat Mobile app to be able to sign.", ZH: "未检测到 UniSat 钱包。电脑端请安装扩展并重启游戏；手机端请在 UniSat 移动端应用内打开游戏以完成签名。" },
     AUTHDIAG_LOCKED:       { FR: "Ton portefeuille UniSat est verrouillé. Ouvre l'extension, saisis ton mot de passe, puis relance le jeu.", EN: "Your UniSat wallet is locked. Open the extension, enter your password, then restart the game.", ZH: "你的 UniSat 钱包已锁定。请打开扩展并输入密码，然后重启游戏。" },
     AUTHDIAG_REJECTED:     { FR: "Signature refusée. Relance le jeu et accepte la demande de signature d'UniSat.", EN: "Signature refused. Restart the game and accept UniSat's signature request.", ZH: "签名被拒绝。请重启游戏并接受 UniSat 的签名请求。" },
     AUTHDIAG_SIGN_FAILED:  { FR: "La demande de signature n'a pas abouti. Ouvre l'extension UniSat, puis relance le jeu.", EN: "The signature request did not complete. Open the UniSat extension, then restart the game.", ZH: "签名请求未完成。请打开 UniSat 扩展，然后重启游戏。" },
