@@ -89,12 +89,13 @@ function RecoverScreen({
     setBusy(true);
     let r;
     // Un seul champ pour deux codes : celui de RÉCUPÉRATION (compte généré) et
-    // celui de LIAISON D'APPAREIL (affiché sous le QR, écran Options du PC).
-    // Le format tranche — 16 caractères Crockford = liaison ; le joueur n'a
-    // pas à savoir lequel il tient.
+    // celui de LIAISON D'APPAREIL (affiché sous le QR du PC, ou copié par le
+    // pont vers l'app UniSat — lien complet accepté, codeFromInput en tire le
+    // code). Le format tranche ; le joueur n'a pas à savoir ce qu'il tient.
     const DL = window.FA_DEVICE_LINK;
+    const lien = DL ? DL.codeFromInput(code) : null;
     try {
-      r = DL && DL.isLinkCode(code) ? await actions.claimDeviceLink(code) : await actions.recoverAccount(code);
+      r = lien ? await actions.claimDeviceLink(lien) : await actions.recoverAccount(code);
     } finally {
       setBusy(false);
     }
@@ -202,6 +203,7 @@ function UnisatAppBridge({
     const url = window.FA_DEVICE_LINK.linkUrl(window.location.origin, r.code);
     setLink({
       url,
+      code: r.code,
       expiresAt: Date.now() + r.expires_in * 1000
     });
     setRestant(r.expires_in);
@@ -241,9 +243,19 @@ function UnisatAppBridge({
   }, /*#__PURE__*/React.createElement("div", {
     className: "mono",
     style: {
+      fontSize: 15,
+      fontWeight: 700,
+      letterSpacing: 1,
+      userSelect: "all"
+    }
+  }, link.code), /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
       fontSize: 11,
       wordBreak: "break-all",
-      userSelect: "all"
+      userSelect: "all",
+      opacity: 0.7,
+      marginTop: 4
     }
   }, link.url), /*#__PURE__*/React.createElement("div", {
     className: "mono muted",

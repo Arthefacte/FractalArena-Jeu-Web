@@ -61,13 +61,14 @@ function RecoverScreen({ onClose }) {
     setBusy(true);
     let r;
     // Un seul champ pour deux codes : celui de RÉCUPÉRATION (compte généré) et
-    // celui de LIAISON D'APPAREIL (affiché sous le QR, écran Options du PC).
-    // Le format tranche — 16 caractères Crockford = liaison ; le joueur n'a
-    // pas à savoir lequel il tient.
+    // celui de LIAISON D'APPAREIL (affiché sous le QR du PC, ou copié par le
+    // pont vers l'app UniSat — lien complet accepté, codeFromInput en tire le
+    // code). Le format tranche ; le joueur n'a pas à savoir ce qu'il tient.
     const DL = window.FA_DEVICE_LINK;
+    const lien = DL ? DL.codeFromInput(code) : null;
     try {
-      r = DL && DL.isLinkCode(code)
-        ? await actions.claimDeviceLink(code)
+      r = lien
+        ? await actions.claimDeviceLink(lien)
         : await actions.recoverAccount(code);
     } finally { setBusy(false); }
     if (r.ok) { onClose && onClose(); return; }
@@ -136,7 +137,7 @@ function UnisatAppBridge({ mode }) {
     setBusy(false);
     if (!r.ok) { toast(I18N.t("OP_DEVLINK_ERROR"), "bad"); return; }
     const url = window.FA_DEVICE_LINK.linkUrl(window.location.origin, r.code);
-    setLink({ url, expiresAt: Date.now() + r.expires_in * 1000 });
+    setLink({ url, code: r.code, expiresAt: Date.now() + r.expires_in * 1000 });
     setRestant(r.expires_in);
     await copier(url);
   };
@@ -158,7 +159,11 @@ function UnisatAppBridge({ mode }) {
         </button>
       ) : (
         <div style={{ marginTop: 10 }}>
-          <div className="mono" style={{ fontSize: 11, wordBreak: "break-all", userSelect: "all" }}>{link.url}</div>
+          {/* Le code seul, en gros : si le navigateur de l'app n'a pas de barre
+              d'adresse, il se colle (ou se recopie) dans « Récupérer mon
+              compte » — qui accepte aussi le lien entier (codeFromInput). */}
+          <div className="mono" style={{ fontSize: 15, fontWeight: 700, letterSpacing: 1, userSelect: "all" }}>{link.code}</div>
+          <div className="mono" style={{ fontSize: 11, wordBreak: "break-all", userSelect: "all", opacity: 0.7, marginTop: 4 }}>{link.url}</div>
           <div className="mono muted" style={{ fontSize: 10.5, margin: "6px 0" }}>{I18N.t("OP_DEVLINK_TTL", restant)}</div>
           <button className="btn ghost sm" disabled={busy} onClick={() => copier(link.url)}>⧉ {I18N.t("OP_DEVLINK_COPY")}</button>
         </div>
