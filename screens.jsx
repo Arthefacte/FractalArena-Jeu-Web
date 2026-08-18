@@ -796,6 +796,9 @@ function Wallet() {
         <button className="btn btn-elec lg" style={{ flex: 1 }} onClick={() => setModal("deposit")}>↓ {I18N.t("WL_DEPOSIT")}</button>
         <button className="btn btn-gold lg" style={{ flex: 1 }} onClick={() => setModal("withdraw")}>↑ {I18N.t("WL_WITHDRAW")}</button>
       </div>
+      <button className="btn block" style={{ marginTop: 10 }} onClick={() => setModal("history")}>
+        🧾 {I18N.t("WL_HISTORY")}
+      </button>
 
       <div className="panel oct" style={{ border: "1px solid var(--line)", padding: "12px 14px", marginTop: 16 }}>
         <div className="flex between center" style={{ gap: 10, flexWrap: "wrap" }}>
@@ -808,7 +811,71 @@ function Wallet() {
 
       {modal === "deposit" && <DepositModal onClose={() => setModal(null)} />}
       {modal === "withdraw" && <WithdrawModal onClose={() => setModal(null)} />}
+      {modal === "history" && <HistoryModal onClose={() => setModal(null)} />}
     </div>
+  );
+}
+
+/* L'historique des mouvements on-chain — pour que le joueur VÉRIFIE lui-même :
+   montant, date/heure locale, statut du retrait, et le txid qui mène à
+   l'explorateur. Chargé à l'ouverture seulement : la liste ne concerne que qui
+   la demande. */
+const UNISCAN_TX = "https://uniscan.cc/fractal/tx/"; // le réseau Fractal, PAS /tx/ (qui cherche sur Bitcoin)
+const WL_H_STATUS = { pending: "WL_H_PENDING", pending_send: "WL_H_PENDING", completed: "WL_H_SENT", failed: "WL_H_FAILED" };
+
+function HistoryModal({ onClose }) {
+  const { actions } = useFA();
+  const [st, setSt] = useState({ loading: true, entries: null });
+  useEffect(() => {
+    let vivant = true;
+    actions.fetchWalletHistory().then((r) => {
+      if (vivant) setSt({ loading: false, entries: r.ok ? r.entries : null });
+    });
+    return () => { vivant = false; };
+  }, []);
+  return (
+    <Modal onClose={onClose} accent="var(--elec)">
+      <SectionHead eyebrow="🧾 LEDGER" title={I18N.t("WL_HISTORY")} />
+      {st.loading && <div className="muted" style={{ textAlign: "center", padding: 18 }}>…</div>}
+      {!st.loading && !st.entries && (
+        <div className="muted" style={{ fontSize: 12, textAlign: "center", padding: 18 }}>{I18N.t("WL_H_ERROR")}</div>
+      )}
+      {!st.loading && st.entries && st.entries.length === 0 && (
+        <div className="muted" style={{ fontSize: 12, textAlign: "center", padding: 18 }}>{I18N.t("WL_H_EMPTY")}</div>
+      )}
+      {!st.loading && st.entries && st.entries.length > 0 && (
+        <div style={{ maxHeight: "55vh", overflowY: "auto" }}>
+          {st.entries.map((e, i) => {
+            const retrait = e.type === "withdraw";
+            const echoue = e.status === "failed";
+            return (
+              <div key={i} style={{ borderBottom: "1px solid var(--line)", padding: "9px 2px" }}>
+                <div className="flex between center" style={{ gap: 8 }}>
+                  <span className="mono" style={{ fontSize: 13, fontWeight: 700, color: retrait ? "var(--gold)" : "var(--elec)", textDecoration: echoue ? "line-through" : "none" }}>
+                    {retrait ? "↑ −" : "↓ +"}{fmt(e.amount)} <TokenIcon s={11} />
+                  </span>
+                  {/* Le statut d'un dépôt est constant (une ligne n'existe que
+                      vérifiée on-chain) : on ne l'affiche que pour les retraits. */}
+                  {retrait && (
+                    <span className="mono" style={{ fontSize: 11, color: echoue ? "var(--alert)" : e.status === "completed" ? "var(--success)" : "var(--text-dim)" }}>
+                      {I18N.t(WL_H_STATUS[e.status] || "WL_H_PENDING")}
+                    </span>
+                  )}
+                </div>
+                <div className="flex between center" style={{ gap: 8, marginTop: 3 }}>
+                  <span className="mono muted" style={{ fontSize: 11 }}>{new Date(e.at).toLocaleString()}</span>
+                  {e.txid
+                    ? <a className="mono" style={{ fontSize: 11, color: "var(--elec)" }} href={UNISCAN_TX + e.txid} target="_blank" rel="noopener">
+                        {e.txid.slice(0, 8)}…{e.txid.slice(-6)} ↗
+                      </a>
+                    : retrait && !echoue && <span className="mono muted" style={{ fontSize: 11 }}>{I18N.t("WL_H_NO_TXID")}</span>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </Modal>
   );
 }
 
