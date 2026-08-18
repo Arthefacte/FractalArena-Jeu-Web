@@ -138,16 +138,20 @@ function UnisatAppBridge({ mode }) {
     if (!r.ok) { toast(I18N.t("OP_DEVLINK_ERROR"), "bad"); return; }
     const DL = window.FA_DEVICE_LINK;
     const url = DL.linkUrl(window.location.origin, r.code);
-    setLink({ url, code: r.code, expiresAt: Date.now() + r.expires_in * 1000 });
+    setLink({
+      url, code: r.code,
+      open: DL.openDappUrl(window.location.origin, r.code),
+      expiresAt: Date.now() + r.expires_in * 1000,
+    });
     setRestant(r.expires_in);
-    // Copie SILENCIEUSE avant de partir : si le lien universel n'aboutit pas
-    // (app absente, version trop ancienne), le joueur revient et le repli
-    // affiché — lien + code — est déjà dans son presse-papier.
-    try { await navigator.clipboard.writeText(url); } catch (e) {}
-    // Le grand raccourci (réponse UniSat, dev-support#105) : le lien universel
-    // ouvre le jeu — code de liaison compris — DANS l'app UniSat. Plus rien à
-    // coller quand il marche ; le bloc de repli reste rendu derrière.
-    window.location.href = DL.openDappUrl(window.location.origin, r.code);
+    // Copie silencieuse, sans await ni toast : un secours discret si le joueur
+    // préfère coller lui-même.
+    try { navigator.clipboard.writeText(url).catch(() => {}); } catch (e) {}
+    // PAS de navigation par script ici : après l'await du fetch, le « geste
+    // utilisateur » est consommé et Android/iOS refusent d'ouvrir une app sur
+    // une navigation lancée hors toucher — constaté en prod le 2026-08-18
+    // (deux codes créés, jamais réclamés : le saut ne partait pas).
+    // L'ouverture est le VRAI lien <a> rendu ci-dessous, un toucher direct.
   };
 
   return (
@@ -163,16 +167,21 @@ function UnisatAppBridge({ mode }) {
       )}
       {!link ? (
         <button className="btn btn-elec block" style={{ marginTop: 10 }} disabled={busy} onClick={generer}>
-          {I18N.t("UAPP_OPEN_BTN")}
+          {I18N.t("UAPP_PREP_BTN")}
         </button>
       ) : (
         <div style={{ marginTop: 10 }}>
-          {/* Repli, visible seulement si le lien universel n'a pas emporté le
-              joueur : le code se colle (ou se recopie) dans « Récupérer mon
+          {/* L'ouverture est un VRAI lien : le toucher est un geste direct, que
+              l'OS honore (le saut par script, lui, était bloqué). target _blank
+              pour que le jeu reste ouvert si l'app n'est pas installée. */}
+          <a className="btn btn-elec block" style={{ textAlign: "center" }} href={link.open}
+             target="_blank" rel="noopener">
+            ↗ {I18N.t("UAPP_OPEN_BTN")}
+          </a>
+          {/* Repli : le code se colle (ou se recopie) dans « Récupérer mon
               compte » — qui accepte aussi le lien entier (codeFromInput). */}
-          <div style={{ marginBottom: 8 }}>{I18N.t("UAPP_FALLBACK")}</div>
+          <div style={{ margin: "10px 0 6px" }}>{I18N.t("UAPP_FALLBACK")}</div>
           <div className="mono" style={{ fontSize: 15, fontWeight: 700, letterSpacing: 1, userSelect: "all" }}>{link.code}</div>
-          <div className="mono" style={{ fontSize: 11, wordBreak: "break-all", userSelect: "all", opacity: 0.7, marginTop: 4 }}>{link.url}</div>
           <div className="mono muted" style={{ fontSize: 10.5, margin: "6px 0" }}>{I18N.t("OP_DEVLINK_TTL", restant)}</div>
           <button className="btn ghost sm" disabled={busy} onClick={() => copier(link.url)}>⧉ {I18N.t("OP_DEVLINK_COPY")}</button>
         </div>
@@ -256,6 +265,13 @@ function LinkWalletButton({ onLinked, disabled }) {
     <div className="acc-warn" style={{ marginTop: 4 }}>
       <div style={{ marginBottom: 8 }}>{I18N.t("ACC_LINK_CONFIRM")}</div>
       <div className="mono" style={{ fontSize: 12, wordBreak: "break-all", marginBottom: 10 }}>{pending}</div>
+      {/* UniSat donne son compte ACTIF — un joueur à plusieurs wallets voyait
+          le premier proposé d'office sans savoir comment obtenir l'autre
+          (constaté le 2026-08-18) : le geste s'explique ici, au moment où il
+          lit l'adresse. */}
+      <div className="muted" style={{ fontSize: 11, lineHeight: 1.5, marginBottom: 10 }}>
+        {I18N.t("ACC_LINK_OTHER_ADDR")}
+      </div>
       <button className="btn btn-gold block" disabled={busy} onClick={confirmer}>
         {I18N.t("ACC_LINK_CONFIRM_BTN")}
       </button>

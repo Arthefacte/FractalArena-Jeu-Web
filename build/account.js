@@ -205,19 +205,20 @@ function UnisatAppBridge({
     setLink({
       url,
       code: r.code,
+      open: DL.openDappUrl(window.location.origin, r.code),
       expiresAt: Date.now() + r.expires_in * 1000
     });
     setRestant(r.expires_in);
-    // Copie SILENCIEUSE avant de partir : si le lien universel n'aboutit pas
-    // (app absente, version trop ancienne), le joueur revient et le repli
-    // affiché — lien + code — est déjà dans son presse-papier.
+    // Copie silencieuse, sans await ni toast : un secours discret si le joueur
+    // préfère coller lui-même.
     try {
-      await navigator.clipboard.writeText(url);
+      navigator.clipboard.writeText(url).catch(() => {});
     } catch (e) {}
-    // Le grand raccourci (réponse UniSat, dev-support#105) : le lien universel
-    // ouvre le jeu — code de liaison compris — DANS l'app UniSat. Plus rien à
-    // coller quand il marche ; le bloc de repli reste rendu derrière.
-    window.location.href = DL.openDappUrl(window.location.origin, r.code);
+    // PAS de navigation par script ici : après l'await du fetch, le « geste
+    // utilisateur » est consommé et Android/iOS refusent d'ouvrir une app sur
+    // une navigation lancée hors toucher — constaté en prod le 2026-08-18
+    // (deux codes créés, jamais réclamés : le saut ne partait pas).
+    // L'ouverture est le VRAI lien <a> rendu ci-dessous, un toucher direct.
   };
   return /*#__PURE__*/React.createElement("div", {
     className: "acc-warn",
@@ -246,13 +247,21 @@ function UnisatAppBridge({
     },
     disabled: busy,
     onClick: generer
-  }, I18N.t("UAPP_OPEN_BTN")) : /*#__PURE__*/React.createElement("div", {
+  }, I18N.t("UAPP_PREP_BTN")) : /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 10
     }
-  }, /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("a", {
+    className: "btn btn-elec block",
     style: {
-      marginBottom: 8
+      textAlign: "center"
+    },
+    href: link.open,
+    target: "_blank",
+    rel: "noopener"
+  }, "\u2197 ", I18N.t("UAPP_OPEN_BTN")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      margin: "10px 0 6px"
     }
   }, I18N.t("UAPP_FALLBACK")), /*#__PURE__*/React.createElement("div", {
     className: "mono",
@@ -263,15 +272,6 @@ function UnisatAppBridge({
       userSelect: "all"
     }
   }, link.code), /*#__PURE__*/React.createElement("div", {
-    className: "mono",
-    style: {
-      fontSize: 11,
-      wordBreak: "break-all",
-      userSelect: "all",
-      opacity: 0.7,
-      marginTop: 4
-    }
-  }, link.url), /*#__PURE__*/React.createElement("div", {
     className: "mono muted",
     style: {
       fontSize: 10.5,
@@ -385,7 +385,14 @@ function LinkWalletButton({
       wordBreak: "break-all",
       marginBottom: 10
     }
-  }, pending), /*#__PURE__*/React.createElement("button", {
+  }, pending), /*#__PURE__*/React.createElement("div", {
+    className: "muted",
+    style: {
+      fontSize: 11,
+      lineHeight: 1.5,
+      marginBottom: 10
+    }
+  }, I18N.t("ACC_LINK_OTHER_ADDR")), /*#__PURE__*/React.createElement("button", {
     className: "btn btn-gold block",
     disabled: busy,
     onClick: confirmer
