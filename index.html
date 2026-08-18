@@ -27,7 +27,7 @@
        IGNORENT cette directive quand elle vient d'un <meta>, et GitHub Pages ne permet pas
        d'ajouter un en-tete HTTP : la protection est donc ce script, charge avant tout
        affichage. -->
-  <script src="frame-guard.js?v=162"></script>
+  <script src="frame-guard.js?v=163"></script>
   <title>Fractal Arena</title>
   <link rel="icon" type="image/png" href="assets/favicon.png?v=1" />
   <!-- PWA : le manifeste rend le jeu installable (écran d'accueil, plein écran).
@@ -35,14 +35,14 @@
        balises apple-* qui doublent l'information. Icônes fabriquées depuis
        l'emblème réel par _bake/gen-pwa-icons.mjs (dont une « maskable » réduite
        à 72 %, qu'Android insère dans son propre gabarit sans couper les pointes). -->
-  <link rel="manifest" href="manifest.webmanifest?v=162" />
+  <link rel="manifest" href="manifest.webmanifest?v=163" />
   <link rel="apple-touch-icon" href="assets/pwa/apple-touch-icon-180.png" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Fractal Arena" />
-  <link rel="stylesheet" href="styles.css?v=162" />
-  <link rel="stylesheet" href="mobile.css?v=162" />
+  <link rel="stylesheet" href="styles.css?v=163" />
+  <link rel="stylesheet" href="mobile.css?v=163" />
   <!-- Three.js AUTO-HÉBERGÉ (0.160.0) : cœur + clôture transitive des addons vendorisés sous
        vendor/three-0.160.0/. Élimine la dépendance CDN tierce non protégeable par SRI (les
        importmaps ne supportent pas l'intégrité). Le dossier versionné sert de cache-bust. -->
@@ -117,8 +117,8 @@
       <div class="bhash"><span class="tag">MINING GENESIS</span><span class="hx" id="boot-hx">0x0000000000000000</span></div>
     </div>
   </div>
-  <script src="boot-hash.js?v=162"></script>
-  <script src="assets/boot-anim.js?v=162" async></script>
+  <script src="boot-hash.js?v=163"></script>
+  <script src="assets/boot-anim.js?v=163" async></script>
 
   <!-- React en build de PRODUCTION : 143 Ko au lieu de 1,19 Mo, et surtout plus de
        validations de développement refaites à chaque rendu sur le téléphone du joueur.
@@ -129,72 +129,72 @@
 
   <!-- plain JS data/logic -->
   <!-- Cache-busting : incrémenter ?v=X à chaque déploiement pour forcer le rechargement -->
-  <script src="diag.js?v=162"></script>
-  <script src="asset-hashes.js?v=162"></script>
-  <script src="data.js?v=162"></script>
-  <script src="i18n.js?v=162"></script>
-  <script src="account-ui.js?v=162"></script>
-  <script src="vendor/qrcode-generator/qrcode.js?v=162"></script>
-  <script src="device-link-ui.js?v=162"></script>
-  <script src="pwa-ui.js?v=162"></script>
+  <script src="diag.js?v=163"></script>
+  <script src="asset-hashes.js?v=163"></script>
+  <script src="data.js?v=163"></script>
+  <script src="i18n.js?v=163"></script>
+  <script src="account-ui.js?v=163"></script>
+  <script src="vendor/qrcode-generator/qrcode.js?v=163"></script>
+  <script src="device-link-ui.js?v=163"></script>
+  <script src="pwa-ui.js?v=163"></script>
   <!-- engine.js supprimé : moteur de combat client mort (FA_ENGINE jamais appelé), divergent
        du serveur qui fait autorité. -->
-  <script src="cosmetic.js?v=162"></script>
-  <script src="chain-bg-ui.js?v=162"></script>
-  <script src="chain-bg.js?v=162"></script>
-  <script src="sfx.js?v=162"></script>
-  <script src="finisher-ui.js?v=162"></script>
-  <script src="finisher.js?v=162"></script>
-  <script src="juice-ui.js?v=162"></script>
-  <script src="tape-ui.js?v=162"></script>
-  <script src="dex-ui.js?v=162"></script>
-  <script src="quiz-ui.js?v=162"></script>
-  <script src="juice.js?v=162"></script>
-  <script src="loop.js?v=162"></script>
-  <script src="arene-ui.js?v=162"></script>
-  <script src="market-ui.js?v=162"></script>
-  <script src="forge-ui.js?v=162"></script>
-  <script src="forge-cine-ui.js?v=162"></script>
-  <script src="forge-cine.js?v=162"></script>
-  <script src="talents-data.js?v=162"></script>
-  <script src="talents-ui.js?v=162"></script>
-  <script src="tour-ui.js?v=162"></script>
-  <script src="expeditions-ui.js?v=162"></script>
-  <script src="totem-ui.js?v=162"></script>
-  <script src="relic-assets.js?v=162"></script>
-  <script type="module" src="totem-cine.js?v=162"></script>
-  <script type="module" src="relic-viewer-boot.js?v=162"></script>
-  <script type="module" src="relic-models.js?v=162"></script>
-  <script type="module" src="relic-icons.js?v=162"></script>
+  <script src="cosmetic.js?v=163"></script>
+  <script src="chain-bg-ui.js?v=163"></script>
+  <script src="chain-bg.js?v=163"></script>
+  <script src="sfx.js?v=163"></script>
+  <script src="finisher-ui.js?v=163"></script>
+  <script src="finisher.js?v=163"></script>
+  <script src="juice-ui.js?v=163"></script>
+  <script src="tape-ui.js?v=163"></script>
+  <script src="dex-ui.js?v=163"></script>
+  <script src="quiz-ui.js?v=163"></script>
+  <script src="juice.js?v=163"></script>
+  <script src="loop.js?v=163"></script>
+  <script src="arene-ui.js?v=163"></script>
+  <script src="market-ui.js?v=163"></script>
+  <script src="forge-ui.js?v=163"></script>
+  <script src="forge-cine-ui.js?v=163"></script>
+  <script src="forge-cine.js?v=163"></script>
+  <script src="talents-data.js?v=163"></script>
+  <script src="talents-ui.js?v=163"></script>
+  <script src="tour-ui.js?v=163"></script>
+  <script src="expeditions-ui.js?v=163"></script>
+  <script src="totem-ui.js?v=163"></script>
+  <script src="relic-assets.js?v=163"></script>
+  <script type="module" src="totem-cine.js?v=163"></script>
+  <script type="module" src="relic-viewer-boot.js?v=163"></script>
+  <script type="module" src="relic-models.js?v=163"></script>
+  <script type="module" src="relic-icons.js?v=163"></script>
 
   <!-- React (Babel) — order matters: components → screens → chat/room → app -->
-  <script src="build/components.js?v=162"></script>
-  <script src="build/account.js?v=162"></script>
-  <script src="build/cinematique.js?v=162"></script>
-  <script src="build/fosse.js?v=162"></script>
-  <script src="build/arene-battle.js?v=162"></script>
-  <script src="build/arene.js?v=162"></script>
-  <script src="build/market.js?v=162"></script>
-  <script src="build/screens.js?v=162"></script>
-  <script src="build/chat.js?v=162"></script>
-  <script src="build/roomchat.js?v=162"></script>
-  <script src="build/leaderboard.js?v=162"></script>
-  <script src="build/quests.js?v=162"></script>
-  <script src="build/login.js?v=162"></script>
-  <script src="build/tutorial.js?v=162"></script>
-  <script src="build/campaign.js?v=162"></script>
-  <script src="build/tour.js?v=162"></script>
-  <script src="build/expeditions.js?v=162"></script>
-  <script src="build/relic-viewer.js?v=162"></script>
-  <script src="build/buyback.js?v=162"></script>
-  <script src="build/link.js?v=162"></script>
-  <script src="build/quiz.js?v=162"></script>
-  <script src="build/pwa.js?v=162"></script>
-  <script src="build/app.js?v=162"></script>
+  <script src="build/components.js?v=163"></script>
+  <script src="build/account.js?v=163"></script>
+  <script src="build/cinematique.js?v=163"></script>
+  <script src="build/fosse.js?v=163"></script>
+  <script src="build/arene-battle.js?v=163"></script>
+  <script src="build/arene.js?v=163"></script>
+  <script src="build/market.js?v=163"></script>
+  <script src="build/screens.js?v=163"></script>
+  <script src="build/chat.js?v=163"></script>
+  <script src="build/roomchat.js?v=163"></script>
+  <script src="build/leaderboard.js?v=163"></script>
+  <script src="build/quests.js?v=163"></script>
+  <script src="build/login.js?v=163"></script>
+  <script src="build/tutorial.js?v=163"></script>
+  <script src="build/campaign.js?v=163"></script>
+  <script src="build/tour.js?v=163"></script>
+  <script src="build/expeditions.js?v=163"></script>
+  <script src="build/relic-viewer.js?v=163"></script>
+  <script src="build/buyback.js?v=163"></script>
+  <script src="build/link.js?v=163"></script>
+  <script src="build/quiz.js?v=163"></script>
+  <script src="build/pwa.js?v=163"></script>
+  <script src="build/app.js?v=163"></script>
 
-  <script src="boot-splash.js?v=162"></script>
+  <script src="boot-splash.js?v=163"></script>
 
-  <script src="sw-register.js?v=162"></script>
+  <script src="sw-register.js?v=163"></script>
 </body>
 
 </html>

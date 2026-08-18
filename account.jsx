@@ -136,10 +136,18 @@ function UnisatAppBridge({ mode }) {
     const r = await actions.createDeviceLink();
     setBusy(false);
     if (!r.ok) { toast(I18N.t("OP_DEVLINK_ERROR"), "bad"); return; }
-    const url = window.FA_DEVICE_LINK.linkUrl(window.location.origin, r.code);
+    const DL = window.FA_DEVICE_LINK;
+    const url = DL.linkUrl(window.location.origin, r.code);
     setLink({ url, code: r.code, expiresAt: Date.now() + r.expires_in * 1000 });
     setRestant(r.expires_in);
-    await copier(url);
+    // Copie SILENCIEUSE avant de partir : si le lien universel n'aboutit pas
+    // (app absente, version trop ancienne), le joueur revient et le repli
+    // affiché — lien + code — est déjà dans son presse-papier.
+    try { await navigator.clipboard.writeText(url); } catch (e) {}
+    // Le grand raccourci (réponse UniSat, dev-support#105) : le lien universel
+    // ouvre le jeu — code de liaison compris — DANS l'app UniSat. Plus rien à
+    // coller quand il marche ; le bloc de repli reste rendu derrière.
+    window.location.href = DL.openDappUrl(window.location.origin, r.code);
   };
 
   return (
@@ -155,13 +163,14 @@ function UnisatAppBridge({ mode }) {
       )}
       {!link ? (
         <button className="btn btn-elec block" style={{ marginTop: 10 }} disabled={busy} onClick={generer}>
-          ⧉ {I18N.t("UAPP_BTN")}
+          {I18N.t("UAPP_OPEN_BTN")}
         </button>
       ) : (
         <div style={{ marginTop: 10 }}>
-          {/* Le code seul, en gros : si le navigateur de l'app n'a pas de barre
-              d'adresse, il se colle (ou se recopie) dans « Récupérer mon
+          {/* Repli, visible seulement si le lien universel n'a pas emporté le
+              joueur : le code se colle (ou se recopie) dans « Récupérer mon
               compte » — qui accepte aussi le lien entier (codeFromInput). */}
+          <div style={{ marginBottom: 8 }}>{I18N.t("UAPP_FALLBACK")}</div>
           <div className="mono" style={{ fontSize: 15, fontWeight: 700, letterSpacing: 1, userSelect: "all" }}>{link.code}</div>
           <div className="mono" style={{ fontSize: 11, wordBreak: "break-all", userSelect: "all", opacity: 0.7, marginTop: 4 }}>{link.url}</div>
           <div className="mono muted" style={{ fontSize: 10.5, margin: "6px 0" }}>{I18N.t("OP_DEVLINK_TTL", restant)}</div>

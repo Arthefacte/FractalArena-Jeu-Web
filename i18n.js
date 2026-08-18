@@ -167,13 +167,17 @@
     UAPP_LINK_INTRO: { FR: "Sur téléphone, la liaison se signe dans l'app UniSat — et ton compte t'y suit :", EN: "On a phone, linking is signed in the UniSat app — and your account follows you there:", ZH: "在手机上，绑定需在 UniSat 应用中签名——你的账号会跟随你过去：" },
     UAPP_WD_INTRO: { FR: "Sur téléphone, le retrait se signe dans l'app UniSat — et ton compte t'y suit :", EN: "On a phone, withdrawals are signed in the UniSat app — and your account follows you there:", ZH: "在手机上，提现需在 UniSat 应用中签名——你的账号会跟随你过去：" },
     UAPP_STEP1: { FR: "1. Installe l'app UniSat et crée-toi un portefeuille (le tien, pas celui du jeu).", EN: "1. Install the UniSat app and create yourself a wallet (your own, not the game's).", ZH: "1. 安装 UniSat 应用并创建一个属于你自己的钱包（不是游戏的钱包）。" },
-    UAPP_STEP2: { FR: "2. Touche le bouton ci-dessous : il copie un lien d'accès à ton compte, valable 2 minutes.", EN: "2. Tap the button below: it copies an access link to your account, valid for 2 minutes.", ZH: "2. 点按下方按钮：它会复制一个账号访问链接，有效期 2 分钟。" },
-    UAPP_STEP3_LINK: { FR: "3. Ouvre Fractal Arena dans le navigateur de l'app UniSat et colle le lien — ou le code, dans « Récupérer mon compte ». Ton compte te suit : touche « Lier mon portefeuille UniSat ».", EN: "3. Open Fractal Arena in the UniSat app's browser and paste the link — or the code, under “Recover my account”. Your account follows you: tap “Link my UniSat wallet”.", ZH: "3. 在 UniSat 应用内浏览器中打开 Fractal Arena，粘贴链接——或在「找回我的账号」中粘贴代码。你的账号会跟随你：点按「绑定我的 UniSat 钱包」。" },
-    UAPP_STEP3_WD: { FR: "3. Ouvre Fractal Arena dans le navigateur de l'app UniSat et colle le lien — ou le code, dans « Récupérer mon compte ». Ton compte te suit, et le retrait se signe là-bas.", EN: "3. Open Fractal Arena in the UniSat app's browser and paste the link — or the code, under “Recover my account”. Your account follows you, and the withdrawal is signed there.", ZH: "3. 在 UniSat 应用内浏览器中打开 Fractal Arena，粘贴链接——或在「找回我的账号」中粘贴代码。你的账号会跟随你，提现在那里签名完成。" },
+    UAPP_STEP2: { FR: "2. Touche le bouton ci-dessous : le jeu s'ouvre dans l'app UniSat, déjà sur ton compte.", EN: "2. Tap the button below: the game opens in the UniSat app, already on your account.", ZH: "2. 点按下方按钮：游戏将在 UniSat 应用中打开，并已登录你的账号。" },
+    UAPP_STEP3_LINK: { FR: "3. Là-bas, touche « Lier mon portefeuille UniSat ».", EN: "3. There, tap “Link my UniSat wallet”.", ZH: "3. 在那里点按「绑定我的 UniSat 钱包」。" },
+    UAPP_STEP3_WD: { FR: "3. Là-bas, le retrait se signe normalement.", EN: "3. There, the withdrawal is signed as usual.", ZH: "3. 在那里正常签名完成提现。" },
+    UAPP_OPEN_BTN: { FR: "Ouvrir dans l'app UniSat", EN: "Open in the UniSat app", ZH: "在 UniSat 应用中打开" },
+    // Repli si le lien universel ne débouche pas (app absente, version trop
+    // ancienne — UniSat prévient que la compatibilité varie) : le lien d'accès
+    // a été copié et reste affiché, avec le code pour « Récupérer mon compte ».
+    UAPP_FALLBACK: { FR: "Rien ne s'est ouvert ? Le lien est copié : colle-le dans le navigateur de l'app UniSat — ou entre le code dans « Récupérer mon compte ».", EN: "Nothing opened? The link is copied: paste it in the UniSat app's browser — or enter the code under “Recover my account”.", ZH: "没有打开？链接已复制：将其粘贴到 UniSat 应用内浏览器——或在「找回我的账号」中输入代码。" },
     // Une fois le pont franchi, la session PERSISTE dans le navigateur UniSat :
     // les fois suivantes, il suffit d'y rouvrir le jeu.
     UAPP_WD_AGAIN: { FR: "Déjà fait une fois ? Le jeu est resté connecté dans l'app UniSat : rouvre-le là-bas, c'est tout.", EN: "Done it once already? The game stayed signed in inside the UniSat app: just reopen it there.", ZH: "已经做过一次？游戏在 UniSat 应用中保持登录：直接在那里重新打开即可。" },
-    UAPP_BTN: { FR: "Copier mon lien d'accès", EN: "Copy my access link", ZH: "复制我的访问链接" },
     UAPP_COPIED: { FR: "Lien copié ✓ Ouvre l'app UniSat et colle-le dans son navigateur.", EN: "Link copied ✓ Open the UniSat app and paste it in its browser.", ZH: "链接已复制 ✓ 打开 UniSat 应用，将其粘贴到内置浏览器。" },
     // PWA — installation sur l'écran d'accueil, et perte de réseau. Le jeu ne
     // combat pas sans serveur : on le dit clairement plutôt que de laisser un

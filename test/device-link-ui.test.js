@@ -40,6 +40,17 @@ test("codeFromInput : un lien complet collé vaut son code (pont mobile 2026-08-
   assert.strictEqual(DL.codeFromInput(null), null);
 });
 
+test("openDappUrl : lien universel UniSat portant l'URL de liaison (dev-support#105)", () => {
+  // Format donné par UniSat le 2026-08-18 : app.unisat.cloud/request?method=openDapp
+  // avec data = base64(JSON [url]) — Universal Link iOS / App Link Android.
+  const u = DL.openDappUrl("https://fractalarena.com", "ABCD-2345-JKMN-PQRS");
+  assert.ok(u.startsWith("https://app.unisat.cloud/request?method=openDapp&from=FractalArena&data="), u);
+  const data = decodeURIComponent(u.slice(u.indexOf("data=") + 5));
+  const urls = JSON.parse(Buffer.from(data, "base64").toString("utf8"));
+  assert.deepStrictEqual(urls, ["https://fractalarena.com/#link=ABCD-2345-JKMN-PQRS"],
+    "le data doit contenir l'URL du jeu AVEC le code de liaison — c'est elle que l'app ouvre");
+});
+
 test("parseLinkHash : accepte le format du QR, rejette tout le reste", () => {
   assert.strictEqual(DL.parseLinkHash("#link=ABCD-2345-JKMN-PQRS"), "ABCD2345JKMNPQRS");
   assert.strictEqual(DL.parseLinkHash("#link=abcd2345jkmnpqrs"), "ABCD2345JKMNPQRS");
