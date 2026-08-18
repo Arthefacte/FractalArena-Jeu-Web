@@ -204,6 +204,10 @@
 
     ACC_DISCONNECT_CONFIRM_TITLE: { FR: "Déconnecter ce compte ?", EN: "Disconnect this account?", ZH: "断开此账号？" },
     ACC_DISCONNECT_CONFIRM_BODY: { FR: "Ce compte n'a pas de wallet installé. Une fois déconnecté, seul ton code de récupération pourra te permettre d'y revenir — s'il est perdu, le compte l'est aussi.", EN: "This account has no installed wallet. Once disconnected, only your recovery code can get you back in — lose it and the account is gone too.", ZH: "此账号未安装钱包。断开后，只有恢复码能让你重新登录——如果恢复码丢失，账号也将无法找回。" },
+    // Variante compte LIÉ : le portefeuille reçoit les retraits mais ne
+    // reconnecte PAS (choix serveur : pas de session de 30 j sur simple
+    // possession du wallet) — le code de récupération reste la clé de retour.
+    ACC_DISCONNECT_CONFIRM_BODY_LINKED: { FR: "Ton portefeuille est bien lié : il reçoit tes retraits. Mais il ne sert pas à se reconnecter — pour revenir, il te faudra ton code de récupération, ou un autre appareil encore connecté (ton téléphone, par exemple). Code perdu et plus aucun appareil connecté = compte perdu.", EN: "Your wallet is linked: it receives your withdrawals. But it does not sign you back in — to return, you'll need your recovery code, or another device still signed in (your phone, for instance). Code lost and no device left signed in = account lost.", ZH: "你的钱包已绑定：提现会发往该钱包。但它不能用于重新登录——要回到账号，需要你的恢复码，或另一台仍保持登录的设备（例如你的手机）。恢复码丢失且没有任何已登录设备 = 账号丢失。" },
     ACC_DISCONNECT_CONFIRM_BTN: { FR: "Déconnecter quand même", EN: "Disconnect anyway", ZH: "仍然断开连接" },
     ACC_DISCONNECT_CANCEL: { FR: "Annuler", EN: "Cancel", ZH: "取消" },
     ACC_RECOVER_ERROR: { FR: "Réseau ou serveur indisponible. Ton code n'a pas été rejeté — réessaie dans un moment.", EN: "Network or server unavailable. Your code was not rejected — try again shortly.", ZH: "网络或服务器不可用。你的恢复码并未被拒绝——请稍后再试。" },

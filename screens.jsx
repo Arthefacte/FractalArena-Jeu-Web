@@ -1309,7 +1309,14 @@ function Options() {
       {confirmDisconnect && (
         <Modal onClose={() => setConfirmDisconnect(false)} accent="var(--alert)">
           <div className="h1" style={{ fontSize: 20, color: "var(--alert)", marginBottom: 12 }}>{I18N.t("ACC_DISCONNECT_CONFIRM_TITLE")}</div>
-          <div className="mono" style={{ fontSize: 13, lineHeight: 1.6, color: "var(--text-dim)", marginBottom: 20 }}>{I18N.t("ACC_DISCONNECT_CONFIRM_BODY")}</div>
+          {/* Un compte généré au portefeuille LIÉ n'est plus « sans wallet » —
+              mais le portefeuille ne sert qu'aux retraits, PAS à se reconnecter
+              (refus serveur volontaire, auth.js « compte_reserve_au_retrait ») :
+              le code de récupération reste la seule clé de retour. Dire l'ancien
+              texte à un joueur qui vient de lier ferait douter la liaison. */}
+          <div className="mono" style={{ fontSize: 13, lineHeight: 1.6, color: "var(--text-dim)", marginBottom: 20 }}>
+            {I18N.t(g.linkedWallet ? "ACC_DISCONNECT_CONFIRM_BODY_LINKED" : "ACC_DISCONNECT_CONFIRM_BODY")}
+          </div>
           <div className="flex gap8" style={{ flexWrap: "wrap" }}>
             <button className="btn btn-alert" onClick={() => { setConfirmDisconnect(false); actions.disconnect(); }}>{I18N.t("ACC_DISCONNECT_CONFIRM_BTN")}</button>
             <button className="btn ghost" onClick={() => setConfirmDisconnect(false)}>{I18N.t("ACC_DISCONNECT_CANCEL")}</button>
