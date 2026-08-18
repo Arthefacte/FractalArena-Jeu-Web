@@ -153,8 +153,13 @@
     ACC_LINK_CONFIRM_BTN: { FR: "Oui, lier cette adresse", EN: "Yes, link this address", ZH: "确认绑定该地址" },
     ACC_LINK_CANCEL: { FR: "Annuler", EN: "Cancel", ZH: "取消" },
     ACC_LINK_OK: { FR: "Portefeuille lié ✓ Tes gains sont libérés et tes retraits partiront là-bas.", EN: "Wallet linked ✓ Your earnings are released and withdrawals will go there.", ZH: "钱包已绑定 ✓ 收益已释放，提现将发往该地址。" },
-    ACC_LINK_NO_UNISAT: { FR: "Installe l'extension UniSat sur ordinateur pour lier un portefeuille.", EN: "Install the UniSat extension on desktop to link a wallet.", ZH: "请在电脑上安装 UniSat 扩展以绑定钱包。" },
-    ACC_LINK_DESKTOP_ONLY: { FR: "À faire sur ordinateur : lier demande une signature dans l'extension UniSat, impossible depuis un navigateur mobile. Ton compte et tes gains t'attendent, connecte-toi depuis un ordinateur avec l'extension installée.", EN: "Do this on a computer: linking requires a signature in the UniSat extension, which a mobile browser cannot do. Your account and earnings will keep — sign in from a computer with the extension installed.", ZH: "请在电脑上操作：绑定需要在 UniSat 扩展中签名，手机浏览器无法完成。你的账号和收益不会丢失，请在已安装扩展的电脑上登录。" },
+    ACC_LINK_NO_UNISAT: { FR: "Aucun wallet UniSat détecté : utilise l'extension sur ordinateur, ou ouvre le jeu dans l'app UniSat Mobile.", EN: "No UniSat wallet detected: use the extension on desktop, or open the game inside the UniSat Mobile app.", ZH: "未检测到 UniSat 钱包：请在电脑上使用扩展，或在 UniSat 移动端应用内打开游戏。" },
+    // Depuis le 2026-08-18 (flux openDapp validé), mobile n'est plus une impasse :
+    // le navigateur intégré de l'app UniSat sait signer. Mais c'est un contexte
+    // vierge (localStorage vide) — le joueur doit s'y RECONNECTER à son compte
+    // avant de lier, d'où la marche à suivre en toutes lettres et PAS un bouton
+    // de redirect qui le larguerait déconnecté devant l'écran d'accueil.
+    ACC_LINK_DESKTOP_ONLY: { FR: "Lier demande une signature UniSat, que ce navigateur ne fournit pas. Deux chemins : un ordinateur avec l'extension UniSat, ou l'app UniSat Mobile — ouvre le jeu dans son navigateur intégré, reconnecte-toi à ton compte, puis lie. Ton compte et tes gains t'attendent.", EN: "Linking needs a UniSat signature, which this browser can't provide. Two ways: a computer with the UniSat extension, or the UniSat Mobile app — open the game in its built-in browser, sign back into your account, then link. Your account and earnings will keep.", ZH: "绑定需要 UniSat 签名，当前浏览器无法完成。两种方式：在装有 UniSat 扩展的电脑上操作，或使用 UniSat 移动端应用——在其内置浏览器中打开游戏，重新登录你的账号后再绑定。你的账号和收益不会丢失。" },
     ACC_LINK_TAKEN: { FR: "Ce portefeuille est déjà lié à un autre compte. Utilises-en un autre.", EN: "That wallet is already linked to another account. Use a different one.", ZH: "该钱包已绑定至其他账号，请更换一个。" },
     // PWA — installation sur l'écran d'accueil, et perte de réseau. Le jeu ne
     // combat pas sans serveur : on le dit clairement plutôt que de laisser un
@@ -219,6 +224,10 @@
     OB_INSTALL_EXT_TITLE: { FR: "Installe l'extension UniSat", EN: "Install the UniSat extension", ZH: "安装 UniSat 扩展" },
     OB_INSTALL_EXT_SUB: { FR: "Sur ordinateur, le jeu a besoin de l'extension de navigateur UniSat pour connecter ton wallet.", EN: "On desktop, the game needs the UniSat browser extension to connect your wallet.", ZH: "在电脑上，游戏需要 UniSat 浏览器扩展来连接你的钱包。" },
     OB_INSTALL_EXT_BTN: { FR: "Télécharger UniSat", EN: "Download UniSat", ZH: "下载 UniSat" },
+    // Mobile : la signature marche dans le navigateur intégré de l'app UniSat
+    // (flux openDapp officiel) — on y emmène le joueur au lieu de ne rien afficher.
+    OB_OPEN_UNISAT_BTN: { FR: "Ouvrir dans l'app UniSat", EN: "Open in the UniSat app", ZH: "在 UniSat 应用中打开" },
+    OB_OPEN_UNISAT_SUB: { FR: "Tu as déjà un wallet ? Sur téléphone, le jeu se connecte depuis l'app UniSat.", EN: "Already have a wallet? On mobile, the game connects from inside the UniSat app.", ZH: "已有钱包？在手机上，游戏需从 UniSat 应用内连接。" },
     OB_MANUAL_TOGGLE: { FR: "Saisir une adresse manuellement", EN: "Enter an address manually", ZH: "手动输入地址" },
 
     // team

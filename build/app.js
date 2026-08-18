@@ -75,6 +75,18 @@ const HAS_UNISAT = () => ACC.hasProvider();
 let lastAuthReason = null;
 const IS_MOBILE = () => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
 
+// Ouvre le jeu dans le navigateur intégré de l'app UniSat Mobile, où window.unisat
+// est injecté et la signature marche comme sur desktop. C'est le flux officiel
+// « openDapp » (réponse UniSat du 2026-08-16, unisat-wallet/dev-support#105) :
+// Universal Link iOS / App Link Android — la forme https://, PAS unisat://, et le
+// DApp Center n'est pas requis. Validé sur téléphone réel le 2026-08-18.
+// location.origin et non l'URL courante : le joueur doit retomber sur l'accueil,
+// pas sur un état de session qui n'existera pas dans le contexte vierge de l'app.
+const OPEN_IN_UNISAT = () => {
+  const data = encodeURIComponent(btoa(JSON.stringify([location.origin])));
+  window.location.href = `https://app.unisat.cloud/request?method=openDapp&from=FractalArena&data=${data}`;
+};
+
 // Une signature UniSat ouvre une popup hors de la page : rien ne doit s'afficher
 // par-dessus pendant ce temps. On marque l'application occupée (quiz.jsx pose et
 // lit le drapeau `fa-busy` sur <body>) et on la libère quoi qu'il arrive.
@@ -4496,7 +4508,20 @@ function Onboarding({
     },
     disabled: !!busy,
     onClick: connectUnisat
-  }, I18N.t("ACC_HAVE_WALLET")) : !mobile && /*#__PURE__*/React.createElement("a", {
+  }, I18N.t("ACC_HAVE_WALLET")) : mobile ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
+    className: "btn block",
+    style: {
+      marginTop: 12
+    },
+    disabled: !!busy,
+    onClick: OPEN_IN_UNISAT
+  }, I18N.t("OB_OPEN_UNISAT_BTN")), /*#__PURE__*/React.createElement("div", {
+    className: "muted mono",
+    style: {
+      fontSize: 11,
+      marginTop: 8
+    }
+  }, I18N.t("OB_OPEN_UNISAT_SUB"))) : /*#__PURE__*/React.createElement("a", {
     className: "btn block",
     style: {
       marginTop: 12
