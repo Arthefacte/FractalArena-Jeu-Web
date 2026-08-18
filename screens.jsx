@@ -3,7 +3,7 @@
    ============================================================ */
 const { useState, useEffect, useMemo } = React;
 const D = window.FA_DATA, I18N = window.FA_I18N;
-const { useFA, cx, fmt, presetLabel, rarityLabel, Bar, StatGrid, CreatureCard, Modal, SectionHead, MiniStats, RelicIcon, TokenIcon, FaText } = window;
+const { useFA, cx, fmt, presetLabel, rarityLabel, Bar, StatGrid, CreatureCard, Modal, SectionHead, MiniStats, RelicIcon, TokenIcon, FaText, UnisatAppBridge } = window;
 const API_URL = window.FA_API_URL;
 
 /* ---------------- PRESTIGE DU QUIZ ----------------
@@ -925,14 +925,27 @@ function WithdrawModal({ onClose }) {
       setBusy(false);
     }
   }
+  // Sur un appareil sans extension (téléphone, y compris session rejointe par
+  // QR), la signature step-up ne peut PAS aboutir : le joueur remplissait le
+  // montant pour voir authForWithdraw échouer après coup. On lui montre le vrai
+  // chemin AVANT la saisie : le pont vers l'app UniSat, où le jeu reste
+  // connecté et où le retrait se signe (cf. UnisatAppBridge, account.jsx).
+  const pont = window.FA_ACCOUNT.cheminLiaison(
+    window.FA_ACCOUNT.hasProvider(), window.FA_ACCOUNT.estNavigateurMobile()) === "unisat-app";
   return (
     <Modal onClose={onClose} accent="var(--gold)">
       <div className="eyebrow" style={{ color: "var(--gold)" }}>{I18N.t("WL_WITHDRAW")}</div>
       <div className="h2" style={{ margin: "4px 0 10px" }}>{I18N.t("WL_LIQUID")} : <span className="mono" style={{ color: "var(--gold)" }}><TokenIcon s={14} /> {fmt(g.liquid)}</span></div>
-      <div className="muted mono" style={{ fontSize: 12, lineHeight: 1.5, marginBottom: 16 }}>{I18N.t("WL_WD_INFO")}</div>
-      {cdMsg && <div className="mono" style={{ fontSize: 12, lineHeight: 1.4, marginBottom: 12, padding: "8px 10px", borderRadius: 8, background: "rgba(255,90,90,0.12)", color: "var(--alert)" }}>⏳ {cdMsg}</div>}
-      <input className="field" value={amt} onChange={(e) => setAmt(e.target.value.replace(/[^0-9]/g, ""))} placeholder="500" />
-      <button className="btn btn-gold block lg" style={{ marginTop: 18 }} disabled={busy} onClick={go}>{busy ? I18N.t("WL_WD_PROC") : I18N.t("WL_WD_SEND")}</button>
+      {pont ? (
+        <UnisatAppBridge mode="withdraw" />
+      ) : (
+        <>
+          <div className="muted mono" style={{ fontSize: 12, lineHeight: 1.5, marginBottom: 16 }}>{I18N.t("WL_WD_INFO")}</div>
+          {cdMsg && <div className="mono" style={{ fontSize: 12, lineHeight: 1.4, marginBottom: 12, padding: "8px 10px", borderRadius: 8, background: "rgba(255,90,90,0.12)", color: "var(--alert)" }}>⏳ {cdMsg}</div>}
+          <input className="field" value={amt} onChange={(e) => setAmt(e.target.value.replace(/[^0-9]/g, ""))} placeholder="500" />
+          <button className="btn btn-gold block lg" style={{ marginTop: 18 }} disabled={busy} onClick={go}>{busy ? I18N.t("WL_WD_PROC") : I18N.t("WL_WD_SEND")}</button>
+        </>
+      )}
     </Modal>
   );
 }
