@@ -167,14 +167,18 @@
     UAPP_LINK_INTRO: { FR: "Sur téléphone, la liaison se signe dans l'app UniSat — et ton compte t'y suit :", EN: "On a phone, linking is signed in the UniSat app — and your account follows you there:", ZH: "在手机上，绑定需在 UniSat 应用中签名——你的账号会跟随你过去：" },
     UAPP_WD_INTRO: { FR: "Sur téléphone, le retrait se signe dans l'app UniSat — et ton compte t'y suit :", EN: "On a phone, withdrawals are signed in the UniSat app — and your account follows you there:", ZH: "在手机上，提现需在 UniSat 应用中签名——你的账号会跟随你过去：" },
     UAPP_STEP1: { FR: "1. Installe l'app UniSat et crée-toi un portefeuille (le tien, pas celui du jeu).", EN: "1. Install the UniSat app and create yourself a wallet (your own, not the game's).", ZH: "1. 安装 UniSat 应用并创建一个属于你自己的钱包（不是游戏的钱包）。" },
-    UAPP_STEP2: { FR: "2. Touche le bouton ci-dessous : le jeu s'ouvre dans l'app UniSat, déjà sur ton compte.", EN: "2. Tap the button below: the game opens in the UniSat app, already on your account.", ZH: "2. 点按下方按钮：游戏将在 UniSat 应用中打开，并已登录你的账号。" },
+    UAPP_STEP2: { FR: "2. Touche le bouton, puis « Ouvrir » : le jeu s'ouvre dans l'app UniSat, déjà sur ton compte.", EN: "2. Tap the button, then “Open”: the game opens in the UniSat app, already on your account.", ZH: "2. 点按按钮，再点「打开」：游戏将在 UniSat 应用中打开，并已登录你的账号。" },
     UAPP_STEP3_LINK: { FR: "3. Là-bas, touche « Lier mon portefeuille UniSat ».", EN: "3. There, tap “Link my UniSat wallet”.", ZH: "3. 在那里点按「绑定我的 UniSat 钱包」。" },
     UAPP_STEP3_WD: { FR: "3. Là-bas, le retrait se signe normalement.", EN: "3. There, the withdrawal is signed as usual.", ZH: "3. 在那里正常签名完成提现。" },
+    UAPP_PREP_BTN: { FR: "Continuer dans l'app UniSat", EN: "Continue in the UniSat app", ZH: "在 UniSat 应用中继续" },
     UAPP_OPEN_BTN: { FR: "Ouvrir dans l'app UniSat", EN: "Open in the UniSat app", ZH: "在 UniSat 应用中打开" },
+    // La liaison prend le compte ACTIF d'UniSat : pour lier un autre wallet, il
+    // se change dans l'app, pas chez nous — dit au moment où l'adresse se lit.
+    ACC_LINK_OTHER_ADDR: { FR: "Pas la bonne adresse ? Annule, change de portefeuille actif dans UniSat, et redemande : le jeu lie le compte actif au moment du clic.", EN: "Not the right address? Cancel, switch the active wallet in UniSat, then ask again: the game links whichever account is active when you click.", ZH: "地址不对？请取消，在 UniSat 中切换当前钱包后重试：游戏绑定的是点击时的当前账户。" },
     // Repli si le lien universel ne débouche pas (app absente, version trop
     // ancienne — UniSat prévient que la compatibilité varie) : le lien d'accès
     // a été copié et reste affiché, avec le code pour « Récupérer mon compte ».
-    UAPP_FALLBACK: { FR: "Rien ne s'est ouvert ? Le lien est copié : colle-le dans le navigateur de l'app UniSat — ou entre le code dans « Récupérer mon compte ».", EN: "Nothing opened? The link is copied: paste it in the UniSat app's browser — or enter the code under “Recover my account”.", ZH: "没有打开？链接已复制：将其粘贴到 UniSat 应用内浏览器——或在「找回我的账号」中输入代码。" },
+    UAPP_FALLBACK: { FR: "Le bouton ne t'emmène pas ? Le lien est copié : colle-le dans le navigateur de l'app UniSat — ou entre ce code dans « Récupérer mon compte » :", EN: "The button doesn't take you there? The link is copied: paste it in the UniSat app's browser — or enter this code under “Recover my account”:", ZH: "按钮没有跳转？链接已复制：将其粘贴到 UniSat 应用内浏览器——或在「找回我的账号」中输入此代码：" },
     // Une fois le pont franchi, la session PERSISTE dans le navigateur UniSat :
     // les fois suivantes, il suffit d'y rouvrir le jeu.
     UAPP_WD_AGAIN: { FR: "Déjà fait une fois ? Le jeu est resté connecté dans l'app UniSat : rouvre-le là-bas, c'est tout.", EN: "Done it once already? The game stayed signed in inside the UniSat app: just reopen it there.", ZH: "已经做过一次？游戏在 UniSat 应用中保持登录：直接在那里重新打开即可。" },

@@ -51,6 +51,18 @@ test("openDappUrl : lien universel UniSat portant l'URL de liaison (dev-support#
     "le data doit contenir l'URL du jeu AVEC le code de liaison — c'est elle que l'app ouvre");
 });
 
+test("le saut vers l'app UniSat est un VRAI lien <a>, jamais une navigation script", () => {
+  // Constaté en prod le 2026-08-18 : window.location.href vers le lien
+  // universel APRÈS l'await du fetch perd le geste utilisateur — Android/iOS
+  // refusent alors d'ouvrir l'app (codes créés, jamais réclamés). Seul un
+  // toucher direct sur une ancre est honoré partout.
+  const bloc = ACCOUNT.slice(ACCOUNT.indexOf("function UnisatAppBridge"), ACCOUNT.indexOf("function LinkWalletButton"));
+  assert.ok(bloc.length > 0, "UnisatAppBridge introuvable");
+  assert.ok(!/window\.location\.href/.test(bloc), "navigation script interdite dans le pont");
+  assert.match(bloc, /href=\{link\.open\}/, "l'ouverture doit être une ancre vers openDappUrl");
+  assert.match(bloc, /target="_blank"/, "sans _blank, app absente = le jeu remplacé par app.unisat.cloud");
+});
+
 test("parseLinkHash : accepte le format du QR, rejette tout le reste", () => {
   assert.strictEqual(DL.parseLinkHash("#link=ABCD-2345-JKMN-PQRS"), "ABCD2345JKMNPQRS");
   assert.strictEqual(DL.parseLinkHash("#link=abcd2345jkmnpqrs"), "ABCD2345JKMNPQRS");
