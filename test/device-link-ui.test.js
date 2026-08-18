@@ -29,6 +29,17 @@ test("normalisation : tirets, espaces et minuscules acceptes, reste rejete", () 
   assert.strictEqual(DL.normalizeLinkCode("A".repeat(100)), null);
 });
 
+test("codeFromInput : un lien complet collé vaut son code (pont mobile 2026-08-18)", () => {
+  // Le pont vers l'app UniSat copie l'URL entière ; si le navigateur de l'app
+  // n'offre pas de barre d'adresse, le joueur la colle dans « Récupérer mon
+  // compte » — le champ doit en tirer le code au lieu de la rejeter.
+  assert.strictEqual(DL.codeFromInput("https://fractalarena.com/#link=ABCD-2345-JKMN-PQRS"), "ABCD2345JKMNPQRS");
+  assert.strictEqual(DL.codeFromInput("abcd-2345-jkmn-pqrs"), "ABCD2345JKMNPQRS", "un code nu passe comme avant");
+  assert.strictEqual(DL.codeFromInput("https://fractalarena.com/"), null);
+  assert.strictEqual(DL.codeFromInput("#link=ABCD2345JKMNPQRS"), "ABCD2345JKMNPQRS");
+  assert.strictEqual(DL.codeFromInput(null), null);
+});
+
 test("parseLinkHash : accepte le format du QR, rejette tout le reste", () => {
   assert.strictEqual(DL.parseLinkHash("#link=ABCD-2345-JKMN-PQRS"), "ABCD2345JKMNPQRS");
   assert.strictEqual(DL.parseLinkHash("#link=abcd2345jkmnpqrs"), "ABCD2345JKMNPQRS");

@@ -27,6 +27,16 @@
     return normalizeLinkCode(input) !== null;
   }
 
+  // Un lien complet collé vaut son code. Le pont vers l'app UniSat (mobile)
+  // copie l'URL entière ; selon la version de l'app, son navigateur n'a pas de
+  // barre où la coller — le joueur la met alors dans « Récupérer mon compte »,
+  // et ce champ doit en tirer le code plutôt que la rejeter.
+  function codeFromInput(input) {
+    const s = String(input || "");
+    const i = s.indexOf("#link=");
+    return normalizeLinkCode(i >= 0 ? s.slice(i + 6) : s);
+  }
+
   // L'URL portée par le QR. Le code reste groupé (lisible si le joueur ouvre
   // le lien à la main) ; la normalisation d'en face retire les tirets.
   function linkUrl(origin, code) {
@@ -54,7 +64,7 @@
     }
   }
 
-  const api = { ALPHABET, CODE_LEN, normalizeLinkCode, isLinkCode, linkUrl, parseLinkHash, svgQr };
+  const api = { ALPHABET, CODE_LEN, normalizeLinkCode, isLinkCode, codeFromInput, linkUrl, parseLinkHash, svgQr };
   if (typeof window === "undefined") { global.window = global.window || {}; }
   window.FA_DEVICE_LINK = api;
 })();

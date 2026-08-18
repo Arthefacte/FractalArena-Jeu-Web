@@ -187,11 +187,37 @@ test("un compte hors parcours n'a jamais d'etape crypto", () => {
   assert.strictEqual(A.discoveryNextAction(null, ""), null, "etat pas encore charge : ne rien supposer");
 });
 
-// Liaison impossible depuis un mobile : l'extension UniSat n'y est pas injectée, donc
-// aucune signature n'est possible. Le message d'échec « no-unisat » n'arrivait qu'APRÈS
-// le clic ; on le dit avant, là où le joueur décide.
-test("linkHintKey : prévient qu'il faut un ordinateur tant qu'UniSat n'est pas là", () => {
+// Sans extension injectée, aucune signature n'est possible sur place — mais le chemin
+// de secours n'est pas le même selon l'appareil : sur mobile, le navigateur intégré de
+// l'app UniSat injecte le provider (vérifié en réel le 2026-08-18) et un code de
+// liaison y transporte la session ; sur ordinateur, c'est l'extension qu'il faut.
+test("cheminLiaison : extension présente → liaison sur place, quel que soit l'appareil", () => {
   const { A } = load();
-  assert.strictEqual(A.linkHintKey(false), "ACC_LINK_DESKTOP_ONLY");
-  assert.strictEqual(A.linkHintKey(true), null, "extension présente : aucune note à afficher");
+  assert.strictEqual(A.cheminLiaison(true, false), "extension");
+  assert.strictEqual(A.cheminLiaison(true, true), "extension",
+    "dans le navigateur de l'app UniSat, le provider EST là : on lie sur place");
+});
+
+test("cheminLiaison : sans extension, mobile → pont vers l'app UniSat, desktop → extension à installer", () => {
+  const { A } = load();
+  assert.strictEqual(A.cheminLiaison(false, true), "unisat-app");
+  assert.strictEqual(A.cheminLiaison(false, false), "desktop");
+});
+
+test("estNavigateurMobile : sans matchMedia ni userAgent, répondre false — jamais lever", () => {
+  const { A } = load();
+  assert.strictEqual(A.estNavigateurMobile(), false);
+});
+
+test("estNavigateurMobile : pointeur grossier OU userAgent mobile suffisent", () => {
+  const { A: A1, win: w1 } = load();
+  w1.matchMedia = (q) => ({ matches: q === "(pointer: coarse)" });
+  assert.strictEqual(A1.estNavigateurMobile(), true, "écran tactile : pointer coarse");
+  const { A: A2, win: w2 } = load();
+  w2.navigator = { userAgent: "Mozilla/5.0 (Linux; Android 14; Pixel 8) Mobile Safari" };
+  assert.strictEqual(A2.estNavigateurMobile(), true, "repli userAgent quand matchMedia manque");
+  const { A: A3, win: w3 } = load();
+  w3.matchMedia = () => ({ matches: false });
+  w3.navigator = { userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" };
+  assert.strictEqual(A3.estNavigateurMobile(), false);
 });

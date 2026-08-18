@@ -192,12 +192,27 @@
     return addr.slice(0, 6) + "…" + addr.slice(-4);
   }
 
-  // Note à afficher sous le bouton de liaison. Sans extension UniSat injectée, lier
-  // est impossible — c'est TOUJOURS le cas dans un navigateur mobile, qui ne sait pas
-  // signer. Le joueur ne l'apprenait qu'après avoir cliqué (échec « no-unisat ») ;
-  // autant le dire au moment où il décide, avec la marche à suivre.
-  function linkHintKey(hasUnisat) {
-    return hasUnisat ? null : "ACC_LINK_DESKTOP_ONLY";
+  // Ce navigateur est-il un mobile ? Gardes larges, comme estAppInstallee : ces
+  // API manquent en environnement de test, et l'absence de réponse vaut
+  // « desktop » — jamais une exception au chargement.
+  function estNavigateurMobile() {
+    try {
+      if (window.matchMedia && window.matchMedia("(pointer: coarse)").matches) return true;
+      return /Android|iPhone|iPad|Mobi/i.test((window.navigator && window.navigator.userAgent) || "");
+    } catch (e) { return false; }
+  }
+
+  // Quel chemin proposer pour lier (ou signer) quand le joueur est là. Sans
+  // extension injectée, rien n'est signable sur place — mais le secours diffère :
+  //  - mobile → « unisat-app » : le navigateur intégré de l'app UniSat injecte le
+  //    provider (vérifié en réel le 2026-08-18) ; un code de liaison d'appareil y
+  //    transporte la session, sans déconnexion ni code de récupération ;
+  //  - desktop → « desktop » : installer l'extension.
+  // Le joueur ne l'apprenait qu'après avoir cliqué (échec « no-unisat ») ; autant
+  // le dire au moment où il décide, avec la marche à suivre.
+  function cheminLiaison(hasUnisat, mobile) {
+    if (hasUnisat) return "extension";
+    return mobile ? "unisat-app" : "desktop";
   }
 
   // Nommer un échec d'authentification.
@@ -238,7 +253,7 @@
     KIND_GENERATED, KIND_UNISAT, TOKEN_KEY, KIND_KEY, DEVICE_LINKED_KEY, BANNER_SNOOZE_MS,
     readToken, writeToken, clearToken, readKind, markDeviceLinked, estAppareilLie,
     isValidRecoveryCode, looksLikeSeed, shouldShowLockedBanner, discoveryNextAction,
-    withdrawSigner, withdrawDestination, linkHintKey, authFailure, estAppInstallee,
-    provider, hasProvider, localDisplayName,
+    withdrawSigner, withdrawDestination, cheminLiaison, estNavigateurMobile, authFailure,
+    estAppInstallee, provider, hasProvider, localDisplayName,
   };
 })();

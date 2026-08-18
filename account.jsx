@@ -3,7 +3,7 @@
    SecretsGate (unique affichage des secrets), RecoverScreen, LockedBanner.
    Les secrets ne sont JAMAIS persistes : ils vivent ici, puis disparaissent.
    ============================================================ */
-const { useState } = React;
+const { useState, useEffect } = React;
 const { useFA, cx, Modal, SectionHead } = window;
 const I18N = window.FA_I18N;
 const ACC = window.FA_ACCOUNT;
@@ -61,13 +61,14 @@ function RecoverScreen({ onClose }) {
     setBusy(true);
     let r;
     // Un seul champ pour deux codes : celui de RÉCUPÉRATION (compte généré) et
-    // celui de LIAISON D'APPAREIL (affiché sous le QR, écran Options du PC).
-    // Le format tranche — 16 caractères Crockford = liaison ; le joueur n'a
-    // pas à savoir lequel il tient.
+    // celui de LIAISON D'APPAREIL (affiché sous le QR du PC, ou copié par le
+    // pont vers l'app UniSat — lien complet accepté, codeFromInput en tire le
+    // code). Le format tranche ; le joueur n'a pas à savoir ce qu'il tient.
     const DL = window.FA_DEVICE_LINK;
+    const lien = DL ? DL.codeFromInput(code) : null;
     try {
-      r = DL && DL.isLinkCode(code)
-        ? await actions.claimDeviceLink(code)
+      r = lien
+        ? await actions.claimDeviceLink(lien)
         : await actions.recoverAccount(code);
     } finally { setBusy(false); }
     if (r.ok) { onClose && onClose(); return; }
@@ -94,6 +95,80 @@ function RecoverScreen({ onClose }) {
         {I18N.t("ACC_RECOVER_BTN")}
       </button>
     </Modal>
+  );
+}
+
+/* Pont vers l'app UniSat — mobile sans extension.
+   Ce que ce bloc remplace : se déconnecter, rouvrir le jeu dans le navigateur
+   de l'app UniSat, retaper un code de récupération. Un code de liaison
+   d'appareil (le même que le QR PC→téléphone, écran Options) fait tout ça en
+   un collage : la session suit le joueur dans l'app, où le provider est
+   injecté (vérifié en réel le 2026-08-18) et où liaison et retraits se
+   signent. Et comme la session y persiste (fa_device_linked), les retraits
+   suivants n'ont plus besoin du pont : rouvrir le jeu dans l'app suffit.
+   `mode` choisit la marche finale : "link" (volet crypto) ou "withdraw". */
+function UnisatAppBridge({ mode }) {
+  const { actions, toast } = useFA();
+  const [link, setLink] = useState(null); // { url, expiresAt }
+  const [restant, setRestant] = useState(0);
+  const [busy, setBusy] = useState(false);
+
+  // Même règle que DeviceLinkPanel (Options) : un code mort ne doit pas rester
+  // affiché comme s'il était encore collable.
+  useEffect(() => {
+    if (!link) return undefined;
+    const id = setInterval(() => {
+      const r = Math.max(0, Math.ceil((link.expiresAt - Date.now()) / 1000));
+      setRestant(r);
+      if (r <= 0) setLink(null);
+    }, 500);
+    return () => clearInterval(id);
+  }, [link]);
+
+  const copier = async (url) => {
+    // Presse-papier refusé : l'URL reste affichée en clair, sélectionnable.
+    try { await navigator.clipboard.writeText(url); toast(I18N.t("UAPP_COPIED"), "good"); }
+    catch (e) {}
+  };
+
+  const generer = async () => {
+    setBusy(true);
+    const r = await actions.createDeviceLink();
+    setBusy(false);
+    if (!r.ok) { toast(I18N.t("OP_DEVLINK_ERROR"), "bad"); return; }
+    const url = window.FA_DEVICE_LINK.linkUrl(window.location.origin, r.code);
+    setLink({ url, code: r.code, expiresAt: Date.now() + r.expires_in * 1000 });
+    setRestant(r.expires_in);
+    await copier(url);
+  };
+
+  return (
+    <div className="acc-warn" style={{ marginTop: 8, fontSize: 12 }}>
+      <div style={{ marginBottom: 8 }}>{I18N.t(mode === "withdraw" ? "UAPP_WD_INTRO" : "UAPP_LINK_INTRO")}</div>
+      <div style={{ lineHeight: 1.7 }}>
+        <div>{I18N.t("UAPP_STEP1")}</div>
+        <div>{I18N.t("UAPP_STEP2")}</div>
+        <div>{I18N.t(mode === "withdraw" ? "UAPP_STEP3_WD" : "UAPP_STEP3_LINK")}</div>
+      </div>
+      {mode === "withdraw" && (
+        <div className="muted" style={{ fontSize: 11, marginTop: 8 }}>{I18N.t("UAPP_WD_AGAIN")}</div>
+      )}
+      {!link ? (
+        <button className="btn btn-elec block" style={{ marginTop: 10 }} disabled={busy} onClick={generer}>
+          ⧉ {I18N.t("UAPP_BTN")}
+        </button>
+      ) : (
+        <div style={{ marginTop: 10 }}>
+          {/* Le code seul, en gros : si le navigateur de l'app n'a pas de barre
+              d'adresse, il se colle (ou se recopie) dans « Récupérer mon
+              compte » — qui accepte aussi le lien entier (codeFromInput). */}
+          <div className="mono" style={{ fontSize: 15, fontWeight: 700, letterSpacing: 1, userSelect: "all" }}>{link.code}</div>
+          <div className="mono" style={{ fontSize: 11, wordBreak: "break-all", userSelect: "all", opacity: 0.7, marginTop: 4 }}>{link.url}</div>
+          <div className="mono muted" style={{ fontSize: 10.5, margin: "6px 0" }}>{I18N.t("OP_DEVLINK_TTL", restant)}</div>
+          <button className="btn ghost sm" disabled={busy} onClick={() => copier(link.url)}>⧉ {I18N.t("OP_DEVLINK_COPY")}</button>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -146,18 +221,25 @@ function LinkWalletButton({ onLinked, disabled }) {
   };
 
   if (!pending) {
-    // Sur mobile, l'extension UniSat n'est jamais injectée et rien n'est signable :
-    // le dire ICI, pas après un clic qui échoue. Le bouton reste actif — l'extension
-    // peut s'injecter tardivement, et un bouton mort n'explique rien.
-    const hint = ACC.linkHintKey(ACC.hasProvider());
+    // Sans extension injectée, rien n'est signable sur place : le dire ICI, pas
+    // après un clic qui échoue. Le chemin de secours dépend de l'appareil
+    // (cheminLiaison) : sur mobile, le pont vers l'app UniSat — dont le
+    // navigateur intégré injecte le provider ; sur ordinateur, l'extension (le
+    // bouton reste actif, elle peut s'injecter tardivement). Sur le chemin
+    // mobile, le bouton disparaît : il ne peut pas aboutir, et les étapes du
+    // pont désignent leur propre bouton.
+    const chemin = ACC.cheminLiaison(ACC.hasProvider(), ACC.estNavigateurMobile());
     return (
       <>
-        <button className="btn block" disabled={busy || disabled} onClick={demander}>
-          {I18N.t("ACC_LINK_BTN")}
-        </button>
-        {hint && (
-          <div className="acc-warn" style={{ marginTop: 8, fontSize: 12 }}>{I18N.t(hint)}</div>
+        {chemin !== "unisat-app" && (
+          <button className="btn block" disabled={busy || disabled} onClick={demander}>
+            {I18N.t("ACC_LINK_BTN")}
+          </button>
         )}
+        {chemin === "desktop" && (
+          <div className="acc-warn" style={{ marginTop: 8, fontSize: 12 }}>{I18N.t("ACC_LINK_DESKTOP_ONLY")}</div>
+        )}
+        {chemin === "unisat-app" && <UnisatAppBridge mode="link" />}
       </>
     );
   }
@@ -368,4 +450,4 @@ function LockedBanner() {
   );
 }
 
-Object.assign(window, { SecretsGate, RecoverScreen, LockedBanner, CryptoVolet, DiscoveryFinish, LinkWalletButton });
+Object.assign(window, { SecretsGate, RecoverScreen, LockedBanner, CryptoVolet, DiscoveryFinish, LinkWalletButton, UnisatAppBridge });

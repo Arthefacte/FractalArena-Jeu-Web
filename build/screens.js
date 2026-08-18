@@ -24,7 +24,8 @@ const {
   MiniStats,
   RelicIcon,
   TokenIcon,
-  FaText
+  FaText,
+  UnisatAppBridge
 } = window;
 const API_URL = window.FA_API_URL;
 
@@ -1848,6 +1849,12 @@ function WithdrawModal({
       setBusy(false);
     }
   }
+  // Sur un appareil sans extension (téléphone, y compris session rejointe par
+  // QR), la signature step-up ne peut PAS aboutir : le joueur remplissait le
+  // montant pour voir authForWithdraw échouer après coup. On lui montre le vrai
+  // chemin AVANT la saisie : le pont vers l'app UniSat, où le jeu reste
+  // connecté et où le retrait se signe (cf. UnisatAppBridge, account.jsx).
+  const pont = window.FA_ACCOUNT.cheminLiaison(window.FA_ACCOUNT.hasProvider(), window.FA_ACCOUNT.estNavigateurMobile()) === "unisat-app";
   return /*#__PURE__*/React.createElement(Modal, {
     onClose: onClose,
     accent: "var(--gold)"
@@ -1868,7 +1875,9 @@ function WithdrawModal({
     }
   }, /*#__PURE__*/React.createElement(TokenIcon, {
     s: 14
-  }), " ", fmt(g.liquid))), /*#__PURE__*/React.createElement("div", {
+  }), " ", fmt(g.liquid))), pont ? /*#__PURE__*/React.createElement(UnisatAppBridge, {
+    mode: "withdraw"
+  }) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     className: "muted mono",
     style: {
       fontSize: 12,
@@ -1898,7 +1907,7 @@ function WithdrawModal({
     },
     disabled: busy,
     onClick: go
-  }, busy ? I18N.t("WL_WD_PROC") : I18N.t("WL_WD_SEND")));
+  }, busy ? I18N.t("WL_WD_PROC") : I18N.t("WL_WD_SEND"))));
 }
 
 /* ---------------- PERSO / VANITY ---------------- */
