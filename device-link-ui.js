@@ -43,6 +43,16 @@
     return origin + "/#link=" + String(code || "").trim();
   }
 
+  // Lien universel openDapp (réponse UniSat, dev-support#105, 2026-08-18) :
+  // ouvre une URL HTTPS — notre lien de liaison compris — directement dans le
+  // navigateur intégré de l'app UniSat, où window.unisat est injecté. Universal
+  // Link iOS / App Link Android : pas besoin du schéma unisat://, et pas besoin
+  // d'être listé au DApp Center. btoa existe en navigateur comme sous Node ≥16.
+  function openDappUrl(origin, code) {
+    const data = encodeURIComponent(btoa(JSON.stringify([linkUrl(origin, code)])));
+    return "https://app.unisat.cloud/request?method=openDapp&from=FractalArena&data=" + data;
+  }
+
   // Au boot du téléphone : le hash contient-il un code de liaison ?
   // Renvoie le code NORMALISÉ ou null — jamais une chaîne brute du monde.
   function parseLinkHash(hash) {
@@ -64,7 +74,7 @@
     }
   }
 
-  const api = { ALPHABET, CODE_LEN, normalizeLinkCode, isLinkCode, codeFromInput, linkUrl, parseLinkHash, svgQr };
+  const api = { ALPHABET, CODE_LEN, normalizeLinkCode, isLinkCode, codeFromInput, linkUrl, openDappUrl, parseLinkHash, svgQr };
   if (typeof window === "undefined") { global.window = global.window || {}; }
   window.FA_DEVICE_LINK = api;
 })();

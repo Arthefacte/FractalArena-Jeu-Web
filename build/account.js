@@ -200,14 +200,24 @@ function UnisatAppBridge({
       toast(I18N.t("OP_DEVLINK_ERROR"), "bad");
       return;
     }
-    const url = window.FA_DEVICE_LINK.linkUrl(window.location.origin, r.code);
+    const DL = window.FA_DEVICE_LINK;
+    const url = DL.linkUrl(window.location.origin, r.code);
     setLink({
       url,
       code: r.code,
       expiresAt: Date.now() + r.expires_in * 1000
     });
     setRestant(r.expires_in);
-    await copier(url);
+    // Copie SILENCIEUSE avant de partir : si le lien universel n'aboutit pas
+    // (app absente, version trop ancienne), le joueur revient et le repli
+    // affiché — lien + code — est déjà dans son presse-papier.
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch (e) {}
+    // Le grand raccourci (réponse UniSat, dev-support#105) : le lien universel
+    // ouvre le jeu — code de liaison compris — DANS l'app UniSat. Plus rien à
+    // coller quand il marche ; le bloc de repli reste rendu derrière.
+    window.location.href = DL.openDappUrl(window.location.origin, r.code);
   };
   return /*#__PURE__*/React.createElement("div", {
     className: "acc-warn",
@@ -236,11 +246,15 @@ function UnisatAppBridge({
     },
     disabled: busy,
     onClick: generer
-  }, "\u29C9 ", I18N.t("UAPP_BTN")) : /*#__PURE__*/React.createElement("div", {
+  }, I18N.t("UAPP_OPEN_BTN")) : /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 10
     }
   }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 8
+    }
+  }, I18N.t("UAPP_FALLBACK")), /*#__PURE__*/React.createElement("div", {
     className: "mono",
     style: {
       fontSize: 15,
