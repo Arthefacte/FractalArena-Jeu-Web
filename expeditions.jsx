@@ -536,7 +536,16 @@ function Expeditions() {
               return (
                 <div key={i} className="exq-fx-card" style={{ borderColor: tm.color, boxShadow: `0 0 16px rgba(${tm.rgb},.4)`, "--fx-x": i - 1, animationDelay: (0.35 + i * 0.12) + "s" }}>
                   <span className="exq-streak" style={{ background: `linear-gradient(0deg, ${tm.color}, transparent)`, animationDelay: (0.83 + i * 0.12) + "s" }} />
-                  <span className="exq-hex" style={{ color: tm.color, borderColor: tm.color, background: `linear-gradient(150deg, rgba(${tm.rgb},.22), rgba(6,9,18,.7))` }}>{EXP_GLYPH[b && b.type] || "✦"}</span>
+                  {b ? (
+                    // Le VRAI visuel de la carte du joueur (cadre par rang inclus),
+                    // même repli d'image que CreatureCard/CombatCard.
+                    <span className="exq-fx-art" style={{ borderColor: tm.color }}>
+                      <img src={D.artFor(b)} alt="" draggable="false"
+                        onError={(e) => { const fb = D.ART[b.image_key]; if (fb && !e.currentTarget.dataset.fb) { e.currentTarget.dataset.fb = "1"; e.currentTarget.src = fb; } }} />
+                    </span>
+                  ) : (
+                    <span className="exq-hex" style={{ color: tm.color, borderColor: tm.color, background: `linear-gradient(150deg, rgba(${tm.rgb},.22), rgba(6,9,18,.7))` }}>{EXP_GLYPH[b && b.type] || "✦"}</span>
+                  )}
                   <span style={{ fontSize: 9, fontWeight: 700, maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", padding: "0 4px" }}>{b ? D.displayName(b) : ""}</span>
                   <span className="exq-mono" style={{ fontSize: 9, color: tm.color }}>NIV {b ? b.level : ""}</span>
                 </div>
