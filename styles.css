@@ -589,6 +589,17 @@ input { font-family: var(--font-mono); }
   30%  { box-shadow: inset 0 0 30px color-mix(in srgb, var(--success) 55%, transparent); }
   100% { box-shadow: inset 0 0 0 color-mix(in srgb, var(--success) 0%, transparent); }
 }
+.xp-float {
+  font-size: 17px; letter-spacing: 0.5px;
+  animation-duration: 1.25s;
+  text-shadow: 0 0 10px color-mix(in srgb, var(--elec) 60%, transparent), 0 2px 8px rgba(0,0,0,0.8);
+}
+.xp-glow { animation: xpGlow 0.7s ease-out; }
+@keyframes xpGlow {
+  0%   { box-shadow: inset 0 0 0 color-mix(in srgb, var(--elec) 0%, transparent); }
+  30%  { box-shadow: inset 0 0 30px color-mix(in srgb, var(--elec) 45%, transparent); }
+  100% { box-shadow: inset 0 0 0 color-mix(in srgb, var(--elec) 0%, transparent); }
+}
 .ko-burst { animation: koBurst 0.5s ease-out; }
 @keyframes koBurst {
   0%   { filter: brightness(3) saturate(0); }
@@ -596,7 +607,7 @@ input { font-family: var(--font-mono); }
   100% { filter: brightness(1) saturate(1); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .jspark, .arena-shake, .heal-glow, .ko-burst { animation: none; }
+  .jspark, .arena-shake, .heal-glow, .xp-glow, .ko-burst { animation: none; }
 }
 
 /* ---- Embers ---- */
