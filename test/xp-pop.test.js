@@ -27,6 +27,13 @@ test("settleBattle fait poper l'XP sur chaque carte de l'équipe, victoire seule
   assert.match(settle[0], /window\.FA_JUICE && window\.FA_JUICE\.xp/, "l'appel doit être gardé (juice.js peut être absent — même règle que FA_FINISHER)");
 });
 
+test("la carte de combat côté joueur porte une jauge d'XP", () => {
+  assert.match(fosse, /xpMax: D\.xpToNext\(b\)/, "beastMeta doit embarquer xp/xpMax pour la jauge");
+  const card = fosse.match(/function CombatCard\([\s\S]*?\n\}/);
+  assert.ok(card, "CombatCard introuvable");
+  assert.match(card[0], /side === "p1"[\s\S]*?kind="xp"/, "la jauge XP doit être rendue côté joueur (p1) seulement");
+});
+
 test("le style du pop d'XP existe et respecte prefers-reduced-motion", () => {
   assert.match(css, /\.xp-glow \{/, "styles.css doit définir .xp-glow");
   // styles.css a plusieurs blocs reduced-motion : on vérifie que la ligne de

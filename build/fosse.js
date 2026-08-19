@@ -175,6 +175,23 @@ function CombatCard({
   }, D.fmtStat(Math.round((live ? Math.max(0, live.hp) : meta.maxHp) * scale)), "/", D.fmtStat(Math.round((live ? live.maxHp : meta.maxHp) * scale)))), /*#__PURE__*/React.createElement(Bar, {
     frac: frac,
     kind: "hp"
+  })), side === "p1" && meta.xpMax > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 6
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bar-label"
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: "var(--elec)"
+    }
+  }, "XP"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: "var(--text)"
+    }
+  }, meta.xp, "/", meta.xpMax)), /*#__PURE__*/React.createElement(Bar, {
+    frac: Math.min(1, (meta.xp || 0) / meta.xpMax),
+    kind: "xp"
   })), /*#__PURE__*/React.createElement("div", {
     className: "stat-row"
   }, [["ATK", meta.atk], ["DEF", meta.def], ["SPD", meta.spd], ["MAG", meta.mag]].map(([k, v]) => /*#__PURE__*/React.createElement("div", {
@@ -292,6 +309,8 @@ function Fosse() {
   const p2Refs = useRef([]);
   const boardRef = useRef(null);
   function beastMeta(b) {
+    // xp/xpMax : la jauge d'XP des cartes joueur — resynchronisée à chaque combat
+    // (playFight relit le roster vivant), donc elle avance au fil de la loop.
     return b ? {
       name: D.displayName(b),
       type: b.type,
@@ -300,6 +319,8 @@ function Fosse() {
       rank: b.rank,
       preset: b.preset,
       level: b.level,
+      xp: b.xp || 0,
+      xpMax: D.xpToNext(b),
       maxHp: D.eff(b, "hp"),
       atk: D.eff(b, "atk"),
       def: D.eff(b, "def"),
