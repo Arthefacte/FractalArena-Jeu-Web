@@ -23,11 +23,11 @@
   }
 
   // Chiffre flottant (reprend .dmg-float ; classe .crit pour l'emphase).
-  function floatText(cardEl, text, color, crit) {
+  function floatText(cardEl, text, color, crit, extraClass) {
     const art = artOf(cardEl);
     if (!art) return;
     const el = document.createElement("div");
-    el.className = crit ? "dmg-float crit" : "dmg-float";
+    el.className = (crit ? "dmg-float crit" : "dmg-float") + (extraClass ? " " + extraClass : "");
     el.textContent = text;
     el.style.color = color;
     el.style.left = (30 + Math.random() * 40) + "%";
@@ -111,6 +111,20 @@
     } catch (e) {}
   }
 
+  // Gain d'XP : chiffre flottant cyan + lueur — même langage visuel que les
+  // dégâts/soins, déclenché au règlement de la victoire (pas pendant le replay).
+  function xp(cardEl, o) {
+    try {
+      o = o || {};
+      floatText(cardEl, "+" + o.amount + " XP", "var(--elec)", false, "xp-float");
+      const art = artOf(cardEl);
+      if (art && !reduced()) {
+        art.classList.remove("xp-glow"); void art.offsetWidth; art.classList.add("xp-glow");
+        setTimeout(() => art.classList.remove("xp-glow"), 720);
+      }
+    } catch (e) {}
+  }
+
   function ko(cardEl) {
     try {
       const art = artOf(cardEl);
@@ -127,5 +141,5 @@
     try { return (crit && !reduced()) ? 90 : 0; } catch (e) { return 0; }
   }
 
-  window.FA_JUICE = { hit, heal, ko, lunge, hitStopMs };
+  window.FA_JUICE = { hit, heal, xp, ko, lunge, hitStopMs };
 })();

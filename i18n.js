@@ -383,6 +383,7 @@
     L_LOSE: { FR: "DÉFAITE", EN: "DEFEAT", ZH: "失败" },
     L_TIMEOUT: { FR: "Limite de rounds — décision au %%PV", EN: "Round cap — decided on HP%%", ZH: "回合上限 — 按血量判定" },
     L_LEVELUP: { FR: "⬆ %s passe niveau %d", EN: "⬆ %s reached level %d", ZH: "⬆ %s 升至 %d级" },
+    L_XP_GAIN: { FR: "+%d XP pour chaque entité de l'équipe", EN: "+%d XP for each entity on the team", ZH: "队伍中每个实体 +%d XP" },
     L_RARITYUP: { FR: "✦ UPGRADE RARETÉ — %s → %s", EN: "✦ RARITY UPGRADE — %s → %s", ZH: "✦ 稀有度提升 — %s → %s" },
 
     // result

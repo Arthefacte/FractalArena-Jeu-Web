@@ -313,6 +313,16 @@ function Fosse() {
     summary.levelUps.forEach((e) => log(I18N.t("L_LEVELUP", D.displayName(e.beast), e.beast.level), "lc-elec"));
     summary.rarityUps.forEach((e) => log(I18N.t("L_RARITYUP", D.displayName(e.beast), rarityLabel(e.beast.rarity)), "lc-purple"));
 
+    // L'XP gagnée "pope" sur chaque carte de l'équipe — même langage visuel que
+    // les dégâts, en boucle comprise (léger décalage carte par carte). Gardé
+    // comme FA_FINISHER : juice.js absent ne doit rien casser.
+    if (win && summary.xp > 0 && window.FA_JUICE && window.FA_JUICE.xp) {
+      log(I18N.t("L_XP_GAIN", summary.xp), "lc-elec");
+      p1Refs.current.forEach((el, i) => {
+        if (el) setTimeout(() => window.FA_JUICE.xp(el, { amount: summary.xp }), (160 + i * 150) / spd);
+      });
+    }
+
     setPlaying(false);
     battleRef.current = null;
 
