@@ -217,6 +217,11 @@ function BoostPills() {
   }];
   async function tap(key) {
     if (busy) return;
+    // Sans charge, rien à activer — même garde que le serveur (no_charges).
+    if (!g.boostsArmed[key] && (g.boosts[key] || 0) <= 0) {
+      toast(I18N.t("BO_NO_CHARGES"), "bad");
+      return;
+    }
     setBusy(key);
     const r = await actions.toggleBoost(key, !g.boostsArmed[key]);
     setBusy(null);

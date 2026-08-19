@@ -766,8 +766,9 @@ function Boosts() {
           const remaining = g.boosts[it.key] || 0;
           const armed = g.boostsArmed[it.key] === true;
           const lit = armed && remaining > 0;
-          // Le Catalyseur exige un compte vérifié on-chain (le serveur le refuse sinon).
-          const armDisabled = togglingKey !== null || (it.key === "catalyst" && !g.onchainVerified && !armed);
+          // Sans charge, rien à activer (le serveur le refuse aussi : no_charges).
+          // Le Catalyseur exige en plus un compte vérifié on-chain.
+          const armDisabled = togglingKey !== null || (remaining <= 0 && !armed) || (it.key === "catalyst" && !g.onchainVerified && !armed);
           return (
             <div key={it.key} className="panel oct" style={{ border: `1px solid ${lit ? it.color : "var(--line)"}`, padding: 20, display: "flex", flexDirection: "column", gap: 12, boxShadow: lit ? `0 0 24px color-mix(in srgb, ${it.color} 22%, transparent)` : "none" }}>
               <div className="flex between center">

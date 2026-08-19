@@ -1199,7 +1199,9 @@ function App() {
         });
         const data = await resp.json();
         if (data.status !== "ok") {
-          const reason = data.error === "verification_requise" ? I18N.t("BO_NEED_VERIFIED") : (data.error || "Erreur serveur");
+          const reason = data.error === "verification_requise" ? I18N.t("BO_NEED_VERIFIED")
+            : data.error === "no_charges" ? I18N.t("BO_NO_CHARGES")
+            : (data.error || "Erreur serveur");
           return { ok: false, reason };
         }
         setG((st) => ({
