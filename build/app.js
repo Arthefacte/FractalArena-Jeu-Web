@@ -239,8 +239,17 @@ function freshState() {
     },
     boosts: {
       xp_boost: 0,
-      insurance: 0,
-      lucky_strike: 0
+      lucky_strike: 0,
+      momentum: 0,
+      catalyst: 0
+    },
+    // Armement des boosts (server-owned, resync via /boosts/status) : un boost ne se
+    // consomme JAMAIS sans que le joueur l'ait armé — toggle dans la Fosse.
+    boostsArmed: {
+      xp_boost: false,
+      lucky_strike: false,
+      momentum: false,
+      catalyst: false
     },
     // Progression Campagne PvE (locale uniquement, persistée dans localStorage).
     // campaignProgress : { [worldIndex]: { stars: number[10] } }
@@ -286,6 +295,21 @@ function freshState() {
     expNowOffset: 0 // horloge serveur - horloge locale (compte à rebours honnêtes)
   };
 }
+
+// Réponse GET /boosts/status → { charges, armed } par boost (4 boosts v2).
+const BOOST_KEYS = ["xp_boost", "lucky_strike", "momentum", "catalyst"];
+function mapBoostStatus(bd) {
+  const charges = {},
+    armed = {};
+  for (const k of BOOST_KEYS) {
+    charges[k] = bd?.[k]?.charges ?? 0;
+    armed[k] = bd?.[k]?.armed === true;
+  }
+  return {
+    charges,
+    armed
+  };
+}
 function loadState() {
   try {
     const raw = localStorage.getItem(SAVE_KEY);
@@ -312,9 +336,16 @@ function loadState() {
       }, s.session || {}),
       boosts: Object.assign({
         xp_boost: 0,
-        insurance: 0,
-        lucky_strike: 0
-      }, s.boosts || {})
+        lucky_strike: 0,
+        momentum: 0,
+        catalyst: 0
+      }, s.boosts || {}),
+      boostsArmed: Object.assign({
+        xp_boost: false,
+        lucky_strike: false,
+        momentum: false,
+        catalyst: false
+      }, s.boostsArmed || {})
     });
   } catch (e) {
     return null;
@@ -741,11 +772,11 @@ function App() {
           const boostsData = boostsResp.ok ? await boostsResp.json() : null;
           setG(s => {
             const next = serverToState(save, addr, s);
-            if (boostsData) next.boosts = {
-              xp_boost: boostsData.xp_boost?.charges ?? 0,
-              insurance: boostsData.insurance?.charges ?? 0,
-              lucky_strike: boostsData.lucky_strike?.charges ?? 0
-            };
+            if (boostsData) {
+              const bm = mapBoostStatus(boostsData);
+              next.boosts = bm.charges;
+              next.boostsArmed = bm.armed;
+            }
             next.ordinalName = save.ordinal_name || ""; // nom ordinal du serveur, vide si absent
             next.totem = totem;
             next.onchainVerified = save.onchain_verified !== false;
@@ -1706,7 +1737,9 @@ function App() {
         xp: 0,
         milestone: false,
         luckyBonus: 0,
-        insuranceUsed: false,
+        momentumBonus: 0,
+        catalystUnlocked: 0,
+        winStreak: 0,
         betAmount,
         levelUps: [],
         rarityUps: []
@@ -1737,8 +1770,11 @@ function App() {
           summary.payout = payout;
           summary.net = net;
           if (!free) session.net += net;
-          // lucky strike : appliqué et crédité CÔTÉ SERVEUR (déjà inclus dans le solde srv)
+          // lucky strike / momentum / catalyseur : appliqués et crédités CÔTÉ SERVEUR
+          // (déjà inclus dans le solde srv) — on ne fait qu'afficher.
           if (srv && srv.lucky_bonus > 0) summary.luckyBonus = srv.lucky_bonus;
+          if (srv && srv.momentum_bonus > 0) summary.momentumBonus = srv.momentum_bonus;
+          if (srv && srv.catalyst_unlocked > 0) summary.catalystUnlocked = srv.catalyst_unlocked;
           // xp / level-ups : ATTRIBUÉS CÔTÉ SERVEUR (infalsifiable). On affiche les valeurs
           // renvoyées ; le roster serveur est adopté plus bas (plus de calcul d'XP local).
           summary.xp = srv ? srv.xp ?? 0 : 0;
@@ -1747,20 +1783,16 @@ function App() {
           summary.rarityUps = lvEvents.filter(e => e.type === "rarity_up");
         } else {
           session.losses += 1;
-          if (srv && srv.insurance_used) {
-            // remboursement de la mise géré CÔTÉ SERVEUR (solde srv déjà à jour)
-            summary.insuranceUsed = true;
-          } else if (!free) {
+          if (!free) {
             // Mise perdue : 100 % → rachat (réparti côté serveur dans les 4 pools).
             session.net -= betAmount;
           }
         }
-        // boosts : TOUTES les charges (lucky/insurance/xp_boost) sont consommées CÔTÉ
-        // SERVEUR dans /fight, uniquement sur victoire → on resynchronise simplement.
+        if (srv && srv.win_streak !== undefined) summary.winStreak = srv.win_streak;
+        // boosts : TOUTES les charges sont consommées CÔTÉ SERVEUR dans /fight,
+        // uniquement sur victoire et seulement si armées → on resynchronise simplement.
         if (srv && srv.boosts) {
-          if (srv.boosts.lucky_strike !== undefined) boosts.lucky_strike = srv.boosts.lucky_strike;
-          if (srv.boosts.insurance !== undefined) boosts.insurance = srv.boosts.insurance;
-          if (srv.boosts.xp_boost !== undefined) boosts.xp_boost = srv.boosts.xp_boost;
+          for (const k of BOOST_KEYS) if (srv.boosts[k] !== undefined) boosts[k] = srv.boosts[k];
         }
         // roster SERVER-OWNED : on adopte les creatures renvoyées (XP/niveaux serveur).
         const roster = srv && srv.creatures ? srv.creatures : s.roster;
@@ -1826,16 +1858,65 @@ function App() {
           }, bd] = await Promise.all([svResp.json(), bResp.json()]);
           setG(st => {
             const n = serverToState(save, s.wallet, st);
-            n.boosts = {
-              xp_boost: bd.xp_boost?.charges ?? 0,
-              insurance: bd.insurance?.charges ?? 0,
-              lucky_strike: bd.lucky_strike?.charges ?? 0
-            };
+            const bm = mapBoostStatus(bd);
+            n.boosts = bm.charges;
+            n.boostsArmed = bm.armed;
             return n;
           });
         }
         return {
           ok: true
+        };
+      } catch (e) {
+        return {
+          ok: false,
+          reason: "Erreur réseau"
+        };
+      }
+    },
+    // Arme/désarme un boost — la SEULE porte d'activation (persistée serveur).
+    // Actionnable depuis la Fosse comme depuis l'écran Boosts.
+    async toggleBoost(key, armed) {
+      const s = gRef.current;
+      if (!s.wallet || !s.authToken) return {
+        ok: false,
+        reason: "Wallet requis"
+      };
+      try {
+        const resp = await fetch(`${API_URL}/boosts/toggle`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${s.authToken}`
+          },
+          body: JSON.stringify({
+            wallet: s.wallet,
+            boost_type: key,
+            armed: !!armed
+          })
+        });
+        const data = await resp.json();
+        if (data.status !== "ok") {
+          const reason = data.error === "verification_requise" ? I18N.t("BO_NEED_VERIFIED") : data.error || "Erreur serveur";
+          return {
+            ok: false,
+            reason
+          };
+        }
+        setG(st => ({
+          ...st,
+          boosts: {
+            ...st.boosts,
+            [key]: data.charges ?? st.boosts[key]
+          },
+          boostsArmed: {
+            ...st.boostsArmed,
+            [key]: data.armed === true
+          }
+        }));
+        return {
+          ok: true,
+          armed: data.armed === true
         };
       } catch (e) {
         return {

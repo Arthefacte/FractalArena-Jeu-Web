@@ -1386,6 +1386,41 @@ function ForgeReliques() {
 }
 
 /* ---------------- BOOSTS ---------------- */
+// v2 : 4 boosts en packs de 50 charges. Les charges achetées restent INERTES tant
+// que le joueur n'a pas armé le boost (interrupteur ici et dans la Fosse).
+function BoostArmSwitch({
+  armed,
+  color,
+  disabled,
+  onToggle
+}) {
+  return /*#__PURE__*/React.createElement("span", {
+    onClick: disabled ? undefined : onToggle,
+    className: "oct-sm",
+    style: {
+      width: 42,
+      height: 22,
+      flex: "none",
+      background: armed ? color : "#1a2238",
+      position: "relative",
+      transition: "background .2s",
+      borderRadius: 11,
+      cursor: disabled ? "not-allowed" : "pointer",
+      opacity: disabled ? 0.45 : 1
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      position: "absolute",
+      top: 3,
+      left: armed ? 22 : 3,
+      width: 16,
+      height: 16,
+      borderRadius: "50%",
+      background: "#fff",
+      transition: "left .2s"
+    }
+  }));
+}
 function Boosts() {
   const {
     g,
@@ -1396,25 +1431,25 @@ function Boosts() {
     key: "xp_boost",
     name: I18N.t("BO_XP_NAME"),
     desc: I18N.t("BO_XP_DESC"),
-    color: "var(--gold)",
-    remaining: g.boosts.xp_boost,
-    unit: "fights"
-  }, {
-    key: "insurance",
-    name: I18N.t("BO_INS_NAME"),
-    desc: I18N.t("BO_INS_DESC"),
-    color: "var(--success)",
-    remaining: g.boosts.insurance,
-    unit: "charges"
+    color: "var(--gold)"
   }, {
     key: "lucky_strike",
     name: I18N.t("BO_LUCKY_NAME"),
     desc: I18N.t("BO_LUCKY_DESC"),
-    color: "var(--fire)",
-    remaining: g.boosts.lucky_strike,
-    unit: "fights"
+    color: "var(--fire)"
+  }, {
+    key: "momentum",
+    name: I18N.t("BO_MOM_NAME"),
+    desc: I18N.t("BO_MOM_DESC"),
+    color: "#9B5CFF"
+  }, {
+    key: "catalyst",
+    name: I18N.t("BO_CAT_NAME"),
+    desc: I18N.t("BO_CAT_DESC"),
+    color: "var(--success)"
   }];
   const [buyingKey, setBuyingKey] = useState(null);
+  const [togglingKey, setTogglingKey] = useState(null);
   async function buy(key) {
     if (buyingKey) return;
     setBuyingKey(key);
@@ -1426,12 +1461,29 @@ function Boosts() {
     }
     toast(I18N.t("BO_BOUGHT"), "good");
   }
+  async function arm(key) {
+    if (togglingKey) return;
+    setTogglingKey(key);
+    const r = await actions.toggleBoost(key, !g.boostsArmed[key]);
+    setTogglingKey(null);
+    if (!r.ok) {
+      toast(r.reason, "bad");
+      return;
+    }
+    toast(I18N.t(r.armed ? "BO_ARMED_ON" : "BO_ARMED_OFF"), r.armed ? "good" : "info");
+  }
   return /*#__PURE__*/React.createElement("div", {
     className: "container"
   }, /*#__PURE__*/React.createElement(SectionHead, {
     eyebrow: I18N.t("BO_SUB"),
     title: I18N.t("BO_TITLE")
   }), /*#__PURE__*/React.createElement("div", {
+    className: "muted",
+    style: {
+      fontSize: 13,
+      marginBottom: 14
+    }
+  }, I18N.t("BO_ARM_HINT")), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "grid",
       gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))",
@@ -1439,17 +1491,21 @@ function Boosts() {
     }
   }, items.map(it => {
     const def = D.BOOSTS[it.key];
-    const active = it.remaining > 0;
+    const remaining = g.boosts[it.key] || 0;
+    const armed = g.boostsArmed[it.key] === true;
+    const lit = armed && remaining > 0;
+    // Le Catalyseur exige un compte vérifié on-chain (le serveur le refuse sinon).
+    const armDisabled = togglingKey !== null || it.key === "catalyst" && !g.onchainVerified && !armed;
     return /*#__PURE__*/React.createElement("div", {
       key: it.key,
       className: "panel oct",
       style: {
-        border: `1px solid ${active ? it.color : "var(--line)"}`,
+        border: `1px solid ${lit ? it.color : "var(--line)"}`,
         padding: 20,
         display: "flex",
         flexDirection: "column",
         gap: 12,
-        boxShadow: active ? `0 0 24px color-mix(in srgb, ${it.color} 22%, transparent)` : "none"
+        boxShadow: lit ? `0 0 24px color-mix(in srgb, ${it.color} 22%, transparent)` : "none"
       }
     }, /*#__PURE__*/React.createElement("div", {
       className: "flex between center"
@@ -1459,26 +1515,49 @@ function Boosts() {
         color: it.color,
         fontSize: 17
       }
-    }, it.name), active && /*#__PURE__*/React.createElement("span", {
+    }, it.name), /*#__PURE__*/React.createElement("span", {
       className: "pill",
       style: {
-        color: it.color,
-        borderColor: it.color
+        color: remaining > 0 ? it.color : "var(--text-dim)",
+        borderColor: remaining > 0 ? it.color : "var(--line)"
       }
-    }, I18N.t("BO_ACTIVE", it.remaining))), /*#__PURE__*/React.createElement("div", {
+    }, I18N.t("BO_CHARGES", remaining))), /*#__PURE__*/React.createElement("div", {
       className: "muted",
       style: {
         fontSize: 13,
         lineHeight: 1.5,
         minHeight: 56
       }
-    }, it.desc), /*#__PURE__*/React.createElement("div", {
+    }, it.desc), /*#__PURE__*/React.createElement("label", {
+      className: "flex between center",
+      style: {
+        padding: "8px 0",
+        borderTop: "1px solid var(--line-soft)"
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "mono",
+      style: {
+        fontSize: 12,
+        color: armed ? it.color : "var(--text-dim)"
+      }
+    }, I18N.t(armed ? "BO_STATE_ARMED" : "BO_STATE_OFF")), /*#__PURE__*/React.createElement(BoostArmSwitch, {
+      armed: armed,
+      color: it.color,
+      disabled: armDisabled,
+      onToggle: () => arm(it.key)
+    })), it.key === "catalyst" && !g.onchainVerified && /*#__PURE__*/React.createElement("div", {
+      className: "mono",
+      style: {
+        fontSize: 11,
+        color: "var(--alert)"
+      }
+    }, I18N.t("BO_NEED_VERIFIED")), /*#__PURE__*/React.createElement("div", {
       className: "mono",
       style: {
         fontSize: 11,
         color: "var(--text-dim)"
       }
-    }, it.unit === "fights" ? `${def.fights || def.charges} combats` : `${def.charges} charges`), /*#__PURE__*/React.createElement("button", {
+    }, `${def.charges} charges / pack`), /*#__PURE__*/React.createElement("button", {
       className: "btn block",
       style: {
         "--c": it.color,
