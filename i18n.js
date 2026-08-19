@@ -739,7 +739,7 @@
     CAMP_W4_TITLE: { FR: "Dompteur du Réseau", EN: "Network Tamer", ZH: "网络驯服者" },
     CAMP_W5_TITLE: { FR: "Marcheur Genesis", EN: "Genesis Walker", ZH: "创世行者" },
     CAMP_W6_TITLE: { FR: "Survivant du Cœur", EN: "Core Survivor", ZH: "核心幸存者" },
-    CAMP_LEGEND_TITLE: { FR: "La Fin de NETWORK", EN: "NETWORK's End", ZH: "NETWORK 的终结" },
+    CAMP_LEGEND_TITLE: { FR: "Légende de la Chaîne", EN: "Legend of the Chain", ZH: "链之传奇" },
 
     // ---- Expéditions (idle) ----
     NAV_EXPEDITIONS: { FR: "Expéditions", EN: "Expeditions", ZH: "远征" },

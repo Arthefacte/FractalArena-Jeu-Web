@@ -158,6 +158,10 @@ function serverToState(save, addr, s) {
     ticketsSilver: save.tickets_silver ?? 0,
     ticketsGold: save.tickets_gold ?? 0,
     campaignProgress: nestProgress(save.campaign_progress),
+    // Titres dérivés de la progression à CHAQUE hydratation : ils ne sont pas
+    // persistés, et ne les calculer qu'au moment d'un combat les faisait
+    // disparaître au rechargement pour un joueur ayant déjà tout fini.
+    campaignTitles: D.deriveCampaignTitles(nestProgress(save.campaign_progress)),
     campaignFreeTs: Number(save.campaign_free_ts) || 0,
     session: {
       wins: save.session_wins ?? 0,
@@ -3342,27 +3346,13 @@ function App() {
           };
         }
         const nested = nestProgress(data.progress);
-        // Titres : dérivés de la progression serveur (cosmétique)
-        const titles = s.campaignTitles.slice();
-        let titleUnlocked = null,
-          legend = false;
-        D.WORLDS.forEach((_, i) => {
-          const wp = nested[i];
-          const total = wp ? wp.stars.reduce((a, b) => a + b, 0) : 0;
-          const key = "CAMP_W" + (i + 1) + "_TITLE";
-          if (total === D.STARS_PER_WORLD && !titles.includes(key)) {
-            titles.push(key);
-            titleUnlocked = key;
-          }
-        });
-        const allDone = D.WORLDS.every((_, i) => {
-          const wp = nested[i];
-          return wp && wp.stars.reduce((a, b) => a + b, 0) === D.STARS_PER_WORLD;
-        });
-        if (allDone && !titles.includes("CAMP_LEGEND_TITLE")) {
-          titles.push("CAMP_LEGEND_TITLE");
-          legend = true;
-        }
+        // Titres : dérivés de la progression serveur (cosmétique). On compare à
+        // l'état courant uniquement pour signaler ce que CE combat vient de
+        // débloquer (bandeau) — la liste elle-même est toujours recalculée.
+        const titles = D.deriveCampaignTitles(nested);
+        const fresh = titles.filter(k => !s.campaignTitles.includes(k));
+        const titleUnlocked = fresh.find(k => k !== "CAMP_LEGEND_TITLE") || null;
+        const legend = fresh.includes("CAMP_LEGEND_TITLE");
         setG(st => ({
           ...st,
           locked: data.new_locked ?? st.locked,
