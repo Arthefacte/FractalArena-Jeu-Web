@@ -1079,7 +1079,27 @@ function Expeditions() {
           background: `linear-gradient(0deg, ${tm.color}, transparent)`,
           animationDelay: 0.83 + i * 0.12 + "s"
         }
-      }), /*#__PURE__*/React.createElement("span", {
+      }), b ?
+      /*#__PURE__*/
+      // Le VRAI visuel de la carte du joueur (cadre par rang inclus),
+      // même repli d'image que CreatureCard/CombatCard.
+      React.createElement("span", {
+        className: "exq-fx-art",
+        style: {
+          borderColor: tm.color
+        }
+      }, /*#__PURE__*/React.createElement("img", {
+        src: D.artFor(b),
+        alt: "",
+        draggable: "false",
+        onError: e => {
+          const fb = D.ART[b.image_key];
+          if (fb && !e.currentTarget.dataset.fb) {
+            e.currentTarget.dataset.fb = "1";
+            e.currentTarget.src = fb;
+          }
+        }
+      })) : /*#__PURE__*/React.createElement("span", {
         className: "exq-hex",
         style: {
           color: tm.color,

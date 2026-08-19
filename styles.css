@@ -1341,6 +1341,8 @@ input { font-family: var(--font-mono); }
   justify-content: center; gap: 6px; background: linear-gradient(160deg, rgba(14,20,38,.96), rgba(6,9,18,.96));
   border: 1px solid; will-change: transform, opacity;
   animation-name: exqFlight; animation-duration: 1s; animation-timing-function: cubic-bezier(.42,0,.72,.25); animation-fill-mode: both; }
+.exq-fx-art { width: 62px; height: 70px; overflow: hidden; border: 1px solid; flex: none; background: #04060d; }
+.exq-fx-art img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .exq-streak { position: absolute; left: 50%; bottom: 100%; width: 2px; height: 170px; margin-left: -1px;
   transform-origin: 50% 100%; animation: exqStreak .52s ease-out both; }
 .exq-shock { position: absolute; top: 50%; left: 50%; width: 170px; height: 170px; margin: -85px 0 0 -85px;
