@@ -1029,7 +1029,7 @@ function App() {
         const detail = r ? I18N.t(r.cle) : (ACC.estAppInstallee() ? I18N.t("AUTHDIAG_PENDING_APP") : "");
         return { ok: false, reason: detail ? `${I18N.t("AUTHDIAG_TITLE")} ${detail}` : I18N.t("AUTHDIAG_TITLE"), authReason: r };
       }
-      if (s.selected.length !== 3) return { ok: false, reason: "Sélectionne 3 bêtes" };
+      if (s.selected.length !== 3) return { ok: false, reason: "Sélectionne 3 entités" };
       if (free && s.freeFights <= 0) return { ok: false, reason: "Plus de combats gratuits" };
       let tier = betTier;
       if (!free) {
@@ -2097,7 +2097,7 @@ function App() {
     },
     async pvpSetDefense(posture) {
       const authHeaders = () => ({ "Authorization": "Bearer " + gRef.current.authToken });
-      const sel = gRef.current.selected; if (sel.length !== 3) return { ok: false, error: "3 bêtes requises" };
+      const sel = gRef.current.selected; if (sel.length !== 3) return { ok: false, error: "3 entités requises" };
       const r = await fetch(`${API_URL}/pvp/defense`, { method: "POST", headers: { ...authHeaders(), "Content-Type": "application/json" }, body: JSON.stringify({ selected: sel, posture: posture || "equilibre" }) });
       const j = await r.json().catch(() => ({})); return j;
     },

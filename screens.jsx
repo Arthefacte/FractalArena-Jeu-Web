@@ -101,8 +101,21 @@ function Team() {
   }, [g.roster]);
   const selCount = g.selected.length;
 
+  // Entités parties en expédition : non sélectionnables ici (même garde que le
+  // serveur, qui refuse le combat avec bete_en_expedition — miroir d'expeditions.jsx).
+  const busyIds = useMemo(
+    () => new Set((g.expeditions || []).flatMap((e) => (Array.isArray(e.beast_ids) ? e.beast_ids : []))),
+    [g.expeditions]
+  );
+  // Une entité déjà sélectionnée qui part en expédition est désélectionnée d'office :
+  // sans ça, l'équipe garde un membre injouable et la Fosse échoue au lancement.
+  useEffect(() => {
+    g.selected.filter((id) => busyIds.has(id)).forEach((id) => actions.toggleSelect(id));
+  }, [busyIds]);
+
   function toggle(b) {
     if (g.selected.includes(b.id)) actions.toggleSelect(b.id);
+    else if (busyIds.has(b.id)) toast(I18N.t("EXP_ERR_bete_en_expedition"), "bad");
     else if (selCount >= 3) toast(I18N.t("TEAM_FULL"), "bad");
     else actions.toggleSelect(b.id);
   }
@@ -145,13 +158,21 @@ function Team() {
         );
       })()}
       <div className="grid-cards">
-        {sorted.map((b) => (
-          <div key={b.id} style={{ display: "flex", flexDirection: "column" }}>
-            <CreatureCard beast={b} selectable selected={g.selected.includes(b.id)} onClick={() => toggle(b)} showXp />
-            <RelicSlot beast={b} />
-            <TalentSlot beast={b} />
-          </div>
-        ))}
+        {sorted.map((b) => {
+          const busy = busyIds.has(b.id);
+          return (
+            <div key={b.id} style={{ display: "flex", flexDirection: "column", ...(busy ? { opacity: 0.55, filter: "saturate(0.4)" } : {}) }}>
+              <CreatureCard beast={b} selectable={!busy} selected={g.selected.includes(b.id)} onClick={() => toggle(b)} showXp
+                badge={busy ? (
+                  <div style={{ position: "absolute", bottom: 8, left: 8, right: 8, textAlign: "center", background: "rgba(6,9,18,0.85)", border: "1px solid var(--elec)", color: "var(--elec)", fontSize: 11, padding: "3px 6px", borderRadius: 6 }} className="mono">
+                    ⏳ {I18N.t("TEAM_BUSY_EXP")}
+                  </div>
+                ) : null} />
+              <RelicSlot beast={b} />
+              <TalentSlot beast={b} />
+            </div>
+          );
+        })}
       </div>
     </div>
   );
