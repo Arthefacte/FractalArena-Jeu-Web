@@ -1494,8 +1494,9 @@ function Boosts() {
     const remaining = g.boosts[it.key] || 0;
     const armed = g.boostsArmed[it.key] === true;
     const lit = armed && remaining > 0;
-    // Le Catalyseur exige un compte vérifié on-chain (le serveur le refuse sinon).
-    const armDisabled = togglingKey !== null || it.key === "catalyst" && !g.onchainVerified && !armed;
+    // Sans charge, rien à activer (le serveur le refuse aussi : no_charges).
+    // Le Catalyseur exige en plus un compte vérifié on-chain.
+    const armDisabled = togglingKey !== null || remaining <= 0 && !armed || it.key === "catalyst" && !g.onchainVerified && !armed;
     return /*#__PURE__*/React.createElement("div", {
       key: it.key,
       className: "panel oct",
