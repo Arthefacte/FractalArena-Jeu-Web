@@ -93,6 +93,50 @@ function CombatCard({ meta, live, side, cref, oppMeta, scale = 1 }) {
   );
 }
 
+// Pastilles d'armement des boosts — directement dans la Fosse : un tap arme ou
+// désarme (persisté serveur) ; le compteur affiche les charges restantes. Un boost
+// désarmé ne se consomme JAMAIS, même avec des charges en stock.
+function BoostPills() {
+  const { g, actions, toast } = useFA();
+  const [busy, setBusy] = useState(null);
+  const defs = [
+    { key: "xp_boost", label: I18N.t("BO_XP_NAME"), color: "var(--gold)" },
+    { key: "lucky_strike", label: I18N.t("BO_LUCKY_NAME"), color: "var(--fire)" },
+    { key: "momentum", label: I18N.t("BO_MOM_NAME"), color: "#9B5CFF" },
+    { key: "catalyst", label: I18N.t("BO_CAT_NAME"), color: "var(--success)" },
+  ];
+  async function tap(key) {
+    if (busy) return;
+    setBusy(key);
+    const r = await actions.toggleBoost(key, !g.boostsArmed[key]);
+    setBusy(null);
+    if (!r.ok) { toast(r.reason, "bad"); return; }
+    toast(I18N.t(r.armed ? "BO_ARMED_ON" : "BO_ARMED_OFF"), r.armed ? "good" : "info");
+  }
+  return (
+    <div className="flex gap8 wrap" style={{ marginBottom: 14 }}>
+      {defs.map((d) => {
+        const n = g.boosts[d.key] || 0;
+        const armed = g.boostsArmed[d.key] === true;
+        const lit = armed && n > 0;
+        return (
+          <button key={d.key} onClick={() => tap(d.key)} disabled={busy !== null}
+            className="pill" title={I18N.t("BO_ARM_HINT")}
+            style={{
+              cursor: "pointer", background: "none", fontFamily: "inherit", fontSize: "inherit",
+              color: lit ? d.color : "var(--text-dim)",
+              borderColor: armed ? d.color : "var(--line)",
+              opacity: n <= 0 && !armed ? 0.55 : 1,
+              boxShadow: lit ? `0 0 12px color-mix(in srgb, ${d.color} 30%, transparent)` : "none",
+            }}>
+            {armed ? "⬢" : "⬡"} {d.label} · {n}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function Fosse() {
   const { g, actions, toast } = useFA();
   // Référence vivante vers l'état : la chaîne de la boucle (settleBattle → playFight)
@@ -339,6 +383,8 @@ function Fosse() {
         </div>
       </div>
 
+      <BoostPills />
+
       {/* Arena board with full battle background */}
       <div ref={boardRef} className="panel oct" style={{ position: "relative", overflow: "hidden", border: "1px solid var(--line)", padding: "26px 22px 22px" }}>
         <div style={{ position: "absolute", inset: 0, backgroundImage: "var(--filigrane)", backgroundSize: "cover", backgroundPosition: "center", opacity: 0.16, mixBlendMode: "luminosity" }} />
@@ -451,14 +497,12 @@ function ResultModal({ data, onClose }) {
             {!data.free && <ResRow fa label={I18N.t("RES_NET")} value={(data.net >= 0 ? "+" : "") + fmt(data.net)} color={data.net >= 0 ? "var(--success)" : "var(--alert)"} />}
             <ResRow label={I18N.t("RES_XP")} value={"+" + data.xp} color="var(--elec)" />
             {data.luckyBonus > 0 && <ResRow fa label="Lucky Strike" value={"+" + fmt(data.luckyBonus)} color="var(--fire)" />}
+            {data.momentumBonus > 0 && <ResRow fa label={`${I18N.t("BO_MOM_NAME")} ×${data.winStreak}`} value={"+" + fmt(data.momentumBonus)} color="#9B5CFF" />}
+            {data.catalystUnlocked > 0 && <ResRow fa label={I18N.t("RES_CATALYST")} value={"+" + fmt(data.catalystUnlocked)} color="var(--success)" />}
           </>
         ) : (
           <>
-            {data.insuranceUsed ? (
-              <ResRow fa label="Insurance 🛡" value={"+" + fmt(data.betAmount)} color="var(--success)" />
-            ) : (
-              <ResRow fa label={I18N.t("RES_BUYBACK")} value={fmt(data.betAmount)} color="var(--alert)" />
-            )}
+            <ResRow fa label={I18N.t("RES_BUYBACK")} value={fmt(data.betAmount)} color="var(--alert)" />
             <ResRow label={I18N.t("RES_XP")} value="+0" color="var(--text-dim)" />
           </>
         )}

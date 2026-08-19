@@ -187,6 +187,73 @@ function CombatCard({
     title: String(Math.round(v * scale))
   }, D.fmtStat(Math.round(v * scale))))))));
 }
+
+// Pastilles d'armement des boosts — directement dans la Fosse : un tap arme ou
+// désarme (persisté serveur) ; le compteur affiche les charges restantes. Un boost
+// désarmé ne se consomme JAMAIS, même avec des charges en stock.
+function BoostPills() {
+  const {
+    g,
+    actions,
+    toast
+  } = useFA();
+  const [busy, setBusy] = useState(null);
+  const defs = [{
+    key: "xp_boost",
+    label: I18N.t("BO_XP_NAME"),
+    color: "var(--gold)"
+  }, {
+    key: "lucky_strike",
+    label: I18N.t("BO_LUCKY_NAME"),
+    color: "var(--fire)"
+  }, {
+    key: "momentum",
+    label: I18N.t("BO_MOM_NAME"),
+    color: "#9B5CFF"
+  }, {
+    key: "catalyst",
+    label: I18N.t("BO_CAT_NAME"),
+    color: "var(--success)"
+  }];
+  async function tap(key) {
+    if (busy) return;
+    setBusy(key);
+    const r = await actions.toggleBoost(key, !g.boostsArmed[key]);
+    setBusy(null);
+    if (!r.ok) {
+      toast(r.reason, "bad");
+      return;
+    }
+    toast(I18N.t(r.armed ? "BO_ARMED_ON" : "BO_ARMED_OFF"), r.armed ? "good" : "info");
+  }
+  return /*#__PURE__*/React.createElement("div", {
+    className: "flex gap8 wrap",
+    style: {
+      marginBottom: 14
+    }
+  }, defs.map(d => {
+    const n = g.boosts[d.key] || 0;
+    const armed = g.boostsArmed[d.key] === true;
+    const lit = armed && n > 0;
+    return /*#__PURE__*/React.createElement("button", {
+      key: d.key,
+      onClick: () => tap(d.key),
+      disabled: busy !== null,
+      className: "pill",
+      title: I18N.t("BO_ARM_HINT"),
+      style: {
+        cursor: "pointer",
+        background: "none",
+        fontFamily: "inherit",
+        fontSize: "inherit",
+        color: lit ? d.color : "var(--text-dim)",
+        borderColor: armed ? d.color : "var(--line)",
+        opacity: n <= 0 && !armed ? 0.55 : 1,
+        boxShadow: lit ? `0 0 12px color-mix(in srgb, ${d.color} 30%, transparent)` : "none"
+      }
+    }, armed ? "⬢" : "⬡", " ", d.label, " \xB7 ", n);
+  }));
+}
 function Fosse() {
   const {
     g,
@@ -565,7 +632,7 @@ function Fosse() {
     style: {
       color: "var(--elec)"
     }
-  }, I18N.t("AR_TICKETS", g.ticketsSilver, g.ticketsGold)))), /*#__PURE__*/React.createElement("div", {
+  }, I18N.t("AR_TICKETS", g.ticketsSilver, g.ticketsGold)))), /*#__PURE__*/React.createElement(BoostPills, null), /*#__PURE__*/React.createElement("div", {
     ref: boardRef,
     className: "panel oct",
     style: {
@@ -924,12 +991,17 @@ function ResultModal({
     label: "Lucky Strike",
     value: "+" + fmt(data.luckyBonus),
     color: "var(--fire)"
-  })) : /*#__PURE__*/React.createElement(React.Fragment, null, data.insuranceUsed ? /*#__PURE__*/React.createElement(ResRow, {
+  }), data.momentumBonus > 0 && /*#__PURE__*/React.createElement(ResRow, {
     fa: true,
-    label: "Insurance \uD83D\uDEE1",
-    value: "+" + fmt(data.betAmount),
+    label: `${I18N.t("BO_MOM_NAME")} ×${data.winStreak}`,
+    value: "+" + fmt(data.momentumBonus),
+    color: "#9B5CFF"
+  }), data.catalystUnlocked > 0 && /*#__PURE__*/React.createElement(ResRow, {
+    fa: true,
+    label: I18N.t("RES_CATALYST"),
+    value: "+" + fmt(data.catalystUnlocked),
     color: "var(--success)"
-  }) : /*#__PURE__*/React.createElement(ResRow, {
+  })) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(ResRow, {
     fa: true,
     label: I18N.t("RES_BUYBACK"),
     value: fmt(data.betAmount),
