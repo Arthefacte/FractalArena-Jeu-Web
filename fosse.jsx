@@ -80,6 +80,15 @@ function CombatCard({ meta, live, side, cref, oppMeta, scale = 1 }) {
           </div>
           <Bar frac={frac} kind="hp" />
         </div>
+        {side === "p1" && meta.xpMax > 0 && (
+          <div style={{ marginTop: 6 }}>
+            <div className="bar-label">
+              <span style={{ color: "var(--elec)" }}>XP</span>
+              <span style={{ color: "var(--text)" }}>{meta.xp}/{meta.xpMax}</span>
+            </div>
+            <Bar frac={Math.min(1, (meta.xp || 0) / meta.xpMax)} kind="xp" />
+          </div>
+        )}
         <div className="stat-row">
           {[["ATK", meta.atk], ["DEF", meta.def], ["SPD", meta.spd], ["MAG", meta.mag]].map(([k, v]) => (
             <div className="stat" key={k}>
@@ -170,7 +179,9 @@ function Fosse() {
   const boardRef = useRef(null);
 
   function beastMeta(b) {
-    return b ? { name: D.displayName(b), type: b.type, rarity: b.rarity, image_key: b.image_key, rank: b.rank, preset: b.preset, level: b.level, maxHp: D.eff(b, "hp"), atk: D.eff(b, "atk"), def: D.eff(b, "def"), spd: D.eff(b, "spd"), mag: D.eff(b, "mag") } : null;
+    // xp/xpMax : la jauge d'XP des cartes joueur — resynchronisée à chaque combat
+    // (playFight relit le roster vivant), donc elle avance au fil de la loop.
+    return b ? { name: D.displayName(b), type: b.type, rarity: b.rarity, image_key: b.image_key, rank: b.rank, preset: b.preset, level: b.level, xp: b.xp || 0, xpMax: D.xpToNext(b), maxHp: D.eff(b, "hp"), atk: D.eff(b, "atk"), def: D.eff(b, "def"), spd: D.eff(b, "spd"), mag: D.eff(b, "mag") } : null;
   }
 
   // keep idle preview synced with selection
