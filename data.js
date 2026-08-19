@@ -20,7 +20,7 @@ window.FA_API_URL = (typeof location !== "undefined" &&
 // À BUMPER AVEC LES BALISES ?v= D'index.html — un test le vérifie.
 // Ne sert plus que de REPLI : un asset absent du manifeste doit rester cache-busté
 // plutôt que servi indéfiniment par le CDN.
-window.FA_ASSET_V = "167";
+window.FA_ASSET_V = "168";
 
 // L'URL porte l'empreinte du CONTENU du fichier (asset-hashes.js, généré au build),
 // et non la version du jeu. Versionner par la version du jeu — ce que faisait la
@@ -501,6 +501,20 @@ window.FA_ASSET_URL = function (chemin) {
     return team;
   }
 
+  // Titres de campagne : fonction PURE de la progression imbriquée
+  // ({ [w]: { stars: number[] } }). Rien à persister — un monde à 30/30 vaut
+  // son titre, tous les mondes à 100 % valent en plus le titre Légende.
+  function deriveCampaignTitles(progress) {
+    const titles = [];
+    WORLDS.forEach((_, i) => {
+      const wp = progress && progress[i];
+      const total = wp ? wp.stars.reduce((a, b) => a + b, 0) : 0;
+      if (total === STARS_PER_WORLD) titles.push("CAMP_W" + (i + 1) + "_TITLE");
+    });
+    if (titles.length === WORLDS.length) titles.push("CAMP_LEGEND_TITLE");
+    return titles;
+  }
+
   window.FA_DATA = {
     RARITY_ORDER, RARITY_LIST, RARITY_COLORS, RARITY_UPGRADE, MINT_ODDS,
     RANK_LIST, RANK_FACTOR, RANK_ODDS, RANK_COLORS, rollRank, artFor,
@@ -517,5 +531,6 @@ window.FA_ASSET_URL = function (chemin) {
     WORLDS, FLOORS_PER_WORLD, BOSS_FLOOR, STARS_PER_WORLD,
     campReward,
     generatePvEEnemy,
+    deriveCampaignTitles,
   };
 })();
