@@ -172,8 +172,17 @@ function Team() {
     return g.roster.slice().sort((a, b) => D.RARITY_ORDER[b.rarity] - D.RARITY_ORDER[a.rarity] || b.level - a.level);
   }, [g.roster]);
   const selCount = g.selected.length;
+
+  // Entités parties en expédition : non sélectionnables ici (même garde que le
+  // serveur, qui refuse le combat avec bete_en_expedition — miroir d'expeditions.jsx).
+  const busyIds = useMemo(() => new Set((g.expeditions || []).flatMap(e => Array.isArray(e.beast_ids) ? e.beast_ids : [])), [g.expeditions]);
+  // Une entité déjà sélectionnée qui part en expédition est désélectionnée d'office :
+  // sans ça, l'équipe garde un membre injouable et la Fosse échoue au lancement.
+  useEffect(() => {
+    g.selected.filter(id => busyIds.has(id)).forEach(id => actions.toggleSelect(id));
+  }, [busyIds]);
   function toggle(b) {
-    if (g.selected.includes(b.id)) actions.toggleSelect(b.id);else if (selCount >= 3) toast(I18N.t("TEAM_FULL"), "bad");else actions.toggleSelect(b.id);
+    if (g.selected.includes(b.id)) actions.toggleSelect(b.id);else if (busyIds.has(b.id)) toast(I18N.t("EXP_ERR_bete_en_expedition"), "bad");else if (selCount >= 3) toast(I18N.t("TEAM_FULL"), "bad");else actions.toggleSelect(b.id);
   }
   return /*#__PURE__*/React.createElement("div", {
     className: "container"
@@ -254,23 +263,46 @@ function Team() {
     }, "\u203A"));
   })(), /*#__PURE__*/React.createElement("div", {
     className: "grid-cards"
-  }, sorted.map(b => /*#__PURE__*/React.createElement("div", {
-    key: b.id,
-    style: {
-      display: "flex",
-      flexDirection: "column"
-    }
-  }, /*#__PURE__*/React.createElement(CreatureCard, {
-    beast: b,
-    selectable: true,
-    selected: g.selected.includes(b.id),
-    onClick: () => toggle(b),
-    showXp: true
-  }), /*#__PURE__*/React.createElement(RelicSlot, {
-    beast: b
-  }), /*#__PURE__*/React.createElement(TalentSlot, {
-    beast: b
-  })))));
+  }, sorted.map(b => {
+    const busy = busyIds.has(b.id);
+    return /*#__PURE__*/React.createElement("div", {
+      key: b.id,
+      style: {
+        display: "flex",
+        flexDirection: "column",
+        ...(busy ? {
+          opacity: 0.55,
+          filter: "saturate(0.4)"
+        } : {})
+      }
+    }, /*#__PURE__*/React.createElement(CreatureCard, {
+      beast: b,
+      selectable: !busy,
+      selected: g.selected.includes(b.id),
+      onClick: () => toggle(b),
+      showXp: true,
+      badge: busy ? /*#__PURE__*/React.createElement("div", {
+        style: {
+          position: "absolute",
+          bottom: 8,
+          left: 8,
+          right: 8,
+          textAlign: "center",
+          background: "rgba(6,9,18,0.85)",
+          border: "1px solid var(--elec)",
+          color: "var(--elec)",
+          fontSize: 11,
+          padding: "3px 6px",
+          borderRadius: 6
+        },
+        className: "mono"
+      }, "\u23F3 ", I18N.t("TEAM_BUSY_EXP")) : null
+    }), /*#__PURE__*/React.createElement(RelicSlot, {
+      beast: b
+    }), /*#__PURE__*/React.createElement(TalentSlot, {
+      beast: b
+    }));
+  })));
 }
 function RelicSlot({
   beast

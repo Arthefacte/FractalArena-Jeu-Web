@@ -1612,7 +1612,7 @@ function App() {
       }
       if (s.selected.length !== 3) return {
         ok: false,
-        reason: "Sélectionne 3 bêtes"
+        reason: "Sélectionne 3 entités"
       };
       if (free && s.freeFights <= 0) return {
         ok: false,
@@ -3766,7 +3766,7 @@ function App() {
       const sel = gRef.current.selected;
       if (sel.length !== 3) return {
         ok: false,
-        error: "3 bêtes requises"
+        error: "3 entités requises"
       };
       const r = await fetch(`${API_URL}/pvp/defense`, {
         method: "POST",
