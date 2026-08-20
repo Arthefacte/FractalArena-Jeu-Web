@@ -169,11 +169,10 @@
     // Repli si le lien universel ne débouche pas (app absente, version trop
     // ancienne — UniSat prévient que la compatibilité varie) : le lien d'accès
     // a été copié et reste affiché, avec le code pour « Récupérer mon compte ».
-    UAPP_FALLBACK: { FR: "Le bouton ne t'emmène pas ? Le lien est copié : colle-le dans le navigateur de l'app UniSat — ou entre ce code dans « Récupérer mon compte » :", EN: "The button doesn't take you there? The link is copied: paste it in the UniSat app's browser — or enter this code under “Recover my account”:", ZH: "按钮没有跳转？链接已复制：将其粘贴到 UniSat 应用内浏览器——或在「找回我的账号」中输入此代码：" },
+    UAPP_FALLBACK: { FR: "Le bouton ne t'emmène pas ? Ouvre le jeu dans l'app UniSat, puis entre ce code dans « Récupérer mon compte » :", EN: "The button doesn't take you there? Open the game in the UniSat app, then enter this code under “Recover my account”:", ZH: "按钮没有跳转？在 UniSat 应用中打开游戏，然后在「找回我的账号」中输入此代码：" },
     // Une fois le pont franchi, la session PERSISTE dans le navigateur UniSat :
     // les fois suivantes, il suffit d'y rouvrir le jeu.
     UAPP_WD_AGAIN: { FR: "Déjà fait une fois ? Le jeu est resté connecté dans l'app UniSat : rouvre-le là-bas, c'est tout.", EN: "Done it once already? The game stayed signed in inside the UniSat app: just reopen it there.", ZH: "已经做过一次？游戏在 UniSat 应用中保持登录：直接在那里重新打开即可。" },
-    UAPP_COPIED: { FR: "Lien copié ✓ Ouvre l'app UniSat et colle-le dans son navigateur.", EN: "Link copied ✓ Open the UniSat app and paste it in its browser.", ZH: "链接已复制 ✓ 打开 UniSat 应用，将其粘贴到内置浏览器。" },
     // PWA — installation sur l'écran d'accueil, et perte de réseau. Le jeu ne
     // combat pas sans serveur : on le dit clairement plutôt que de laisser un
     // bouton tourner dans le vide.
