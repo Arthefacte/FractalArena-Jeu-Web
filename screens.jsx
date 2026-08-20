@@ -1170,12 +1170,23 @@ function DeviceLinkPanel() {
     setRestant(r.expires_in);
   };
 
-  const copier = async () => {
+  // Deux choses à copier, deux usages distincts :
+  //   - le CODE, pour le coller dans « J'ai déjà un compte » sur l'autre
+  //     appareil. C'est le cas courant depuis qu'on peut prendre un code sur
+  //     son propre téléphone (jeu ouvert dans l'app UniSat) pour ouvrir sa
+  //     session dans le navigateur : on ne scanne pas son propre écran ;
+  //   - le LIEN, à s'envoyer par message : l'ouvrir connecte sans rien saisir.
+  // Le champ de saisie accepte les deux (codeFromInput extrait le code d'une
+  // URL), mais le joueur qui voit « https://… » là où on lui demande un code
+  // croit s'être trompé de bouton.
+  const copierTexte = async (texte, cle) => {
     try {
-      await navigator.clipboard.writeText(window.FA_DEVICE_LINK.linkUrl(window.location.origin, link.code));
-      toast(I18N.t("OP_DEVLINK_COPIED"), "good");
+      await navigator.clipboard.writeText(texte);
+      toast(I18N.t(cle), "good");
     } catch (e) { /* presse-papier refusé : le code reste lisible à l'écran */ }
   };
+  const copierCode = () => copierTexte(link.code, "OP_DEVLINK_CODE_COPIED");
+  const copierLien = () => copierTexte(window.FA_DEVICE_LINK.linkUrl(window.location.origin, link.code), "OP_DEVLINK_COPIED");
 
   if (!g.authToken) return null;
   const svg = link && window.FA_DEVICE_LINK
@@ -1197,7 +1208,10 @@ function DeviceLinkPanel() {
           {svg && <div style={{ background: "#fff", padding: 10, width: 208, margin: "0 auto", borderRadius: 6 }} dangerouslySetInnerHTML={{ __html: svg }} />}
           <div className="mono" style={{ fontSize: 15, fontWeight: 700, letterSpacing: 1, margin: "10px 0 2px", userSelect: "all" }}>{link.code}</div>
           <div className="mono" style={{ fontSize: 10.5, color: "var(--text-dim)", marginBottom: 10 }}>{I18N.t("OP_DEVLINK_TTL", restant)}</div>
-          <button className="btn ghost sm" onClick={copier}>⧉ {I18N.t("OP_DEVLINK_COPY")}</button>
+          <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
+            <button className="btn ghost sm" onClick={copierCode}>⧉ {I18N.t("OP_DEVLINK_COPY_CODE")}</button>
+            <button className="btn ghost sm" onClick={copierLien}>⧉ {I18N.t("OP_DEVLINK_COPY")}</button>
+          </div>
         </div>
       )}
     </div>

@@ -64,6 +64,17 @@ test("l'aide dit comment emporter sa session hors de l'app UniSat", () => {
   assert.match(ligne("OP_DEVLINK_HINT"), /app UniSat/, "le cas qui bloquait le user doit être nommé");
 });
 
+test("le panneau permet de copier LE CODE, pas seulement le lien", () => {
+  // Depuis qu'on prend un code sur son propre téléphone pour ouvrir sa session
+  // dans un autre navigateur, on ne scanne pas son écran : on colle. Et ce
+  // qu'on colle est un CODE — voir « https://… » apparaître à la place fait
+  // croire qu'on s'est trompé de bouton (signalé par le user).
+  const src = read("screens.jsx");
+  assert.match(src, /const copierCode = \(\) => copierTexte\(link\.code,/, "le bouton code doit copier le code nu");
+  assert.match(src, /const copierLien = \(\) => copierTexte\(window\.FA_DEVICE_LINK\.linkUrl\(/, "le lien reste copiable à part");
+  assert.match(src, /OP_DEVLINK_COPY_CODE/, "le bouton doit exister à l'écran");
+});
+
 test("sur mobile, récupérer son compte est une vraie option, pas un lien perdu", () => {
   const app = read("app.jsx");
   assert.match(app, /mobile && !hasWallet \?/, "l'écran d'entrée doit distinguer le cas mobile sans wallet");
