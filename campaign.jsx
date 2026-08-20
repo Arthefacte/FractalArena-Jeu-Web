@@ -70,6 +70,7 @@ function CampCombatCard({ meta, live, side, cref }) {
     );
   }
   const rc = D.RARITY_COLORS[meta.rarity];
+  const maxRarity = meta.rarity === "Legendary";   // hors du cycle des raretés
   const frac = live ? live.hp / live.maxHp : 1;
   const dead = live && !live.alive;
   return (
@@ -79,8 +80,6 @@ function CampCombatCard({ meta, live, side, cref }) {
         <img src={D.artFor(meta)} alt={meta.name} draggable="false"
           onError={(e) => { const fb = D.ART[meta.image_key]; if (fb && !e.currentTarget.dataset.fb) { e.currentTarget.dataset.fb = "1"; e.currentTarget.src = fb; } }}
           style={meta.boss ? { transform: "scale(1.08)", filter: "drop-shadow(0 0 10px rgba(247,147,26,0.7))" } : undefined} />
-        <div className="rar-tag">{rarityLabel(meta.rarity)}</div>
-        <div className="lvl-tag">LV {meta.level}</div>
         {meta.boss && <div style={{ position: "absolute", top: 6, left: 6, fontSize: 9, fontWeight: 700, color: "var(--gold)", background: "rgba(0,0,0,0.6)", padding: "2px 5px", borderRadius: 4, letterSpacing: 1 }}>{I18N.t("CAMP_BOSS")}</div>}
       </div>
       <div className="body">
@@ -94,6 +93,17 @@ function CampCombatCard({ meta, live, side, cref }) {
             <span style={{ color: "var(--text)" }}>{D.fmtStat(live ? Math.max(0, Math.ceil(live.hp)) : meta.maxHp)}/{D.fmtStat(live ? live.maxHp : meta.maxHp)}</span>
           </div>
           <Bar frac={frac} kind="hp" />
+        </div>
+        {/* Même ligne qu'en Fosse : à 100 la rareté monte d'un cran et le
+            niveau repart à 1 (data.js, MAX_LEVEL_UPGRADE), donc la jauge mesure
+            la marche vers la rareté suivante. La Légendaire en est exclue :
+            niveau nu et jauge pleine. Jauge côté joueur seulement. */}
+        <div style={{ marginTop: 6 }}>
+          <div className="bar-label">
+            <span style={{ color: rc }}>{rarityLabel(meta.rarity)}</span>
+            <span style={{ color: "var(--text)" }}>{maxRarity ? "LV " + meta.level : meta.level + "/" + D.ECON.MAX_LEVEL_UPGRADE}</span>
+          </div>
+          {side === "p1" && <Bar frac={maxRarity ? 1 : meta.level / D.ECON.MAX_LEVEL_UPGRADE} kind="rar" />}
         </div>
         <div className="stat-row">
           {[["ATK", meta.atk], ["DEF", meta.def], ["SPD", meta.spd], ["MAG", meta.mag]].map(([k, v]) => (

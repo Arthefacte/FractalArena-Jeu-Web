@@ -100,6 +100,7 @@ function CombatCard({
     }, "\u2014")));
   }
   const rc = D.RARITY_COLORS[meta.rarity];
+  const maxRarity = meta.rarity === "Legendary"; // hors du cycle des raretés
   const frac = live ? live.maxHp > 0 ? live.hp / live.maxHp : 0 : 1;
   const dead = live && !live.alive;
   return /*#__PURE__*/React.createElement("div", {
@@ -121,11 +122,7 @@ function CombatCard({
         e.currentTarget.src = fb;
       }
     }
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "rar-tag"
-  }, rarityLabel(meta.rarity)), /*#__PURE__*/React.createElement("div", {
-    className: "lvl-tag"
-  }, "LV ", meta.level)), /*#__PURE__*/React.createElement("div", {
+  })), /*#__PURE__*/React.createElement("div", {
     className: "body"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex between center",
@@ -192,6 +189,23 @@ function CombatCard({
   }, meta.xp, "/", meta.xpMax)), /*#__PURE__*/React.createElement(Bar, {
     frac: Math.min(1, (meta.xp || 0) / meta.xpMax),
     kind: "xp"
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 6
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bar-label"
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: rc
+    }
+  }, rarityLabel(meta.rarity)), /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: "var(--text)"
+    }
+  }, maxRarity ? "LV " + meta.level : meta.level + "/" + D.ECON.MAX_LEVEL_UPGRADE)), side === "p1" && /*#__PURE__*/React.createElement(Bar, {
+    frac: maxRarity ? 1 : meta.level / D.ECON.MAX_LEVEL_UPGRADE,
+    kind: "rar"
   })), /*#__PURE__*/React.createElement("div", {
     className: "stat-row"
   }, [["ATK", meta.atk], ["DEF", meta.def], ["SPD", meta.spd], ["MAG", meta.mag]].map(([k, v]) => /*#__PURE__*/React.createElement("div", {
