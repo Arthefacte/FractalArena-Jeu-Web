@@ -63,21 +63,38 @@ import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
   function isReady(type) { return !!_loaded[type]; }
 
   // Clone le modèle + ses matériaux, applique le glow de rareté (préserve la couleur/texture).
+  //
+  // Le halo est MULTIPLIÉ par l'emissiveMap : là où elle existe, il n'allume que
+  // les zones prévues par l'artiste (veines, circuits). Là où elle MANQUE, il
+  // s'étale uniformément sur toute la surface et délave le modèle — voile blanc
+  // signalé sur la Membrane d'Onyx le 2026-08-20, où, le modèle étant noir, le
+  // halo devenait la seule chose visible. Trois des huit .glb sont dans ce cas :
+  // sapphire_plate, cobalt_spring, onyx_membrane.
+  //
+  // On ne repeint donc pas la matière de ceux-là. makeInstance signale le cas
+  // (`tinted`) pour que l'appelant porte la rareté autrement — la vignette le
+  // fait avec sa lumière d'appoint, qui touche les reflets sans laver la texture.
   function makeInstance(type, rarity) {
     if (!_loaded[type]) throw new Error("relic model not ready: " + type);
     const inst = _loaded[type].clone(true);
     const glow = A.RARITY_GLOW[rarity] || A.RARITY_GLOW.Common;
+    let tinted = false;
     inst.traverse((o) => {
       if (!o.isMesh || !o.material) return;
       const wasArray = Array.isArray(o.material);
       const mats = wasArray ? o.material : [o.material];
       const cloned = mats.map((m) => {
         const c = m.clone();
-        if (c.emissive) { c.emissive = new THREE.Color(glow.color); c.emissiveIntensity = glow.intensity; }
+        if (c.emissive && c.emissiveMap) {
+          c.emissive = new THREE.Color(glow.color);
+          c.emissiveIntensity = glow.intensity;
+          tinted = true;
+        }
         return c;
       });
       o.material = wasArray ? cloned : cloned[0];
     });
+    inst.userData.rarityTinted = tinted;
     return inst;
   }
 
