@@ -112,6 +112,7 @@ function UnisatAppBridge({ mode }) {
   const [link, setLink] = useState(null); // { url, expiresAt }
   const [restant, setRestant] = useState(0);
   const [busy, setBusy] = useState(false);
+  const [secours, setSecours] = useState(false);   // le pont à code, replié par défaut
 
   // Même règle que DeviceLinkPanel (Options) : un code mort ne doit pas rester
   // affiché comme s'il était encore collable.
@@ -150,35 +151,55 @@ function UnisatAppBridge({ mode }) {
     // L'ouverture est le VRAI lien <a> rendu ci-dessous, un toucher direct.
   };
 
+  // Lien STATIQUE vers le jeu dans l'app : aucun appel serveur, donc il est
+  // prêt dès l'affichage — c'est ce qui permet UN SEUL toucher. Le joueur qui a
+  // déjà lié sa session là-bas y retombe connecté et signe son retrait.
+  const direct = window.FA_DEVICE_LINK.openDappUrl(window.location.origin);
+
   return (
     <div className="acc-warn" style={{ marginTop: 8, fontSize: 12 }}>
       <div style={{ marginBottom: 8 }}>{I18N.t(mode === "withdraw" ? "UAPP_WD_INTRO" : "UAPP_LINK_INTRO")}</div>
-      <div style={{ lineHeight: 1.7 }}>
-        <div>{I18N.t("UAPP_STEP1")}</div>
-        <div>{I18N.t("UAPP_STEP2")}</div>
-        <div>{I18N.t(mode === "withdraw" ? "UAPP_STEP3_WD" : "UAPP_STEP3_LINK")}</div>
-      </div>
-      {mode === "withdraw" && (
-        <div className="muted" style={{ fontSize: 11, marginTop: 8 }}>{I18N.t("UAPP_WD_AGAIN")}</div>
-      )}
-      {!link ? (
-        <button className="btn btn-elec block" style={{ marginTop: 10 }} disabled={busy} onClick={generer}>
-          {I18N.t("UAPP_PREP_BTN")}
+      <a className="btn btn-elec block" style={{ textAlign: "center" }} href={direct}
+         target="_blank" rel="noopener">
+        ↗ {I18N.t("UAPP_OPEN_BTN")}
+      </a>
+      {!secours ? (
+        /* Le pont à code n'est PAS le chemin courant : il ne sert qu'au premier
+           passage, ou si la session de l'app a été perdue. Au premier plan, il
+           faisait lire un mode d'emploi d'installation à quelqu'un dont le
+           portefeuille est déjà lié — et mettait en avant un code de secours
+           dont il n'a aucun usage tant que le bouton marche. */
+        <button className="btn ghost sm block" style={{ marginTop: 8 }} onClick={() => setSecours(true)}>
+          {I18N.t("UAPP_FIRST_TIME")}
         </button>
       ) : (
         <div style={{ marginTop: 10 }}>
-          {/* L'ouverture est un VRAI lien : le toucher est un geste direct, que
-              l'OS honore (le saut par script, lui, était bloqué). target _blank
-              pour que le jeu reste ouvert si l'app n'est pas installée. */}
-          <a className="btn btn-elec block" style={{ textAlign: "center" }} href={link.open}
-             target="_blank" rel="noopener">
-            ↗ {I18N.t("UAPP_OPEN_BTN")}
-          </a>
-          {/* Repli : le code se recopie dans « Récupérer mon compte ». Ne pas
-              y remettre « colle le lien dans UniSat » : impossible chez eux. */}
-          <div style={{ margin: "10px 0 6px" }}>{I18N.t("UAPP_FALLBACK")}</div>
-          <div className="mono" style={{ fontSize: 15, fontWeight: 700, letterSpacing: 1, userSelect: "all" }}>{link.code}</div>
-          <div className="mono muted" style={{ fontSize: 10.5, margin: "6px 0" }}>{I18N.t("OP_DEVLINK_TTL", restant)}</div>
+          <div style={{ lineHeight: 1.7 }}>
+            <div>{I18N.t("UAPP_STEP1")}</div>
+            <div>{I18N.t("UAPP_STEP2")}</div>
+            <div>{I18N.t(mode === "withdraw" ? "UAPP_STEP3_WD" : "UAPP_STEP3_LINK")}</div>
+          </div>
+          {!link ? (
+            <button className="btn btn-elec block" style={{ marginTop: 10 }} disabled={busy} onClick={generer}>
+              {I18N.t("UAPP_PREP_BTN")}
+            </button>
+          ) : (
+            <div style={{ marginTop: 10 }}>
+              {/* Deux temps ici, et c'est nécessaire : après l'await de generer(),
+                  le geste utilisateur est consommé et l'OS refuse d'ouvrir l'app
+                  (2026-08-18, deux codes créés jamais réclamés). L'ouverture est
+                  donc un VRAI lien, touché directement. */}
+              <a className="btn btn-elec block" style={{ textAlign: "center" }} href={link.open}
+                 target="_blank" rel="noopener">
+                ↗ {I18N.t("UAPP_OPEN_BTN")}
+              </a>
+              {/* Repli : le code se recopie dans « Récupérer mon compte ». Ne pas
+                  y remettre « colle le lien dans UniSat » : impossible chez eux. */}
+              <div style={{ margin: "10px 0 6px" }}>{I18N.t("UAPP_FALLBACK")}</div>
+              <div className="mono" style={{ fontSize: 15, fontWeight: 700, letterSpacing: 1, userSelect: "all" }}>{link.code}</div>
+              <div className="mono muted" style={{ fontSize: 10.5, margin: "6px 0" }}>{I18N.t("OP_DEVLINK_TTL", restant)}</div>
+            </div>
+          )}
         </div>
       )}
     </div>
