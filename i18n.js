@@ -591,6 +591,8 @@
     OP_DEVLINK_BTN: { FR: "Afficher le QR code", EN: "Show QR code", ZH: "显示二维码" },
     OP_DEVLINK_TTL: { FR: "Valable %d s · usage unique", EN: "Valid %d s · single use", ZH: "有效期 %d 秒 · 仅限一次" },
     OP_DEVLINK_COPY: { FR: "Copier le lien", EN: "Copy link", ZH: "复制链接" },
+    OP_DEVLINK_COPY_CODE: { FR: "Copier le code", EN: "Copy code", ZH: "复制代码" },
+    OP_DEVLINK_CODE_COPIED: { FR: "Code copié", EN: "Code copied", ZH: "代码已复制" },
     OP_DEVLINK_COPIED: { FR: "Lien copié", EN: "Link copied", ZH: "链接已复制" },
     OP_DEVLINK_ERROR: { FR: "Impossible de créer le code — réessaie", EN: "Couldn't create the code — try again", ZH: "无法创建代码——请重试" },
     DEVLINK_CLAIM_TITLE: { FR: "Connecter cet appareil", EN: "Connect this device", ZH: "连接此设备" },
