@@ -1,3 +1,4 @@
+// Aucune carte du jeu ne pose plus la rareté ni le niveau sur sa vignette.
 // Sur le plateau de combat, les cartes tiennent à 3 par rangée (~108 px de large
 // sur un écran de 390). Rareté et niveau y étaient posés sur la vignette, tous
 // deux ancrés en haut : mesuré dans un navigateur, 23 px de recouvrement en
@@ -55,13 +56,25 @@ test("la Légendaire n'affiche pas de cible qu'elle n'a pas", () => {
   }
 });
 
-test("le roster, lui, garde ses badges (cartes plus grandes)", () => {
+test("le roster suit la même règle (mesuré : -11 px en Légendaire à 320 px)", () => {
   const src = read("components.jsx");
-  assert.match(src, /className="rar-tag"/, "le roster garde le badge de rareté");
-  assert.match(src, /className="lvl-tag"/, "le roster garde le badge de niveau");
+  assert.doesNotMatch(src, /className="rar-tag"/, "la rareté ne doit plus être posée sur l'art");
+  assert.doesNotMatch(src, /className="lvl-tag"/, "le niveau ne doit plus être posé sur l'art");
+  assert.match(src, /kind="rar"/, "le roster doit porter la même jauge qu'en combat");
+  assert.match(src, /D\.ECON\.MAX_LEVEL_UPGRADE/, "le palier doit venir de la constante");
 });
 
-test("les surcharges mobiles des badges de combat ont disparu avec eux", () => {
-  const mobile = read("mobile.css");
-  assert.doesNotMatch(mobile, /\.arena-board-row \.card \.(rar|lvl)-tag/, "règle devenue morte : à retirer");
+test("la vignette du roster garde ses ÉTATS (coche, badge de rôle)", () => {
+  // Distinction volontaire : les données descendent dans le corps, les états
+  // d'interaction restent sur l'art — c'est là qu'ils veulent dire quelque chose.
+  const src = read("components.jsx");
+  assert.match(src, /className="sel-check"/, "la coche de sélection reste sur l'art");
+  assert.match(src, /\{badge\}/, "le badge de rôle reste sur l'art");
+});
+
+test("plus aucun CSS de badge ne subsiste (code mort)", () => {
+  // Aucune carte ne les rend plus : les laisser inviterait à les ressusciter.
+  for (const f of ["styles.css", "mobile.css"]) {
+    assert.doesNotMatch(read(f), /^\s*\.[a-z.\- ]*(rar|lvl)-tag\s*\{/m, f + " : règle devenue morte");
+  }
 });

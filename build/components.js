@@ -136,6 +136,7 @@ function CreatureCard({
   badge
 }) {
   const rc = D.RARITY_COLORS[beast.rarity];
+  const maxRarity = beast.rarity === "Legendary"; // hors du cycle des raretés
   const pc = D.PRESET_COLORS[beast.preset];
   const xpMax = D.xpToNext(beast);
   const ref = useRef(null);
@@ -195,11 +196,7 @@ function CreatureCard({
         e.currentTarget.src = fb;
       }
     }
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "rar-tag"
-  }, rarityLabel(beast.rarity)), /*#__PURE__*/React.createElement("div", {
-    className: "lvl-tag"
-  }, "LV ", beast.level), selectable && /*#__PURE__*/React.createElement("div", {
+  }), selectable && /*#__PURE__*/React.createElement("div", {
     className: "sel-check"
   }, "\u2713"), badge), /*#__PURE__*/React.createElement("div", {
     className: "body"
@@ -227,6 +224,23 @@ function CreatureCard({
   }, /*#__PURE__*/React.createElement("span", null, "XP"), /*#__PURE__*/React.createElement("span", null, beast.xp, "/", xpMax)), /*#__PURE__*/React.createElement(Bar, {
     frac: beast.xp / xpMax,
     kind: "xp"
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: showXp ? 6 : 9
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bar-label"
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: rc
+    }
+  }, rarityLabel(beast.rarity)), /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: "var(--text)"
+    }
+  }, maxRarity ? "LV " + beast.level : beast.level + "/" + D.ECON.MAX_LEVEL_UPGRADE)), /*#__PURE__*/React.createElement(Bar, {
+    frac: maxRarity ? 1 : beast.level / D.ECON.MAX_LEVEL_UPGRADE,
+    kind: "rar"
   }))), /*#__PURE__*/React.createElement("div", {
     className: "foil",
     "aria-hidden": "true"
