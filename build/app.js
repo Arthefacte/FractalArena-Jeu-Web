@@ -4623,7 +4623,14 @@ function Onboarding({
     href: "https://unisat.io/download",
     target: "_blank",
     rel: "noopener noreferrer"
-  }, I18N.t("OB_INSTALL_EXT_BTN")), /*#__PURE__*/React.createElement("div", {
+  }, I18N.t("OB_INSTALL_EXT_BTN")), mobile && !hasWallet ? /*#__PURE__*/React.createElement("button", {
+    className: "btn block",
+    style: {
+      marginTop: 10
+    },
+    disabled: !!busy,
+    onClick: () => setRecovering(true)
+  }, I18N.t("ACC_ALREADY_ELSEWHERE")) : /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 14
     }

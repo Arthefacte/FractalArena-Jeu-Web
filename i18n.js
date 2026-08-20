@@ -115,9 +115,10 @@
     ACC_CONFIRM_SAVED: { FR: "J'ai noté mon code de récupération", EN: "I have saved my recovery code", ZH: "我已保存恢复码" },
     ACC_CONTINUE: { FR: "Entrer dans l'arène", EN: "Enter the arena", ZH: "进入竞技场" },
 
+    ACC_ALREADY_ELSEWHERE: { FR: "J'ai déjà un compte ailleurs", EN: "I already have an account elsewhere", ZH: "我在其他设备上已有账号" },
     ACC_RECOVER_LINK: { FR: "Récupérer mon compte", EN: "Recover my account", ZH: "找回我的账号" },
     ACC_RECOVER_TITLE: { FR: "Récupérer ton compte", EN: "Recover your account", ZH: "找回你的账号" },
-    ACC_RECOVER_SUB: { FR: "Colle ton code de récupération, ou le code de liaison affiché sur ton ordinateur (Options → Connecter un téléphone). Jamais ta phrase de 12 mots.", EN: "Paste your recovery code, or the link code shown on your computer (Options → Connect a phone). Never your 12-word phrase.", ZH: "粘贴你的恢复码，或电脑上显示的连接代码（选项 → 连接手机）。切勿粘贴 12 个助记词。" },
+    ACC_RECOVER_SUB: { FR: "Colle ton code de récupération, ou un code de liaison pris sur un appareil où tu es déjà connecté — ordinateur, ou le jeu ouvert dans l'app UniSat (Options → Connecter un autre appareil). Jamais ta phrase de 12 mots.", EN: "Paste your recovery code, or a link code taken from any device where you are already signed in — a computer, or the game open in the UniSat app (Options → Connect another device). Never your 12-word phrase.", ZH: "粘贴你的恢复码，或从任何已登录的设备上获取的连接代码——电脑，或在 UniSat 应用中打开的游戏（选项 → 连接其他设备）。切勿粘贴 12 个助记词。" },
     ACC_RECOVER_PLACEHOLDER: { FR: "Code de récupération ou de liaison", EN: "Recovery or link code", ZH: "恢复码或连接代码" },
     ACC_RECOVER_BTN: { FR: "Récupérer", EN: "Recover", ZH: "找回" },
     ACC_RECOVER_FAIL: { FR: "Code invalide.", EN: "Invalid code.", ZH: "恢复码无效。" },
@@ -581,11 +582,11 @@
     OP_LANG: { FR: "Langue", EN: "Language", ZH: "语言" },
     OP_SOUND: { FR: "Effets sonores", EN: "Sound effects", ZH: "音效" },
     // ---- Liaison d'appareil (QR) ----
-    OP_DEVLINK_TITLE: { FR: "Connecter un téléphone", EN: "Connect a phone", ZH: "连接手机" },
+    OP_DEVLINK_TITLE: { FR: "Connecter un autre appareil", EN: "Connect another device", ZH: "连接其他设备" },
     OP_DEVLINK_HINT: {
-      FR: "Scanne le QR avec ton téléphone (ou recopie le code dans « J'ai déjà un compte ») : il jouera avec ce compte, sans signature.",
-      EN: "Scan the QR with your phone (or type the code under \"I already have an account\"): it will play with this account, no signature needed.",
-      ZH: "用手机扫描二维码（或在「我已有账号」中输入代码）：手机将使用此账号游戏，无需签名。",
+      FR: "Scanne le QR, ou recopie le code dans « J'ai déjà un compte » sur l'autre appareil : il jouera avec ce compte, sans signature. Depuis le jeu ouvert dans l'app UniSat, c'est ainsi qu'on emporte sa session vers son navigateur — et elle y reste ouverte.",
+      EN: "Scan the QR, or type the code under \"I already have an account\" on the other device: it will play with this account, no signature needed. From the game open in the UniSat app, this is how you carry your session over to your browser — and it stays signed in there.",
+      ZH: "扫描二维码，或在另一台设备的「我已有账号」中输入代码：该设备将使用此账号游戏，无需签名。在 UniSat 应用中打开游戏时，这也是将会话带到浏览器的方式——并且会保持登录。",
     },
     OP_DEVLINK_BTN: { FR: "Afficher le QR code", EN: "Show QR code", ZH: "显示二维码" },
     OP_DEVLINK_TTL: { FR: "Valable %d s · usage unique", EN: "Valid %d s · single use", ZH: "有效期 %d 秒 · 仅限一次" },
