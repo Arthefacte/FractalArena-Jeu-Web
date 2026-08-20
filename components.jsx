@@ -74,6 +74,7 @@ const MAX_TILT = 7; // degrés
 
 function CreatureCard({ beast, selected, onClick, selectable, showXp, badge }) {
   const rc = D.RARITY_COLORS[beast.rarity];
+  const maxRarity = beast.rarity === "Legendary";   // hors du cycle des raretés
   const pc = D.PRESET_COLORS[beast.preset];
   const xpMax = D.xpToNext(beast);
   const ref = useRef(null);
@@ -116,8 +117,6 @@ function CreatureCard({ beast, selected, onClick, selectable, showXp, badge }) {
       <div className="art">
         <img src={D.artFor(beast)} alt={beast.name} draggable="false"
           onError={(e) => { const fb = D.ART[beast.image_key]; if (fb && !e.currentTarget.dataset.fb) { e.currentTarget.dataset.fb = "1"; e.currentTarget.src = fb; } }} />
-        <div className="rar-tag">{rarityLabel(beast.rarity)}</div>
-        <div className="lvl-tag">LV {beast.level}</div>
         {selectable && <div className="sel-check">✓</div>}
         {badge}
       </div>
@@ -133,6 +132,21 @@ function CreatureCard({ beast, selected, onClick, selectable, showXp, badge }) {
             <Bar frac={beast.xp / xpMax} kind="xp" />
           </div>
         )}
+        {/* Rareté + niveau : ils étaient posés sur la vignette, où ils se
+            chevauchaient sur les petits écrans (mesuré : -11 px en Légendaire à
+            320 px, 9 px de marge à 360). Même jauge qu'en combat — à
+            MAX_LEVEL_UPGRADE la rareté monte d'un cran et le niveau repart à 1,
+            donc elle mesure la marche vers la rareté SUIVANTE, pas un plafond.
+            La Légendaire est hors du cycle : niveau nu et jauge pleine.
+            Toujours affichée : contrairement à l'XP, le niveau est une donnée
+            que la carte doit porter partout où elle apparaît. */}
+        <div style={{ marginTop: showXp ? 6 : 9 }}>
+          <div className="bar-label">
+            <span style={{ color: rc }}>{rarityLabel(beast.rarity)}</span>
+            <span style={{ color: "var(--text)" }}>{maxRarity ? "LV " + beast.level : beast.level + "/" + D.ECON.MAX_LEVEL_UPGRADE}</span>
+          </div>
+          <Bar frac={maxRarity ? 1 : beast.level / D.ECON.MAX_LEVEL_UPGRADE} kind="rar" />
+        </div>
       </div>
       <div className="foil" aria-hidden="true" />
     </div>
