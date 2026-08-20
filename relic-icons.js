@@ -3,7 +3,7 @@ import * as THREE from "three";
 (function () {
   const CACHE = new Map();               // "type|rarity|size" -> dataURL (modèle uniquement)
   const RARITY_HEX = { Common: 0x9CA3AF, Rare: 0x3B82F6, Epic: 0xB026FF, Legendary: 0xF7931A };
-  let renderer = null, scene = null, camera = null, key = null, amb = null, ok = true;
+  let renderer = null, scene = null, camera = null, key = null, amb = null, rar = null, ok = true;
 
   function geoFor(type) {
     switch (type) {
@@ -28,6 +28,15 @@ import * as THREE from "three";
       camera.position.set(0, 0, 4);
       key = new THREE.DirectionalLight(0xffffff, 1.4); key.position.set(2, 3, 4); scene.add(key);
       amb = new THREE.AmbientLight(0xffffff, 0.55); scene.add(amb);
+      // Lampe de rareté : elle ne sert QUE pour les modèles dont le matériau ne
+      // canalise pas le halo (pas d'emissiveMap). Repeindre leur émissif les
+      // délavait ; une lumière colorée touche les reflets et laisse la texture
+      // intacte. Éteinte par défaut, allumée le temps d'un rendu.
+      // decay 0 : l'intensité ne dépend pas de la distance, donc le réglage se
+      // lit tel quel. Avec le decay physique par défaut (2), 3 candelas à 2,8
+      // unités ne marquaient pas du tout un modèle noir — mesuré.
+      rar = new THREE.PointLight(0xffffff, 0, 12); rar.decay = 0;
+      rar.position.set(-1.6, 0.8, 2.2); scene.add(rar);
       return true;
     } catch (e) { ok = false; return false; }
   }
@@ -38,6 +47,7 @@ import * as THREE from "three";
     renderer.render(scene, camera);
     const url = renderer.domElement.toDataURL("image/png");
     scene.remove(obj);
+    if (rar) rar.intensity = 0;   // scène partagée : ne pas teinter le rendu suivant
     return url;
   }
 
@@ -53,6 +63,17 @@ import * as THREE from "three";
   function _model(type, rarity) {
     const inst = window.FA_RELIC_MODELS.makeInstance(type, rarity);
     inst.rotation.set(0.35, 0.7, 0);
+    // makeInstance n'a pas pu porter la rareté sur la matière : on la porte ici.
+    // L'intensité suit la MÊME échelle que le halo émissif (RARITY_GLOW), ×8
+    // pour passer de l'unité « emissiveIntensity » aux candelas : la Commune
+    // reste presque invisible (1,2) et la Légendaire marque (7,6), sans jamais
+    // laver la texture — c'est tout le point de ce correctif.
+    if (rar) {
+      const tinted = inst.userData && inst.userData.rarityTinted;
+      const glow = (window.FA_RELIC_ASSETS.RARITY_GLOW[rarity]) || window.FA_RELIC_ASSETS.RARITY_GLOW.Common;
+      rar.color.setHex(glow.color);
+      rar.intensity = tinted ? 0 : glow.intensity * 8;
+    }
     const dispose = () => inst.traverse((o) => {
       if (o.isMesh) {
         const mats = Array.isArray(o.material) ? o.material : [o.material];
