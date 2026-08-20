@@ -4630,7 +4630,7 @@ function Onboarding({
     },
     disabled: !!busy,
     onClick: () => setRecovering(true)
-  }, I18N.t("ACC_ALREADY_ELSEWHERE")) : /*#__PURE__*/React.createElement("div", {
+  }, I18N.t("ACC_ALREADY_LINKED")) : /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 14
     }
