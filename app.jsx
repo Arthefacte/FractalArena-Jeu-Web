@@ -2644,10 +2644,22 @@ function Onboarding({ onAccountCreated }) {
           </a>
         )}
 
-        <div style={{ marginTop: 14 }}>
-          <button className="btn-link" style={{ background: "none", border: "none", color: "var(--text-dim)", fontSize: 11, cursor: "pointer", textDecoration: "underline" }}
-                  onClick={() => setRecovering(true)}>{I18N.t("ACC_RECOVER_LINK")}</button>
-        </div>
+        {/* Le joueur déjà inscrit qui ouvre le jeu sur un appareil neuf ne peut
+            RIEN signer ici (pas d'extension sur mobile). Son seul chemin — un
+            code de liaison pris là où il est déjà connecté — tenait dans un lien
+            souligné de 11 px sous le pli : on le manque, on touche « Ouvrir dans
+            l'app UniSat », et on recommence à chaque ouverture. Sur mobile, ce
+            chemin devient une vraie option, à côté de celle qui mène à l'app. */}
+        {mobile && !hasWallet ? (
+          <button className="btn block" style={{ marginTop: 10 }} disabled={!!busy} onClick={() => setRecovering(true)}>
+            {I18N.t("ACC_ALREADY_ELSEWHERE")}
+          </button>
+        ) : (
+          <div style={{ marginTop: 14 }}>
+            <button className="btn-link" style={{ background: "none", border: "none", color: "var(--text-dim)", fontSize: 11, cursor: "pointer", textDecoration: "underline" }}
+                    onClick={() => setRecovering(true)}>{I18N.t("ACC_RECOVER_LINK")}</button>
+          </div>
+        )}
 
         <div className="lang-switch" style={{ margin: "16px auto 0", width: "fit-content" }}>
           {[["FR", "Français"], ["EN", "English"], ["ZH", "中文"]].map(([code, lbl]) => (
