@@ -13,6 +13,7 @@ const XU = window.FA_EXPEDITIONS_UI;
 const { useFA, SectionHead, Bar } = window;
 
 const EXP_GLYPH = { HASH: "#", MINING: "⛏", LEDGER: "▤", NETWORK: "❖", GENESIS: "✦", BLOCK: "▣" };
+const HEX_CLIP = "polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%)";
 const expErr = XU.errText;
 function modeLabel(mode) { return mode === "risquee" ? I18N.t("EXP_MODE_RISKY") : I18N.t("EXP_MODE_PRUDENT"); }
 function rateColor(pct) { return pct >= 75 ? "var(--success)" : pct >= 55 ? "var(--gold)" : "var(--alert)"; }
@@ -43,6 +44,7 @@ function Expeditions() {
   const [fx, setFx] = useState(null);              // { worldId, rate, endsAt, ids } pendant l'animation
   const [justLaunched, setJustLaunched] = useState(null);
   const [claiming, setClaiming] = useState(false);
+  const [rfx, setRfx] = useState(null);            // { worldId, ids, success } : retour du portail
   const [loot, setLoot] = useState(null);          // { success, rewards, fa_week, worldId, beastIds }
   const [confirmRecall, setConfirmRecall] = useState(false);
   // Fenêtres d'épuisement locales (échec Risquée : +30 min après ends_at),
@@ -56,6 +58,7 @@ function Expeditions() {
   const fxWorldRef = useRef(null);   // monde de l'anim en cours (lu par endFx, jamais périmé)
   const flashTimer = useRef(null);   // pulse justLaunched 800 ms
   const claimTimer = useRef(null);   // burst claiming 750 ms
+  const rfxTimer = useRef(null);     // overlay de retour 1,85 s
 
   // Tick 1 s seulement là où un compte à rebours est VISIBLE ET VIVANT :
   // dest/track avec au moins une expédition qui court encore.
@@ -74,6 +77,7 @@ function Expeditions() {
     if (fxTimer.current) clearTimeout(fxTimer.current);
     if (flashTimer.current) clearTimeout(flashTimer.current);
     if (claimTimer.current) clearTimeout(claimTimer.current);
+    if (rfxTimer.current) clearTimeout(rfxTimer.current);
   }, []);
 
   const now = Date.now() + (g.expNowOffset || 0);
@@ -129,7 +133,7 @@ function Expeditions() {
     }
     fxWorldRef.current = selWorld;
     setFx({ worldId: selWorld, ids: sel.slice(), endsAt: new Date(r.expedition.ends_at) });
-    fxTimer.current = setTimeout(endFx, 2300);
+    fxTimer.current = setTimeout(endFx, 2500);
   }
 
   // ---- Claim : résolution serveur puis vue butin ----
@@ -140,7 +144,7 @@ function Expeditions() {
     if (!r.ok && r.reason === "retry") r = await actions.expeditionsClaim(e.id);
     setBusyCall(false);
     if (!r.ok) { setClaiming(false); if (r.reason !== "auth") toast(expErr(r.reason), "bad"); return; }
-    claimTimer.current = setTimeout(() => setClaiming(false), 750);   // laisse le burst se jouer
+    setClaiming(false);   // le portail de retour prend le relais (même batch React : pas de trou)
     if (r.success === false && e.mode === "risquee") {
       // Échec Risquée : le serveur tient les bêtes indisponibles jusqu'à
       // ends_at + 30 min — on AJOUTE cette fenêtre (les fenêtres échues sortent).
@@ -150,6 +154,14 @@ function Expeditions() {
     setLoot({ success: r.success, rewards: r.rewards, fa_week: r.fa_week, worldId: e.destination, beastIds: e.beast_ids || [] });
     setSelWorld(e.destination);
     setView("loot");
+    // Retour : le portail recrache l'équipe PAR-DESSUS la vue butin, qui se
+    // découvre quand l'overlay fond. Miroir exact de l'aller ; en mouvement
+    // réduit on saute droit au butin (comme launch()).
+    if (!reducedMotion()) {
+      if (rfxTimer.current) clearTimeout(rfxTimer.current);
+      setRfx({ worldId: e.destination, ids: e.beast_ids || [], success: r.success !== false });
+      rfxTimer.current = setTimeout(() => { rfxTimer.current = null; setRfx(null); }, 1850);
+    }
   }
 
   async function doRecall(e) {
@@ -201,9 +213,9 @@ function Expeditions() {
           <div className="panel" style={{ padding: "10px 13px", display: "grid", gridTemplateColumns: "minmax(0,1fr) auto", gap: 10, alignItems: "center" }}>
             <div style={{ minWidth: 0 }}>
               <div className="exq-mono" style={{ fontSize: 10, color: "var(--text-dim)", marginBottom: 5 }}>{I18N.t("EXP_FA_WEEK")}</div>
-              <Bar frac={Math.min(1, (fa.granted || 0) / (fa.cap || 500))} kind="xp" />
+              <Bar frac={Math.min(1, (fa.granted || 0) / (fa.cap || 5000))} kind="xp" />
             </div>
-            <b className="exq-mono" style={{ color: "var(--fire)" }}>{fa.granted || 0}/{fa.cap || 500}</b>
+            <b className="exq-mono" style={{ color: "var(--fire)" }}>{fa.granted || 0}/{fa.cap || 5000}</b>
           </div>
         )}
         <div className="exq-worlds">
@@ -430,7 +442,7 @@ function Expeditions() {
     const fragRanks = Object.keys(XU.FRAGMENT_COSTS).filter((rk) => (frags[rk] || 0) > 0);
     const failed = loot.success === false;
     const crew = (loot.beastIds || []).map(beastById).filter(Boolean);
-    const fa = loot.fa_week || g.expFaWeek || { granted: 0, cap: 500 };
+    const fa = loot.fa_week || g.expFaWeek || { granted: 0, cap: 5000 };
     return (
       <div className="exq-col">
         <div>
@@ -488,10 +500,10 @@ function Expeditions() {
         <div className="exq-farow">
           <div style={{ minWidth: 0 }}>
             <b style={{ color: "var(--fire)", fontSize: 15 }}>🔒 {I18N.t("EXP_FA_LOCKED_GAIN", rw.fa || 0)}</b>
-            <div className="exq-mono" style={{ fontSize: 10, color: "var(--text-dim)" }}>{I18N.t("EXP_FA_CAP", fa.granted || 0, fa.cap || 500)}</div>
+            <div className="exq-mono" style={{ fontSize: 10, color: "var(--text-dim)" }}>{I18N.t("EXP_FA_CAP", fa.granted || 0, fa.cap || 5000)}</div>
           </div>
           <div style={{ flex: "none", width: "38%", maxWidth: 150 }}>
-            <Bar frac={Math.min(1, (fa.granted || 0) / (fa.cap || 500))} kind="xp" />
+            <Bar frac={Math.min(1, (fa.granted || 0) / (fa.cap || 5000))} kind="xp" />
           </div>
         </div>
         <button className="exq-launch" onClick={() => { setLoot(null); setView("dest"); }}
@@ -510,7 +522,49 @@ function Expeditions() {
     );
   }
 
-  // ============ OVERLAY DE LANCEMENT (portail hexagonal) ============
+  // ============ PORTAIL : briques partagées par l'ALLER et le RETOUR ============
+  function hexRing(size, col, delay) {
+    return (
+      <span key={size} className="exq-ring" style={{ width: size, height: size, margin: `-${size / 2}px 0 0 -${size / 2}px`, animationDelay: delay }}>
+        <span style={{ position: "absolute", inset: 0, background: col, clipPath: HEX_CLIP }} />
+        <span style={{ position: "absolute", inset: 3, background: "#05070f", clipPath: HEX_CLIP }} />
+      </span>
+    );
+  }
+  function hexShock(col) {
+    return (
+      <span className="exq-shock">
+        <span style={{ position: "absolute", inset: 0, background: col, clipPath: HEX_CLIP }} />
+        <span style={{ position: "absolute", inset: 5, background: "#05070f", clipPath: HEX_CLIP }} />
+      </span>
+    );
+  }
+  // La carte animée porte le VRAI visuel du joueur (artFor + cadre par rang),
+  // comme CreatureCard/CombatCard. Deux couches : le slot fait l'entrée (décalée
+  // carte par carte), la carte fait le vol (simultané). L'aller aspire, le
+  // retour recrache — seules les animations CSS changent, pas ce markup.
+  function fxCard(b, i) {
+    const tm = typeMeta(b && b.type);
+    return (
+      <div key={i} className="exq-fx-slot" style={{ animationDelay: (0.2 + i * 0.26) + "s" }}>
+        <div className="exq-fx-card" style={{ borderColor: tm.color, boxShadow: `0 0 16px rgba(${tm.rgb},.4)`, "--fx-x": i - 1 }}>
+          <span className="exq-streak" style={{ background: `linear-gradient(0deg, ${tm.color}, transparent)`, animationDelay: "1.3s" }} />
+          {b ? (
+            <span className="exq-fx-art" style={{ borderColor: tm.color }}>
+              <img src={D.artFor(b)} alt="" draggable="false"
+                onError={(e) => { const fb = D.ART[b.image_key]; if (fb && !e.currentTarget.dataset.fb) { e.currentTarget.dataset.fb = "1"; e.currentTarget.src = fb; } }} />
+            </span>
+          ) : (
+            <span className="exq-hex" style={{ color: tm.color, borderColor: tm.color, background: `linear-gradient(150deg, rgba(${tm.rgb},.22), rgba(6,9,18,.7))` }}>{EXP_GLYPH[b && b.type] || "✦"}</span>
+          )}
+          <span style={{ fontSize: 9, fontWeight: 700, maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", padding: "0 4px" }}>{b ? D.displayName(b) : ""}</span>
+          <span className="exq-mono" style={{ fontSize: 9, color: tm.color }}>NIV {b ? b.level : ""}</span>
+        </div>
+      </div>
+    );
+  }
+
+  // ============ OVERLAY DE LANCEMENT (aspiration dans le portail) ============
   function renderFx() {
     if (!fx) return null;
     const w = XU.worldOf(fx.worldId) || XU.WORLDS[0];
@@ -524,38 +578,9 @@ function Expeditions() {
             </span>
           ))}
           <span className="exq-fx-glow" style={{ background: `radial-gradient(circle, rgba(${w.rgb},.55), transparent 68%)` }} />
-          {[[232, w.color, "0s"], [172, "#00F0FF", ".08s"], [112, "#F7931A", ".16s"]].map(([size, col, delay]) => (
-            <span key={size} className="exq-ring" style={{ width: size, height: size, margin: `-${size / 2}px 0 0 -${size / 2}px`, animationDelay: delay }}>
-              <span style={{ position: "absolute", inset: 0, background: col, clipPath: "polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%)" }} />
-              <span style={{ position: "absolute", inset: 3, background: "#05070f", clipPath: "polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%)" }} />
-            </span>
-          ))}
-          <div className="exq-fx-cards">
-            {cards.map((b, i) => {
-              const tm = typeMeta(b && b.type);
-              return (
-                <div key={i} className="exq-fx-card" style={{ borderColor: tm.color, boxShadow: `0 0 16px rgba(${tm.rgb},.4)`, "--fx-x": i - 1, animationDelay: (0.35 + i * 0.12) + "s" }}>
-                  <span className="exq-streak" style={{ background: `linear-gradient(0deg, ${tm.color}, transparent)`, animationDelay: (0.83 + i * 0.12) + "s" }} />
-                  {b ? (
-                    // Le VRAI visuel de la carte du joueur (cadre par rang inclus),
-                    // même repli d'image que CreatureCard/CombatCard.
-                    <span className="exq-fx-art" style={{ borderColor: tm.color }}>
-                      <img src={D.artFor(b)} alt="" draggable="false"
-                        onError={(e) => { const fb = D.ART[b.image_key]; if (fb && !e.currentTarget.dataset.fb) { e.currentTarget.dataset.fb = "1"; e.currentTarget.src = fb; } }} />
-                    </span>
-                  ) : (
-                    <span className="exq-hex" style={{ color: tm.color, borderColor: tm.color, background: `linear-gradient(150deg, rgba(${tm.rgb},.22), rgba(6,9,18,.7))` }}>{EXP_GLYPH[b && b.type] || "✦"}</span>
-                  )}
-                  <span style={{ fontSize: 9, fontWeight: 700, maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", padding: "0 4px" }}>{b ? D.displayName(b) : ""}</span>
-                  <span className="exq-mono" style={{ fontSize: 9, color: tm.color }}>NIV {b ? b.level : ""}</span>
-                </div>
-              );
-            })}
-          </div>
-          <span className="exq-shock">
-            <span style={{ position: "absolute", inset: 0, background: w.color, clipPath: "polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%)" }} />
-            <span style={{ position: "absolute", inset: 5, background: "#05070f", clipPath: "polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%)" }} />
-          </span>
+          {[[232, w.color, "0s"], [172, "#00F0FF", ".08s"], [112, "#F7931A", ".16s"]].map(([size, col, delay]) => hexRing(size, col, delay))}
+          <div className="exq-fx-cards">{cards.map(fxCard)}</div>
+          {hexShock(w.color)}
           <span className="exq-flash" />
           <div className="exq-fx-center">
             <span className="exq-stamp" style={{ textShadow: `0 0 26px ${w.color}, 0 0 60px rgba(0,0,0,.9)` }}>{wName(w).toUpperCase()}</span>
@@ -567,6 +592,28 @@ function Expeditions() {
     );
   }
 
+  // ============ OVERLAY DE RETOUR (le portail recrache l'équipe) ============
+  // Non cliquable : il dure 1,85 s et découvre la vue butin déjà montée dessous.
+  function renderReturnFx() {
+    if (!rfx) return null;
+    const w = XU.worldOf(rfx.worldId) || XU.WORLDS[0];
+    const cards = rfx.ids.map(beastById);
+    const failed = rfx.success === false;
+    const tint = failed ? "var(--alert)" : "var(--gold)";
+    return (
+      <div className="exq-rfx">
+        <span className="exq-fx-glow" style={{ background: `radial-gradient(circle, rgba(${w.rgb},.55), transparent 68%)` }} />
+        {[[232, w.color, "0s"], [172, "#00F0FF", ".08s"], [112, tint, ".16s"]].map(([size, col, delay]) => hexRing(size, col, delay))}
+        {hexShock(w.color)}
+        <span className="exq-flash" />
+        <div className="exq-fx-cards">{cards.map(fxCard)}</div>
+        <span className="exq-rfx-tag" style={{ color: failed ? "var(--alert)" : "#fff", textShadow: `0 0 22px ${tint}, 0 0 60px rgba(0,0,0,.9)` }}>
+          {(failed ? I18N.t("EXP_HARD_RETURN") : I18N.t("EXP_VICTORY")).toUpperCase()}
+        </span>
+      </div>
+    );
+  }
+
   return (
     <div className="container">
       {view === "dest" && renderDest()}
@@ -574,6 +621,7 @@ function Expeditions() {
       {view === "track" && renderTrack()}
       {view === "loot" && renderLoot()}
       {renderFx()}
+      {renderReturnFx()}
       {claiming && (
         <div className="exq-claimfx">
           <div style={{ position: "relative", display: "grid", placeItems: "center" }}>
