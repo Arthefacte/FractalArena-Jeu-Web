@@ -102,7 +102,7 @@ function RecoverScreen({ onClose }) {
    Ce que ce bloc remplace : se déconnecter, rouvrir le jeu dans le navigateur
    de l'app UniSat, retaper un code de récupération. Un code de liaison
    d'appareil (le même que le QR PC→téléphone, écran Options) fait tout ça en
-   un collage : la session suit le joueur dans l'app, où le provider est
+   un toucher : la session suit le joueur dans l'app, où le provider est
    injecté (vérifié en réel le 2026-08-18) et où liaison et retraits se
    signent. Et comme la session y persiste (fa_device_linked), les retraits
    suivants n'ont plus besoin du pont : rouvrir le jeu dans l'app suffit.
@@ -125,12 +125,6 @@ function UnisatAppBridge({ mode }) {
     return () => clearInterval(id);
   }, [link]);
 
-  const copier = async (url) => {
-    // Presse-papier refusé : l'URL reste affichée en clair, sélectionnable.
-    try { await navigator.clipboard.writeText(url); toast(I18N.t("UAPP_COPIED"), "good"); }
-    catch (e) {}
-  };
-
   const generer = async () => {
     setBusy(true);
     const r = await actions.createDeviceLink();
@@ -144,9 +138,11 @@ function UnisatAppBridge({ mode }) {
       expiresAt: Date.now() + r.expires_in * 1000,
     });
     setRestant(r.expires_in);
-    // Copie silencieuse, sans await ni toast : un secours discret si le joueur
-    // préfère coller lui-même.
-    try { navigator.clipboard.writeText(url).catch(() => {}); } catch (e) {}
+    // PAS de copie du lien : on ne peut RIEN coller dans la recherche de l'app
+    // UniSat (constaté par le user, 2026-08-20) — et le jeu n'étant pas listé
+    // au DApp Center, elle ne le trouve pas non plus. Proposer un collage
+    // envoyait donc le joueur dans une impasse. Le lien universel ci-dessous
+    // est le SEUL chemin ; le code sert de repli une fois dans l'app.
     // PAS de navigation par script ici : après l'await du fetch, le « geste
     // utilisateur » est consommé et Android/iOS refusent d'ouvrir une app sur
     // une navigation lancée hors toucher — constaté en prod le 2026-08-18
@@ -178,12 +174,11 @@ function UnisatAppBridge({ mode }) {
              target="_blank" rel="noopener">
             ↗ {I18N.t("UAPP_OPEN_BTN")}
           </a>
-          {/* Repli : le code se colle (ou se recopie) dans « Récupérer mon
-              compte » — qui accepte aussi le lien entier (codeFromInput). */}
+          {/* Repli : le code se recopie dans « Récupérer mon compte ». Ne pas
+              y remettre « colle le lien dans UniSat » : impossible chez eux. */}
           <div style={{ margin: "10px 0 6px" }}>{I18N.t("UAPP_FALLBACK")}</div>
           <div className="mono" style={{ fontSize: 15, fontWeight: 700, letterSpacing: 1, userSelect: "all" }}>{link.code}</div>
           <div className="mono muted" style={{ fontSize: 10.5, margin: "6px 0" }}>{I18N.t("OP_DEVLINK_TTL", restant)}</div>
-          <button className="btn ghost sm" disabled={busy} onClick={() => copier(link.url)}>⧉ {I18N.t("OP_DEVLINK_COPY")}</button>
         </div>
       )}
     </div>
