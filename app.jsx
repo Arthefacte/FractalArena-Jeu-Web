@@ -2652,7 +2652,7 @@ function Onboarding({ onAccountCreated }) {
             chemin devient une vraie option, à côté de celle qui mène à l'app. */}
         {mobile && !hasWallet ? (
           <button className="btn block" style={{ marginTop: 10 }} disabled={!!busy} onClick={() => setRecovering(true)}>
-            {I18N.t("ACC_ALREADY_ELSEWHERE")}
+            {I18N.t("ACC_ALREADY_LINKED")}
           </button>
         ) : (
           <div style={{ marginTop: 14 }}>

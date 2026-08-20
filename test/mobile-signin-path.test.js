@@ -78,9 +78,9 @@ test("le panneau permet de copier LE CODE, pas seulement le lien", () => {
 test("sur mobile, récupérer son compte est une vraie option, pas un lien perdu", () => {
   const app = read("app.jsx");
   assert.match(app, /mobile && !hasWallet \?/, "l'écran d'entrée doit distinguer le cas mobile sans wallet");
-  assert.match(app, /ACC_ALREADY_ELSEWHERE/, "l'option doit exister");
+  assert.match(app, /ACC_ALREADY_LINKED/, "l'option doit exister");
   // Elle doit être un bouton de même rang que celui qui mène à l'app UniSat.
-  const i = app.indexOf("ACC_ALREADY_ELSEWHERE");
+  const i = app.indexOf("ACC_ALREADY_LINKED");
   const bloc = app.slice(i - 300, i + 100);
   assert.match(bloc, /className="btn block"/, "un bouton, pas un lien souligné");
 });

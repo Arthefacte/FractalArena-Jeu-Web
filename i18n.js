@@ -115,7 +115,7 @@
     ACC_CONFIRM_SAVED: { FR: "J'ai noté mon code de récupération", EN: "I have saved my recovery code", ZH: "我已保存恢复码" },
     ACC_CONTINUE: { FR: "Entrer dans l'arène", EN: "Enter the arena", ZH: "进入竞技场" },
 
-    ACC_ALREADY_ELSEWHERE: { FR: "J'ai déjà un compte ailleurs", EN: "I already have an account elsewhere", ZH: "我在其他设备上已有账号" },
+    ACC_ALREADY_LINKED: { FR: "J'ai déjà un compte lié", EN: "I already have a linked account", ZH: "我已有绑定的账号" },
     ACC_RECOVER_LINK: { FR: "Récupérer mon compte", EN: "Recover my account", ZH: "找回我的账号" },
     ACC_RECOVER_TITLE: { FR: "Récupérer ton compte", EN: "Recover your account", ZH: "找回你的账号" },
     ACC_RECOVER_SUB: { FR: "Colle ton code de récupération, ou un code de liaison pris sur un appareil où tu es déjà connecté — ordinateur, ou le jeu ouvert dans l'app UniSat (Options → Connecter un autre appareil). Jamais ta phrase de 12 mots.", EN: "Paste your recovery code, or a link code taken from any device where you are already signed in — a computer, or the game open in the UniSat app (Options → Connect another device). Never your 12-word phrase.", ZH: "粘贴你的恢复码，或从任何已登录的设备上获取的连接代码——电脑，或在 UniSat 应用中打开的游戏（选项 → 连接其他设备）。切勿粘贴 12 个助记词。" },
