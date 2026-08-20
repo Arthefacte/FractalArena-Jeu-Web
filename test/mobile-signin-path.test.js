@@ -30,13 +30,26 @@ const ligne = (cle) => {
   return I18N.slice(i, finBloc);
 };
 
-test("aucun texte n'impose un ordinateur pour récupérer son compte", () => {
+test("aucun texte du parcours de liaison n'impose un ordinateur", () => {
   // Le serveur émet un code pour req.authenticated_wallet : TOUTE session
   // authentifiée y a droit, le jeu ouvert dans l'app UniSat compris.
-  const sub = ligne("ACC_RECOVER_SUB");
-  assert.doesNotMatch(sub, /sur ton ordinateur/, "ce mot faisait croire qu'un PC était obligatoire");
-  assert.doesNotMatch(sub, /on your computer/, "idem en anglais");
-  assert.match(sub, /appareil où tu es déjà connecté/, "le code vient de n'importe quel appareil connecté");
+  //
+  // Tout le PARCOURS est couvert, pas la seule première étape : la première
+  // passe n'avait corrigé que ACC_RECOVER_SUB, et le joueur retombait sur
+  // « le compte affiché sur ton ordinateur » à l'écran suivant.
+  //
+  // Restent volontairement hors liste ACC_LINK_NO_UNISAT et OB_INSTALL_EXT_SUB :
+  // ils parlent de l'EXTENSION UniSat, qui n'existe effectivement que sur
+  // ordinateur. Ce n'est pas une fausse contrainte, c'est un fait.
+  for (const cle of ["ACC_RECOVER_SUB", "OP_DEVLINK_HINT", "DEVLINK_CLAIM_SUB",
+                     "DEVLINK_CLAIM_REPLACE", "DEVLINK_FAIL"]) {
+    const t = ligne(cle);
+    assert.doesNotMatch(t, /ton ordinateur/, cle + " : fait croire qu'un PC est obligatoire");
+    assert.doesNotMatch(t, /your computer/, cle + " : idem en anglais");
+    assert.doesNotMatch(t, /你电脑上|在电脑上/, cle + " : idem en chinois");
+  }
+  assert.match(ligne("ACC_RECOVER_SUB"), /appareil où tu es déjà connecté/,
+    "le code vient de n'importe quel appareil connecté");
 });
 
 test("le panneau parle d'un APPAREIL, pas d'un téléphone", () => {
