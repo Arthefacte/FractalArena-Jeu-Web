@@ -251,13 +251,10 @@
   .arena-board-row .card .body { padding: 7px 8px 9px; }
   .arena-board-row .card .cname { font-size: 11px; }
   .arena-board-row .card .cpreset { font-size: 9px; }
-  .arena-board-row .card .rar-tag { font-size: 8px; padding: 2px 5px; }
-  /* Rareté et niveau se chevauchaient : sur 3 colonnes la carte fait ~108 px, et
-     « LÉGENDAIRE » + « LV 20 » en demandent ~128 avec leurs marges. Réduire la
-     police ne fait que repousser le seuil ; le niveau descend donc en bas de la
-     vignette, où le dégradé de .art::after le garde lisible. Plus aucun
-     recouvrement possible, quelle que soit la longueur du libellé. */
-  .arena-board-row .card .lvl-tag { font-size: 8.5px; padding: 2px 5px; top: auto; bottom: 6px; right: 6px; }
+  /* Plus de badges sur la vignette en combat : rareté et niveau vivent
+     désormais dans le corps de la carte, en jauge. Les surcharges de .rar-tag
+     et .lvl-tag qui étaient ici (dont le déplacement en bas de la v176) sont
+     devenues du code mort et ont été retirées. */
   .arena-board-row .bar-label { font-size: 8.5px; }
 
   /* arena board padding */

@@ -132,6 +132,7 @@ function CampCombatCard({
     }, "\u2014")));
   }
   const rc = D.RARITY_COLORS[meta.rarity];
+  const maxRarity = meta.rarity === "Legendary"; // hors du cycle des raretés
   const frac = live ? live.hp / live.maxHp : 1;
   const dead = live && !live.alive;
   return /*#__PURE__*/React.createElement("div", {
@@ -158,11 +159,7 @@ function CampCombatCard({
       transform: "scale(1.08)",
       filter: "drop-shadow(0 0 10px rgba(247,147,26,0.7))"
     } : undefined
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "rar-tag"
-  }, rarityLabel(meta.rarity)), /*#__PURE__*/React.createElement("div", {
-    className: "lvl-tag"
-  }, "LV ", meta.level), meta.boss && /*#__PURE__*/React.createElement("div", {
+  }), meta.boss && /*#__PURE__*/React.createElement("div", {
     style: {
       position: "absolute",
       top: 6,
@@ -206,6 +203,23 @@ function CampCombatCard({
   }, D.fmtStat(live ? Math.max(0, Math.ceil(live.hp)) : meta.maxHp), "/", D.fmtStat(live ? live.maxHp : meta.maxHp))), /*#__PURE__*/React.createElement(Bar, {
     frac: frac,
     kind: "hp"
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 6
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bar-label"
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: rc
+    }
+  }, rarityLabel(meta.rarity)), /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: "var(--text)"
+    }
+  }, maxRarity ? "LV " + meta.level : meta.level + "/" + D.ECON.MAX_LEVEL_UPGRADE)), side === "p1" && /*#__PURE__*/React.createElement(Bar, {
+    frac: maxRarity ? 1 : meta.level / D.ECON.MAX_LEVEL_UPGRADE,
+    kind: "rar"
   })), /*#__PURE__*/React.createElement("div", {
     className: "stat-row"
   }, [["ATK", meta.atk], ["DEF", meta.def], ["SPD", meta.spd], ["MAG", meta.mag]].map(([k, v]) => /*#__PURE__*/React.createElement("div", {

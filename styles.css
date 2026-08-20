@@ -504,6 +504,11 @@ input { font-family: var(--font-mono); }
 .bar.hp.low > i { background: linear-gradient(90deg, var(--alert), #ff7a92); }
 .bar.xp { height: 4px; }
 .bar.xp > i { background: linear-gradient(90deg, var(--elec), #7af6ff); }
+/* Rareté — progression vers la rareté SUIVANTE, pas vers un plafond : à 100 la
+   rareté monte d'un cran et le niveau repart à 1 (data.js, MAX_LEVEL_UPGRADE).
+   Teintée par --rc, donc elle change de couleur en même temps que la carte. */
+.bar.rar { height: 4px; }
+.bar.rar > i { background: linear-gradient(90deg, color-mix(in srgb, var(--rc) 55%, #05070f), var(--rc)); }
 .bar-label { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); margin-bottom: 3px; }
 
 /* ---- Battle log ---- */

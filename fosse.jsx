@@ -49,6 +49,7 @@ function CombatCard({ meta, live, side, cref, oppMeta, scale = 1 }) {
     );
   }
   const rc = D.RARITY_COLORS[meta.rarity];
+  const maxRarity = meta.rarity === "Legendary";   // hors du cycle des raretés
   const frac = live ? (live.maxHp > 0 ? live.hp / live.maxHp : 0) : 1;
   const dead = live && !live.alive;
   return (
@@ -56,8 +57,6 @@ function CombatCard({ meta, live, side, cref, oppMeta, scale = 1 }) {
       <div className="art">
         <img src={D.artFor(meta)} alt={meta.name} draggable="false"
           onError={(e) => { const fb = D.ART[meta.image_key]; if (fb && !e.currentTarget.dataset.fb) { e.currentTarget.dataset.fb = "1"; e.currentTarget.src = fb; } }} />
-        <div className="rar-tag">{rarityLabel(meta.rarity)}</div>
-        <div className="lvl-tag">LV {meta.level}</div>
       </div>
       <div className="body">
         <div className="flex between center" style={{ gap: 6 }}>
@@ -89,6 +88,21 @@ function CombatCard({ meta, live, side, cref, oppMeta, scale = 1 }) {
             <Bar frac={Math.min(1, (meta.xp || 0) / meta.xpMax)} kind="xp" />
           </div>
         )}
+        {/* Rareté + niveau : ils étaient posés sur la vignette et s'y
+            chevauchaient à 3 cartes par rangée. Ici la jauge dit ce qu'il reste
+            avant la rareté SUIVANTE — à 100 la rareté monte d'un cran et le
+            niveau repart à 1 (data.js, MAX_LEVEL_UPGRADE). La Légendaire est
+            hors du cycle (`b.rarity !== "Legendary"`) : aucune cible, on montre
+            son niveau nu et la jauge pleine plutôt qu'un x/100 qui mentirait.
+            Jauge du côté joueur seulement, comme l'XP ; l'adversaire garde la
+            ligne, qui reste une info tactique. */}
+        <div style={{ marginTop: 6 }}>
+          <div className="bar-label">
+            <span style={{ color: rc }}>{rarityLabel(meta.rarity)}</span>
+            <span style={{ color: "var(--text)" }}>{maxRarity ? "LV " + meta.level : meta.level + "/" + D.ECON.MAX_LEVEL_UPGRADE}</span>
+          </div>
+          {side === "p1" && <Bar frac={maxRarity ? 1 : meta.level / D.ECON.MAX_LEVEL_UPGRADE} kind="rar" />}
+        </div>
         <div className="stat-row">
           {[["ATK", meta.atk], ["DEF", meta.def], ["SPD", meta.spd], ["MAG", meta.mag]].map(([k, v]) => (
             <div className="stat" key={k}>
