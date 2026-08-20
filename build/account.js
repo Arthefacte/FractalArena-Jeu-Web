@@ -173,6 +173,7 @@ function UnisatAppBridge({
   const [link, setLink] = useState(null); // { url, expiresAt }
   const [restant, setRestant] = useState(0);
   const [busy, setBusy] = useState(false);
+  const [secours, setSecours] = useState(false); // le pont à code, replié par défaut
 
   // Même règle que DeviceLinkPanel (Options) : un code mort ne doit pas rester
   // affiché comme s'il était encore collable.
@@ -213,6 +214,11 @@ function UnisatAppBridge({
     // (deux codes créés, jamais réclamés : le saut ne partait pas).
     // L'ouverture est le VRAI lien <a> rendu ci-dessous, un toucher direct.
   };
+
+  // Lien STATIQUE vers le jeu dans l'app : aucun appel serveur, donc il est
+  // prêt dès l'affichage — c'est ce qui permet UN SEUL toucher. Le joueur qui a
+  // déjà lié sa session là-bas y retombe connecté et signe son retrait.
+  const direct = window.FA_DEVICE_LINK.openDappUrl(window.location.origin);
   return /*#__PURE__*/React.createElement("div", {
     className: "acc-warn",
     style: {
@@ -223,17 +229,36 @@ function UnisatAppBridge({
     style: {
       marginBottom: 8
     }
-  }, I18N.t(mode === "withdraw" ? "UAPP_WD_INTRO" : "UAPP_LINK_INTRO")), /*#__PURE__*/React.createElement("div", {
+  }, I18N.t(mode === "withdraw" ? "UAPP_WD_INTRO" : "UAPP_LINK_INTRO")), /*#__PURE__*/React.createElement("a", {
+    className: "btn btn-elec block",
+    style: {
+      textAlign: "center"
+    },
+    href: direct,
+    target: "_blank",
+    rel: "noopener"
+  }, "\u2197 ", I18N.t("UAPP_OPEN_BTN")), !secours ?
+  /*#__PURE__*/
+  /* Le pont à code n'est PAS le chemin courant : il ne sert qu'au premier
+     passage, ou si la session de l'app a été perdue. Au premier plan, il
+     faisait lire un mode d'emploi d'installation à quelqu'un dont le
+     portefeuille est déjà lié — et mettait en avant un code de secours
+     dont il n'a aucun usage tant que le bouton marche. */
+  React.createElement("button", {
+    className: "btn ghost sm block",
+    style: {
+      marginTop: 8
+    },
+    onClick: () => setSecours(true)
+  }, I18N.t("UAPP_FIRST_TIME")) : /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 10
+    }
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       lineHeight: 1.7
     }
-  }, /*#__PURE__*/React.createElement("div", null, I18N.t("UAPP_STEP1")), /*#__PURE__*/React.createElement("div", null, I18N.t("UAPP_STEP2")), /*#__PURE__*/React.createElement("div", null, I18N.t(mode === "withdraw" ? "UAPP_STEP3_WD" : "UAPP_STEP3_LINK"))), mode === "withdraw" && /*#__PURE__*/React.createElement("div", {
-    className: "muted",
-    style: {
-      fontSize: 11,
-      marginTop: 8
-    }
-  }, I18N.t("UAPP_WD_AGAIN")), !link ? /*#__PURE__*/React.createElement("button", {
+  }, /*#__PURE__*/React.createElement("div", null, I18N.t("UAPP_STEP1")), /*#__PURE__*/React.createElement("div", null, I18N.t("UAPP_STEP2")), /*#__PURE__*/React.createElement("div", null, I18N.t(mode === "withdraw" ? "UAPP_STEP3_WD" : "UAPP_STEP3_LINK"))), !link ? /*#__PURE__*/React.createElement("button", {
     className: "btn btn-elec block",
     style: {
       marginTop: 10
@@ -270,7 +295,7 @@ function UnisatAppBridge({
       fontSize: 10.5,
       margin: "6px 0"
     }
-  }, I18N.t("OP_DEVLINK_TTL", restant))));
+  }, I18N.t("OP_DEVLINK_TTL", restant)))));
 }
 
 /* Le geste de liaison, en deux temps : on demande son adresse à UniSat, on la

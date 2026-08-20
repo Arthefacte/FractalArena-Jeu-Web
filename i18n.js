@@ -155,8 +155,8 @@
     // Pont vers l'app UniSat (mobile sans extension) : un code de liaison
     // d'appareil transporte la session dans le navigateur intégré de l'app, où
     // le provider est injecté et où tout se signe. Vérifié en réel 2026-08-18.
-    UAPP_LINK_INTRO: { FR: "Sur téléphone, la liaison se signe dans l'app UniSat — et ton compte t'y suit :", EN: "On a phone, linking is signed in the UniSat app — and your account follows you there:", ZH: "在手机上，绑定需在 UniSat 应用中签名——你的账号会跟随你过去：" },
-    UAPP_WD_INTRO: { FR: "Sur téléphone, le retrait se signe dans l'app UniSat — et ton compte t'y suit :", EN: "On a phone, withdrawals are signed in the UniSat app — and your account follows you there:", ZH: "在手机上，提现需在 UniSat 应用中签名——你的账号会跟随你过去：" },
+    UAPP_LINK_INTRO: { FR: "Sur téléphone, la liaison se signe dans l'app UniSat — et ton compte t'y suit.", EN: "On a phone, linking is signed in the UniSat app — and your account follows you there:", ZH: "在手机上，绑定需在 UniSat 应用中签名——你的账号会跟随你过去：" },
+    UAPP_WD_INTRO: { FR: "Sur téléphone, le retrait se signe dans l'app UniSat — et ton compte t'y suit.", EN: "On a phone, withdrawals are signed in the UniSat app — and your account follows you there:", ZH: "在手机上，提现需在 UniSat 应用中签名——你的账号会跟随你过去：" },
     UAPP_STEP1: { FR: "1. Installe l'app UniSat et crée-toi un portefeuille (le tien, pas celui du jeu).", EN: "1. Install the UniSat app and create yourself a wallet (your own, not the game's).", ZH: "1. 安装 UniSat 应用并创建一个属于你自己的钱包（不是游戏的钱包）。" },
     UAPP_STEP2: { FR: "2. Touche le bouton, puis « Ouvrir » : le jeu s'ouvre dans l'app UniSat, déjà sur ton compte.", EN: "2. Tap the button, then “Open”: the game opens in the UniSat app, already on your account.", ZH: "2. 点按按钮，再点「打开」：游戏将在 UniSat 应用中打开，并已登录你的账号。" },
     UAPP_STEP3_LINK: { FR: "3. Là-bas, touche « Lier mon portefeuille UniSat ».", EN: "3. There, tap “Link my UniSat wallet”.", ZH: "3. 在那里点按「绑定我的 UniSat 钱包」。" },
@@ -172,7 +172,7 @@
     UAPP_FALLBACK: { FR: "Le bouton ne t'emmène pas ? Ouvre le jeu dans l'app UniSat, puis entre ce code dans « Récupérer mon compte » :", EN: "The button doesn't take you there? Open the game in the UniSat app, then enter this code under “Recover my account”:", ZH: "按钮没有跳转？在 UniSat 应用中打开游戏，然后在「找回我的账号」中输入此代码：" },
     // Une fois le pont franchi, la session PERSISTE dans le navigateur UniSat :
     // les fois suivantes, il suffit d'y rouvrir le jeu.
-    UAPP_WD_AGAIN: { FR: "Déjà fait une fois ? Le jeu est resté connecté dans l'app UniSat : rouvre-le là-bas, c'est tout.", EN: "Done it once already? The game stayed signed in inside the UniSat app: just reopen it there.", ZH: "已经做过一次？游戏在 UniSat 应用中保持登录：直接在那里重新打开即可。" },
+    UAPP_FIRST_TIME: { FR: "Première fois, ou tu n'es pas connecté là-bas ?", EN: "First time, or not signed in there?", ZH: "第一次使用，或在那边尚未登录？" },
     // PWA — installation sur l'écran d'accueil, et perte de réseau. Le jeu ne
     // combat pas sans serveur : on le dit clairement plutôt que de laisser un
     // bouton tourner dans le vide.
