@@ -29,6 +29,7 @@ const EXP_GLYPH = {
   GENESIS: "✦",
   BLOCK: "▣"
 };
+const HEX_CLIP = "polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%)";
 const expErr = XU.errText;
 function modeLabel(mode) {
   return mode === "risquee" ? I18N.t("EXP_MODE_RISKY") : I18N.t("EXP_MODE_PRUDENT");
@@ -79,6 +80,7 @@ function Expeditions() {
   const [fx, setFx] = useState(null); // { worldId, rate, endsAt, ids } pendant l'animation
   const [justLaunched, setJustLaunched] = useState(null);
   const [claiming, setClaiming] = useState(false);
+  const [rfx, setRfx] = useState(null); // { worldId, ids, success } : retour du portail
   const [loot, setLoot] = useState(null); // { success, rewards, fa_week, worldId, beastIds }
   const [confirmRecall, setConfirmRecall] = useState(false);
   // Fenêtres d'épuisement locales (échec Risquée : +30 min après ends_at),
@@ -92,6 +94,7 @@ function Expeditions() {
   const fxWorldRef = useRef(null); // monde de l'anim en cours (lu par endFx, jamais périmé)
   const flashTimer = useRef(null); // pulse justLaunched 800 ms
   const claimTimer = useRef(null); // burst claiming 750 ms
+  const rfxTimer = useRef(null); // overlay de retour 1,85 s
 
   // Tick 1 s seulement là où un compte à rebours est VISIBLE ET VIVANT :
   // dest/track avec au moins une expédition qui court encore.
@@ -112,6 +115,7 @@ function Expeditions() {
     if (fxTimer.current) clearTimeout(fxTimer.current);
     if (flashTimer.current) clearTimeout(flashTimer.current);
     if (claimTimer.current) clearTimeout(claimTimer.current);
+    if (rfxTimer.current) clearTimeout(rfxTimer.current);
   }, []);
   const now = Date.now() + (g.expNowOffset || 0);
   const exps = Array.isArray(g.expeditions) ? g.expeditions : [];
@@ -198,7 +202,7 @@ function Expeditions() {
       ids: sel.slice(),
       endsAt: new Date(r.expedition.ends_at)
     });
-    fxTimer.current = setTimeout(endFx, 2300);
+    fxTimer.current = setTimeout(endFx, 2500);
   }
 
   // ---- Claim : résolution serveur puis vue butin ----
@@ -214,7 +218,7 @@ function Expeditions() {
       if (r.reason !== "auth") toast(expErr(r.reason), "bad");
       return;
     }
-    claimTimer.current = setTimeout(() => setClaiming(false), 750); // laisse le burst se jouer
+    setClaiming(false); // le portail de retour prend le relais (même batch React : pas de trou)
     if (r.success === false && e.mode === "risquee") {
       // Échec Risquée : le serveur tient les bêtes indisponibles jusqu'à
       // ends_at + 30 min — on AJOUTE cette fenêtre (les fenêtres échues sortent).
@@ -233,6 +237,21 @@ function Expeditions() {
     });
     setSelWorld(e.destination);
     setView("loot");
+    // Retour : le portail recrache l'équipe PAR-DESSUS la vue butin, qui se
+    // découvre quand l'overlay fond. Miroir exact de l'aller ; en mouvement
+    // réduit on saute droit au butin (comme launch()).
+    if (!reducedMotion()) {
+      if (rfxTimer.current) clearTimeout(rfxTimer.current);
+      setRfx({
+        worldId: e.destination,
+        ids: e.beast_ids || [],
+        success: r.success !== false
+      });
+      rfxTimer.current = setTimeout(() => {
+        rfxTimer.current = null;
+        setRfx(null);
+      }, 1850);
+    }
   }
   async function doRecall(e) {
     if (busyCall) return;
@@ -335,14 +354,14 @@ function Expeditions() {
         marginBottom: 5
       }
     }, I18N.t("EXP_FA_WEEK")), /*#__PURE__*/React.createElement(Bar, {
-      frac: Math.min(1, (fa.granted || 0) / (fa.cap || 500)),
+      frac: Math.min(1, (fa.granted || 0) / (fa.cap || 5000)),
       kind: "xp"
     })), /*#__PURE__*/React.createElement("b", {
       className: "exq-mono",
       style: {
         color: "var(--fire)"
       }
-    }, fa.granted || 0, "/", fa.cap || 500)), /*#__PURE__*/React.createElement("div", {
+    }, fa.granted || 0, "/", fa.cap || 5000)), /*#__PURE__*/React.createElement("div", {
       className: "exq-worlds"
     }, XU.WORLDS.map(w => {
       const e = byDest[w.id];
@@ -811,7 +830,7 @@ function Expeditions() {
     const crew = (loot.beastIds || []).map(beastById).filter(Boolean);
     const fa = loot.fa_week || g.expFaWeek || {
       granted: 0,
-      cap: 500
+      cap: 5000
     };
     return /*#__PURE__*/React.createElement("div", {
       className: "exq-col"
@@ -977,14 +996,14 @@ function Expeditions() {
         fontSize: 10,
         color: "var(--text-dim)"
       }
-    }, I18N.t("EXP_FA_CAP", fa.granted || 0, fa.cap || 500))), /*#__PURE__*/React.createElement("div", {
+    }, I18N.t("EXP_FA_CAP", fa.granted || 0, fa.cap || 5000))), /*#__PURE__*/React.createElement("div", {
       style: {
         flex: "none",
         width: "38%",
         maxWidth: 150
       }
     }, /*#__PURE__*/React.createElement(Bar, {
-      frac: Math.min(1, (fa.granted || 0) / (fa.cap || 500)),
+      frac: Math.min(1, (fa.granted || 0) / (fa.cap || 5000)),
       kind: "xp"
     }))), /*#__PURE__*/React.createElement("button", {
       className: "exq-launch",
@@ -1010,7 +1029,120 @@ function Expeditions() {
     }, I18N.t("EXP_BACK"));
   }
 
-  // ============ OVERLAY DE LANCEMENT (portail hexagonal) ============
+  // ============ PORTAIL : briques partagées par l'ALLER et le RETOUR ============
+  function hexRing(size, col, delay) {
+    return /*#__PURE__*/React.createElement("span", {
+      key: size,
+      className: "exq-ring",
+      style: {
+        width: size,
+        height: size,
+        margin: `-${size / 2}px 0 0 -${size / 2}px`,
+        animationDelay: delay
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        position: "absolute",
+        inset: 0,
+        background: col,
+        clipPath: HEX_CLIP
+      }
+    }), /*#__PURE__*/React.createElement("span", {
+      style: {
+        position: "absolute",
+        inset: 3,
+        background: "#05070f",
+        clipPath: HEX_CLIP
+      }
+    }));
+  }
+  function hexShock(col) {
+    return /*#__PURE__*/React.createElement("span", {
+      className: "exq-shock"
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        position: "absolute",
+        inset: 0,
+        background: col,
+        clipPath: HEX_CLIP
+      }
+    }), /*#__PURE__*/React.createElement("span", {
+      style: {
+        position: "absolute",
+        inset: 5,
+        background: "#05070f",
+        clipPath: HEX_CLIP
+      }
+    }));
+  }
+  // La carte animée porte le VRAI visuel du joueur (artFor + cadre par rang),
+  // comme CreatureCard/CombatCard. Deux couches : le slot fait l'entrée (décalée
+  // carte par carte), la carte fait le vol (simultané). L'aller aspire, le
+  // retour recrache — seules les animations CSS changent, pas ce markup.
+  function fxCard(b, i) {
+    const tm = typeMeta(b && b.type);
+    return /*#__PURE__*/React.createElement("div", {
+      key: i,
+      className: "exq-fx-slot",
+      style: {
+        animationDelay: 0.2 + i * 0.26 + "s"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "exq-fx-card",
+      style: {
+        borderColor: tm.color,
+        boxShadow: `0 0 16px rgba(${tm.rgb},.4)`,
+        "--fx-x": i - 1
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "exq-streak",
+      style: {
+        background: `linear-gradient(0deg, ${tm.color}, transparent)`,
+        animationDelay: "1.3s"
+      }
+    }), b ? /*#__PURE__*/React.createElement("span", {
+      className: "exq-fx-art",
+      style: {
+        borderColor: tm.color
+      }
+    }, /*#__PURE__*/React.createElement("img", {
+      src: D.artFor(b),
+      alt: "",
+      draggable: "false",
+      onError: e => {
+        const fb = D.ART[b.image_key];
+        if (fb && !e.currentTarget.dataset.fb) {
+          e.currentTarget.dataset.fb = "1";
+          e.currentTarget.src = fb;
+        }
+      }
+    })) : /*#__PURE__*/React.createElement("span", {
+      className: "exq-hex",
+      style: {
+        color: tm.color,
+        borderColor: tm.color,
+        background: `linear-gradient(150deg, rgba(${tm.rgb},.22), rgba(6,9,18,.7))`
+      }
+    }, EXP_GLYPH[b && b.type] || "✦"), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 9,
+        fontWeight: 700,
+        maxWidth: "100%",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        whiteSpace: "nowrap",
+        padding: "0 4px"
+      }
+    }, b ? D.displayName(b) : ""), /*#__PURE__*/React.createElement("span", {
+      className: "exq-mono",
+      style: {
+        fontSize: 9,
+        color: tm.color
+      }
+    }, "NIV ", b ? b.level : "")));
+  }
+
+  // ============ OVERLAY DE LANCEMENT (aspiration dans le portail) ============
   function renderFx() {
     if (!fx) return null;
     const w = XU.worldOf(fx.worldId) || XU.WORLDS[0];
@@ -1037,109 +1169,9 @@ function Expeditions() {
       style: {
         background: `radial-gradient(circle, rgba(${w.rgb},.55), transparent 68%)`
       }
-    }), [[232, w.color, "0s"], [172, "#00F0FF", ".08s"], [112, "#F7931A", ".16s"]].map(([size, col, delay]) => /*#__PURE__*/React.createElement("span", {
-      key: size,
-      className: "exq-ring",
-      style: {
-        width: size,
-        height: size,
-        margin: `-${size / 2}px 0 0 -${size / 2}px`,
-        animationDelay: delay
-      }
-    }, /*#__PURE__*/React.createElement("span", {
-      style: {
-        position: "absolute",
-        inset: 0,
-        background: col,
-        clipPath: "polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%)"
-      }
-    }), /*#__PURE__*/React.createElement("span", {
-      style: {
-        position: "absolute",
-        inset: 3,
-        background: "#05070f",
-        clipPath: "polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%)"
-      }
-    }))), /*#__PURE__*/React.createElement("div", {
+    }), [[232, w.color, "0s"], [172, "#00F0FF", ".08s"], [112, "#F7931A", ".16s"]].map(([size, col, delay]) => hexRing(size, col, delay)), /*#__PURE__*/React.createElement("div", {
       className: "exq-fx-cards"
-    }, cards.map((b, i) => {
-      const tm = typeMeta(b && b.type);
-      return /*#__PURE__*/React.createElement("div", {
-        key: i,
-        className: "exq-fx-card",
-        style: {
-          borderColor: tm.color,
-          boxShadow: `0 0 16px rgba(${tm.rgb},.4)`,
-          "--fx-x": i - 1,
-          animationDelay: 0.35 + i * 0.12 + "s"
-        }
-      }, /*#__PURE__*/React.createElement("span", {
-        className: "exq-streak",
-        style: {
-          background: `linear-gradient(0deg, ${tm.color}, transparent)`,
-          animationDelay: 0.83 + i * 0.12 + "s"
-        }
-      }), b ?
-      /*#__PURE__*/
-      // Le VRAI visuel de la carte du joueur (cadre par rang inclus),
-      // même repli d'image que CreatureCard/CombatCard.
-      React.createElement("span", {
-        className: "exq-fx-art",
-        style: {
-          borderColor: tm.color
-        }
-      }, /*#__PURE__*/React.createElement("img", {
-        src: D.artFor(b),
-        alt: "",
-        draggable: "false",
-        onError: e => {
-          const fb = D.ART[b.image_key];
-          if (fb && !e.currentTarget.dataset.fb) {
-            e.currentTarget.dataset.fb = "1";
-            e.currentTarget.src = fb;
-          }
-        }
-      })) : /*#__PURE__*/React.createElement("span", {
-        className: "exq-hex",
-        style: {
-          color: tm.color,
-          borderColor: tm.color,
-          background: `linear-gradient(150deg, rgba(${tm.rgb},.22), rgba(6,9,18,.7))`
-        }
-      }, EXP_GLYPH[b && b.type] || "✦"), /*#__PURE__*/React.createElement("span", {
-        style: {
-          fontSize: 9,
-          fontWeight: 700,
-          maxWidth: "100%",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap",
-          padding: "0 4px"
-        }
-      }, b ? D.displayName(b) : ""), /*#__PURE__*/React.createElement("span", {
-        className: "exq-mono",
-        style: {
-          fontSize: 9,
-          color: tm.color
-        }
-      }, "NIV ", b ? b.level : ""));
-    })), /*#__PURE__*/React.createElement("span", {
-      className: "exq-shock"
-    }, /*#__PURE__*/React.createElement("span", {
-      style: {
-        position: "absolute",
-        inset: 0,
-        background: w.color,
-        clipPath: "polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%)"
-      }
-    }), /*#__PURE__*/React.createElement("span", {
-      style: {
-        position: "absolute",
-        inset: 5,
-        background: "#05070f",
-        clipPath: "polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%)"
-      }
-    })), /*#__PURE__*/React.createElement("span", {
+    }, cards.map(fxCard)), hexShock(w.color), /*#__PURE__*/React.createElement("span", {
       className: "exq-flash"
     }), /*#__PURE__*/React.createElement("div", {
       className: "exq-fx-center"
@@ -1154,9 +1186,37 @@ function Expeditions() {
       className: "exq-skip exq-mono"
     }, "TAP \u203A")));
   }
+
+  // ============ OVERLAY DE RETOUR (le portail recrache l'équipe) ============
+  // Non cliquable : il dure 1,85 s et découvre la vue butin déjà montée dessous.
+  function renderReturnFx() {
+    if (!rfx) return null;
+    const w = XU.worldOf(rfx.worldId) || XU.WORLDS[0];
+    const cards = rfx.ids.map(beastById);
+    const failed = rfx.success === false;
+    const tint = failed ? "var(--alert)" : "var(--gold)";
+    return /*#__PURE__*/React.createElement("div", {
+      className: "exq-rfx"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "exq-fx-glow",
+      style: {
+        background: `radial-gradient(circle, rgba(${w.rgb},.55), transparent 68%)`
+      }
+    }), [[232, w.color, "0s"], [172, "#00F0FF", ".08s"], [112, tint, ".16s"]].map(([size, col, delay]) => hexRing(size, col, delay)), hexShock(w.color), /*#__PURE__*/React.createElement("span", {
+      className: "exq-flash"
+    }), /*#__PURE__*/React.createElement("div", {
+      className: "exq-fx-cards"
+    }, cards.map(fxCard)), /*#__PURE__*/React.createElement("span", {
+      className: "exq-rfx-tag",
+      style: {
+        color: failed ? "var(--alert)" : "#fff",
+        textShadow: `0 0 22px ${tint}, 0 0 60px rgba(0,0,0,.9)`
+      }
+    }, (failed ? I18N.t("EXP_HARD_RETURN") : I18N.t("EXP_VICTORY")).toUpperCase()));
+  }
   return /*#__PURE__*/React.createElement("div", {
     className: "container"
-  }, view === "dest" && renderDest(), view === "config" && renderConfig(), view === "track" && renderTrack(), view === "loot" && renderLoot(), renderFx(), claiming && /*#__PURE__*/React.createElement("div", {
+  }, view === "dest" && renderDest(), view === "config" && renderConfig(), view === "track" && renderTrack(), view === "loot" && renderLoot(), renderFx(), renderReturnFx(), claiming && /*#__PURE__*/React.createElement("div", {
     className: "exq-claimfx"
   }, /*#__PURE__*/React.createElement("div", {
     style: {
