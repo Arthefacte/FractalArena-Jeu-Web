@@ -32,20 +32,31 @@ const SRC = path.join(ROOT, "assets", "boot-emblem.png");
 const OUT = path.join(ROOT, "assets", "pwa");
 fs.mkdirSync(OUT, { recursive: true });
 
-const png = { compressionLevel: 9, effort: 10, palette: false };
+// palette:true = quantification 256 couleurs. `quality: 100` garde le meilleur
+// rendu que la palette permet : sur cet embleme (metal texture, peu de degrades
+// lisses continus) la perte est invisible, et le 512 tombe de 338 Ko a 117 Ko —
+// sous le plafond de 150 Ko que test/asset-budget.test.js impose aux PNG.
+// Sans palette, l embleme detaille de 2026-08-21 depassait le budget.
+const png = { compressionLevel: 9, effort: 10, palette: true, quality: 100 };
 
 async function any(size, file) {
   await sharp(SRC).resize(size, size, { kernel: "lanczos3" }).png(png).toFile(path.join(OUT, file));
   return file;
 }
 
-/* Le fond de la source est uniforme sur tout son pourtour (mesuré : rgb 25,22,21
-   aux 8 points de contrôle), donc l'emblème réduit peut être posé sur ce même
-   aplat : la marge prolonge le fond au lieu de dessiner un carré. La couture est
-   vérifiée au pixel plus bas — ne pas remplacer cet aplat par une couleur « au
-   jugé » comme #05070f, qui elle se verrait. */
-const corner = await sharp(SRC).extract({ left: 0, top: 0, width: 8, height: 8 }).stats();
-const BG = { r: Math.round(corner.channels[0].mean), g: Math.round(corner.channels[1].mean), b: Math.round(corner.channels[2].mean), alpha: 1 };
+/* Le fond de la source est uniforme sur tout son pourtour, donc l'emblème réduit
+   se pose sur ce même aplat : la marge prolonge le fond au lieu de dessiner un
+   carré. La couture est vérifiée au pixel plus bas, l'écart doit rester nul. */
+// Le pixel du coin, lu en BRUT. `stats()` opère sur l'image d'ENTRÉE et ignore
+// l'`extract` du pipeline : l'ancien code croyait échantillonner le coin, il
+// prenait en fait la moyenne de tout l'emblème. Ça passait inaperçu tant que le
+// fond était brun comme la moyenne ; le jour où l'emblème est passé sur fond
+// navy (#05070f), la marge est ressortie brune autour d'un carré navy.
+const { data: rawCorner, info: rawInfo } = await sharp(SRC).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+const BG = { r: rawCorner[0], g: rawCorner[1], b: rawCorner[2], alpha: 1 };
+if (rawInfo.channels === 4 && rawCorner[3] < 250) {
+  console.warn(`⚠ coin de l'emblème translucide (alpha ${rawCorner[3]}) — la marge des maskable risque de jurer.`);
+}
 
 async function maskable(size, file, ratio = 0.72) {
   const inner = Math.round(size * ratio);
