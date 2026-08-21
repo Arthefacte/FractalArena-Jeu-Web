@@ -2406,13 +2406,13 @@ function Header({ liquidPop, lockedPop }) {
       <div className="hdr-spacer" />
       <div className="flex gap8 center wrap" style={{ justifyContent: "flex-end" }}>
         <span key={"lq" + liquidPop.n} className={cx("chip", "liquid", liquidPop.n > 0 && "pop")}>
-          <img src="assets/TOKEN.png" alt="" width="16" height="16" style={{ borderRadius: 3, border: "1px solid var(--line)" }} />
+          <img src="assets/TOKEN.png" alt="" width="16" height="16" style={{ display: "block" }} />
           {fmt(g.liquid)}
           <ChipDelta delta={liquidPop.delta} />
         </span>
         {g.locked > 0 && (
           <span key={"lk" + lockedPop.n} className={cx("chip", "locked", lockedPop.n > 0 && "pop")}>
-            <img src="assets/TOKEN.png" alt="" width="16" height="16" style={{ borderRadius: 3, border: "1px solid var(--line)" }} />
+            <img src="assets/TOKEN.png" alt="" width="16" height="16" style={{ display: "block" }} />
             <b className="chip-amount">{fmt(g.locked)}</b><span className="chip-lbl"> {I18N.t("LOCKED_CHIP")}</span>
             <ChipDelta delta={lockedPop.delta} />
           </span>

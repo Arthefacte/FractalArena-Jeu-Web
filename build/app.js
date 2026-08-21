@@ -4249,8 +4249,7 @@ function Header({
     width: "16",
     height: "16",
     style: {
-      borderRadius: 3,
-      border: "1px solid var(--line)"
+      display: "block"
     }
   }), fmt(g.liquid), /*#__PURE__*/React.createElement(ChipDelta, {
     delta: liquidPop.delta
@@ -4263,8 +4262,7 @@ function Header({
     width: "16",
     height: "16",
     style: {
-      borderRadius: 3,
-      border: "1px solid var(--line)"
+      display: "block"
     }
   }), /*#__PURE__*/React.createElement("b", {
     className: "chip-amount"
