@@ -176,7 +176,7 @@ function Market() {
     if (M && M.preloadWhenIdle) M.preloadWhenIdle();
   }, []);
   return (
-    <div style={{ maxWidth: 640, margin: "0 auto", padding: "8px 4px" }}>
+    <div className="container" style={{ maxWidth: 640 }}>
       <SectionHead title={I18N.t("MKT_TITLE")} sub={I18N.t("MKT_TAG")} />
       <div className="subtabs">
         <button className={cx("subtab", tab === "browse" && "on")} onClick={() => setTab("browse")}>{I18N.t("MKT_TAB_BROWSE")}</button>

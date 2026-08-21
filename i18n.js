@@ -831,7 +831,7 @@
     },
     EXP_RECALL_YES: { FR: "Oui, rappeler", EN: "Yes, recall", ZH: "确认召回" },
     EXP_CLAIM: { FR: "Réclamer le butin", EN: "Claim loot", ZH: "领取战利品" },
-    EXP_VICTORY: { FR: "La meute revient victorieuse", EN: "The pack returns victorious", ZH: "战群凯旋而归" },
+    EXP_VICTORY: { FR: "Les entités reviennent victorieuses", EN: "Your entities return victorious", ZH: "实体凯旋而归" },
     EXP_HARD_RETURN: { FR: "Retour difficile", EN: "A hard return", ZH: "艰难归来" },
     EXP_FA_LOCKED_GAIN: { FR: "+%d FA verrouillés", EN: "+%d locked FA", ZH: "+%d锁定FA" },
     EXP_FA_CAP: { FR: "plafond hebdo %d/%d", EN: "weekly cap %d/%d", ZH: "周上限%d/%d" },
@@ -846,9 +846,9 @@
     },
     EXP_BACK: { FR: "← Expéditions", EN: "← Expeditions", ZH: "← 远征" },
     EXP_LOGIN: {
-      FR: "Connecte-toi pour envoyer ta meute en expédition.",
-      EN: "Log in to send your pack on expeditions.",
-      ZH: "登录后即可派遣战群远征。",
+      FR: "Connecte-toi pour envoyer tes entités en expédition.",
+      EN: "Log in to send your entities on expeditions.",
+      ZH: "登录后即可派遣实体远征。",
     },
     EXP_FORGE_TITLE: { FR: "Forger avec des fragments", EN: "Forge with fragments", ZH: "用碎片锻造" },
     EXP_FORGE_SUB: {

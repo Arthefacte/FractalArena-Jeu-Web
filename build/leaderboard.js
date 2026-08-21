@@ -69,10 +69,9 @@ function Leaderboard() {
   };
   const myShort = g.wallet ? g.wallet.slice(0, 6) + "…" + g.wallet.slice(-4) : "";
   return /*#__PURE__*/React.createElement("div", {
+    className: "container",
     style: {
-      maxWidth: 640,
-      margin: "0 auto",
-      padding: "8px 4px"
+      maxWidth: 640
     }
   }, /*#__PURE__*/React.createElement(SectionHead, {
     eyebrow: "\uD83C\uDFC6 LEADERBOARD",

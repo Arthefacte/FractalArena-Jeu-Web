@@ -82,7 +82,18 @@ function QuizToast() {
         busy: estOccupe(),
         wallet: g.wallet
       };
-      setPret(QUIZ.shouldAsk(etat, Date.now()));
+      // La pastille est COLLANTE : une fois allumée elle ne s'éteint que quand le
+      // joueur ouvre le quiz (ouvrirRef) ou se déconnecte. Sans ça elle clignotait
+      // (constat joueur, 21/08) : shouldAsk retombe à false dès qu'un .overlay est
+      // dans le DOM — une modale, un combat d'Arène — et se rallume à sa
+      // fermeture, une fois par seconde. Le critère `busy` gardait la BULLE de
+      // s'ouvrir par-dessus le jeu ; il a survécu au passage en pastille du 15/08,
+      // où il n'a plus de raison d'être : une pastille discrète n'interrompt
+      // personne. On le laisse décider du PREMIER allumage, pas de l'extinction.
+      setPret(p => {
+        if (!etat.wallet) return false;
+        return p || QUIZ.shouldAsk(etat, Date.now());
+      });
     }, 1000);
     return () => clearInterval(id);
   }, [g.wallet, question]);

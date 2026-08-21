@@ -151,10 +151,9 @@ function Quests() {
   const showDisc = !!(disc && disc.eligible && disc.steps.length > 0 && (!disc.steps.every(s => s.claimed) || etapeCrypto));
   const d = st.data;
   return /*#__PURE__*/React.createElement("div", {
+    className: "container",
     style: {
-      maxWidth: 640,
-      margin: "0 auto",
-      padding: "8px 4px"
+      maxWidth: 640
     }
   }, showDisc && /*#__PURE__*/React.createElement("div", {
     style: {
