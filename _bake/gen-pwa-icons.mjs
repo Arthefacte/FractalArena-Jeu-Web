@@ -28,6 +28,11 @@ const require = createRequire(import.meta.url);
 const sharp = require("../.design-sync/_tools/node_modules/sharp");
 
 const ROOT = path.join(import.meta.dirname, "..");
+// DEUX sources, et la distinction compte :
+//   NOBG = l embleme DETOURE (fond transparent). C est la vraie forme du logo.
+//   SRC  = le meme, aplati sur le #05070f du jeu. Sert la ou un fond est
+//          OBLIGATOIRE (voir maskable plus bas) et l ecran de demarrage.
+const NOBG = path.join(ROOT, "_bake", "emblem-nobg.png");
 const SRC = path.join(ROOT, "assets", "boot-emblem.png");
 const OUT = path.join(ROOT, "assets", "pwa");
 fs.mkdirSync(OUT, { recursive: true });
@@ -39,14 +44,19 @@ fs.mkdirSync(OUT, { recursive: true });
 // Sans palette, l embleme detaille de 2026-08-21 depassait le budget.
 const png = { compressionLevel: 9, effort: 10, palette: true, quality: 100 };
 
-async function any(size, file) {
-  await sharp(SRC).resize(size, size, { kernel: "lanczos3" }).png(png).toFile(path.join(OUT, file));
+/* « any » : l embleme DETOURE, sans carre derriere lui. Android l affiche tel
+   quel, iOS lui applique son propre arrondi. Un aplat ici redessinerait le carre
+   noir que le nouveau logo est justement cense ne plus avoir. */
+async function any(size, file, source = NOBG) {
+  await sharp(source).resize(size, size, { kernel: "lanczos3" }).png(png).toFile(path.join(OUT, file));
   return file;
 }
 
-/* Le fond de la source est uniforme sur tout son pourtour, donc l'emblème réduit
-   se pose sur ce même aplat : la marge prolonge le fond au lieu de dessiner un
-   carré. La couture est vérifiée au pixel plus bas, l'écart doit rester nul. */
+/* « maskable » : Android insere l icone dans SON gabarit (cercle, goutte,
+   squircle) et REMPLIT toute la surface. Un fond y est donc obligatoire —
+   detouree, l icone flotterait sur du blanc chez la plupart des lanceurs. On
+   prolonge le fond de l embleme aplati pour que la marge ne dessine pas un
+   carre ; la couture est verifiee au pixel plus bas, ecart nul attendu. */
 // Le pixel du coin, lu en BRUT. `stats()` opère sur l'image d'ENTRÉE et ignore
 // l'`extract` du pipeline : l'ancien code croyait échantillonner le coin, il
 // prenait en fait la moyenne de tout l'emblème. Ça passait inaperçu tant que le
@@ -75,7 +85,10 @@ const made = [
   await maskable(192, "icon-maskable-192.png"),
   // iOS ne lit pas le manifeste pour l'icône d'accueil et n'applique pas de
   // fond : il lui faut un carré opaque de 180 px, qu'il arrondira lui-même.
-  await any(180, "apple-touch-icon-180.png"),
+  // iOS ne lit pas le manifeste pour l icone d accueil et NE GERE PAS la
+  // transparence : il compose ce qu on lui donne sur du NOIR pur. Autant lui
+  // fournir nous-memes le fond du jeu, plus proche de l embleme qu un noir sec.
+  await any(180, "apple-touch-icon-180.png", SRC),
 ];
 
 for (const f of made) {
