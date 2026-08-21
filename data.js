@@ -18,6 +18,12 @@ window.FA_API_URL = (typeof location !== "undefined" &&
 // correctif du crash mobile n'atteignait aucun joueur. Une URL neuve à chaque
 // livraison force le CDN à revenir chercher le fichier à l'origine.
 // À BUMPER AVEC LES BALISES ?v= D'index.html — un test le vérifie.
+// Le bump touche CINQ endroits : index.html, cette constante, le CACHE de
+// sw-policy.js, le test épinglé (account-wiring), et les icônes du
+// manifest.webmanifest. Ce dernier a été oublié jusqu'au 2026-08-21 : sans
+// version sur ses icônes, le navigateur installe la PWA avec celle qu'il a
+// déjà en cache HTTP (max-age=14400, 4 h) — l'ancien emblème est apparu à
+// l'installation alors que la prod servait le nouveau depuis une heure.
 // Ne sert plus que de REPLI : un asset absent du manifeste doit rester cache-busté
 // plutôt que servi indéfiniment par le CDN.
 window.FA_ASSET_V = "190";
