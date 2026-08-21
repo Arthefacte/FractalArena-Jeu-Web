@@ -1268,6 +1268,26 @@ input { font-family: var(--font-mono); }
 .exq-beasttag { font-size: 9px; letter-spacing: .3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .exq-warn { display: flex; align-items: center; gap: 7px; padding: 8px 11px; font-size: 11px; line-height: 1.4;
   color: var(--text-dim); background: rgba(247,147,26,.09); border: 1px solid rgba(247,147,26,.35); }
+/* Durée libre 1 -> 12 h : un curseur remplace les trois paliers. */
+.exq-durbox { border: 1px solid var(--line); border-radius: 10px; background: var(--bg-panel); padding: 11px 13px 9px; display: grid; gap: 7px; }
+.exq-durhead { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.exq-durval { font-size: 20px; color: var(--fire); letter-spacing: .5px; }
+.exq-slider { width: 100%; margin: 0; accent-color: var(--fire); height: 22px; cursor: pointer; }
+.exq-durticks { display: flex; justify-content: space-between; font-size: 9px; color: var(--text-faint); }
+.exq-durnote { font-size: 10px; line-height: 1.35; color: var(--text-faint); }
+/* Choix du ticket : 3 colonnes qui tiennent sur un téléphone (minmax 0 sinon la
+   colonne s elargit a la min-content et deborde). */
+.exq-tickets { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; }
+.exq-ticket { min-width: 0; }
+.exq-goldnote { font-size: 10px; line-height: 1.35; color: var(--gold); margin-top: 6px; }
+.exq-dustnote { font-size: 10px; line-height: 1.35; color: var(--text-faint); margin-top: 7px; }
+/* Apercu du butin : les deux issues cote a cote, c est ce qui rend le choix de
+   mode lisible sans calcul. */
+.exq-lootprev { display: grid; grid-template-columns: minmax(0,1fr) 1px minmax(0,1fr); gap: 10px; align-items: stretch; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line-soft); }
+.exq-lootcol { display: grid; gap: 3px; align-content: start; min-width: 0; }
+.exq-lootcol .exq-mono { font-size: 11px; }
+.exq-lootcol b { font-size: 15px; }
+.exq-lootsep { background: var(--line-soft); }
 .exq-durs { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; }
 .exq-modes { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; }
 .exq-toggle { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 10px 8px;

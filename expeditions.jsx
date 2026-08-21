@@ -1,5 +1,5 @@
 // ============================================================
-// FRACTAL ARENA — Écran Expéditions (idle 1 h / 2 h / 8 h)
+// FRACTAL ARENA — Écran Expéditions (idle, durée libre de 1 à 12 h)
 // Port du proto Claude Design « Expeditions.dc.html » (4 vues +
 // animation de lancement). Le serveur fait foi : l'état vient de
 // GET /expeditions/state (g.expeditions), le taux affiché en
@@ -17,9 +17,9 @@ const HEX_CLIP = "polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%)";
 const expErr = XU.errText;
 function modeLabel(mode) { return mode === "risquee" ? I18N.t("EXP_MODE_RISKY") : I18N.t("EXP_MODE_PRUDENT"); }
 function rateColor(pct) { return pct >= 75 ? "var(--success)" : pct >= 55 ? "var(--gold)" : "var(--alert)"; }
+// La durée est libre (1 -> 12 h) : plus de table de paliers à consulter.
 function durLabel(durationS) {
-  const d = XU.DURATIONS.find((x) => x.s === durationS) || XU.DURATIONS[1];
-  return I18N.t(d.i18nKey);
+  return Math.round(durationS / 3600) + " " + I18N.t("EXP_HOURS");
 }
 function typeMeta(type) {
   const w = XU.WORLDS.find((x) => x.type === type);
@@ -38,8 +38,9 @@ function Expeditions() {
   const [view, setView] = useState("dest");        // dest | config | track | loot
   const [selWorld, setSelWorld] = useState(null);
   const [sel, setSel] = useState([]);
-  const [dur, setDur] = useState(7200);
+  const [durH, setDurH] = useState(8);            // heures, curseur 1 -> 12
   const [mode, setMode] = useState("prudente");
+  const [ticket, setTicket] = useState(null);     // null | "argent" | "or"
   const [busyCall, setBusyCall] = useState(false);
   const [fx, setFx] = useState(null);              // { worldId, rate, endsAt, ids } pendant l'animation
   const [justLaunched, setJustLaunched] = useState(null);
@@ -121,8 +122,8 @@ function Expeditions() {
   async function launch() {
     if (busyCall || sel.length !== 3) return;
     setBusyCall(true);
-    let r = await actions.expeditionsStart({ destination: selWorld, beast_ids: sel, mode, duration_s: dur });
-    if (!r.ok && r.reason === "retry") r = await actions.expeditionsStart({ destination: selWorld, beast_ids: sel, mode, duration_s: dur });
+    let r = await actions.expeditionsStart({ destination: selWorld, beast_ids: sel, mode, duration_s: durH * 3600, ticket });
+    if (!r.ok && r.reason === "retry") r = await actions.expeditionsStart({ destination: selWorld, beast_ids: sel, mode, duration_s: durH * 3600, ticket });
     setBusyCall(false);
     // reason "auth" : app.jsx a déjà affiché AUTH_EXPIRED — pas de second toast.
     if (!r.ok) { if (r.reason !== "auth") toast(expErr(r.reason), "bad"); return; }
@@ -224,7 +225,7 @@ function Expeditions() {
             const s = XU.statusOf(e, now);
             const border = s === "ready" ? "rgba(247,147,26,.55)" : s === "running" ? `rgba(${w.rgb},.35)` : "var(--line)";
             const onClick = s === "free"
-              ? () => { setSelWorld(w.id); setSel([]); setDur(7200); setMode("prudente"); setView("config"); }
+              ? () => { setSelWorld(w.id); setSel([]); setDurH(8); setMode("prudente"); setTicket(null); setView("config"); }
               : s === "ready" ? () => claim(e)
               : () => { setSelWorld(w.id); setConfirmRecall(false); setView("track"); };
             return (
@@ -263,12 +264,19 @@ function Expeditions() {
     const ready3 = sel.length === 3;
     const pow = XU.collectionPower(team);
     const affBonus = XU.affinityBonus(team, selWorld);
-    // Le taux affiché est celui du MODE sélectionné (plafonds 90/70) — il
-    // change quand on bascule Prudente/Risquée, comme le vrai taux du /start.
-    const pct = XU.previewSuccessRate(team, selWorld, mode);
+    // Le taux NE DÉPEND PLUS DU MODE : Prudente et Risquée affichent le même
+    // chiffre, et c'est voulu. Le mode joue sur ce qu'on perd en échec, pas sur
+    // les chances. Seul le ticket Or déplace le taux, à 100 %.
+    const pct = XU.previewStartRate(team, selWorld, ticket);
     const successColor = rateColor(pct);
     const warnTeam = sel.some((id) => (g.selected || []).includes(id));
     const allEpic = ready3 && team.every((b) => b.rarity === "Epic");
+    // Aperçu du butin dans les deux issues — c'est ce qui rend le choix de mode
+    // lisible sans calcul : à droite, ce que la Risquée abandonne.
+    const win = ready3 ? XU.previewLoot(selWorld, durH, mode, ticket, true) : null;
+    const lose = ready3 ? XU.previewLoot(selWorld, durH, mode, ticket, false) : null;
+    const silverLeft = g.ticketsSilver | 0;
+    const goldLeft = g.ticketsGold | 0;
     return (
       <div className="exq-col">
         {BackRow()}
@@ -307,18 +315,19 @@ function Expeditions() {
           })}
         </div>
         {warnTeam && <div className="exq-warn"><span style={{ color: "var(--fire)" }}>⚠</span><span>{I18N.t("EXP_TEAM_WARN")}</span></div>}
-        <span className="eyebrow" style={{ fontSize: 10 }}>2 · {I18N.t("EXP_D_1H")}/{I18N.t("EXP_D_2H")}/{I18N.t("EXP_D_8H")}</span>
-        <div className="exq-durs">
-          {XU.DURATIONS.map((d) => {
-            const on = dur === d.s;
-            return (
-              <button key={d.s} onClick={() => setDur(d.s)} className="exq-toggle"
-                style={{ background: on ? "rgba(247,147,26,.12)" : "var(--bg-panel)", borderColor: on ? "var(--fire)" : "var(--line)", color: on ? "var(--fire)" : "var(--text)" }}>
-                <b style={{ fontSize: 16 }}>{I18N.t(d.i18nKey)}</b>
-                {d.s === 28800 && <span className="exq-mono" style={{ fontSize: 9, color: on ? "var(--fire)" : "var(--text-dim)" }}>{I18N.t("EXP_D_8H_SUB")}</span>}
-              </button>
-            );
-          })}
+        <span className="eyebrow" style={{ fontSize: 10 }}>2 · {I18N.t("EXP_DURATION")}</span>
+        <div className="exq-durbox">
+          <div className="exq-durhead">
+            <b className="exq-mono exq-durval">{durH} {I18N.t("EXP_HOURS")}</b>
+            <span className="exq-mono exq-dim" style={{ fontSize: 10 }}>{I18N.t("EXP_BACK_AT", fmtClock(new Date(Date.now() + durH * 3600e3)))}</span>
+          </div>
+          <input type="range" className="exq-slider" min={XU.DURATION_MIN_H} max={XU.DURATION_MAX_H} step={1}
+            value={durH} onChange={(e) => setDurH(parseInt(e.target.value, 10))}
+            aria-label={I18N.t("EXP_DURATION")} />
+          <div className="exq-durticks exq-mono">
+            <span>{XU.DURATION_MIN_H}h</span><span>6h</span><span>{XU.DURATION_MAX_H}h</span>
+          </div>
+          <div className="exq-mono exq-durnote">{I18N.t("EXP_DURATION_NOTE")}</div>
         </div>
         <span className="eyebrow" style={{ fontSize: 10 }}>3 · {I18N.t("EXP_MODE_PRUDENT")} / {I18N.t("EXP_MODE_RISKY")}</span>
         <div className="exq-modes">
@@ -328,6 +337,27 @@ function Expeditions() {
             return (
               <button key={k} onClick={() => setMode(k)} className="exq-toggle" style={{ alignItems: "flex-start", background: on ? bgOn : "var(--bg-panel)", borderColor: on ? accent : "var(--line)", color: on ? accent : "var(--text)" }}>
                 <b style={{ fontSize: 13, letterSpacing: ".5px" }}>{I18N.t(tk)}</b>
+                <span style={{ fontSize: 10, lineHeight: 1.35, color: "var(--text-dim)", textAlign: "left" }}>{I18N.t(sk)}</span>
+              </button>
+            );
+          })}
+        </div>
+        <span className="eyebrow" style={{ fontSize: 10 }}>4 · {I18N.t("EXP_TICKET_STEP")}</span>
+        <div className="exq-tickets">
+          {[[null, "EXP_TICKET_NONE", "EXP_TICKET_NONE_SUB", "var(--text-dim)", 999],
+            ["argent", "EXP_TICKET_SILVER", "EXP_TICKET_SILVER_SUB", "var(--elec)", silverLeft],
+            ["or", "EXP_TICKET_GOLD", "EXP_TICKET_GOLD_SUB", "var(--gold)", goldLeft]].map(([k, tk, sk, accent, left]) => {
+            const on = ticket === k;
+            const out = left <= 0;
+            return (
+              <button key={String(k)} className="exq-toggle exq-ticket" disabled={out}
+                onClick={() => { if (!out) setTicket(k); }}
+                style={{ alignItems: "flex-start", background: on ? "rgba(255,230,0,.08)" : "var(--bg-panel)",
+                  borderColor: on ? accent : "var(--line)", color: on ? accent : out ? "var(--text-faint)" : "var(--text)",
+                  opacity: out ? 0.5 : 1, cursor: out ? "not-allowed" : "pointer" }}>
+                <b style={{ fontSize: 12, letterSpacing: ".4px" }}>
+                  {I18N.t(tk)}{k !== null && <span className="exq-mono" style={{ fontSize: 10, opacity: 0.7 }}> ×{left}</span>}
+                </b>
                 <span style={{ fontSize: 10, lineHeight: 1.35, color: "var(--text-dim)", textAlign: "left" }}>{I18N.t(sk)}</span>
               </button>
             );
@@ -346,12 +376,37 @@ function Expeditions() {
           ) : (
             <span style={{ color: "var(--text-dim)" }}>{I18N.t("EXP_SELECT_3")}</span>
           )}
+          {ready3 && ticket === "or" && (
+            <div className="exq-mono exq-goldnote">{I18N.t("EXP_TICKET_GOLD_LOCKED")}</div>
+          )}
           {ready3 && <div className="exq-mono" style={{ fontSize: 10, color: "var(--text-faint)", marginTop: 6 }}>{I18N.t("EXP_RATE_NOTE")}</div>}
-          {allEpic && (
+          {ready3 && win && (
+            <div className="exq-lootprev">
+              <div className="exq-lootcol">
+                <span className="exq-mono exq-cap">{I18N.t("EXP_LOOT_WIN")}</span>
+                <b className="exq-mono" style={{ color: "var(--success)" }}>+{win.fa} FA</b>
+                <span className="exq-mono exq-dim">+{win.xp} XP</span>
+                <span className="exq-mono" style={{ color: world.color }}>+{win.frags} · {I18N.t("EXP_FRAG")} {win.rank}</span>
+              </div>
+              <div className="exq-lootsep" />
+              <div className="exq-lootcol">
+                <span className="exq-mono exq-cap">{I18N.t("EXP_LOOT_LOSE")}</span>
+                {lose.fa > 0
+                  ? <b className="exq-mono" style={{ color: "var(--text-dim)" }}>+{lose.fa} FA</b>
+                  : <b className="exq-mono" style={{ color: "var(--alert)" }}>0 FA</b>}
+                <span className="exq-mono exq-dim">+{lose.xp} XP</span>
+                <span className="exq-mono" style={{ color: lose.frags > 0 ? world.color : "var(--text-faint)" }}>+{lose.frags} · {I18N.t("EXP_FRAG")} {lose.rank}</span>
+              </div>
+            </div>
+          )}
+          {allEpic && durH >= XU.DUST_MIN_H && (
             <div className="exq-epicbox">
               <span style={{ color: "var(--gold)", fontSize: 15, flex: "none" }}>◈</span>
               <span style={{ fontSize: 11, lineHeight: 1.4 }}>{I18N.t("EXP_DUST")}</span>
             </div>
+          )}
+          {allEpic && durH < XU.DUST_MIN_H && (
+            <div className="exq-mono exq-dustnote">{I18N.t("EXP_DUST_NEEDS_8H")}</div>
           )}
         </div>
         <button className="exq-launch" disabled={!ready3 || busyCall} onClick={launch}
