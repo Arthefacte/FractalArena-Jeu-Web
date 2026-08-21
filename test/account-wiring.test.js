@@ -155,6 +155,21 @@ test("cache-bust homogene : aucune balise ne reste sur l'ancienne version", () =
     `versions heterogenes trouvees : ${uniques.join(", ")} — une seule balise oubliee sert du code perime`);
 });
 
+// Les icones du MANIFESTE doivent porter la version elles aussi. Sans elle, le
+// navigateur installe la PWA avec l icone qu il a deja en cache HTTP
+// (Cache-Control: max-age=14400, soit 4 h) : le 2026-08-21, l ancien embleme
+// est apparu a l installation alors que la prod servait deja le nouveau.
+test("les icones du manifeste portent la version courante", () => {
+  const MANIFEST = fs.readFileSync(path.join(__dirname, "..", "manifest.webmanifest"), "utf8");
+  const srcs = [...MANIFEST.matchAll(/"src":\s*"([^"]+)"/g)].map((m) => m[1]);
+  assert.ok(srcs.length >= 5, "le manifeste doit declarer ses icones");
+  const sansVersion = srcs.filter((s) => !/\?v=\d+$/.test(s));
+  assert.deepStrictEqual(sansVersion, [],
+    `icones sans cache-buster : ${sansVersion.join(", ")} — elles seront servies depuis le cache du navigateur`);
+  const vs = [...new Set(srcs.map((s) => s.split("?v=")[1]))];
+  assert.deepStrictEqual(vs, ["190"], `versions heterogenes dans le manifeste : ${vs.join(", ")}`);
+});
+
 // --- Liaison d'un portefeuille UniSat (decision du user, 2026-07-27) ---
 // On ne demande plus au joueur d'importer la seed de son compte : il lie SON
 // portefeuille, dont lui seul detient la cle, et les retraits partent la-bas.
