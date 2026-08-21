@@ -52,7 +52,6 @@ function TokenIcon({
     height: s,
     draggable: "false",
     style: {
-      borderRadius: 3,
       verticalAlign: "-2px",
       display: "inline-block"
     }

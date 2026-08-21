@@ -21,7 +21,7 @@ function Coin({ c }) {
 // Logo du token FRACTALARENA (assets/TOKEN.png), inline à côté d'un montant.
 function TokenIcon({ s = 15 }) {
   return <img src="assets/TOKEN.png" alt="FA" width={s} height={s} draggable="false"
-    style={{ borderRadius: 3, verticalAlign: "-2px", display: "inline-block" }} />;
+    style={{ verticalAlign: "-2px", display: "inline-block" }} />;
 }
 
 // Convention d'affichage des montants : dans les chaînes i18n, un montant s'écrit
