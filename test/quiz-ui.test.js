@@ -97,3 +97,34 @@ test("donnees absentes ou degenerees : liste vide, jamais une exception", () => 
   assert.deepStrictEqual(tickerItems({ dons: [{ nom: "", amount: 10 }, { nom: "Ana", amount: "x" }], total: 0 }),
     [], "nom vide ou montant non numerique : ignores, pas affiches");
 });
+
+// La pastille ❓ du header est COLLANTE : elle s'allume quand shouldAsk le dit,
+// mais ne s'éteint plus toute seule. Sans ça elle clignotait (constat joueur,
+// 21/08) — shouldAsk retombe à false dès qu'un .overlay entre dans le DOM
+// (modale, combat d'Arène) et se rallume à sa fermeture, une fois par seconde.
+// Ce test verrouille la règle d'accumulation appliquée dans quiz.jsx.
+function pastille(overlays, wallet = "w1") {
+  let pret = false;
+  return overlays.map((busy) => {
+    const etat = { lastAskAt: 0, toastOpen: false, busy, wallet };
+    pret = !etat.wallet ? false : pret || shouldAsk(etat, 999999);
+    return pret ? 1 : 0;
+  });
+}
+
+test("la pastille ne clignote pas quand une surcouche va et vient", () => {
+  const overlays = [false, false, true, true, false, true, false];
+  // Sans accumulation, shouldAsk suit l'overlay : 1100101 — c'est le clignotement.
+  assert.deepStrictEqual(overlays.map((b) => (shouldAsk({ lastAskAt: 0, toastOpen: false, busy: b, wallet: "w1" }, 999999) ? 1 : 0)),
+    [1, 1, 0, 0, 1, 0, 1]);
+  // Avec accumulation, elle reste allumée.
+  assert.deepStrictEqual(pastille(overlays), [1, 1, 1, 1, 1, 1, 1]);
+});
+
+test("la pastille s'allume meme si le premier tick tombe pendant une surcouche", () => {
+  assert.deepStrictEqual(pastille([true, true, false]), [0, 0, 1]);
+});
+
+test("la deconnexion eteint la pastille", () => {
+  assert.deepStrictEqual(pastille([false, false], null), [0, 0]);
+});

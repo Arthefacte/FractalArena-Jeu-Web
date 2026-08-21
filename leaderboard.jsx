@@ -38,7 +38,7 @@ function Leaderboard() {
   const myShort = g.wallet ? g.wallet.slice(0, 6) + "…" + g.wallet.slice(-4) : "";
 
   return (
-    <div style={{ maxWidth: 640, margin: "0 auto", padding: "8px 4px" }}>
+    <div className="container" style={{ maxWidth: 640 }}>
       <SectionHead eyebrow="🏆 LEADERBOARD" title={I18N.t("LB_TITLE")} />
       <div className="lb-tabs">
         <button className={cx("lb-tab", section === "compet" && "on")} onClick={() => pickSection("compet")}>{I18N.t("LB_SEC_COMPET")}</button>

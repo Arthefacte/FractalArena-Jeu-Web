@@ -109,7 +109,7 @@ function Quests() {
 
   const d = st.data;
   return (
-    <div style={{ maxWidth: 640, margin: "0 auto", padding: "8px 4px" }}>
+    <div className="container" style={{ maxWidth: 640 }}>
       {showDisc && (
         <div style={{ marginBottom: 22 }}>
           <SectionHead eyebrow="🎓 START" title={I18N.t("DISC_TITLE")} />

@@ -351,10 +351,9 @@ function Market() {
     if (M && M.preloadWhenIdle) M.preloadWhenIdle();
   }, []);
   return /*#__PURE__*/React.createElement("div", {
+    className: "container",
     style: {
-      maxWidth: 640,
-      margin: "0 auto",
-      padding: "8px 4px"
+      maxWidth: 640
     }
   }, /*#__PURE__*/React.createElement(SectionHead, {
     title: I18N.t("MKT_TITLE"),
