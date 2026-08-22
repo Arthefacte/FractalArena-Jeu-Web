@@ -43,6 +43,9 @@
     { floor: 40, fa: 1000, silver: 0, gold: 1 },
     { floor: 45, fa: 1200, silver: 0, gold: 0 },
     { floor: 50, fa: 1500, silver: 0, gold: 0 },
+    // Jalons d'endurance au-delà de 50 (décision user 2026-08-22, miroir tower.js).
+    { floor: 75,  fa: 1500, silver: 0, gold: 0 },
+    { floor: 100, fa: 1500, silver: 0, gold: 0 },
   ];
 
   function tiersView(bestFloor, claimed) {

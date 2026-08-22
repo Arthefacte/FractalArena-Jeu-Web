@@ -40,9 +40,9 @@ test("le palier d'entree de l'etage 1 existe aussi cote client", () => {
 });
 
 test("la table des paliers reste identique au serveur", () => {
-  assert.strictEqual(TU.TIERS.length, 11);
-  assert.deepStrictEqual(TU.TIERS.map((t) => t.floor), [1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50]);
-  assert.strictEqual(TU.TIERS.reduce((s, t) => s + t.fa, 0), 6550);
+  assert.strictEqual(TU.TIERS.length, 13);
+  assert.deepStrictEqual(TU.TIERS.map((t) => t.floor), [1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 75, 100]);
+  assert.strictEqual(TU.TIERS.reduce((s, t) => s + t.fa, 0), 9550);
   assert.strictEqual(TU.TIERS.reduce((s, t) => s + t.silver, 0), 2);
   assert.strictEqual(TU.TIERS.reduce((s, t) => s + t.gold, 0), 2);
 });
