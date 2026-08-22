@@ -881,6 +881,7 @@
       ZH: "该远征已结束：请领取战利品。",
     },
     EXP_ERR_fragments_insuffisants: { FR: "Pas assez de fragments.", EN: "Not enough fragments.", ZH: "碎片不足。" },
+    EXP_ERR_pas_de_ticket: { FR: "Pas de ticket disponible.", EN: "No ticket available.", ZH: "没有可用的门票。" },
     EXP_ERR_betes_invalides: { FR: "Sélection invalide.", EN: "Invalid selection.", ZH: "选择无效。" },
     EXP_ERR_generic: { FR: "Erreur serveur, réessaie.", EN: "Server error, try again.", ZH: "服务器错误，请重试。" },
 

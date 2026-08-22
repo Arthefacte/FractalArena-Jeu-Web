@@ -1379,14 +1379,14 @@ function App() {
       } catch (e) { return { ok: false }; }
     },
 
-    async expeditionsStart({ destination, beast_ids, mode, duration_s }) {
+    async expeditionsStart({ destination, beast_ids, mode, duration_s, ticket }) {
       const s = gRef.current;
       if (!s.wallet || !s.authToken) return { ok: false, reason: "auth" };
       try {
         const resp = await fetch(`${API_URL}/expeditions/start`, {
           method: "POST",
           headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
-          body: JSON.stringify({ destination, beast_ids, mode, duration_s }),
+          body: JSON.stringify({ destination, beast_ids, mode, duration_s, ticket: ticket || null }),
         });
         if (resp.status === 401) {
           const re = await actions.authenticate(gRef.current.wallet);
@@ -1397,9 +1397,14 @@ function App() {
         if (!data.ok) return { ok: false, reason: data.error || "generic" };
         // La réponse contient l'expédition complète : fusion locale, pas de GET
         // bloquant derrière le bouton LANCER (fragments/plafond inchangés au start).
-        // Même garde d'identité de jeton que expeditionsState.
+        // Même garde d'identité de jeton que expeditionsState. Le ticket est déjà
+        // débité côté serveur au /start : décrément local, comme l'entrée Fosse.
         if (gRef.current.authToken === s.authToken) {
-          setG((st) => ({ ...st, expeditions: [...(st.expeditions || []), data.expedition] }));
+          setG((st) => ({ ...st,
+            expeditions: [...(st.expeditions || []), data.expedition],
+            ticketsGold: ticket === "or" ? Math.max(0, (st.ticketsGold || 0) - 1) : st.ticketsGold,
+            ticketsSilver: ticket === "argent" ? Math.max(0, (st.ticketsSilver || 0) - 1) : st.ticketsSilver,
+          }));
         }
         return { ok: true, expedition: data.expedition };
       } catch (e) { return { ok: false, reason: "generic" }; }
