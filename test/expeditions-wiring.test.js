@@ -30,6 +30,17 @@ test("expeditionsClaim : retry 401 + re-fetch /save (XP/FA/tickets bougent)", ()
   assert.match(b, /serverToState/);
 });
 
+test("expeditionsStart : le ticket part au serveur et le compteur local baisse", () => {
+  const b = bloc("async expeditionsStart", 2200);
+  // Le body du POST doit transmettre le ticket (bug du 2026-08-22 : l'écran le
+  // passait, l'action le perdait à la destructuration → jamais déduit ni appliqué).
+  assert.match(b, /duration_s, ticket/, "ticket absent de la signature");
+  assert.match(b, /JSON\.stringify\(\{[^}]*ticket/, "ticket absent du body");
+  // Le serveur a débité au /start : décrément local, comme la Fosse (entry ticket).
+  assert.match(b, /ticketsGold/, "décrément ticketsGold manquant");
+  assert.match(b, /ticketsSilver/, "décrément ticketsSilver manquant");
+});
+
 test("expeditionsCraftRelic : re-fetch /save (equipment bouge)", () => {
   const b = bloc("async expeditionsCraftRelic", 2200);
   assert.match(b, /svOpts\(\)/);
