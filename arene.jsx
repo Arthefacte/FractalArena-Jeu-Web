@@ -166,6 +166,11 @@ function Arene() {
               return (
                 <div key={o.wallet} className="oct-sm" style={{ border: "1px solid var(--line-soft)", padding: 10, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
                   <div style={{ minWidth: 0 }}>
+                    {/* Nom composé serveur (décision user 2026-08-22) ; repli wallet
+                        raccourci si un vieux serveur ne l'envoie pas encore. */}
+                    <div className="mono" style={{ fontWeight: 700, fontSize: 13, marginBottom: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {o.name || ((o.wallet || "").slice(0, 6) + "…" + (o.wallet || "").slice(-4))}
+                    </div>
                     <div className="flex gap8 center">
                       <span className="mono" style={{ fontSize: 12, color: AU.leagueColor(o.league) }}>{AU.leagueLabel(o.league)}</span>
                       {o.implicit

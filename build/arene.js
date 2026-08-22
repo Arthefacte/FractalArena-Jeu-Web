@@ -351,6 +351,16 @@ function Arene() {
         minWidth: 0
       }
     }, /*#__PURE__*/React.createElement("div", {
+      className: "mono",
+      style: {
+        fontWeight: 700,
+        fontSize: 13,
+        marginBottom: 4,
+        whiteSpace: "nowrap",
+        overflow: "hidden",
+        textOverflow: "ellipsis"
+      }
+    }, o.name || (o.wallet || "").slice(0, 6) + "…" + (o.wallet || "").slice(-4)), /*#__PURE__*/React.createElement("div", {
       className: "flex gap8 center"
     }, /*#__PURE__*/React.createElement("span", {
       className: "mono",
