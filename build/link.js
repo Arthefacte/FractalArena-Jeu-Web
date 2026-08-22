@@ -111,7 +111,49 @@ function Link() {
       ...statCell,
       gridColumn: "1 / -1"
     }
-  }, I18N.t("LINK_AURA"), " : ", TU.auraSummary(t ? t.aura : null))), (() => {
+  }, I18N.t("LINK_AURA"), " : ", TU.auraSummary(t ? t.aura : null))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 20,
+      textAlign: "left"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontWeight: 700,
+      textAlign: "center"
+    }
+  }, I18N.t("LINK_PROG_TITLE")), /*#__PURE__*/React.createElement("div", {
+    className: "muted",
+    style: {
+      fontSize: 12,
+      textAlign: "center",
+      margin: "4px 0 10px"
+    }
+  }, I18N.t("LINK_PROG_YOURS", t ? t.loyaltyDays : 0, TU.accomplishmentLevel(t ? t.worldsCompleted : 0, t ? t.paidWins : 0))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gap: 6
+    }
+  }, ["LINK_PROG_T2", "LINK_PROG_T3", "LINK_PROG_T4", "LINK_PROG_T5"].map((k, i) => {
+    const tier = i + 2;
+    const next = (t ? t.tier : 0) + 1 === tier;
+    const done = (t ? t.tier : 0) >= tier;
+    return /*#__PURE__*/React.createElement("div", {
+      key: k,
+      style: {
+        ...statCell,
+        fontSize: 12.5,
+        opacity: done ? 0.55 : 1,
+        borderColor: next ? "var(--accent, #F7931A)" : "var(--line)"
+      }
+    }, done ? "✓ " : next ? "→ " : "", I18N.t(k));
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "muted",
+    style: {
+      fontSize: 11.5,
+      marginTop: 8,
+      textAlign: "center"
+    }
+  }, I18N.t("LINK_PROG_ACC"))), (() => {
     const items = TU.galleryItems(t);
     if (items.length < 2) return null; // galerie utile à partir de 2 images révélées
     return /*#__PURE__*/React.createElement("div", {

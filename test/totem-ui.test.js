@@ -49,3 +49,16 @@ test("galleryItems : paliers révélés triés, [] si aucun", () => {
   assert.deepStrictEqual(TU.galleryItems({ revealedTier:0, artByTier:{} }), []);
   assert.deepStrictEqual(TU.galleryItems(null), []);
 });
+
+// Parité STRICTE avec totem.js serveur (accomplishmentLevel) — les seuils
+// affichés par l'écran Lien doivent être ceux que le serveur applique.
+test("accomplishmentLevel : miroir exact du serveur (mondes 1/2/4, victoires 100/400/1200)", () => {
+  assert.strictEqual(TU.accomplishmentLevel(0, 0), 0);
+  assert.strictEqual(TU.accomplishmentLevel(1, 0), 1);
+  assert.strictEqual(TU.accomplishmentLevel(2, 0), 2);
+  assert.strictEqual(TU.accomplishmentLevel(4, 0), 3);
+  assert.strictEqual(TU.accomplishmentLevel(0, 100), 1);
+  assert.strictEqual(TU.accomplishmentLevel(0, 400), 2);
+  assert.strictEqual(TU.accomplishmentLevel(0, 1200), 3);
+  assert.strictEqual(TU.accomplishmentLevel(1, 400), 2, "meilleur des deux chemins");
+});

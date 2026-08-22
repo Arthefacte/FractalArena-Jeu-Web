@@ -30,7 +30,18 @@
       .map(tier => ({ tier, url: t.artByTier[tier] }));
   }
 
-  const api = { totemArtFallback, totemArt, galleryItems, tierName, auraSummary, TIER_NAMES };
+  // Miroir STRICT de totem.js serveur (accomplishmentLevel) — parité testée.
+  // acc 0..3 = meilleur des deux chemins : mondes bouclés (1/2/4) ou
+  // victoires payantes (100/400/1200).
+  function accomplishmentLevel(worldsCompleted, paidWins) {
+    let camp = 0;
+    if (worldsCompleted >= 4) camp = 3; else if (worldsCompleted >= 2) camp = 2; else if (worldsCompleted >= 1) camp = 1;
+    let win = 0;
+    if (paidWins >= 1200) win = 3; else if (paidWins >= 400) win = 2; else if (paidWins >= 100) win = 1;
+    return Math.max(camp, win);
+  }
+
+  const api = { totemArtFallback, totemArt, galleryItems, tierName, auraSummary, accomplishmentLevel, TIER_NAMES };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   if (typeof window !== "undefined") window.FA_TOTEM_UI = api;
 })();
