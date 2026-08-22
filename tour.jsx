@@ -90,7 +90,7 @@ function TourMutatorBand({ mutators }) {
   );
 }
 
-/* Bandeau des 10 paliers de la semaine (✓ = payé). */
+/* Bandeau des paliers de la semaine (✓ = payé) — 13 depuis les jalons 75/100. */
 function TourTierBand({ score }) {
   const tiers = TU.tiersView(score.best_floor, score.claimed_tiers);
   return (

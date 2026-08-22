@@ -8,11 +8,11 @@ const TU = globalThis.window.FA_TOUR_UI;
 
 // Palier d'entrée de l'étage 3 ajouté le 2026-07-29 (somme 6 500 → 6 550) et prix de
 // re-run devenu progressif : les deux suivent le serveur, cette table est un miroir.
-test("TIERS : miroir serveur — somme 6550 FA, 2 silver, 2 gold, étages 1..50", () => {
+test("TIERS : miroir serveur — somme 9550 FA, 2 silver, 2 gold, étages 1..100", () => {
   assert.deepStrictEqual(TU.RERUN_COSTS, [100, 125, 150]);
-  assert.strictEqual(TU.TIERS.length, 11);
-  assert.deepStrictEqual(TU.TIERS.map((t) => t.floor), [1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50]);
-  assert.strictEqual(TU.TIERS.reduce((s, t) => s + t.fa, 0), 6550);
+  assert.strictEqual(TU.TIERS.length, 13);
+  assert.deepStrictEqual(TU.TIERS.map((t) => t.floor), [1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 75, 100]);
+  assert.strictEqual(TU.TIERS.reduce((s, t) => s + t.fa, 0), 9550);
   assert.strictEqual(TU.TIERS.reduce((s, t) => s + t.silver, 0), 2);
   assert.strictEqual(TU.TIERS.reduce((s, t) => s + t.gold, 0), 2);
   assert.strictEqual(TU.TIERS[0].fa, 50);
@@ -22,7 +22,7 @@ test("TIERS : miroir serveur — somme 6550 FA, 2 silver, 2 gold, étages 1..50"
 
 test("tiersView : reached/claimed dérivés", () => {
   const v = TU.tiersView(23, [1, 5, 10]);
-  assert.strictEqual(v.length, 11);
+  assert.strictEqual(v.length, 13);
   assert.deepStrictEqual(v.filter((t) => t.reached).map((t) => t.floor), [1, 5, 10, 15, 20]);
   assert.deepStrictEqual(v.filter((t) => t.claimed).map((t) => t.floor), [1, 5, 10]);
   // claimed_tiers null/undefined toléré (score vierge serveur)
@@ -70,8 +70,9 @@ test("nextTier : premier palier au-dessus du meilleur étage", () => {
   assert.strictEqual(TU.nextTier(3).floor, 5);
   assert.strictEqual(TU.nextTier(5).floor, 10);
   assert.strictEqual(TU.nextTier(23).floor, 25);
-  assert.strictEqual(TU.nextTier(50), null);
-  assert.strictEqual(TU.nextTier(99), null);
+  assert.strictEqual(TU.nextTier(50).floor, 75, "jalon d'endurance (2026-08-22)");
+  assert.strictEqual(TU.nextTier(99).floor, 100);
+  assert.strictEqual(TU.nextTier(100), null);
 });
 
 test("pickFittest3 : 3 IDs vivants au hp_frac le plus haut, ordre décroissant", () => {
