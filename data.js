@@ -26,7 +26,7 @@ window.FA_API_URL = (typeof location !== "undefined" &&
 // l'installation alors que la prod servait le nouveau depuis une heure.
 // Ne sert plus que de REPLI : un asset absent du manifeste doit rester cache-busté
 // plutôt que servi indéfiniment par le CDN.
-window.FA_ASSET_V = "192";
+window.FA_ASSET_V = "193";
 
 // L'URL porte l'empreinte du CONTENU du fichier (asset-hashes.js, généré au build),
 // et non la version du jeu. Versionner par la version du jeu — ce que faisait la
@@ -198,8 +198,8 @@ window.FA_ASSET_URL = function (chemin) {
     WELCOME_LOCKED: 1000,
     WELCOME_LIQUID: 0,
     WELCOME_TICKETS_SILVER: 5,
-    VANITY_RENAME: 1000,
-    VANITY_TITLE: 5000,
+    VANITY_RENAME: 100,
+    VANITY_TITLE: 1000,
   };
 
   const FORGE = {
