@@ -4,7 +4,15 @@
    au clic du slot Capitaine de l'écran Équipe (hors barre de nav).
    ============================================================ */
 const I18N = window.FA_I18N;
-const { useFA } = window;
+const { useFA, SectionHead } = window;
+
+// Écran-héros : tout est CENTRÉ (retour user 2026-08-22 : la colonne brute
+// alignée à gauche « penchait », sans espacement). Les stats passent de la
+// liste à puces à une grille de panneaux 2×2, l'aura en pleine largeur.
+const statCell = {
+  background: "var(--bg-panel)", border: "1px solid var(--line)",
+  borderRadius: 10, padding: "10px 12px", fontSize: 13, lineHeight: 1.5,
+};
 
 function Link() {
   const { g, actions } = useFA();
@@ -12,22 +20,18 @@ function Link() {
   const t = g.totem;
   const dormant = !t || t.tier <= 0;
   return (
-    <div className="screen link-screen" style={{ maxWidth: 560, margin: "0 auto" }}>
-      <h2>{I18N.t("LINK_TITLE")}</h2>
-      <div style={{ display: "flex", gap: 16, alignItems: "center", margin: "12px 0" }}>
-        <img alt="Totem"
-             src={t ? TU.totemArt(t) : "assets/HASHBYTE.webp"}
-             onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = t ? TU.totemArtFallback(t.type) : "assets/HASHBYTE.webp"; }}
-             style={{ width: 120, height: 120, borderRadius: 12,
-                      filter: dormant ? "grayscale(1) opacity(0.5)" : "none" }} />
-        <div>
-          <div style={{ fontSize: 22, fontWeight: 800 }}>{t ? t.type : "—"}</div>
-          <div style={{ opacity: 0.85 }}>{I18N.t("LINK_TIER")} {t ? t.tier : 0} · {TU.tierName(t ? t.tier : 0)}</div>
-        </div>
-      </div>
+    <div className="container link-screen" style={{ maxWidth: 620, textAlign: "center" }}>
+      <SectionHead eyebrow={"◈ " + I18N.t("LINK_CAPTAIN")} title={I18N.t("LINK_TITLE")} />
+      <img alt="Totem"
+           src={t ? TU.totemArt(t) : "assets/HASHBYTE.webp"}
+           onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = t ? TU.totemArtFallback(t.type) : "assets/HASHBYTE.webp"; }}
+           style={{ width: 140, height: 140, borderRadius: 14, display: "block", margin: "0 auto",
+                    filter: dormant ? "grayscale(1) opacity(0.5)" : "drop-shadow(0 0 18px rgba(247,147,26,0.25))" }} />
+      <div style={{ fontSize: 22, fontWeight: 800, marginTop: 12 }}>{t ? t.type : "—"}</div>
+      <div style={{ opacity: 0.85, marginTop: 2 }}>{I18N.t("LINK_TIER")} {t ? t.tier : 0} · {TU.tierName(t ? t.tier : 0)}</div>
       {t && t.canInvoke && (
         <button
-          style={{ margin: "8px 0", padding: "12px 18px", fontWeight: 800, fontSize: 16,
+          style={{ margin: "16px auto 0", display: "block", padding: "12px 22px", fontWeight: 800, fontSize: 16,
                    background: "linear-gradient(90deg,#F7931A,#00F0FF)", color: "#05070f",
                    border: "none", borderRadius: 10, cursor: "pointer" }}
           onClick={() => {
@@ -41,21 +45,21 @@ function Link() {
           }}
         >{I18N.t("TOTEM_INVOKE_BTN")}</button>
       )}
-      {dormant && <p style={{ color: "var(--alert, #e55)" }}>{I18N.t("LINK_DORMANT_HINT")}</p>}
-      <ul style={{ lineHeight: 1.8 }}>
-        <li>{I18N.t("LINK_LOYALTY", t ? t.loyaltyDays : 0)}</li>
-        <li>{I18N.t("LINK_WORLDS", t ? t.worldsCompleted : 0)}</li>
-        <li>{I18N.t("LINK_WINS", t ? t.paidWins : 0)}</li>
-        <li>{I18N.t("LINK_AURA")} : {TU.auraSummary(t ? t.aura : null)}</li>
-      </ul>
+      {dormant && <p style={{ color: "var(--alert, #e55)", marginTop: 14 }}>{I18N.t("LINK_DORMANT_HINT")}</p>}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 20, textAlign: "center" }}>
+        <div style={statCell}>{I18N.t("LINK_LOYALTY", t ? t.loyaltyDays : 0)}</div>
+        <div style={statCell}>{I18N.t("LINK_WORLDS", t ? t.worldsCompleted : 0)}</div>
+        <div style={statCell}>{I18N.t("LINK_WINS", t ? t.paidWins : 0)}</div>
+        <div style={{ ...statCell, gridColumn: "1 / -1" }}>{I18N.t("LINK_AURA")} : {TU.auraSummary(t ? t.aura : null)}</div>
+      </div>
       {(() => {
         const items = TU.galleryItems(t);
         if (items.length < 2) return null; // galerie utile à partir de 2 images révélées
         return (
-          <div style={{ marginTop: 14 }}>
+          <div style={{ marginTop: 22 }}>
             <div style={{ fontWeight: 700 }}>{I18N.t("TOTEM_GALLERY_TITLE")}</div>
-            <div style={{ fontSize: 12, opacity: 0.75, marginBottom: 6 }}>{I18N.t("TOTEM_GALLERY_COSMETIC")}</div>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <div style={{ fontSize: 12, opacity: 0.75, marginBottom: 8 }}>{I18N.t("TOTEM_GALLERY_COSMETIC")}</div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
               {items.map((it) => (
                 <img key={it.tier} alt={TU.tierName(it.tier)} src={it.url}
                      onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = TU.totemArtFallback(t.type); }}
@@ -67,7 +71,7 @@ function Link() {
           </div>
         );
       })()}
-      <button className="btn ghost sm" style={{ marginTop: 16 }} onClick={() => actions.setView("team")}>{I18N.t("LINK_BACK")}</button>
+      <button className="btn ghost sm" style={{ marginTop: 24 }} onClick={() => actions.setView("team")}>{I18N.t("LINK_BACK")}</button>
     </div>
   );
 }
