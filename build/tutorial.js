@@ -16,24 +16,28 @@ const I18N = window.FA_I18N;
 
 // Clé localStorage dédiée (séparée de SAVE_KEY : survit à disconnect()).
 const TUT_KEY = "fractal_arena_tutorial_v1";
+
+// Chaque icône doit illustrer le PROPOS du slide, pas un détail (retour user
+// 2026-08-22 : le homard d'« équipe » et la cible de « combats » perdaient tout
+// le monde). « 🔒◎ » montre les deux notions que le slide 4 oppose.
 const SLIDES = [{
   icon: "⚔️",
   t: "TUT_S1_T",
   b: "TUT_S1_B"
 }, {
-  icon: "🦞",
+  icon: "👥",
   t: "TUT_S2_T",
   b: "TUT_S2_B"
 }, {
-  icon: "🎯",
+  icon: "🎲",
   t: "TUT_S3_T",
   b: "TUT_S3_B"
 }, {
-  icon: "🔒",
+  icon: "🔒◎",
   t: "TUT_S4_T",
   b: "TUT_S4_B"
 }, {
-  icon: "🔨",
+  icon: "🧭",
   t: "TUT_S5_T",
   b: "TUT_S5_B"
 }];
