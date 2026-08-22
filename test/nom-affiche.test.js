@@ -90,3 +90,12 @@ test("le classement d'Arène ne tronque pas « Joueur 48213 »", () => {
   assert.ok(m, "troncature du nom introuvable");
   assert.ok(Number(m[1]) >= 13, `« Joueur NNNNN » fait 12 caractères, troncature à ${m[1]}`);
 });
+
+// Décision user 2026-08-22 : l'écran Arène ne montrait que la puissance des
+// adversaires — le serveur compose désormais `name` dans /pvp/opponents.
+test("matchmaking : la carte adversaire affiche le nom composé serveur", () => {
+  const i = ARENE.indexOf("(pvp.opponents || []).map");
+  assert.ok(i > 0, "bloc des adversaires introuvable dans arene.jsx");
+  const bloc = ARENE.slice(i, i + 1400);
+  assert.match(bloc, /o\.name/, "la carte ne montre que la puissance — le nom manque");
+});
