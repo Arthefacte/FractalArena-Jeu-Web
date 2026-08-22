@@ -26,7 +26,7 @@ window.FA_API_URL = (typeof location !== "undefined" &&
 // l'installation alors que la prod servait le nouveau depuis une heure.
 // Ne sert plus que de REPLI : un asset absent du manifeste doit rester cache-busté
 // plutôt que servi indéfiniment par le CDN.
-window.FA_ASSET_V = "195";
+window.FA_ASSET_V = "196";
 
 // L'URL porte l'empreinte du CONTENU du fichier (asset-hashes.js, généré au build),
 // et non la version du jeu. Versionner par la version du jeu — ce que faisait la
