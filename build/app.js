@@ -2525,11 +2525,15 @@ function App() {
           reason: data.error || "generic"
         };
         // Fusion locale : la ligne rappelée disparaît, aucun GET bloquant.
-        // Même garde d'identité de jeton que expeditionsState.
+        // Même garde d'identité de jeton que expeditionsState. Le serveur
+        // rembourse le ticket payé au lancement : re-crédit local du compteur.
         if (gRef.current.authToken === s.authToken) {
+          const refund = data.ticket_refunded;
           setG(st => ({
             ...st,
-            expeditions: (st.expeditions || []).filter(e => e.id !== id)
+            expeditions: (st.expeditions || []).filter(e => e.id !== id),
+            ticketsGold: refund === "or" ? (st.ticketsGold || 0) + 1 : st.ticketsGold,
+            ticketsSilver: refund === "argent" ? (st.ticketsSilver || 0) + 1 : st.ticketsSilver
           }));
         }
         return {
