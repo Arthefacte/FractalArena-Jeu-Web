@@ -825,9 +825,9 @@
     EXP_RATE_LOCKED: { FR: "Taux figé", EN: "Locked rate", ZH: "锁定成功率" },
     EXP_RECALL: { FR: "Rappeler l'expédition", EN: "Recall expedition", ZH: "召回远征" },
     EXP_RECALL_CONFIRM: {
-      FR: "Les entités reviennent immédiatement — AUCUN butin. Confirmer ?",
-      EN: "Entities return immediately — NO loot. Confirm?",
-      ZH: "实体将立即返回——没有任何战利品。确认吗？",
+      FR: "Les entités reviennent immédiatement — AUCUN butin, le ticket éventuel est rendu. Confirmer ?",
+      EN: "Entities return immediately — NO loot, any ticket is refunded. Confirm?",
+      ZH: "实体将立即返回——没有任何战利品，已用门票将退还。确认吗？",
     },
     EXP_RECALL_YES: { FR: "Oui, rappeler", EN: "Yes, recall", ZH: "确认召回" },
     EXP_CLAIM: { FR: "Réclamer le butin", EN: "Claim loot", ZH: "领取战利品" },

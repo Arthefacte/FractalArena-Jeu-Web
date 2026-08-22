@@ -41,6 +41,13 @@ test("expeditionsStart : le ticket part au serveur et le compteur local baisse",
   assert.match(b, /ticketsSilver/, "décrément ticketsSilver manquant");
 });
 
+test("expeditionsRecall : le ticket remboursé par le serveur re-crédite le compteur", () => {
+  const b = bloc("async expeditionsRecall", 2200);
+  assert.match(b, /ticket_refunded/, "ticket_refunded ignoré");
+  assert.match(b, /ticketsGold/, "re-crédit ticketsGold manquant");
+  assert.match(b, /ticketsSilver/, "re-crédit ticketsSilver manquant");
+});
+
 test("expeditionsCraftRelic : re-fetch /save (equipment bouge)", () => {
   const b = bloc("async expeditionsCraftRelic", 2200);
   assert.match(b, /svOpts\(\)/);
