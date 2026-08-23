@@ -58,6 +58,16 @@ test("le cumul rachete n'apparait que s'il est positif", () => {
   assert.strictEqual(cumul.montant, 30000, "somme des total_bought");
 });
 
+test("le cumul on-chain (/dex/status) fait foi sur la somme des tranches", () => {
+  // Les tranches (total_bought) sous-declarent les restes sous-seuil : quand le
+  // total on-chain est connu, c'est lui que la tape doit afficher.
+  const pools = [pool(5000, { total_bought: 10000 }), pool(10000, { total_bought: 20000 })];
+  const cumul = T.composerTape(pools, {}, MAINTENANT, 34500).find((i) => i.type === "cumul");
+  assert.strictEqual(cumul.montant, 34500, "le total on-chain remplace la somme des tranches");
+  const sansDex = T.composerTape(pools, {}, MAINTENANT, 0).find((i) => i.type === "cumul");
+  assert.strictEqual(sansDex.montant, 30000, "repli sur les tranches tant que /dex/status n'a pas repondu");
+});
+
 test("les entrees de la session rejoignent le cycle", () => {
   const items = T.composerTape([pool(5000)], { 5000: 250 }, MAINTENANT);
   const entree = items.find((i) => i.type === "entree");

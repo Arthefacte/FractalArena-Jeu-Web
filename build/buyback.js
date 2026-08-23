@@ -85,12 +85,13 @@ function texteTape(I, it) {
 function TapeBoursiere({
   pools,
   gainsSession,
-  fraiche
+  fraiche,
+  cumulOnChain
 }) {
   // Repli : tape-ui.js absent (404 de déploiement) → pas de tape, pas de crash.
   if (!window.FA_TAPE) return null;
   const I = window.FA_I18N;
-  const items = window.FA_TAPE.composerTape(pools, gainsSession, Date.now());
+  const items = window.FA_TAPE.composerTape(pools, gainsSession, Date.now(), cumulOnChain);
   if (!items.length) return null;
   const run = cle => /*#__PURE__*/React.createElement("span", {
     className: "fa-tape-run",
@@ -334,7 +335,11 @@ function BuybackTicker() {
   // Rien tant que les pools ne sont pas chargés — pas de bandeau vide.
   if (!bb || !bb.pools || !bb.pools.length) return null;
   const I = window.FA_I18N;
-  const totalBought = bb.pools.reduce((s, p) => s + (p.total_bought || 0), 0);
+  // Le total on-chain (/dex/status) fait foi dès qu'il est connu : la somme des
+  // tranches (total_bought) sous-déclare les restes sous-seuil (carryover).
+  // Même choix que la vitrine arthefacte.com — les deux affichent le même chiffre.
+  const cumulOnChain = dex && dex.buyback_totals && Number(dex.buyback_totals.fa) || 0;
+  const totalBought = cumulOnChain > 0 ? cumulOnChain : bb.pools.reduce((s, p) => s + (p.total_bought || 0), 0);
   const last = bb.pools.length - 1;
   return /*#__PURE__*/React.createElement("div", {
     className: "bb-ticker",
@@ -355,7 +360,8 @@ function BuybackTicker() {
   }), /*#__PURE__*/React.createElement(TapeBoursiere, {
     pools: bb.pools,
     gainsSession: cumulGains.current,
-    fraiche: fraiche
+    fraiche: fraiche,
+    cumulOnChain: cumulOnChain
   }), rachat.n > 0 && Object.keys(rachat.tiers).length > 0 && /*#__PURE__*/React.createElement(PluieOr, {
     graine: rachat.n
   }), voirRachats && dex && /*#__PURE__*/React.createElement(PanneauRachats, {
