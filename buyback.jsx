@@ -58,11 +58,11 @@ function texteTape(I, it) {
   if (it.type === "cumul") return I.t("TAPE_CUMUL", bbFmt(it.montant));
   return "";
 }
-function TapeBoursiere({ pools, gainsSession, fraiche }) {
+function TapeBoursiere({ pools, gainsSession, fraiche, cumulOnChain }) {
   // Repli : tape-ui.js absent (404 de déploiement) → pas de tape, pas de crash.
   if (!window.FA_TAPE) return null;
   const I = window.FA_I18N;
-  const items = window.FA_TAPE.composerTape(pools, gainsSession, Date.now());
+  const items = window.FA_TAPE.composerTape(pools, gainsSession, Date.now(), cumulOnChain);
   if (!items.length) return null;
   const run = (cle) => (
     <span className="fa-tape-run" aria-hidden={cle === "b" ? "true" : undefined}>
@@ -232,7 +232,13 @@ function BuybackTicker() {
   if (!bb || !bb.pools || !bb.pools.length) return null;
 
   const I = window.FA_I18N;
-  const totalBought = bb.pools.reduce((s, p) => s + (p.total_bought || 0), 0);
+  // Le total on-chain (/dex/status) fait foi dès qu'il est connu : la somme des
+  // tranches (total_bought) sous-déclare les restes sous-seuil (carryover).
+  // Même choix que la vitrine arthefacte.com — les deux affichent le même chiffre.
+  const cumulOnChain = (dex && dex.buyback_totals && Number(dex.buyback_totals.fa)) || 0;
+  const totalBought = cumulOnChain > 0
+    ? cumulOnChain
+    : bb.pools.reduce((s, p) => s + (p.total_bought || 0), 0);
   const last = bb.pools.length - 1;
   return (
     <div className="bb-ticker" title={I.t("BB_TICK_TITLE")}>
@@ -250,7 +256,7 @@ function BuybackTicker() {
         />
       ))}
       <RangeeDex dex={dex} onVoirRachats={() => setVoirRachats(true)} />
-      <TapeBoursiere pools={bb.pools} gainsSession={cumulGains.current} fraiche={fraiche} />
+      <TapeBoursiere pools={bb.pools} gainsSession={cumulGains.current} fraiche={fraiche} cumulOnChain={cumulOnChain} />
       {rachat.n > 0 && Object.keys(rachat.tiers).length > 0 && <PluieOr graine={rachat.n} />}
       {voirRachats && dex && <PanneauRachats dex={dex} onClose={() => setVoirRachats(false)} />}
     </div>

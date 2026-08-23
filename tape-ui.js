@@ -23,8 +23,10 @@
   //   3. remplissage de chaque pool (pct entier borné 0-100 : un carryover
   //      au-delà du seuil n'affiche pas « 400 % ») ;
   //   4. cumul racheté, seulement s'il est positif (« CUMUL 0 FA » au lancement
-  //      dirait le contraire de ce que la tape veut prouver).
-  function composerTape(pools, gainsSession, maintenantMs) {
+  //      dirait le contraire de ce que la tape veut prouver). Le total on-chain
+  //      (/dex/status) fait foi quand il est connu : la somme des tranches
+  //      (total_bought) sous-déclare les restes sous-seuil (carryover).
+  function composerTape(pools, gainsSession, maintenantMs, cumulOnChain) {
     if (!Array.isArray(pools) || !pools.length) return [];
     const items = [];
 
@@ -57,7 +59,9 @@
       items.push({ type: "pool", tier: p.tier, pct: Math.round(Math.max(0, Math.min(1, frac)) * 100) });
     }
 
-    const cumul = pools.reduce((s, p) => s + ((p && p.total_bought) || 0), 0);
+    const cumul = (Number(cumulOnChain) > 0)
+      ? Number(cumulOnChain)
+      : pools.reduce((s, p) => s + ((p && p.total_bought) || 0), 0);
     if (cumul > 0) items.push({ type: "cumul", montant: cumul });
 
     return items;
