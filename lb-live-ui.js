@@ -17,5 +17,16 @@
     return changed;
   }
 
-  window.FA_LB_LIVE_UI = { rowKey, diffChanges };
+  // Recence « il y a X » : cle i18n + valeur (le composant fait I18N.t(key, n)).
+  // null si l age est inconnu (compte sans updated_at).
+  function formatAgo(ageS) {
+    if (typeof ageS !== "number" || !isFinite(ageS)) return null;
+    const s = Math.max(0, Math.floor(ageS));
+    if (s < 60) return { key: "LB_AGO_NOW", n: null };
+    if (s < 3600) return { key: "LB_AGO_MIN", n: Math.floor(s / 60) };
+    if (s < 86400) return { key: "LB_AGO_H", n: Math.floor(s / 3600) };
+    return { key: "LB_AGO_D", n: Math.floor(s / 86400) };
+  }
+
+  window.FA_LB_LIVE_UI = { rowKey, diffChanges, formatAgo };
 })();

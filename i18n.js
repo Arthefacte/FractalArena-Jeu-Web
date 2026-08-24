@@ -84,6 +84,10 @@
     LB_YOU: { FR: "Toi", EN: "You", ZH: "你" },
     LB_EMPTY: { FR: "Pas encore de classés — sois le premier !", EN: "No ranked players yet — be the first!", ZH: "还没有排名 — 来当第一个！" },
     LB_LIVE_HINT: { FR: "joue en ce moment", EN: "playing right now", ZH: "正在游戏中" },
+    LB_AGO_NOW: { FR: "à l'instant", EN: "just now", ZH: "刚刚" },
+    LB_AGO_MIN: { FR: "il y a %d min", EN: "%d min ago", ZH: "%d 分钟前" },
+    LB_AGO_H: { FR: "il y a %d h", EN: "%d h ago", ZH: "%d 小时前" },
+    LB_AGO_D: { FR: "il y a %d j", EN: "%d d ago", ZH: "%d 天前" },
     LB_LOADING: { FR: "Chargement…", EN: "Loading…", ZH: "加载中…" },
     LB_ERROR: { FR: "Classement indisponible, réessaie.", EN: "Ranking unavailable, try again.", ZH: "排行榜不可用，请重试。" },
 
