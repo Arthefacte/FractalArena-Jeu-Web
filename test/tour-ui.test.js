@@ -64,6 +64,14 @@ test("validateEngage : 3 distinctes, existantes, vivantes", () => {
   assert.strictEqual(TU.validateEngage(["a", "b", "d"], roster, rs).reason, "dead");
 });
 
+test("validateEngage : accepte expectedCount 2 pour un slot champion emprunte", () => {
+  const roster = [{ id: "a" }, { id: "b" }, { id: "c" }];
+  assert.deepStrictEqual(TU.validateEngage(["a", "b"], roster, {}, 2), { ok: true });
+  assert.strictEqual(TU.validateEngage(["a", "b"], roster, {}).ok, false);       // defaut 3 inchange
+  assert.deepStrictEqual(TU.validateEngage(["a", "b", "c"], roster, {}), { ok: true });
+  assert.strictEqual(TU.validateEngage(["a", "a"], roster, {}, 2).reason, "need3");
+});
+
 test("nextTier : premier palier au-dessus du meilleur étage", () => {
   assert.strictEqual(TU.nextTier(0).floor, 1, "le premier objectif visible est le palier d'entrée");
   assert.strictEqual(TU.nextTier(1).floor, 5);
