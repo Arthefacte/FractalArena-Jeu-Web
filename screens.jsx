@@ -113,6 +113,16 @@ function Team() {
     g.selected.filter((id) => busyIds.has(id)).forEach((id) => actions.toggleSelect(id));
   }, [busyIds]);
 
+  // Champion de soutien : ma designation courante (badge ★ + bande sous les cartes)
+  useEffect(() => { if (g.authToken) actions.championGet(); }, [g.authToken]);
+
+  async function designate(b) {
+    if (g.championBeastId === b.id) return;
+    const r = await actions.championSet(b.id);
+    if (r.ok) toast(I18N.t("CHAMP_DESIGNATED_OK", D.displayName(b)), "good");
+    else toast(r.reason || "error", "bad");
+  }
+
   function toggle(b) {
     if (g.selected.includes(b.id)) actions.toggleSelect(b.id);
     else if (busyIds.has(b.id)) toast(I18N.t("EXP_ERR_bete_en_expedition"), "bad");
@@ -160,6 +170,7 @@ function Team() {
       <div className="grid-cards">
         {sorted.map((b) => {
           const busy = busyIds.has(b.id);
+          const isChamp = g.championBeastId === b.id;
           return (
             <div key={b.id} style={{ display: "flex", flexDirection: "column", ...(busy ? { opacity: 0.55, filter: "saturate(0.4)" } : {}) }}>
               <CreatureCard beast={b} selectable={!busy} selected={g.selected.includes(b.id)} onClick={() => toggle(b)} showXp
@@ -167,9 +178,16 @@ function Team() {
                   <div style={{ position: "absolute", bottom: 8, left: 8, right: 8, textAlign: "center", background: "rgba(6,9,18,0.85)", border: "1px solid var(--elec)", color: "var(--elec)", fontSize: 11, padding: "3px 6px", borderRadius: 6 }} className="mono">
                     ⏳ {I18N.t("TEAM_BUSY_EXP")}
                   </div>
+                ) : isChamp ? (
+                  <div style={{ position: "absolute", top: 8, left: 8, fontSize: 16, color: "var(--gold, #F7931A)", textShadow: "0 0 8px rgba(247,147,26,0.8)" }}>★</div>
                 ) : null} />
               <RelicSlot beast={b} />
               <TalentSlot beast={b} />
+              <div className="relic-slot mono"
+                style={{ cursor: isChamp ? "default" : "pointer", color: isChamp ? "var(--gold, #F7931A)" : "var(--text-dim)" }}
+                onClick={() => designate(b)}>
+                {isChamp ? "★ " + I18N.t("CHAMP_IS") : "☆ " + I18N.t("CHAMP_DESIGNATE")}
+              </div>
             </div>
           );
         })}
