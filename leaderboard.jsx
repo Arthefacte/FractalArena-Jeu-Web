@@ -1,9 +1,15 @@
 /* ============================================================
    FRACTAL ARENA — Leaderboard (écran classement)
    ============================================================ */
-const { useState, useEffect } = React;
+const { useState, useEffect, useRef } = React;
 const { useFA, cx, SectionHead } = window;
 const I18N = window.FA_I18N;
+const LU = window.FA_LB_LIVE_UI;
+
+// Cadence du classement vivant : re-fetch toutes les 20 s tant que l'ecran est
+// ouvert (cache serveur 15 s — on voit les chiffres bouger sans marteler l'API).
+const LIVE_POLL_MS = 20_000;
+const FLASH_MS = 1600;
 
 const SECTIONS = {
   compet: [["wins", "LB_TAB_WINS"], ["collection", "LB_TAB_POWER"]],
@@ -16,18 +22,39 @@ function Leaderboard() {
   const [board, setBoard] = useState("wins");
   const [st, setSt] = useState({ loading: true, top: [], you: null, error: false });
 
+  const [flash, setFlash] = useState(new Set());
+  const prevTopRef = useRef(null);
+  const flashTimerRef = useRef(null);
+
   useEffect(() => {
     let alive = true;
+    prevTopRef.current = null;
+    setFlash(new Set());
     setSt((s) => ({ ...s, loading: true, error: false }));
-    actions.fetchLeaderboard(board).then((r) => {
+
+    // silencieux = refresh du polling : pas de spinner, mais un flash sur les
+    // lignes dont la valeur ou le rang a bouge — c'est ce qui rend le live visible.
+    const load = (silencieux) => actions.fetchLeaderboard(board).then((r) => {
       if (!alive) return;
-      if (r.ok) setSt({ loading: false, top: r.top, you: r.you, error: false });
-      else setSt({ loading: false, top: [], you: null, error: true });
+      if (!r.ok) { if (!silencieux) setSt({ loading: false, top: [], you: null, error: true }); return; }
+      if (silencieux) {
+        const changed = LU.diffChanges(prevTopRef.current, r.top);
+        if (changed.size > 0) {
+          setFlash(changed);
+          if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+          flashTimerRef.current = setTimeout(() => { if (alive) setFlash(new Set()); }, FLASH_MS);
+        }
+      }
+      prevTopRef.current = r.top;
+      setSt({ loading: false, top: r.top, you: r.you, error: false });
     }).catch(() => {
       if (!alive) return;
-      setSt({ loading: false, top: [], you: null, error: true });
+      if (!silencieux) setSt({ loading: false, top: [], you: null, error: true });
     });
-    return () => { alive = false; };
+
+    load(false);
+    const id = setInterval(() => load(true), LIVE_POLL_MS);
+    return () => { alive = false; clearInterval(id); if (flashTimerRef.current) clearTimeout(flashTimerRef.current); };
   }, [board]);
 
   const pickSection = (sec) => {
@@ -49,15 +76,25 @@ function Leaderboard() {
           <button key={key} className={cx("lb-tab", board === key && "on")} onClick={() => setBoard(key)}>{I18N.t(lbl)}</button>
         ))}
       </div>
+      <div className="muted mono" style={{ fontSize: 10, textAlign: "right", marginBottom: 6 }}>
+        <span style={{ color: "var(--success)" }}>●</span> {I18N.t("LB_LIVE_HINT")}
+      </div>
       {st.loading && <div className="muted" style={{ textAlign: "center", padding: 24 }}>{I18N.t("LB_LOADING")}</div>}
       {st.error && <div className="muted" style={{ textAlign: "center", padding: 24, color: "var(--alert)" }}>{I18N.t("LB_ERROR")}</div>}
       {!st.loading && !st.error && (
         <div className="lb-list">
           {st.top.length === 0 && <div className="muted" style={{ textAlign: "center", padding: 24 }}>{I18N.t("LB_EMPTY")}</div>}
           {st.top.map((row) => (
-            <div key={row.rank} className={cx("lb-row", row.wallet_short === myShort && "mine", row.rank <= 3 && "top" + row.rank)}>
+            <div key={LU.rowKey(row)}
+              className={cx("lb-row", row.wallet_short === myShort && "mine", row.rank <= 3 && "top" + row.rank)}
+              style={{ transition: "background 0.8s ease",
+                background: flash.has(LU.rowKey(row)) ? "rgba(0,240,255,0.14)" : undefined }}>
               <span className="lb-rank">#{row.rank}</span>
-              <span className="lb-name">{row.name}</span>
+              <span className="lb-name">
+                {row.name}
+                {row.live && <span title={I18N.t("LB_LIVE_HINT")}
+                  style={{ color: "var(--success)", marginLeft: 6, fontSize: 10, textShadow: "0 0 6px rgba(0,255,140,0.9)" }}>●</span>}
+              </span>
               <span className="lb-val">{row.value}</span>
             </div>
           ))}

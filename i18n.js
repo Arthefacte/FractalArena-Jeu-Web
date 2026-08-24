@@ -83,6 +83,7 @@
     LB_TAB_BUYBACK: { FR: "Rachat", EN: "Buyback", ZH: "回购" },
     LB_YOU: { FR: "Toi", EN: "You", ZH: "你" },
     LB_EMPTY: { FR: "Pas encore de classés — sois le premier !", EN: "No ranked players yet — be the first!", ZH: "还没有排名 — 来当第一个！" },
+    LB_LIVE_HINT: { FR: "joue en ce moment", EN: "playing right now", ZH: "正在游戏中" },
     LB_LOADING: { FR: "Chargement…", EN: "Loading…", ZH: "加载中…" },
     LB_ERROR: { FR: "Classement indisponible, réessaie.", EN: "Ranking unavailable, try again.", ZH: "排行榜不可用，请重试。" },
 
