@@ -26,6 +26,16 @@ test("diffChanges : valeur ou rang change = flash ; nouvel entrant et inchange =
   assert.deepEqual([...LU.diffChanges(prev, null)], []);
 });
 
+test("formatAgo : cle i18n + valeur selon l age (min/h/j), null si inconnu", () => {
+  assert.deepEqual(LU.formatAgo(30), { key: "LB_AGO_NOW", n: null });
+  assert.deepEqual(LU.formatAgo(60), { key: "LB_AGO_MIN", n: 1 });
+  assert.deepEqual(LU.formatAgo(12 * 60 + 30), { key: "LB_AGO_MIN", n: 12 });
+  assert.deepEqual(LU.formatAgo(3 * 3600 + 100), { key: "LB_AGO_H", n: 3 });
+  assert.deepEqual(LU.formatAgo(5 * 86400 + 999), { key: "LB_AGO_D", n: 5 });
+  assert.equal(LU.formatAgo(null), null);
+  assert.equal(LU.formatAgo(undefined), null);
+});
+
 const SRC = fs.readFileSync(path.join(__dirname, "..", "leaderboard.jsx"), "utf8");
 const HTML = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
 
@@ -36,6 +46,7 @@ test("l'ecran Classement vit : polling 20 s, point vert, flash via diffChanges",
   assert.match(SRC, /row\.live/);
   assert.match(SRC, /diffChanges/);
   assert.match(SRC, /LB_LIVE_HINT/);
+  assert.match(SRC, /formatAgo/, "la recence s'affiche a cote des joueurs sans point vert");
 });
 
 test("index.html charge lb-live-ui.js avant build/leaderboard.js", () => {

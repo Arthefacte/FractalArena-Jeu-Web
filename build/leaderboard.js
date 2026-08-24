@@ -175,7 +175,17 @@ function Leaderboard() {
       fontSize: 10,
       textShadow: "0 0 6px rgba(0,255,140,0.9)"
     }
-  }, "\u25CF")), /*#__PURE__*/React.createElement("span", {
+  }, "\u25CF"), !row.live && (() => {
+    const ago = LU.formatAgo(row.ago_s);
+    return ago && /*#__PURE__*/React.createElement("span", {
+      className: "mono",
+      style: {
+        marginLeft: 6,
+        fontSize: 9,
+        color: "var(--text-faint)"
+      }
+    }, ago.n === null ? I18N.t(ago.key) : I18N.t(ago.key, ago.n));
+  })()), /*#__PURE__*/React.createElement("span", {
     className: "lb-val"
   }, row.value))), st.you && /*#__PURE__*/React.createElement("div", {
     className: "lb-row mine"
