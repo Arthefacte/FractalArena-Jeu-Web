@@ -121,8 +121,13 @@ function CampCombatCard({ meta, live, side, cref }) {
 /* ---------------- ÉCRAN COMBAT PvE ---------------- */
 function CampaignCombat({ worldIndex, floorIndex, onBack, onCleared }) {
   const { g, actions, toast } = useFA();
-  const selectedBeasts = g.selected.map((id) => g.roster.find((b) => b.id === id)).filter(Boolean);
-  const ready = selectedBeasts.length === 3;
+  // Champion de soutien : avec un champion loué, 2 entités propres suffisent —
+  // le serveur insère le snapshot du prêteur au slot 2 (champion-ui.js).
+  const CU = window.FA_CHAMPION_UI;
+  const champ = g.championBorrow;
+  const ownNeeded = CU.requiredOwnCount(!!champ);
+  const selectedBeasts = g.selected.map((id) => g.roster.find((b) => b.id === id)).filter(Boolean).slice(0, ownNeeded);
+  const ready = selectedBeasts.length === ownNeeded;
   const isBoss = floorIndex === D.BOSS_FLOOR;
   const bossName = I18N.t("CAMP_W" + (worldIndex + 1) + "_BOSS");
 
@@ -144,13 +149,21 @@ function CampaignCombat({ worldIndex, floorIndex, onBack, onCleared }) {
   const p2Refs = useRef([]);
   const boardRef = useRef(null);
 
-  // aperçu idle synchronisé avec la sélection
+  // La liste d'emprunt se charge en entrant dans l'écran de combat (cache serveur 60 s).
+  useEffect(() => { actions.championsList(); }, []);
+
+  // aperçu idle synchronisé avec la sélection — le slot champion reste la carte « ? »
+  // (la projection serveur n'expose pas les stats brutes ; les vraies valeurs
+  // arrivent avec les events du combat).
   useEffect(() => {
     if (!playing) {
-      setP1Meta(selectedBeasts.map(campMeta));
-      setP1Live(selectedBeasts.map((b) => ({ hp: D.eff(b, "hp"), maxHp: D.eff(b, "hp"), alive: true })));
+      const metas = selectedBeasts.map(campMeta);
+      const lives = selectedBeasts.map((b) => ({ hp: D.eff(b, "hp"), maxHp: D.eff(b, "hp"), alive: true }));
+      if (champ) { metas.push(null); lives.push({ hp: 1, maxHp: 1, alive: true }); }
+      setP1Meta(metas);
+      setP1Live(lives);
     }
-  }, [g.selected.join(","), playing]);
+  }, [g.selected.join(","), playing, champ && champ.owner_wallet]);
 
   // Même règle que la Fosse : pas de bulle de quiz pendant la résolution d'un
   // combat (quiz.jsx lit le drapeau `fa-busy` sur <body>).
@@ -170,13 +183,20 @@ function CampaignCombat({ worldIndex, floorIndex, onBack, onCleared }) {
 
   async function startFight() {
     if (playing) return;
-    if (!ready) { toast(I18N.t("CAMP_NEED3"), "bad"); return; }
+    if (!ready) { toast(I18N.t(champ ? "CHAMP_NEED2" : "CAMP_NEED3"), "bad"); return; }
     setPlaying(true); // verrou anti double-clic pendant l'appel serveur
 
     // Combat SERVEUR-AUTORITATIF : entrée, combat et récompenses gérés côté serveur.
-    const resp = await actions.campaignFight(worldIndex, floorIndex, g.selected.slice(0, 3), posture);
+    const resp = await actions.campaignFight(worldIndex, floorIndex, g.selected.slice(0, ownNeeded), posture, champ);
     if (!resp.ok) {
       setPlaying(false);
+      // Champion disparu entre l'affichage et le combat : on retire l'emprunt et on re-liste.
+      if (resp.reason === "champion_indisponible") {
+        toast(I18N.t("CHAMP_ERR_champion_indisponible"), "bad");
+        actions.championClearBorrow();
+        actions.championsList();
+        return;
+      }
       // bete_en_expedition : garde serveur des Expéditions — code traduit, pas brut.
       toast(resp.reason === "bete_en_expedition" ? I18N.t("EXP_ERR_bete_en_expedition") : resp.reason, "bad");
       return;
@@ -189,7 +209,18 @@ function CampaignCombat({ worldIndex, floorIndex, onBack, onCleared }) {
     setResult(null);
     setLogLines([]);
     setRound(0);
-    setP1Meta(selectedBeasts.map(campMeta));
+    // Le meta du slot champion se construit depuis l'unité serveur du 1er event
+    // (toUnit : name/maxHp/atk/def/spd/mag réels du snapshot du prêteur).
+    const metas = selectedBeasts.map(campMeta);
+    if (champ) {
+      const u = events.length ? events[0].state.p1[CU.CHAMPION_SLOT] : null;
+      metas.push(u ? {
+        name: champ.beast.name, rarity: champ.beast.rarity, image_key: champ.beast.image_key,
+        rank: champ.beast.rank, preset: champ.beast.preset, level: champ.beast.level,
+        maxHp: u.maxHp, atk: u.atk, def: u.def, spd: u.spd, mag: u.mag, boss: false,
+      } : null);
+    }
+    setP1Meta(metas);
     setP2Meta(enemies.map(campMeta));
     if (events.length) { setP1Live(events[0].state.p1); setP2Live(events[0].state.p2); }
     log(resp.free ? I18N.t("CAMP_FREE_TODAY") : I18N.t("CAMP_TICKET_COST"), "lc-gold");
@@ -271,6 +302,9 @@ function CampaignCombat({ worldIndex, floorIndex, onBack, onCleared }) {
       lockedGain: (r.reward && r.reward.lockedGain) || 0,
       silver: (r.reward && r.reward.silver) || 0,
       gold: (r.reward && r.reward.gold) || 0,
+      // Commission du champion : le pseudo vient de l'entrée de liste (jamais le wallet).
+      commission: (r.champion && r.champion.commission) || 0,
+      champName: (g.championBorrow && g.championBorrow.name) || "",
       titleUnlocked: r.titleUnlocked || null, legend: !!r.legend,
     };
     // Le finisher précède la modale, et joue le victory/defeat que la Campagne
@@ -313,7 +347,14 @@ function CampaignCombat({ worldIndex, floorIndex, onBack, onCleared }) {
               </div>
               <div className="team-row" style={{ gridTemplateColumns: "repeat(3,1fr)" }}>
                 {[0, 1, 2].map((i) => (
-                  <CampCombatCard key={i} side="p1" meta={p1Meta[i]} live={p1Live && p1Live[i]} cref={(el) => (p1Refs.current[i] = el)} />
+                  <div key={i} style={champ && i === CU.CHAMPION_SLOT ? { border: "1px solid var(--elec)", borderRadius: 10, padding: 2 } : undefined}>
+                    {champ && i === CU.CHAMPION_SLOT && (
+                      <div className="mono" style={{ fontSize: 9, color: "var(--elec)", textAlign: "center", marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {I18N.t("CHAMP_BORROWED_TAG", champ.name)}
+                      </div>
+                    )}
+                    <CampCombatCard side="p1" meta={p1Meta[i]} live={p1Live && p1Live[i]} cref={(el) => (p1Refs.current[i] = el)} />
+                  </div>
                 ))}
               </div>
             </div>
@@ -354,7 +395,7 @@ function CampaignCombat({ worldIndex, floorIndex, onBack, onCleared }) {
         <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 18, display: "flex", flexDirection: "column", gap: 14, justifyContent: "center" }}>
           {!ready ? (
             <>
-              <div className="mono" style={{ fontSize: 12, color: "var(--alert)", textAlign: "center" }}>{I18N.t("CAMP_NEED3")}</div>
+              <div className="mono" style={{ fontSize: 12, color: "var(--alert)", textAlign: "center" }}>{I18N.t(champ ? "CHAMP_NEED2" : "CAMP_NEED3")}</div>
               <button className="btn btn-elec block lg" onClick={() => actions.setView("team")}>{I18N.t("CAMP_GOTO_TEAM")}</button>
             </>
           ) : (
@@ -369,6 +410,10 @@ function CampaignCombat({ worldIndex, floorIndex, onBack, onCleared }) {
                 {isBoss ? "⚔️ " + bossName : I18N.t("CAMP_FIGHT")}
               </button>
             </>
+          )}
+          {!playing && (
+            <window.ChampionRow champions={g.championsList} activeOwner={champ ? champ.owner_wallet : null}
+              onPick={(e) => actions.championPickBorrow(e)} onClear={() => actions.championClearBorrow()} />
           )}
         </div>
       </div>
@@ -397,6 +442,7 @@ function CampResultModal({ data, isBoss, onClose, onNext, onRetry }) {
         <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
           <CampResRow label={I18N.t("CAMP_STARS_EARNED", data.stars)} value={"★".repeat(data.stars)} color="var(--gold)" />
           {data.lockedGain > 0 && <CampResRow fa label="FRACTALARENA 🔒" value={"+" + fmt(data.lockedGain)} color="var(--success)" />}
+          {data.commission > 0 && <CampResRow fa label={I18N.t("CHAMP_COMMISSION_ROW", data.champName)} value={fmt(data.commission)} color="var(--elec)" />}
           {data.silver > 0 && <CampResRow label={I18N.t("CAMP_REWARD_SILVER", data.silver)} value="🎟" color="var(--elec)" />}
           {data.gold > 0 && <CampResRow label={I18N.t("CAMP_REWARD_GOLD", data.gold)} value="🎟" color="var(--gold)" />}
           {data.titleUnlocked && (
