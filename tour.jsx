@@ -199,6 +199,11 @@ function TourResultModal({ result, onClose }) {
           {rewards.gold > 0 && <div className="mono" style={{ fontSize: 12, color: "var(--gold)", textAlign: "center" }}>+{rewards.gold} 🎟 Gold</div>}
         </div>
       )}
+      {(result.commission || 0) > 0 && (
+        <div className="mono" style={{ fontSize: 12, color: "var(--elec)", textAlign: "center", marginBottom: 8 }}>
+          {I18N.t("CHAMP_COMMISSION_ROW", result.champName)} : <TokenIcon s={11} /> {fmt(result.commission)}
+        </div>
+      )}
       {runOver ? (
         <div className="mono" style={{ fontSize: 13, textAlign: "center", color: "var(--alert)", padding: "8px 0" }}>{I18N.t("TOUR_RUN_OVER")}</div>
       ) : won ? (
@@ -233,6 +238,8 @@ function Tour() {
   }
   useEffect(() => { setSt((s) => ({ ...s, loading: true })); refresh(); }, [g.wallet, g.authToken]);
   useEffect(() => { const id = setInterval(() => setTick((t) => t + 1), 30000); return () => clearInterval(id); }, []);
+  // Champion de soutien : la liste d'emprunt se charge en entrant dans la Tour.
+  useEffect(() => { actions.championsList(); }, []);
 
   if (!g.wallet || !g.authToken) {
     return (
@@ -249,8 +256,15 @@ function Tour() {
   const rosterState = run ? run.roster_state : {};
   const view = TU.rosterRunView(g.roster, rosterState);
   const alive = TU.aliveCount(g.roster, rosterState);
-  const engage = TU.validateEngage(g.selected, g.roster, rosterState);
-  const selectedBeasts = g.selected.map((id) => g.roster.find((b) => b.id === id)).filter(Boolean);
+  // Champion de soutien : avec un champion loué, 2 entités propres suffisent
+  // (le serveur insère le snapshot au slot 2). Un champion tombé CE run est
+  // désactivé d'office — sa tuile reste grisée dans la rangée.
+  const CU = window.FA_CHAMPION_UI;
+  const champDead = g.championBorrow ? CU.championRunState(rosterState, g.championBorrow.beast.id).dead : false;
+  const champ = champDead ? null : g.championBorrow;
+  const ownNeeded = CU.requiredOwnCount(!!champ);
+  const engage = TU.validateEngage(g.selected.slice(0, ownNeeded), g.roster, rosterState, ownNeeded);
+  const selectedBeasts = g.selected.slice(0, ownNeeded).map((id) => g.roster.find((b) => b.id === id)).filter(Boolean);
 
   async function onStart() {
     if (busy) return;
@@ -273,13 +287,22 @@ function Tour() {
 
   async function onFight() {
     if (busy || !run) return;
-    if (!engage.ok) { toast(I18N.t("TOUR_NEED3"), "bad"); return; }
+    if (!engage.ok) { toast(I18N.t(champ ? "CHAMP_NEED2" : "TOUR_NEED3"), "bad"); return; }
     setBusy(true);
-    const r = await actions.towerFight(g.selected.slice(0, 3), posture);
+    const r = await actions.towerFight(g.selected.slice(0, ownNeeded), posture, champ);
     setBusy(false);
-    if (!r.ok) { toast(tourErr(r.reason), "bad"); refresh(); return; }
-    setBattle({ events: r.events, p1Team: selectedBeasts, p2Team: r.enemy, won: r.won, floorFought: run.floor });
-    setResult({ won: r.won, rewards: r.rewards, runOver: r.runOver, floor: r.floor });
+    if (!r.ok) {
+      if (r.reason === "champion_indisponible") {
+        toast(I18N.t("CHAMP_ERR_champion_indisponible"), "bad");
+        actions.championClearBorrow();
+        actions.championsList();
+        return;
+      }
+      toast(tourErr(r.reason), "bad"); refresh(); return;
+    }
+    setBattle({ events: r.events, p1Team: champ ? [...selectedBeasts, champ.beast] : selectedBeasts, p2Team: r.enemy, won: r.won, floorFought: run.floor });
+    setResult({ won: r.won, rewards: r.rewards, runOver: r.runOver, floor: r.floor,
+      commission: (r.champion && r.champion.commission) || 0, champName: champ ? champ.name : "" });
     setSt((s) => ({
       ...s,
       run: r.runOver ? null : { floor: r.floor, roster_state: r.rosterState },
@@ -311,18 +334,26 @@ function Tour() {
     let curState = run.roster_state || {};
     let curFloor = run.floor;
     const startFloor = run.floor;
-    const sessionTiers = []; let sSilver = 0, sGold = 0, sessionBest = 0;
+    const sessionTiers = []; let sSilver = 0, sGold = 0, sessionBest = 0, sCommission = 0;
     let over = false;
+    // Le champion suit l'auto-combat : les 2 plus en forme + lui. S'il tombe ou
+    // disparaît, l'auto continue sans lui (il ne prolonge jamais le run : la règle
+    // « moins de 3 vivantes du roster propre = fin » est inchangée).
+    const champRef = { current: champ };
     try {
       while (!stopRef.current) {
         const fittest = TU.pickFittest3(g.roster, curState);
         if (!fittest) { over = true; break; } // < 3 vivantes → run terminé
-        const r = await actions.towerFight(fittest, posture);
+        if (champRef.current && CU.championRunState(curState, champRef.current.beast.id).dead) champRef.current = null;
+        const curChamp = champRef.current;
+        const r = await actions.towerFight(curChamp ? fittest.slice(0, 2) : fittest, posture, curChamp);
         if (!r.ok) {
           if (r.reason === "trop_rapide") { await sleep(300); continue; } // throttle serveur : ré-attente
+          if (r.reason === "champion_indisponible") { champRef.current = null; continue; }
           toast(tourErr(r.reason), "bad");
           break;
         }
+        if (r.champion && r.champion.commission > 0) sCommission += r.champion.commission;
         const nextState = r.rosterState || {};
         const casualties = newCasualties(curState, nextState);
         setAutoLog((L) => [...L, { floor: curFloor, won: r.won, casualties, tiers: r.rewards.tiers }]);
@@ -347,7 +378,7 @@ function Tour() {
     } finally {
       runningRef.current = false;
       setAutoRunning(false);
-      setAutoRecap({ startFloor, bestFloor: sessionBest, tiers: sessionTiers, silver: sSilver, gold: sGold, over });
+      setAutoRecap({ startFloor, bestFloor: sessionBest, tiers: sessionTiers, silver: sSilver, gold: sGold, commission: sCommission, over });
     }
   }
 
@@ -401,6 +432,19 @@ function Tour() {
                 onToggle={() => actions.toggleSelect(beast.id)} />
             ))}
           </div>
+
+          {!autoRunning && (
+            <div style={{ marginBottom: 14 }}>
+              <window.ChampionRow champions={g.championsList} activeOwner={champ ? champ.owner_wallet : null}
+                runState={rosterState}
+                onPick={(e) => actions.championPickBorrow(e)} onClear={() => actions.championClearBorrow()} />
+              {champ && (
+                <div className="mono" style={{ fontSize: 11, color: "var(--elec)", marginTop: 4 }}>
+                  {I18N.t("CHAMP_ACTIVE", champ.name)} · {I18N.t("CHAMP_NEED2")}
+                </div>
+              )}
+            </div>
+          )}
 
           {autoRunning ? (
             <div>
@@ -471,6 +515,7 @@ function Tour() {
             <div className="mono" style={{ fontSize: 12, textAlign: "center", marginBottom: 8 }}>
               {autoRecap.silver > 0 && <span style={{ color: "var(--elec)" }}>+{autoRecap.silver} 🎟 </span>}
               {autoRecap.gold > 0 && <span style={{ color: "var(--gold)" }}>+{autoRecap.gold} 🎟</span>}
+              {autoRecap.commission > 0 && <span className="mono" style={{ color: "var(--elec)", display: "block", marginTop: 4 }}><FaText text={I18N.t("CHAMP_COMMISSION_GAIN", autoRecap.commission)} /></span>}
             </div>
           )}
           <button className="btn btn-elec block lg" style={{ marginTop: 10 }} onClick={() => { setAutoRecap(null); refresh(); }}>{I18N.t("TOUR_CONTINUE")}</button>
