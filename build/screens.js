@@ -181,6 +181,16 @@ function Team() {
   useEffect(() => {
     g.selected.filter(id => busyIds.has(id)).forEach(id => actions.toggleSelect(id));
   }, [busyIds]);
+
+  // Champion de soutien : ma designation courante (badge ★ + bande sous les cartes)
+  useEffect(() => {
+    if (g.authToken) actions.championGet();
+  }, [g.authToken]);
+  async function designate(b) {
+    if (g.championBeastId === b.id) return;
+    const r = await actions.championSet(b.id);
+    if (r.ok) toast(I18N.t("CHAMP_DESIGNATED_OK", D.displayName(b)), "good");else toast(r.reason || "error", "bad");
+  }
   function toggle(b) {
     if (g.selected.includes(b.id)) actions.toggleSelect(b.id);else if (busyIds.has(b.id)) toast(I18N.t("EXP_ERR_bete_en_expedition"), "bad");else if (selCount >= 3) toast(I18N.t("TEAM_FULL"), "bad");else actions.toggleSelect(b.id);
   }
@@ -265,6 +275,7 @@ function Team() {
     className: "grid-cards"
   }, sorted.map(b => {
     const busy = busyIds.has(b.id);
+    const isChamp = g.championBeastId === b.id;
     return /*#__PURE__*/React.createElement("div", {
       key: b.id,
       style: {
@@ -296,12 +307,28 @@ function Team() {
           borderRadius: 6
         },
         className: "mono"
-      }, "\u23F3 ", I18N.t("TEAM_BUSY_EXP")) : null
+      }, "\u23F3 ", I18N.t("TEAM_BUSY_EXP")) : isChamp ? /*#__PURE__*/React.createElement("div", {
+        style: {
+          position: "absolute",
+          top: 8,
+          left: 8,
+          fontSize: 16,
+          color: "var(--gold, #F7931A)",
+          textShadow: "0 0 8px rgba(247,147,26,0.8)"
+        }
+      }, "\u2605") : null
     }), /*#__PURE__*/React.createElement(RelicSlot, {
       beast: b
     }), /*#__PURE__*/React.createElement(TalentSlot, {
       beast: b
-    }));
+    }), /*#__PURE__*/React.createElement("div", {
+      className: "relic-slot mono",
+      style: {
+        cursor: isChamp ? "default" : "pointer",
+        color: isChamp ? "var(--gold, #F7931A)" : "var(--text-dim)"
+      },
+      onClick: () => designate(b)
+    }, isChamp ? "★ " + I18N.t("CHAMP_IS") : "☆ " + I18N.t("CHAMP_DESIGNATE")));
   })));
 }
 function RelicSlot({

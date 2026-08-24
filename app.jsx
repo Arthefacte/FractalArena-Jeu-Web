@@ -2345,6 +2345,9 @@ function App() {
           if (g.towerPrizes && g.towerPrizes.length) actions.towerPrizesSeen();
         }} />;
       })()}
+      {g.championUses.unseen > 0 && g.championUses.uses.length > 0 && (
+        <window.ChampionUsesModal uses={g.championUses.uses} onSeen={() => actions.championUsesSeen()} />
+      )}
     </FA_Ctx.Provider>
   );
 }
