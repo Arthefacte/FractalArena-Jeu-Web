@@ -959,6 +959,26 @@
     TOUR_ERR_BEASTS: { FR: "Sélection invalide : 3 entités vivantes distinctes requises.", EN: "Invalid selection: 3 distinct living entities required.", ZH: "选择无效：需要3个不同的存活实体。" },
     TOUR_ERR_GENERIC: { FR: "Erreur serveur.", EN: "Server error.", ZH: "服务器错误。" },
 
+    // Champion de soutien — location de puissance (jamais « mercenaire », jamais « bête »)
+    CHAMP_ROW_TITLE: { FR: "Champions alliés", EN: "Allied champions", ZH: "盟友冠军" },
+    CHAMP_RENT: { FR: "Louer la puissance de %s", EN: "Rent the power of %s", ZH: "租用 %s 的算力" },
+    CHAMP_ACTIVE: { FR: "Champion actif : %s", EN: "Active champion: %s", ZH: "已选冠军：%s" },
+    CHAMP_CLEAR: { FR: "Retirer le champion", EN: "Remove champion", ZH: "移除冠军" },
+    CHAMP_EMPTY: { FR: "Aucun champion disponible pour l'instant", EN: "No champion available yet", ZH: "暂无可用冠军" },
+    CHAMP_NEED2: { FR: "Sélectionne 2 entités — le champion occupe le 3e slot", EN: "Select 2 entities — the champion fills the 3rd slot", ZH: "选择 2 个实体——冠军占据第 3 个位置" },
+    CHAMP_BORROWED_TAG: { FR: "Prêté par %s", EN: "Lent by %s", ZH: "由 %s 出借" },
+    CHAMP_DESIGNATE: { FR: "Désigner champion", EN: "Set as champion", ZH: "设为冠军" },
+    CHAMP_IS: { FR: "Champion", EN: "Champion", ZH: "冠军" },
+    CHAMP_DESIGNATED_OK: { FR: "%s est ton champion", EN: "%s is now your champion", ZH: "%s 已成为你的冠军" },
+    CHAMP_COMMISSION_ROW: { FR: "Commission versée à %s", EN: "Commission paid to %s", ZH: "支付给 %s 的佣金" },
+    CHAMP_COMMISSION_GAIN: { FR: "+%d FA de commission", EN: "+%d FA commission", ZH: "+%d FA 佣金" },
+    CHAMP_USES_TITLE: { FR: "Ton champion a servi", EN: "Your champion was rented", ZH: "你的冠军被租用了" },
+    CHAMP_USES_LINE: { FR: "%s combat(s) — commission %d FA · +%d points de lien", EN: "%s fight(s) — %d FA commission · +%d link points", ZH: "%s 场战斗——佣金 %d FA · +%d 羁绊点" },
+    CHAMP_USES_BY: { FR: "avec %s", EN: "with %s", ZH: "与 %s" },
+    CHAMP_POINTS: { FR: "Points de lien", EN: "Link points", ZH: "羁绊点" },
+    CHAMP_POINTS_DESC: { FR: "Gagnés quand ton champion sert et quand tu loues celui des autres. Purement cosmétiques.", EN: "Earned when your champion serves and when you rent others'. Purely cosmetic.", ZH: "当你的冠军被租用或你租用他人冠军时获得。纯装饰用途。" },
+    CHAMP_ERR_champion_indisponible: { FR: "Ce champion n'est plus disponible", EN: "This champion is no longer available", ZH: "该冠军已不可用" },
+
     // ===== Mutateurs de la Tour =====
     MUT_TITLE: { FR: "Mutateurs de la semaine", EN: "Weekly mutators", ZH: "本周变异" },
     MUT_HINT: { FR: "Actifs pour tous, sur les deux camps. Changent chaque lundi.", EN: "Active for everyone, on both sides. Rotates every Monday.", ZH: "对所有人生效，双方均受影响。每周一轮换。" },
