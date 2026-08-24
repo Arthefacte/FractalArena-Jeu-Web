@@ -127,6 +127,7 @@ function serverToState(save, addr, s) {
     playerName: save.display_name || "",
     playerTitle: save.player_title || "",
     holderDays: save.holder_badge_days ?? 0,
+    championPoints: save.link_points ?? 0,   // server-owned (Champion de soutien)
     lang: save.lang || s.lang || "FR",
     // Préserve la vue courante : ce helper sert aussi à resynchroniser après une
     // action (reroll/fusion/boosts…) ; forcer "team" éjectait l'utilisateur de la
@@ -205,6 +206,12 @@ function freshState() {
     pvp: {},
     pvpPrizes: [],
     towerPrizes: [],
+    // Champion de soutien (location de puissance)
+    championBeastId: null,          // ma designation (badge Equipe)
+    championsList: [],              // liste d'emprunt (GET /champions)
+    championBorrow: null,           // {owner_wallet, name, beast} — emprunt actif (session)
+    championUses: { uses: [], unseen: 0 },
+    championPoints: 0,              // save.link_points (server-owned)
     market: { listings: [], mine: null },
     // Expéditions : état serveur (GET /expeditions/state) — actives + compteurs.
     expeditions: [],
@@ -328,6 +335,7 @@ function App() {
   useEffect(() => { if (g.authToken) actions.pvpPrizes(); }, [g.authToken]);
   useEffect(() => { if (g.authToken) actions.towerPrizes(); }, [g.authToken]);
   useEffect(() => { if (g.authToken) actions.expeditionsState(); }, [g.authToken]);
+  useEffect(() => { if (g.authToken) actions.championUses(); }, [g.authToken]);
 
   // language
   useEffect(() => { I18N.setLang(g.lang); }, [g.lang]);
@@ -1922,14 +1930,17 @@ function App() {
     // ticket Argent), exécute le combat, crédite les récompenses en delta et persiste
     // la progression. Renvoie { ok, events, enemy, won, survivors, stars, reward, free,
     // titleUnlocked, legend } ou { ok:false, reason }.
-    async campaignFight(worldIndex, floorIndex, selectedIds, posture) {
+    async campaignFight(worldIndex, floorIndex, selectedIds, posture, champion) {
       const s = gRef.current;
       if (!s.authToken) return { ok: false, reason: I18N.t("CAMP_NO_TICKET") };
       try {
         const resp = await fetch(`${API_URL}/campaign/fight`, {
           method: "POST",
           headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
-          body: JSON.stringify({ world_index: worldIndex, floor_index: floorIndex, selected: selectedIds, posture: posture || "equilibre" }),
+          body: JSON.stringify({
+            world_index: worldIndex, floor_index: floorIndex, selected: selectedIds, posture: posture || "equilibre",
+            ...(champion ? { champion_owner_wallet: champion.owner_wallet, champion_slot: window.FA_CHAMPION_UI.CHAMPION_SLOT } : {}),
+          }),
         });
         const data = await resp.json();
         if (!resp.ok) {
@@ -1960,6 +1971,7 @@ function App() {
           ok: true, events: data.events || [], enemy: data.enemy || [],
           won: !!data.won, survivors: data.survivors || 0, stars: data.stars || 0,
           reward: data.reward || { lockedGain: 0, silver: 0, gold: 0 }, free: !!data.free,
+          champion: data.champion || null,
           titleUnlocked, legend,
         };
       } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
@@ -1999,13 +2011,16 @@ function App() {
       } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
     },
 
-    async towerFight(selectedIds, posture) {
+    async towerFight(selectedIds, posture, champion) {
       const s = gRef.current;
       if (!s.wallet || !s.authToken) return { ok: false, reason: "auth" };
       try {
         const resp = await fetch(`${API_URL}/tower/fight`, {
           method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
-          body: JSON.stringify({ beast_ids: selectedIds, posture: posture || "equilibre" }),
+          body: JSON.stringify({
+            beast_ids: selectedIds, posture: posture || "equilibre",
+            ...(champion ? { champion_owner_wallet: champion.owner_wallet, champion_slot: window.FA_CHAMPION_UI.CHAMPION_SLOT } : {}),
+          }),
         });
         const data = await resp.json();
         if (!resp.ok || data.status !== "ok") return { ok: false, reason: data.error || "Erreur serveur" };
@@ -2023,6 +2038,7 @@ function App() {
           ok: true, won: !!data.won, floor: data.floor, bestFloor: data.best_floor || 0,
           rewards: rw, runOver: !!data.run_over, rosterState: data.roster_state || {},
           events: data.events || [], enemy: data.enemy || [],
+          champion: data.champion || null,
         };
       } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
     },
@@ -2098,6 +2114,64 @@ function App() {
         await fetch(`${API_URL}/tower/prizes/seen`, { method: "POST", headers: { "Authorization": "Bearer " + gRef.current.authToken } });
       } catch (e) { /* silencieux */ }
       setG((s) => ({ ...s, towerPrizes: [] }));
+    },
+    // ---- Champion de soutien (location de puissance) ----
+    async championGet() {
+      const s = gRef.current;
+      if (!s.authToken) return { ok: false };
+      try {
+        const r = await fetch(`${API_URL}/champion`, { headers: { "Authorization": `Bearer ${s.authToken}` } });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) return { ok: false, reason: d.error || "Erreur serveur" };
+        setG((st) => ({ ...st, championBeastId: d.beast_id || null }));
+        return { ok: true, beast_id: d.beast_id || null };
+      } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
+    },
+    async championSet(beastId) {
+      const s = gRef.current;
+      if (!s.authToken) return { ok: false };
+      try {
+        const r = await fetch(`${API_URL}/champion`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
+          body: JSON.stringify({ beast_id: beastId }),
+        });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) return { ok: false, reason: d.error || "Erreur serveur" };
+        setG((st) => ({ ...st, championBeastId: d.beast_id }));
+        return { ok: true, beast_id: d.beast_id };
+      } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
+    },
+    async championsList() {
+      try {
+        const r = await fetch(`${API_URL}/champions`);
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) return { ok: false };
+        setG((st) => ({ ...st, championsList: d.champions || [] }));
+        return { ok: true, champions: d.champions || [] };
+      } catch (e) { return { ok: false }; }
+    },
+    championPickBorrow(entry) { setG((st) => ({ ...st, championBorrow: entry })); },
+    championClearBorrow() { setG((st) => ({ ...st, championBorrow: null })); },
+    async championUses() {
+      const s = gRef.current;
+      if (!s.authToken) return { ok: false };
+      try {
+        const r = await fetch(`${API_URL}/champion/uses`, { headers: { "Authorization": `Bearer ${s.authToken}` } });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) return { ok: false };
+        setG((st) => ({ ...st, championUses: { uses: d.uses || [], unseen: d.unseen || 0 } }));
+        return { ok: true };
+      } catch (e) { return { ok: false }; }
+    },
+    async championUsesSeen() {
+      const s = gRef.current;
+      if (!s.authToken) return { ok: false };
+      try {
+        await fetch(`${API_URL}/champion/uses/seen`, { method: "POST", headers: { "Authorization": `Bearer ${s.authToken}` } });
+      } catch (e) { /* silencieux */ }
+      setG((st) => ({ ...st, championUses: { ...st.championUses, unseen: 0 } }));
+      return { ok: true };
     },
     async pvpAttacksSeen() {
       if (!gRef.current.authToken) return;
