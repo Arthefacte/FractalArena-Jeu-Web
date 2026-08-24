@@ -2335,7 +2335,29 @@ function Perso() {
     frac: g.holderDays / 360,
     kind: "xp",
     className: ""
-  })), /*#__PURE__*/React.createElement(QuizPrestige, null)));
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "panel oct",
+    style: {
+      border: "1px solid var(--line)",
+      padding: 20,
+      marginTop: 16
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex between center"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "h2"
+  }, "\uD83D\uDD17 ", I18N.t("CHAMP_POINTS")), /*#__PURE__*/React.createElement("span", {
+    className: "pill",
+    style: {
+      color: "var(--elec)"
+    }
+  }, g.championPoints)), /*#__PURE__*/React.createElement("div", {
+    className: "muted mono",
+    style: {
+      fontSize: 11,
+      marginTop: 6
+    }
+  }, I18N.t("CHAMP_POINTS_DESC"))), /*#__PURE__*/React.createElement(QuizPrestige, null)));
 }
 
 /* ---------------- OPTIONS ---------------- */

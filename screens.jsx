@@ -1147,6 +1147,15 @@ function Perso() {
             <div className="muted mono" style={{ fontSize: 12, marginTop: 8 }}>{I18N.t("PE_BADGE_DESC", g.holderDays)}</div>
             <Bar frac={g.holderDays / 360} kind="xp" className="" />
           </div>
+          {/* Champion de soutien : points de lien — affichage seul en v1 (aucun
+              achat par points ; ils se gagnent quand le champion sert). */}
+          <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 20, marginTop: 16 }}>
+            <div className="flex between center">
+              <span className="h2">🔗 {I18N.t("CHAMP_POINTS")}</span>
+              <span className="pill" style={{ color: "var(--elec)" }}>{g.championPoints}</span>
+            </div>
+            <div className="muted mono" style={{ fontSize: 11, marginTop: 6 }}>{I18N.t("CHAMP_POINTS_DESC")}</div>
+          </div>
           {/* Les titres du quiz se gagnent, ils ne s'achètent pas : ils vivent
               sous le titre payant, pas à sa place. */}
           <QuizPrestige />
