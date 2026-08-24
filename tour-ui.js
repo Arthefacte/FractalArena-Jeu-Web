@@ -74,9 +74,10 @@
   }
 
   // Pré-vol client (confort UX) — le serveur revalide tout (betes_invalides).
-  function validateEngage(selectedIds, roster, rosterState) {
+  // expectedCount = 2 quand un champion emprunté occupe le 3e slot (Champion de soutien).
+  function validateEngage(selectedIds, roster, rosterState, expectedCount = 3) {
     const ids = Array.isArray(selectedIds) ? selectedIds : [];
-    if (ids.length !== 3 || new Set(ids).size !== 3) return { ok: false, reason: "need3" };
+    if (ids.length !== expectedCount || new Set(ids).size !== expectedCount) return { ok: false, reason: "need3" };
     const byId = new Set((roster || []).map((b) => b.id));
     for (const id of ids) {
       if (!byId.has(id)) return { ok: false, reason: "unknown" };

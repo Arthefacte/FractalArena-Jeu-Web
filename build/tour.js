@@ -504,7 +504,17 @@ function TourResultModal({
       color: "var(--gold)",
       textAlign: "center"
     }
-  }, "+", rewards.gold, " \uD83C\uDF9F Gold")), runOver ? /*#__PURE__*/React.createElement("div", {
+  }, "+", rewards.gold, " \uD83C\uDF9F Gold")), (result.commission || 0) > 0 && /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      fontSize: 12,
+      color: "var(--elec)",
+      textAlign: "center",
+      marginBottom: 8
+    }
+  }, I18N.t("CHAMP_COMMISSION_ROW", result.champName), " : ", /*#__PURE__*/React.createElement(TokenIcon, {
+    s: 11
+  }), " ", fmt(result.commission)), runOver ? /*#__PURE__*/React.createElement("div", {
     className: "mono",
     style: {
       fontSize: 13,
@@ -585,6 +595,10 @@ function Tour() {
     const id = setInterval(() => setTick(t => t + 1), 30000);
     return () => clearInterval(id);
   }, []);
+  // Champion de soutien : la liste d'emprunt se charge en entrant dans la Tour.
+  useEffect(() => {
+    actions.championsList();
+  }, []);
   if (!g.wallet || !g.authToken) {
     return /*#__PURE__*/React.createElement("div", {
       className: "container"
@@ -623,8 +637,15 @@ function Tour() {
   const rosterState = run ? run.roster_state : {};
   const view = TU.rosterRunView(g.roster, rosterState);
   const alive = TU.aliveCount(g.roster, rosterState);
-  const engage = TU.validateEngage(g.selected, g.roster, rosterState);
-  const selectedBeasts = g.selected.map(id => g.roster.find(b => b.id === id)).filter(Boolean);
+  // Champion de soutien : avec un champion loué, 2 entités propres suffisent
+  // (le serveur insère le snapshot au slot 2). Un champion tombé CE run est
+  // désactivé d'office — sa tuile reste grisée dans la rangée.
+  const CU = window.FA_CHAMPION_UI;
+  const champDead = g.championBorrow ? CU.championRunState(rosterState, g.championBorrow.beast.id).dead : false;
+  const champ = champDead ? null : g.championBorrow;
+  const ownNeeded = CU.requiredOwnCount(!!champ);
+  const engage = TU.validateEngage(g.selected.slice(0, ownNeeded), g.roster, rosterState, ownNeeded);
+  const selectedBeasts = g.selected.slice(0, ownNeeded).map(id => g.roster.find(b => b.id === id)).filter(Boolean);
   async function onStart() {
     if (busy) return;
     setBusy(true);
@@ -655,20 +676,26 @@ function Tour() {
   async function onFight() {
     if (busy || !run) return;
     if (!engage.ok) {
-      toast(I18N.t("TOUR_NEED3"), "bad");
+      toast(I18N.t(champ ? "CHAMP_NEED2" : "TOUR_NEED3"), "bad");
       return;
     }
     setBusy(true);
-    const r = await actions.towerFight(g.selected.slice(0, 3), posture);
+    const r = await actions.towerFight(g.selected.slice(0, ownNeeded), posture, champ);
     setBusy(false);
     if (!r.ok) {
+      if (r.reason === "champion_indisponible") {
+        toast(I18N.t("CHAMP_ERR_champion_indisponible"), "bad");
+        actions.championClearBorrow();
+        actions.championsList();
+        return;
+      }
       toast(tourErr(r.reason), "bad");
       refresh();
       return;
     }
     setBattle({
       events: r.events,
-      p1Team: selectedBeasts,
+      p1Team: champ ? [...selectedBeasts, champ.beast] : selectedBeasts,
       p2Team: r.enemy,
       won: r.won,
       floorFought: run.floor
@@ -677,7 +704,9 @@ function Tour() {
       won: r.won,
       rewards: r.rewards,
       runOver: r.runOver,
-      floor: r.floor
+      floor: r.floor,
+      commission: r.champion && r.champion.commission || 0,
+      champName: champ ? champ.name : ""
     });
     setSt(s => ({
       ...s,
@@ -716,8 +745,15 @@ function Tour() {
     const sessionTiers = [];
     let sSilver = 0,
       sGold = 0,
-      sessionBest = 0;
+      sessionBest = 0,
+      sCommission = 0;
     let over = false;
+    // Le champion suit l'auto-combat : les 2 plus en forme + lui. S'il tombe ou
+    // disparaît, l'auto continue sans lui (il ne prolonge jamais le run : la règle
+    // « moins de 3 vivantes du roster propre = fin » est inchangée).
+    const champRef = {
+      current: champ
+    };
     try {
       while (!stopRef.current) {
         const fittest = TU.pickFittest3(g.roster, curState);
@@ -725,15 +761,22 @@ function Tour() {
           over = true;
           break;
         } // < 3 vivantes → run terminé
-        const r = await actions.towerFight(fittest, posture);
+        if (champRef.current && CU.championRunState(curState, champRef.current.beast.id).dead) champRef.current = null;
+        const curChamp = champRef.current;
+        const r = await actions.towerFight(curChamp ? fittest.slice(0, 2) : fittest, posture, curChamp);
         if (!r.ok) {
           if (r.reason === "trop_rapide") {
             await sleep(300);
             continue;
           } // throttle serveur : ré-attente
+          if (r.reason === "champion_indisponible") {
+            champRef.current = null;
+            continue;
+          }
           toast(tourErr(r.reason), "bad");
           break;
         }
+        if (r.champion && r.champion.commission > 0) sCommission += r.champion.commission;
         const nextState = r.rosterState || {};
         const casualties = newCasualties(curState, nextState);
         setAutoLog(L => [...L, {
@@ -776,6 +819,7 @@ function Tour() {
         tiers: sessionTiers,
         silver: sSilver,
         gold: sGold,
+        commission: sCommission,
         over
       });
     }
@@ -896,7 +940,24 @@ function Tour() {
     dead: dead,
     selIdx: g.selected.indexOf(beast.id),
     onToggle: () => actions.toggleSelect(beast.id)
-  }))), autoRunning ? /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+  }))), !autoRunning && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 14
+    }
+  }, /*#__PURE__*/React.createElement(window.ChampionRow, {
+    champions: g.championsList,
+    activeOwner: champ ? champ.owner_wallet : null,
+    runState: rosterState,
+    onPick: e => actions.championPickBorrow(e),
+    onClear: () => actions.championClearBorrow()
+  }), champ && /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      fontSize: 11,
+      color: "var(--elec)",
+      marginTop: 4
+    }
+  }, I18N.t("CHAMP_ACTIVE", champ.name), " \xB7 ", I18N.t("CHAMP_NEED2"))), autoRunning ? /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "flex between center",
     style: {
       marginBottom: 8
@@ -1060,7 +1121,16 @@ function Tour() {
     style: {
       color: "var(--gold)"
     }
-  }, "+", autoRecap.gold, " \uD83C\uDF9F")), /*#__PURE__*/React.createElement("button", {
+  }, "+", autoRecap.gold, " \uD83C\uDF9F"), autoRecap.commission > 0 && /*#__PURE__*/React.createElement("span", {
+    className: "mono",
+    style: {
+      color: "var(--elec)",
+      display: "block",
+      marginTop: 4
+    }
+  }, /*#__PURE__*/React.createElement(FaText, {
+    text: I18N.t("CHAMP_COMMISSION_GAIN", autoRecap.commission)
+  }))), /*#__PURE__*/React.createElement("button", {
     className: "btn btn-elec block lg",
     style: {
       marginTop: 10

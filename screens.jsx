@@ -113,6 +113,16 @@ function Team() {
     g.selected.filter((id) => busyIds.has(id)).forEach((id) => actions.toggleSelect(id));
   }, [busyIds]);
 
+  // Champion de soutien : ma designation courante (badge ★ + bande sous les cartes)
+  useEffect(() => { if (g.authToken) actions.championGet(); }, [g.authToken]);
+
+  async function designate(b) {
+    if (g.championBeastId === b.id) return;
+    const r = await actions.championSet(b.id);
+    if (r.ok) toast(I18N.t("CHAMP_DESIGNATED_OK", D.displayName(b)), "good");
+    else toast(r.reason || "error", "bad");
+  }
+
   function toggle(b) {
     if (g.selected.includes(b.id)) actions.toggleSelect(b.id);
     else if (busyIds.has(b.id)) toast(I18N.t("EXP_ERR_bete_en_expedition"), "bad");
@@ -160,6 +170,7 @@ function Team() {
       <div className="grid-cards">
         {sorted.map((b) => {
           const busy = busyIds.has(b.id);
+          const isChamp = g.championBeastId === b.id;
           return (
             <div key={b.id} style={{ display: "flex", flexDirection: "column", ...(busy ? { opacity: 0.55, filter: "saturate(0.4)" } : {}) }}>
               <CreatureCard beast={b} selectable={!busy} selected={g.selected.includes(b.id)} onClick={() => toggle(b)} showXp
@@ -167,9 +178,16 @@ function Team() {
                   <div style={{ position: "absolute", bottom: 8, left: 8, right: 8, textAlign: "center", background: "rgba(6,9,18,0.85)", border: "1px solid var(--elec)", color: "var(--elec)", fontSize: 11, padding: "3px 6px", borderRadius: 6 }} className="mono">
                     ⏳ {I18N.t("TEAM_BUSY_EXP")}
                   </div>
+                ) : isChamp ? (
+                  <div style={{ position: "absolute", top: 8, left: 8, fontSize: 16, color: "var(--gold, #F7931A)", textShadow: "0 0 8px rgba(247,147,26,0.8)" }}>★</div>
                 ) : null} />
               <RelicSlot beast={b} />
               <TalentSlot beast={b} />
+              <div className="relic-slot mono"
+                style={{ cursor: isChamp ? "default" : "pointer", color: isChamp ? "var(--gold, #F7931A)" : "var(--text-dim)" }}
+                onClick={() => designate(b)}>
+                {isChamp ? "★ " + I18N.t("CHAMP_IS") : "☆ " + I18N.t("CHAMP_DESIGNATE")}
+              </div>
             </div>
           );
         })}
@@ -1128,6 +1146,15 @@ function Perso() {
             <div className="muted" style={{ fontSize: 11, marginTop: 8, lineHeight: 1.4, fontStyle: "italic" }}>{I18N.t("PE_BADGE_HINT")}</div>
             <div className="muted mono" style={{ fontSize: 12, marginTop: 8 }}>{I18N.t("PE_BADGE_DESC", g.holderDays)}</div>
             <Bar frac={g.holderDays / 360} kind="xp" className="" />
+          </div>
+          {/* Champion de soutien : points de lien — affichage seul en v1 (aucun
+              achat par points ; ils se gagnent quand le champion sert). */}
+          <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 20, marginTop: 16 }}>
+            <div className="flex between center">
+              <span className="h2">🔗 {I18N.t("CHAMP_POINTS")}</span>
+              <span className="pill" style={{ color: "var(--elec)" }}>{g.championPoints}</span>
+            </div>
+            <div className="muted mono" style={{ fontSize: 11, marginTop: 6 }}>{I18N.t("CHAMP_POINTS_DESC")}</div>
           </div>
           {/* Les titres du quiz se gagnent, ils ne s'achètent pas : ils vivent
               sous le titre payant, pas à sa place. */}
