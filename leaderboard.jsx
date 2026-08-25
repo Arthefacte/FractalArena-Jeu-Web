@@ -91,15 +91,17 @@ function Leaderboard() {
                 background: flash.has(LU.rowKey(row)) ? "rgba(0,240,255,0.14)" : undefined }}>
               <span className="lb-rank">#{row.rank}</span>
               <span className="lb-name">
-                {row.name}
+                {/* Recence AVANT le nom : .lb-name coupe a l'ellipse, un nom long
+                    perso avalait le point vert / le « il y a X » sur mobile. */}
                 {row.live && <span title={I18N.t("LB_LIVE_HINT")}
-                  style={{ color: "var(--success)", marginLeft: 6, fontSize: 10, textShadow: "0 0 6px rgba(0,255,140,0.9)" }}>●</span>}
+                  style={{ color: "var(--success)", marginRight: 6, fontSize: 10, textShadow: "0 0 6px rgba(0,255,140,0.9)" }}>●</span>}
                 {!row.live && (() => {
                   const ago = LU.formatAgo(row.ago_s);
-                  return ago && <span className="mono" style={{ marginLeft: 6, fontSize: 9, color: "var(--text-faint)" }}>
+                  return ago && <span className="mono" style={{ marginRight: 6, fontSize: 9, color: "var(--text-faint)" }}>
                     {ago.n === null ? I18N.t(ago.key) : I18N.t(ago.key, ago.n)}
                   </span>;
                 })()}
+                {row.name}
               </span>
               <span className="lb-val">{row.value}</span>
             </div>

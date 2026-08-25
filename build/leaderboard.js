@@ -167,11 +167,11 @@ function Leaderboard() {
     className: "lb-rank"
   }, "#", row.rank), /*#__PURE__*/React.createElement("span", {
     className: "lb-name"
-  }, row.name, row.live && /*#__PURE__*/React.createElement("span", {
+  }, row.live && /*#__PURE__*/React.createElement("span", {
     title: I18N.t("LB_LIVE_HINT"),
     style: {
       color: "var(--success)",
-      marginLeft: 6,
+      marginRight: 6,
       fontSize: 10,
       textShadow: "0 0 6px rgba(0,255,140,0.9)"
     }
@@ -180,12 +180,12 @@ function Leaderboard() {
     return ago && /*#__PURE__*/React.createElement("span", {
       className: "mono",
       style: {
-        marginLeft: 6,
+        marginRight: 6,
         fontSize: 9,
         color: "var(--text-faint)"
       }
     }, ago.n === null ? I18N.t(ago.key) : I18N.t(ago.key, ago.n));
-  })()), /*#__PURE__*/React.createElement("span", {
+  })(), row.name), /*#__PURE__*/React.createElement("span", {
     className: "lb-val"
   }, row.value))), st.you && /*#__PURE__*/React.createElement("div", {
     className: "lb-row mine"
