@@ -11,7 +11,8 @@ test("CampaignCombat integre le champion : liste, rangee, envoi, erreur traduite
   assert.match(SRC, /ChampionRow/);
   assert.match(SRC, /championBorrow/);
   assert.match(SRC, /requiredOwnCount/);
-  assert.match(SRC, /CHAMP_ERR_champion_indisponible/);
+  assert.match(SRC, /champion_indisponible/);
+  assert.match(SRC, /champion_epuise/);
   assert.match(SRC, /championClearBorrow/);
   assert.match(SRC, /CHAMP_BORROWED_TAG/);
   assert.match(SRC, /CHAMP_NEED2/);

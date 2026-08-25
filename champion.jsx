@@ -7,9 +7,12 @@ const { Modal, Bar, FaText } = window;
 
 /* Tuile d'un champion empruntable : art + pseudo du PRÊTEUR + entité en corps.
    Jamais de rareté/niveau sur la vignette (règle du lot cartes) — tout en corps. */
-function ChampionTile({ entry, active, disabled, onClick, hpFrac }) {
+function ChampionTile({ entry, active, dead, onClick, hpFrac }) {
   const b = entry.beast;
   const rc = D.RARITY_COLORS[b.rarity];
+  // Deux indisponibilités distinctes : tombé dans le run (☠) et plafond de
+  // location du jour atteint (« épuisé », annoté par le serveur dans la liste).
+  const disabled = dead || !!entry.epuise;
   return (
     <button className="panel oct" disabled={disabled} onClick={onClick}
       style={{
@@ -25,7 +28,7 @@ function ChampionTile({ entry, active, disabled, onClick, hpFrac }) {
       <div style={{ position: "relative", width: 56, height: 56, margin: "0 auto", borderRadius: 8, overflow: "hidden", background: "#0b1020", border: "1px solid " + rc }}>
         {D.ART[b.image_key] && <img src={D.artFor(b)} alt="" draggable="false" style={{ width: "100%", height: "100%", objectFit: "contain", filter: disabled ? "grayscale(1)" : "none" }}
           onError={(e) => { const fb = D.ART[b.image_key]; if (fb && !e.currentTarget.dataset.fb) { e.currentTarget.dataset.fb = "1"; e.currentTarget.src = fb; } }} />}
-        {disabled && <span style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", fontSize: 22 }}>☠</span>}
+        {dead && <span style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", fontSize: 22 }}>☠</span>}
       </div>
       <div className="mono" style={{ fontSize: 10, marginTop: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: "var(--elec)" }}>
         {entry.name}
@@ -33,6 +36,11 @@ function ChampionTile({ entry, active, disabled, onClick, hpFrac }) {
       <div className="mono" style={{ fontSize: 10, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: "var(--text-dim)" }}>
         {b.name} · LV{b.level}
       </div>
+      {!dead && entry.epuise && (
+        <div className="mono" style={{ fontSize: 9, color: "var(--alert)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+          {I18N.t("CHAMP_EXHAUSTED")}
+        </div>
+      )}
       {hpFrac != null && <div style={{ marginTop: 3 }}><Bar frac={disabled ? 0 : hpFrac} kind="hp" /></div>}
     </button>
   );
@@ -52,7 +60,7 @@ function ChampionRow({ champions, activeOwner, onPick, onClear, runState }) {
               const active = activeOwner === entry.owner_wallet;
               const st = runState ? CU.championRunState(runState, entry.beast.id) : null;
               return <ChampionTile key={entry.owner_wallet} entry={entry} active={active}
-                disabled={!!(st && st.dead)} hpFrac={st ? st.hpFrac : null}
+                dead={!!(st && st.dead)} hpFrac={st ? st.hpFrac : null}
                 onClick={() => (active ? onClear() : onPick(entry))} />;
             })}
           </div>}

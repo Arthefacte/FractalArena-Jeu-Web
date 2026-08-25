@@ -289,7 +289,8 @@ function freshState() {
     // {owner_wallet, name, beast} — emprunt actif (session)
     championUses: {
       uses: [],
-      unseen: 0
+      unseen: 0,
+      totals: null
     },
     championPoints: 0,
     // save.link_points (server-owned)
@@ -3898,7 +3899,8 @@ function App() {
           ...st,
           championUses: {
             uses: d.uses || [],
-            unseen: d.unseen || 0
+            unseen: d.unseen || 0,
+            totals: d.totals || null
           }
         }));
         return {

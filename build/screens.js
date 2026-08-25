@@ -2192,6 +2192,12 @@ function Perso() {
   const [name, setName] = useState("");
   const [title, setTitle] = useState(g.playerTitle || "");
   const [busy, setBusy] = useState(false);
+
+  // L'historique des locations vit ici : on rafraîchit en entrant (le fetch
+  // de connexion peut dater de la session).
+  useEffect(() => {
+    actions.championUses();
+  }, []);
   async function doRename() {
     if (!sel || !name.trim() || busy) return;
     setBusy(true);
@@ -2357,7 +2363,61 @@ function Perso() {
       fontSize: 11,
       marginTop: 6
     }
-  }, I18N.t("CHAMP_POINTS_DESC"))), /*#__PURE__*/React.createElement(QuizPrestige, null)));
+  }, I18N.t("CHAMP_POINTS_DESC"))), /*#__PURE__*/React.createElement("div", {
+    className: "panel oct",
+    style: {
+      border: "1px solid var(--line)",
+      padding: 20,
+      marginTop: 16
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex between center wrap",
+    style: {
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "h2"
+  }, "\u2694\uFE0F ", I18N.t("CHAMP_USES_TITLE")), g.championUses.totals && g.championUses.totals.uses > 0 && /*#__PURE__*/React.createElement("span", {
+    className: "pill mono",
+    style: {
+      color: "var(--gold)"
+    }
+  }, I18N.t("CHAMP_TOTAL_LINE", g.championUses.totals.uses, g.championUses.totals.commission))), (() => {
+    const agg = window.FA_CHAMPION_UI.aggregateUsesByDay(g.championUses.uses);
+    if (!agg.length) return /*#__PURE__*/React.createElement("div", {
+      className: "muted mono",
+      style: {
+        fontSize: 11,
+        marginTop: 8
+      }
+    }, I18N.t("CHAMP_USES_EMPTY"));
+    return agg.map(a => /*#__PURE__*/React.createElement("div", {
+      key: a.day,
+      style: {
+        marginTop: 10,
+        borderBottom: "1px solid var(--line)",
+        paddingBottom: 8
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "mono",
+      style: {
+        fontSize: 11,
+        color: "var(--text-dim)"
+      }
+    }, a.day), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13
+      }
+    }, /*#__PURE__*/React.createElement(FaText, {
+      text: I18N.t("CHAMP_USES_LINE", a.fights, a.commission, a.points)
+    })), a.names.length > 0 && /*#__PURE__*/React.createElement("div", {
+      className: "muted mono",
+      style: {
+        fontSize: 11,
+        marginTop: 2
+      }
+    }, I18N.t("CHAMP_USES_BY", a.names.join(", ")))));
+  })()), /*#__PURE__*/React.createElement(QuizPrestige, null)));
 }
 
 /* ---------------- OPTIONS ---------------- */

@@ -17,12 +17,15 @@ const {
 function ChampionTile({
   entry,
   active,
-  disabled,
+  dead,
   onClick,
   hpFrac
 }) {
   const b = entry.beast;
   const rc = D.RARITY_COLORS[b.rarity];
+  // Deux indisponibilités distinctes : tombé dans le run (☠) et plafond de
+  // location du jour atteint (« épuisé », annoté par le serveur dans la liste).
+  const disabled = dead || !!entry.epuise;
   return /*#__PURE__*/React.createElement("button", {
     className: "panel oct",
     disabled: disabled,
@@ -76,7 +79,7 @@ function ChampionTile({
         e.currentTarget.src = fb;
       }
     }
-  }), disabled && /*#__PURE__*/React.createElement("span", {
+  }), dead && /*#__PURE__*/React.createElement("span", {
     style: {
       position: "absolute",
       inset: 0,
@@ -103,7 +106,16 @@ function ChampionTile({
       textOverflow: "ellipsis",
       color: "var(--text-dim)"
     }
-  }, b.name, " \xB7 LV", b.level), hpFrac != null && /*#__PURE__*/React.createElement("div", {
+  }, b.name, " \xB7 LV", b.level), !dead && entry.epuise && /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      fontSize: 9,
+      color: "var(--alert)",
+      whiteSpace: "nowrap",
+      overflow: "hidden",
+      textOverflow: "ellipsis"
+    }
+  }, I18N.t("CHAMP_EXHAUSTED")), hpFrac != null && /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 3
     }
@@ -153,7 +165,7 @@ function ChampionRow({
       key: entry.owner_wallet,
       entry: entry,
       active: active,
-      disabled: !!(st && st.dead),
+      dead: !!(st && st.dead),
       hpFrac: st ? st.hpFrac : null,
       onClick: () => active ? onClear() : onPick(entry)
     });

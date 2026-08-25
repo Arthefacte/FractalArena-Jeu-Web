@@ -11,7 +11,8 @@ test("la Tour integre le champion : rangee, envoi, validation a 2, erreur tradui
   assert.match(SRC, /championsList\(\)/);
   assert.match(SRC, /championBorrow/);
   assert.match(SRC, /requiredOwnCount/);
-  assert.match(SRC, /CHAMP_ERR_champion_indisponible/);
+  assert.match(SRC, /champion_indisponible/);
+  assert.match(SRC, /champion_epuise/);
   assert.match(SRC, /CHAMP_ACTIVE/);
 });
 
