@@ -114,7 +114,9 @@ function Team() {
   }, [busyIds]);
 
   // Champion de soutien : ma designation courante (badge ★ + bande sous les cartes)
-  useEffect(() => { if (g.authToken) actions.championGet(); }, [g.authToken]);
+  // + l'historique des locations (panneau en bas d'écran — c'est ICI qu'on désigne
+  // son champion, le user ne le trouvait pas dans Perso sous un onglet).
+  useEffect(() => { if (g.authToken) { actions.championGet(); actions.championUses(); } }, [g.authToken]);
 
   async function designate(b) {
     if (g.championBeastId === b.id) return;
@@ -191,6 +193,31 @@ function Team() {
             </div>
           );
         })}
+      </div>
+      {/* Historique des locations du champion — sur l'écran où on le désigne
+          (il était introuvable dans Perso, caché sous l'onglet Titre). */}
+      <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 20, marginTop: 20, maxWidth: 560 }}>
+        <div className="flex between center wrap" style={{ gap: 8 }}>
+          <span className="h2">⚔️ {I18N.t("CHAMP_USES_TITLE")}</span>
+          {g.championUses.totals && g.championUses.totals.uses > 0 && (
+            <span className="pill mono" style={{ color: "var(--gold)" }}>
+              {I18N.t("CHAMP_TOTAL_LINE", g.championUses.totals.uses, g.championUses.totals.commission)}
+            </span>
+          )}
+        </div>
+        {(() => {
+          const agg = window.FA_CHAMPION_UI.aggregateUsesByDay(g.championUses.uses);
+          if (!agg.length) return <div className="muted mono" style={{ fontSize: 11, marginTop: 8 }}>{I18N.t("CHAMP_USES_EMPTY")}</div>;
+          return agg.map((a) => (
+            <div key={a.day} style={{ marginTop: 10, borderBottom: "1px solid var(--line)", paddingBottom: 8 }}>
+              <div className="mono" style={{ fontSize: 11, color: "var(--text-dim)" }}>{a.day}</div>
+              <div style={{ fontSize: 13 }}><FaText text={I18N.t("CHAMP_USES_LINE", a.fights, a.commission, a.points)} /></div>
+              {a.names.length > 0 && (
+                <div className="muted mono" style={{ fontSize: 11, marginTop: 2 }}>{I18N.t("CHAMP_USES_BY", a.names.join(", "))}</div>
+              )}
+            </div>
+          ));
+        })()}
       </div>
     </div>
   );
@@ -1095,10 +1122,6 @@ function Perso() {
   const [title, setTitle] = useState(g.playerTitle || "");
   const [busy, setBusy] = useState(false);
 
-  // L'historique des locations vit ici : on rafraîchit en entrant (le fetch
-  // de connexion peut dater de la session).
-  useEffect(() => { actions.championUses(); }, []);
-
   async function doRename() {
     if (!sel || !name.trim() || busy) return;
     setBusy(true);
@@ -1159,32 +1182,6 @@ function Perso() {
               <span className="pill" style={{ color: "var(--elec)" }}>{g.championPoints}</span>
             </div>
             <div className="muted mono" style={{ fontSize: 11, marginTop: 6 }}>{I18N.t("CHAMP_POINTS_DESC")}</div>
-          </div>
-          {/* Historique permanent des locations du champion : la modale de
-              reconnexion ne se montre qu'une fois — ici on retrouve les jours
-              agrégés (combats, commissions, avec qui) et le total à vie. */}
-          <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 20, marginTop: 16 }}>
-            <div className="flex between center wrap" style={{ gap: 8 }}>
-              <span className="h2">⚔️ {I18N.t("CHAMP_USES_TITLE")}</span>
-              {g.championUses.totals && g.championUses.totals.uses > 0 && (
-                <span className="pill mono" style={{ color: "var(--gold)" }}>
-                  {I18N.t("CHAMP_TOTAL_LINE", g.championUses.totals.uses, g.championUses.totals.commission)}
-                </span>
-              )}
-            </div>
-            {(() => {
-              const agg = window.FA_CHAMPION_UI.aggregateUsesByDay(g.championUses.uses);
-              if (!agg.length) return <div className="muted mono" style={{ fontSize: 11, marginTop: 8 }}>{I18N.t("CHAMP_USES_EMPTY")}</div>;
-              return agg.map((a) => (
-                <div key={a.day} style={{ marginTop: 10, borderBottom: "1px solid var(--line)", paddingBottom: 8 }}>
-                  <div className="mono" style={{ fontSize: 11, color: "var(--text-dim)" }}>{a.day}</div>
-                  <div style={{ fontSize: 13 }}><FaText text={I18N.t("CHAMP_USES_LINE", a.fights, a.commission, a.points)} /></div>
-                  {a.names.length > 0 && (
-                    <div className="muted mono" style={{ fontSize: 11, marginTop: 2 }}>{I18N.t("CHAMP_USES_BY", a.names.join(", "))}</div>
-                  )}
-                </div>
-              ));
-            })()}
           </div>
           {/* Les titres du quiz se gagnent, ils ne s'achètent pas : ils vivent
               sous le titre payant, pas à sa place. */}
