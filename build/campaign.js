@@ -195,24 +195,7 @@ function CampCombatCard({
       borderRadius: 4,
       letterSpacing: 1
     }
-  }, I18N.t("CAMP_BOSS")), borrowTag && !meta.boss && /*#__PURE__*/React.createElement("div", {
-    className: "mono",
-    style: {
-      position: "absolute",
-      top: 6,
-      left: 6,
-      maxWidth: "calc(100% - 12px)",
-      fontSize: 9,
-      fontWeight: 700,
-      color: "var(--elec)",
-      background: "rgba(0,0,0,0.6)",
-      padding: "2px 5px",
-      borderRadius: 4,
-      overflow: "hidden",
-      textOverflow: "ellipsis",
-      whiteSpace: "nowrap"
-    }
-  }, borrowTag)), /*#__PURE__*/React.createElement("div", {
+  }, I18N.t("CAMP_BOSS"))), /*#__PURE__*/React.createElement("div", {
     className: "body"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex between center",
@@ -226,7 +209,17 @@ function CampCombatCard({
     style: {
       color: D.PRESET_COLORS[meta.preset]
     }
-  }, presetLabel(meta.preset))), /*#__PURE__*/React.createElement("div", {
+  }, presetLabel(meta.preset))), borrowTag && /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      fontSize: 9,
+      color: "var(--elec)",
+      marginTop: 3,
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      whiteSpace: "nowrap"
+    }
+  }, borrowTag), /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 8
     }
@@ -382,9 +375,10 @@ function CampaignCombat({
     const resp = await actions.campaignFight(worldIndex, floorIndex, g.selected.slice(0, ownNeeded), posture, champ);
     if (!resp.ok) {
       setPlaying(false);
-      // Champion disparu entre l'affichage et le combat : on retire l'emprunt et on re-liste.
-      if (resp.reason === "champion_indisponible") {
-        toast(I18N.t("CHAMP_ERR_champion_indisponible"), "bad");
+      // Champion disparu OU plafond de location atteint entre l'affichage et le
+      // combat : on retire l'emprunt et on re-liste.
+      if (resp.reason === "champion_indisponible" || resp.reason === "champion_epuise") {
+        toast(I18N.t("CHAMP_ERR_" + resp.reason), "bad");
         actions.championClearBorrow();
         actions.championsList();
         return;

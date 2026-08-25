@@ -26,6 +26,10 @@ const KEYS = [
   ["CHAMP_POINTS", 0],
   ["CHAMP_POINTS_DESC", 0],
   ["CHAMP_ERR_champion_indisponible", 0],
+  ["CHAMP_ERR_champion_epuise", 0],
+  ["CHAMP_EXHAUSTED", 0],
+  ["CHAMP_USES_EMPTY", 0],
+  ["CHAMP_TOTAL_LINE", 2],
 ];
 
 test("champion : toutes les clés présentes et non vides dans les 3 langues", () => {

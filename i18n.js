@@ -983,6 +983,10 @@
     CHAMP_POINTS: { FR: "Points de lien", EN: "Link points", ZH: "羁绊点" },
     CHAMP_POINTS_DESC: { FR: "Gagnés quand ton champion sert et quand tu loues celui des autres. Purement cosmétiques.", EN: "Earned when your champion serves and when you rent others'. Purely cosmetic.", ZH: "当你的冠军被租用或你租用他人冠军时获得。纯装饰用途。" },
     CHAMP_ERR_champion_indisponible: { FR: "Ce champion n'est plus disponible", EN: "This champion is no longer available", ZH: "该冠军已不可用" },
+    CHAMP_ERR_champion_epuise: { FR: "Ce champion a atteint son plafond de locations du jour", EN: "This champion reached today's rental cap", ZH: "该冠军已达今日租用上限" },
+    CHAMP_EXHAUSTED: { FR: "Épuisé aujourd'hui", EN: "Maxed out today", ZH: "今日已满" },
+    CHAMP_USES_EMPTY: { FR: "Ton champion n'a pas encore servi", EN: "Your champion hasn't served yet", ZH: "你的冠军尚未被租用" },
+    CHAMP_TOTAL_LINE: { FR: "Total : %s location(s) · %d FA", EN: "Total: %s rental(s) · %d FA", ZH: "累计：%s 次租用 · %d FA" },
 
     // ===== Mutateurs de la Tour =====
     MUT_TITLE: { FR: "Mutateurs de la semaine", EN: "Weekly mutators", ZH: "本周变异" },

@@ -292,8 +292,8 @@ function Tour() {
     const r = await actions.towerFight(g.selected.slice(0, ownNeeded), posture, champ);
     setBusy(false);
     if (!r.ok) {
-      if (r.reason === "champion_indisponible") {
-        toast(I18N.t("CHAMP_ERR_champion_indisponible"), "bad");
+      if (r.reason === "champion_indisponible" || r.reason === "champion_epuise") {
+        toast(I18N.t("CHAMP_ERR_" + r.reason), "bad");
         actions.championClearBorrow();
         actions.championsList();
         return;
@@ -349,7 +349,7 @@ function Tour() {
         const r = await actions.towerFight(curChamp ? fittest.slice(0, 2) : fittest, posture, curChamp);
         if (!r.ok) {
           if (r.reason === "trop_rapide") { await sleep(300); continue; } // throttle serveur : ré-attente
-          if (r.reason === "champion_indisponible") { champRef.current = null; continue; }
+          if (r.reason === "champion_indisponible" || r.reason === "champion_epuise") { champRef.current = null; continue; }
           toast(tourErr(r.reason), "bad");
           break;
         }

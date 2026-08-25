@@ -92,15 +92,15 @@ function CampCombatCard({ meta, live, side, cref, borrowTag }) {
           onError={(e) => { const fb = D.ART[meta.image_key]; if (fb && !e.currentTarget.dataset.fb) { e.currentTarget.dataset.fb = "1"; e.currentTarget.src = fb; } }}
           style={meta.boss ? { transform: "scale(1.08)", filter: "drop-shadow(0 0 10px rgba(247,147,26,0.7))" } : undefined} />
         {meta.boss && <div style={{ position: "absolute", top: 6, left: 6, fontSize: 9, fontWeight: 700, color: "var(--gold)", background: "rgba(0,0,0,0.6)", padding: "2px 5px", borderRadius: 4, letterSpacing: 1 }}>{I18N.t("CAMP_BOSS")}</div>}
-        {/* Badge « Prêté par X » DANS la vignette (patron du badge BOSS) : une
-            ligne au-dessus de la carte décalait tout le carré vers le bas. */}
-        {borrowTag && !meta.boss && <div className="mono" style={{ position: "absolute", top: 6, left: 6, maxWidth: "calc(100% - 12px)", fontSize: 9, fontWeight: 700, color: "var(--elec)", background: "rgba(0,0,0,0.6)", padding: "2px 5px", borderRadius: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{borrowTag}</div>}
       </div>
       <div className="body">
         <div className="flex between center" style={{ gap: 6 }}>
           <div className="cname">{meta.name}</div>
           <div className="cpreset" style={{ color: D.PRESET_COLORS[meta.preset] }}>{presetLabel(meta.preset)}</div>
         </div>
+        {/* « Prêté par X » vit dans le CORPS : au-dessus de la carte il décalait
+            le carré, sur la vignette il masquait l'art (retours user 25-08). */}
+        {borrowTag && <div className="mono" style={{ fontSize: 9, color: "var(--elec)", marginTop: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{borrowTag}</div>}
         <div style={{ marginTop: 8 }}>
           <div className="bar-label">
             <span style={{ color: side === "p1" ? "var(--elec)" : "var(--alert)" }}>HP</span>
@@ -210,9 +210,10 @@ function CampaignCombat({ worldIndex, floorIndex, onBack, onCleared }) {
     const resp = await actions.campaignFight(worldIndex, floorIndex, g.selected.slice(0, ownNeeded), posture, champ);
     if (!resp.ok) {
       setPlaying(false);
-      // Champion disparu entre l'affichage et le combat : on retire l'emprunt et on re-liste.
-      if (resp.reason === "champion_indisponible") {
-        toast(I18N.t("CHAMP_ERR_champion_indisponible"), "bad");
+      // Champion disparu OU plafond de location atteint entre l'affichage et le
+      // combat : on retire l'emprunt et on re-liste.
+      if (resp.reason === "champion_indisponible" || resp.reason === "champion_epuise") {
+        toast(I18N.t("CHAMP_ERR_" + resp.reason), "bad");
         actions.championClearBorrow();
         actions.championsList();
         return;
