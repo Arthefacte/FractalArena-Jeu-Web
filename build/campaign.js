@@ -101,10 +101,11 @@ function campMeta(b) {
 }
 
 // Aperçu du champion avant le combat : la projection serveur (championEntry)
-// n'expose jamais les stats brutes — on montre image/nom tout de suite, les
-// chiffres restent « ? » jusqu'aux events du premier combat.
+// expose les stats EFFECTIVES dans `stats` (jamais les brutes) — repli « ? »
+// si le champ manque (liste servie par un serveur antérieur).
 function champIdleMeta(champ) {
-  const b = champ.beast;
+  const b = champ.beast,
+    s = b.stats || {};
   return {
     name: b.name,
     rarity: b.rarity,
@@ -112,11 +113,11 @@ function champIdleMeta(champ) {
     rank: b.rank,
     preset: b.preset,
     level: b.level,
-    maxHp: null,
-    atk: null,
-    def: null,
-    spd: null,
-    mag: null,
+    maxHp: s.hp ?? null,
+    atk: s.atk ?? null,
+    def: s.def ?? null,
+    spd: s.spd ?? null,
+    mag: s.mag ?? null,
     boss: false
   };
 }
@@ -124,7 +125,8 @@ function CampCombatCard({
   meta,
   live,
   side,
-  cref
+  cref,
+  borrowTag
 }) {
   if (!meta) {
     return /*#__PURE__*/React.createElement("div", {
@@ -160,8 +162,8 @@ function CampCombatCard({
     className: cx("card", dead && "dead", meta.boss && "camp-boss-card"),
     ref: cref,
     style: {
-      "--rc": meta.boss ? "var(--gold)" : rc,
-      boxShadow: meta.boss ? "0 0 22px rgba(247,147,26,0.5)" : undefined
+      "--rc": meta.boss ? "var(--gold)" : borrowTag ? "var(--elec)" : rc,
+      boxShadow: meta.boss ? "0 0 22px rgba(247,147,26,0.5)" : borrowTag ? "0 0 14px rgba(0,240,255,0.35)" : undefined
     }
   }, /*#__PURE__*/React.createElement("div", {
     className: "art"
@@ -193,7 +195,24 @@ function CampCombatCard({
       borderRadius: 4,
       letterSpacing: 1
     }
-  }, I18N.t("CAMP_BOSS"))), /*#__PURE__*/React.createElement("div", {
+  }, I18N.t("CAMP_BOSS")), borrowTag && !meta.boss && /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      position: "absolute",
+      top: 6,
+      left: 6,
+      maxWidth: "calc(100% - 12px)",
+      fontSize: 9,
+      fontWeight: 700,
+      color: "var(--elec)",
+      background: "rgba(0,0,0,0.6)",
+      padding: "2px 5px",
+      borderRadius: 4,
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      whiteSpace: "nowrap"
+    }
+  }, borrowTag)), /*#__PURE__*/React.createElement("div", {
     className: "body"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex between center",
@@ -308,9 +327,15 @@ function CampaignCombat({
         maxHp: D.eff(b, "hp"),
         alive: true
       }));
+      // Le champion occupe TOUJOURS son slot (2, arrière) : avec 0 ou 1 entité
+      // sélectionnée, un simple push le faisait glisser tout à gauche.
       if (champ) {
-        metas.push(champIdleMeta(champ));
-        lives.push(null);
+        while (metas.length < CU.CHAMPION_SLOT) {
+          metas.push(null);
+          lives.push(null);
+        }
+        metas[CU.CHAMPION_SLOT] = champIdleMeta(champ);
+        lives[CU.CHAMPION_SLOT] = null;
       }
       setP1Meta(metas);
       setP1Live(lives);
@@ -630,31 +655,14 @@ function CampaignCombat({
     style: {
       gridTemplateColumns: "repeat(3,minmax(0,1fr))"
     }
-  }, [0, 1, 2].map(i => /*#__PURE__*/React.createElement("div", {
+  }, [0, 1, 2].map(i => /*#__PURE__*/React.createElement(CampCombatCard, {
     key: i,
-    style: champ && i === CU.CHAMPION_SLOT ? {
-      border: "1px solid var(--elec)",
-      borderRadius: 10,
-      padding: 2,
-      minWidth: 0
-    } : undefined
-  }, champ && i === CU.CHAMPION_SLOT && /*#__PURE__*/React.createElement("div", {
-    className: "mono",
-    style: {
-      fontSize: 9,
-      color: "var(--elec)",
-      textAlign: "center",
-      marginBottom: 2,
-      overflow: "hidden",
-      textOverflow: "ellipsis",
-      whiteSpace: "nowrap"
-    }
-  }, I18N.t("CHAMP_BORROWED_TAG", champ.name)), /*#__PURE__*/React.createElement(CampCombatCard, {
     side: "p1",
     meta: p1Meta[i],
     live: p1Live && p1Live[i],
+    borrowTag: champ && i === CU.CHAMPION_SLOT ? I18N.t("CHAMP_BORROWED_TAG", champ.name) : null,
     cref: el => p1Refs.current[i] = el
-  }))))), /*#__PURE__*/React.createElement("div", {
+  })))), /*#__PURE__*/React.createElement("div", {
     className: "flex center arena-vs",
     style: {
       flexDirection: "column",
