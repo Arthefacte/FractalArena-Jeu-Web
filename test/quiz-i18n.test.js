@@ -8,6 +8,7 @@ const { T } = globalThis.window.FA_I18N;
 const LANGS = ["FR", "EN", "ZH"];
 const CLES = [
   "QUIZ_KEEP", "QUIZ_GIVE", "QUIZ_CORRECT", "QUIZ_WRONG", "QUIZ_REVIEW",
+  "QUIZ_REVIEW_PAID", "QUIZ_REVIEW_GAIN",
   "QUIZ_GIVEN", "QUIZ_TICKER_DON", "QUIZ_TICKER_TOTAL",
   "QUIZ_TITLE_KNOWLEDGE", "QUIZ_TITLE_CONTRIB",
   "QUIZ_SECONDS", "QUIZ_TIMEOUT", "QUIZ_CLOSE",
@@ -89,8 +90,17 @@ test("le refus pour compte non verifie dit la cause ET le geste", () => {
 
 test("les montants suivent la convention FaText", () => {
   for (const lang of LANGS) {
-    for (const cle of ["QUIZ_KEEP", "QUIZ_GIVEN", "QUIZ_KEPT", "QUIZ_TICKER_DON", "QUIZ_TICKER_TOTAL"]) {
+    for (const cle of ["QUIZ_KEEP", "QUIZ_GIVEN", "QUIZ_KEPT", "QUIZ_TICKER_DON", "QUIZ_TICKER_TOTAL", "QUIZ_REVIEW_PAID", "QUIZ_REVIEW_GAIN"]) {
       assert.match(T[cle][lang], /%d\s*FA\b/, `${cle}/${lang} : montant hors convention FaText`);
     }
+  }
+});
+
+// Le montant de révision vient du serveur (review_reward) : jamais figé dans le
+// libellé — même règle que QUIZ_KEEP.
+test("aucun montant en dur dans les libelles de revision", () => {
+  for (const lang of LANGS) {
+    assert.ok(!/\b5\b/.test(T.QUIZ_REVIEW_PAID[lang]), `${lang} : montant fige dans QUIZ_REVIEW_PAID`);
+    assert.ok(!/\b5\b/.test(T.QUIZ_REVIEW_GAIN[lang]), `${lang} : montant fige dans QUIZ_REVIEW_GAIN`);
   }
 });

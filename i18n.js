@@ -1181,7 +1181,9 @@
     QUIZ_GIVE:  { FR: "Offrir au rachat", EN: "Give to buyback", ZH: "捐给回购池" },
     QUIZ_CORRECT: { FR: "Bonne réponse", EN: "Correct", ZH: "回答正确" },
     QUIZ_WRONG:   { FR: "Mauvaise réponse", EN: "Wrong answer", ZH: "回答错误" },
-    QUIZ_REVIEW:  { FR: "Révision — sans récompense", EN: "Review — no reward", ZH: "复习 — 无奖励" },
+    QUIZ_REVIEW:  { FR: "Révision — plafond du jour atteint", EN: "Review — daily cap reached", ZH: "复习 — 已达今日上限" },
+    QUIZ_REVIEW_PAID: { FR: "Révision — +%d FA si bonne réponse", EN: "Review — +%d FA if correct", ZH: "复习 — 答对 +%d FA" },
+    QUIZ_REVIEW_GAIN: { FR: "+%d FA de révision", EN: "+%d FA review bonus", ZH: "复习奖励 +%d FA" },
     QUIZ_GIVEN:   { FR: "%d FA ajoutés au pool de rachat", EN: "%d FA added to the buyback pool", ZH: "已向回购池注入 %d FA" },
     // Le gain atterrit dans le solde verrouillé (« misable uniquement ») : le dire,
     // sinon le joueur cherche ses FA dans le bandeau du haut, qui n'affiche que le liquide.

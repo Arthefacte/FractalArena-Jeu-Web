@@ -221,7 +221,13 @@ function QuizToast() {
         />
       </div>
       <div className="quiz-head">
-        {question.revision ? <div className="quiz-tag">{I18N.t("QUIZ_REVIEW")}</div> : <span />}
+        {/* Révision : la bulle annonce ce qu'elle peut encore payer (le serveur
+            envoie review_left/review_reward ; absents = vieux serveur → plafond). */}
+        {question.revision
+          ? <div className="quiz-tag">{question.review_left > 0
+              ? I18N.t("QUIZ_REVIEW_PAID", question.review_reward || 5)
+              : I18N.t("QUIZ_REVIEW")}</div>
+          : <span />}
         <div className="quiz-timer">{I18N.t("QUIZ_SECONDS", restant)}</div>
         {/* La croix n'apparaît qu'une fois l'explication lue et rien à décider.
             Tant que garder/offrir est à l'écran elle serait une troisième sortie
@@ -251,6 +257,12 @@ function QuizToast() {
             {I18N.t(verdict.correct ? "QUIZ_CORRECT" : "QUIZ_WRONG")}
           </div>
           <div className="quiz-why">{verdict.explanation}</div>
+          {/* Gain de révision : crédité direct, sans choix garder/offrir. */}
+          {verdict.revision && verdict.reward > 0 && (
+            <div className="mono" style={{ marginTop: 6, color: "var(--success)", fontSize: 12 }}>
+              <FaText text={I18N.t("QUIZ_REVIEW_GAIN", verdict.reward)} s={12} />
+            </div>
+          )}
           {/* Les deux destinations, même classe, même largeur : le joueur voit
               deux options équivalentes, jamais une injonction à donner. */}
           {choixEnAttente && (
