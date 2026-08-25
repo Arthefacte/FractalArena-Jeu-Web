@@ -36,3 +36,18 @@ test("aggregateUsesByDay : agrege par jour, jours recents d abord, 3 noms max", 
   assert.deepEqual({ f: agg[1].fights, c: agg[1].commission }, { f: 1, c: 5 });
   assert.deepEqual(CU.aggregateUsesByDay([]), []);
 });
+
+test("mergeDays : chiffres serveur exhaustifs, noms des lignes locales, repli sans days", () => {
+  // Le cas vecu : 21 locations dans la journee, fenetre de 20 lignes → l agregat
+  // local disait « 20 combats, +0 points » ; les chiffres serveur font foi.
+  const uses = Array.from({ length: 20 }, () => ({ day: "2026-08-25", commission: 2, points: 0, borrower_name: "Bob" }));
+  const days = [{ day: "2026-08-25", fights: 21, commission: 52, points: 2 }];
+  const m = CU.mergeDays(days, uses);
+  assert.deepEqual(m, [{ day: "2026-08-25", fights: 21, commission: 52, points: 2, names: ["Bob"] }]);
+  // Jour serveur sans ligne locale (purge des 20) : noms vides, chiffres gardes.
+  const m2 = CU.mergeDays([{ day: "2026-08-20", fights: 3, commission: 9, points: 2 }], uses);
+  assert.deepEqual(m2[0].names, []);
+  // Vieux serveur sans days : repli sur l agregat local.
+  const repli = CU.mergeDays(undefined, uses);
+  assert.equal(repli[0].fights, 20);
+});

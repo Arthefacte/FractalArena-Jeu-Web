@@ -206,7 +206,8 @@ function Team() {
           )}
         </div>
         {(() => {
-          const agg = window.FA_CHAMPION_UI.aggregateUsesByDay(g.championUses.uses);
+          // Chiffres exhaustifs du serveur (days), noms depuis les 20 dernières lignes.
+          const agg = window.FA_CHAMPION_UI.mergeDays(g.championUses.days, g.championUses.uses);
           if (!agg.length) return <div className="muted mono" style={{ fontSize: 11, marginTop: 8 }}>{I18N.t("CHAMP_USES_EMPTY")}</div>;
           return agg.map((a) => (
             <div key={a.day} style={{ marginTop: 10, borderBottom: "1px solid var(--line)", paddingBottom: 8 }}>

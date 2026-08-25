@@ -290,7 +290,8 @@ function freshState() {
     championUses: {
       uses: [],
       unseen: 0,
-      totals: null
+      totals: null,
+      days: []
     },
     championPoints: 0,
     // save.link_points (server-owned)
@@ -3900,7 +3901,8 @@ function App() {
           championUses: {
             uses: d.uses || [],
             unseen: d.unseen || 0,
-            totals: d.totals || null
+            totals: d.totals || null,
+            days: d.days || []
           }
         }));
         return {

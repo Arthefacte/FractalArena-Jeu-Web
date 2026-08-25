@@ -31,5 +31,16 @@
     return [...map.values()].sort((x, y) => (x.day < y.day ? 1 : -1));
   }
 
-  window.FA_CHAMPION_UI = { CHAMPION_SLOT, requiredOwnCount, championRunState, aggregateUsesByDay };
+  // Jours a afficher : les agregats serveur (exhaustifs, /champion/uses days[])
+  // portent les chiffres ; les noms viennent des 20 dernieres lignes, seule
+  // source qui les connait. Sans days (vieux serveur), repli sur l agregat local.
+  function mergeDays(days, uses) {
+    const local = aggregateUsesByDay(uses);
+    if (!Array.isArray(days) || !days.length) return local;
+    const names = new Map(local.map((a) => [a.day, a.names]));
+    return days.map((d) => ({ day: d.day, fights: d.fights, commission: d.commission,
+      points: d.points, names: names.get(d.day) || [] }));
+  }
+
+  window.FA_CHAMPION_UI = { CHAMPION_SLOT, requiredOwnCount, championRunState, aggregateUsesByDay, mergeDays };
 })();

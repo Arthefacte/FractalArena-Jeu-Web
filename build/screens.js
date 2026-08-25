@@ -355,7 +355,8 @@ function Team() {
       color: "var(--gold)"
     }
   }, I18N.t("CHAMP_TOTAL_LINE", g.championUses.totals.uses, g.championUses.totals.commission))), (() => {
-    const agg = window.FA_CHAMPION_UI.aggregateUsesByDay(g.championUses.uses);
+    // Chiffres exhaustifs du serveur (days), noms depuis les 20 dernières lignes.
+    const agg = window.FA_CHAMPION_UI.mergeDays(g.championUses.days, g.championUses.uses);
     if (!agg.length) return /*#__PURE__*/React.createElement("div", {
       className: "muted mono",
       style: {
