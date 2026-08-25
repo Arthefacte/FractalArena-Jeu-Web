@@ -58,6 +58,15 @@ function campMeta(b) {
   } : null;
 }
 
+// Aperçu du champion avant le combat : la projection serveur (championEntry)
+// n'expose jamais les stats brutes — on montre image/nom tout de suite, les
+// chiffres restent « ? » jusqu'aux events du premier combat.
+function champIdleMeta(champ) {
+  const b = champ.beast;
+  return { name: b.name, rarity: b.rarity, image_key: b.image_key, rank: b.rank, preset: b.preset,
+    level: b.level, maxHp: null, atk: null, def: null, spd: null, mag: null, boss: false };
+}
+
 function CampCombatCard({ meta, live, side, cref }) {
   if (!meta) {
     return (
@@ -90,7 +99,7 @@ function CampCombatCard({ meta, live, side, cref }) {
         <div style={{ marginTop: 8 }}>
           <div className="bar-label">
             <span style={{ color: side === "p1" ? "var(--elec)" : "var(--alert)" }}>HP</span>
-            <span style={{ color: "var(--text)" }}>{D.fmtStat(live ? Math.max(0, Math.ceil(live.hp)) : meta.maxHp)}/{D.fmtStat(live ? live.maxHp : meta.maxHp)}</span>
+            <span style={{ color: "var(--text)" }}>{live ? D.fmtStat(Math.max(0, Math.ceil(live.hp))) + "/" + D.fmtStat(live.maxHp) : meta.maxHp == null ? "?/?" : D.fmtStat(meta.maxHp) + "/" + D.fmtStat(meta.maxHp)}</span>
           </div>
           <Bar frac={frac} kind="hp" />
         </div>
@@ -109,7 +118,7 @@ function CampCombatCard({ meta, live, side, cref }) {
           {[["ATK", meta.atk], ["DEF", meta.def], ["SPD", meta.spd], ["MAG", meta.mag]].map(([k, v]) => (
             <div className="stat" key={k}>
               <div className="k">{k}</div>
-              <div className="v" title={String(v)}>{D.fmtStat(v)}</div>
+              <div className="v" title={String(v)}>{v == null ? "?" : D.fmtStat(v)}</div>
             </div>
           ))}
         </div>
@@ -152,14 +161,14 @@ function CampaignCombat({ worldIndex, floorIndex, onBack, onCleared }) {
   // La liste d'emprunt se charge en entrant dans l'écran de combat (cache serveur 60 s).
   useEffect(() => { actions.championsList(); }, []);
 
-  // aperçu idle synchronisé avec la sélection — le slot champion reste la carte « ? »
-  // (la projection serveur n'expose pas les stats brutes ; les vraies valeurs
-  // arrivent avec les events du combat).
+  // aperçu idle synchronisé avec la sélection — le slot champion montre image
+  // et nom tout de suite, stats « ? » (la projection serveur n'expose pas les
+  // stats brutes ; les vraies valeurs arrivent avec les events du combat).
   useEffect(() => {
     if (!playing) {
       const metas = selectedBeasts.map(campMeta);
       const lives = selectedBeasts.map((b) => ({ hp: D.eff(b, "hp"), maxHp: D.eff(b, "hp"), alive: true }));
-      if (champ) { metas.push(null); lives.push({ hp: 1, maxHp: 1, alive: true }); }
+      if (champ) { metas.push(champIdleMeta(champ)); lives.push(null); }
       setP1Meta(metas);
       setP1Live(lives);
     }
@@ -345,9 +354,12 @@ function CampaignCombat({ worldIndex, floorIndex, onBack, onCleared }) {
                 <span className="h2" style={{ color: "var(--elec)", fontSize: 15 }}>{g.ordinalName || g.playerName || I18N.t("AR_YOU")}</span>
                 {round > 0 && <span className="pill mono" style={{ fontSize: 10 }}>{I18N.t("AR_ROUND", round)}</span>}
               </div>
-              <div className="team-row" style={{ gridTemplateColumns: "repeat(3,1fr)" }}>
+              {/* minmax(0,1fr) : avec 1fr nu, le min-content de l'étiquette
+                  « Prêté par X » (nowrap) élargissait la colonne du champion
+                  et écrasait les deux autres cartes sur mobile. */}
+              <div className="team-row" style={{ gridTemplateColumns: "repeat(3,minmax(0,1fr))" }}>
                 {[0, 1, 2].map((i) => (
-                  <div key={i} style={champ && i === CU.CHAMPION_SLOT ? { border: "1px solid var(--elec)", borderRadius: 10, padding: 2 } : undefined}>
+                  <div key={i} style={champ && i === CU.CHAMPION_SLOT ? { border: "1px solid var(--elec)", borderRadius: 10, padding: 2, minWidth: 0 } : undefined}>
                     {champ && i === CU.CHAMPION_SLOT && (
                       <div className="mono" style={{ fontSize: 9, color: "var(--elec)", textAlign: "center", marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {I18N.t("CHAMP_BORROWED_TAG", champ.name)}
@@ -369,7 +381,7 @@ function CampaignCombat({ worldIndex, floorIndex, onBack, onCleared }) {
               <div className="flex between center" style={{ marginBottom: 10 }}>
                 <span className="h2" style={{ color: "var(--alert)", fontSize: 15 }}>{I18N.t("CAMP_VS")}</span>
               </div>
-              <div className="team-row" style={{ gridTemplateColumns: "repeat(3,1fr)" }}>
+              <div className="team-row" style={{ gridTemplateColumns: "repeat(3,minmax(0,1fr))" }}>
                 {[0, 1, 2].map((i) => (
                   <CampCombatCard key={i} side="p2" meta={p2Meta[i]} live={p2Live && p2Live[i]} cref={(el) => (p2Refs.current[i] = el)} />
                 ))}

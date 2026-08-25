@@ -99,6 +99,27 @@ function campMeta(b) {
     boss: !!b.is_boss
   } : null;
 }
+
+// Aperçu du champion avant le combat : la projection serveur (championEntry)
+// n'expose jamais les stats brutes — on montre image/nom tout de suite, les
+// chiffres restent « ? » jusqu'aux events du premier combat.
+function champIdleMeta(champ) {
+  const b = champ.beast;
+  return {
+    name: b.name,
+    rarity: b.rarity,
+    image_key: b.image_key,
+    rank: b.rank,
+    preset: b.preset,
+    level: b.level,
+    maxHp: null,
+    atk: null,
+    def: null,
+    spd: null,
+    mag: null,
+    boss: false
+  };
+}
 function CampCombatCard({
   meta,
   live,
@@ -200,7 +221,7 @@ function CampCombatCard({
     style: {
       color: "var(--text)"
     }
-  }, D.fmtStat(live ? Math.max(0, Math.ceil(live.hp)) : meta.maxHp), "/", D.fmtStat(live ? live.maxHp : meta.maxHp))), /*#__PURE__*/React.createElement(Bar, {
+  }, live ? D.fmtStat(Math.max(0, Math.ceil(live.hp))) + "/" + D.fmtStat(live.maxHp) : meta.maxHp == null ? "?/?" : D.fmtStat(meta.maxHp) + "/" + D.fmtStat(meta.maxHp))), /*#__PURE__*/React.createElement(Bar, {
     frac: frac,
     kind: "hp"
   })), /*#__PURE__*/React.createElement("div", {
@@ -230,7 +251,7 @@ function CampCombatCard({
   }, k), /*#__PURE__*/React.createElement("div", {
     className: "v",
     title: String(v)
-  }, D.fmtStat(v)))))));
+  }, v == null ? "?" : D.fmtStat(v)))))));
 }
 
 /* ---------------- ÉCRAN COMBAT PvE ---------------- */
@@ -276,9 +297,9 @@ function CampaignCombat({
     actions.championsList();
   }, []);
 
-  // aperçu idle synchronisé avec la sélection — le slot champion reste la carte « ? »
-  // (la projection serveur n'expose pas les stats brutes ; les vraies valeurs
-  // arrivent avec les events du combat).
+  // aperçu idle synchronisé avec la sélection — le slot champion montre image
+  // et nom tout de suite, stats « ? » (la projection serveur n'expose pas les
+  // stats brutes ; les vraies valeurs arrivent avec les events du combat).
   useEffect(() => {
     if (!playing) {
       const metas = selectedBeasts.map(campMeta);
@@ -288,12 +309,8 @@ function CampaignCombat({
         alive: true
       }));
       if (champ) {
-        metas.push(null);
-        lives.push({
-          hp: 1,
-          maxHp: 1,
-          alive: true
-        });
+        metas.push(champIdleMeta(champ));
+        lives.push(null);
       }
       setP1Meta(metas);
       setP1Live(lives);
@@ -611,14 +628,15 @@ function CampaignCombat({
   }, I18N.t("AR_ROUND", round))), /*#__PURE__*/React.createElement("div", {
     className: "team-row",
     style: {
-      gridTemplateColumns: "repeat(3,1fr)"
+      gridTemplateColumns: "repeat(3,minmax(0,1fr))"
     }
   }, [0, 1, 2].map(i => /*#__PURE__*/React.createElement("div", {
     key: i,
     style: champ && i === CU.CHAMPION_SLOT ? {
       border: "1px solid var(--elec)",
       borderRadius: 10,
-      padding: 2
+      padding: 2,
+      minWidth: 0
     } : undefined
   }, champ && i === CU.CHAMPION_SLOT && /*#__PURE__*/React.createElement("div", {
     className: "mono",
@@ -688,7 +706,7 @@ function CampaignCombat({
   }, I18N.t("CAMP_VS"))), /*#__PURE__*/React.createElement("div", {
     className: "team-row",
     style: {
-      gridTemplateColumns: "repeat(3,1fr)"
+      gridTemplateColumns: "repeat(3,minmax(0,1fr))"
     }
   }, [0, 1, 2].map(i => /*#__PURE__*/React.createElement(CampCombatCard, {
     key: i,
