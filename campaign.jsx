@@ -59,15 +59,16 @@ function campMeta(b) {
 }
 
 // Aperçu du champion avant le combat : la projection serveur (championEntry)
-// n'expose jamais les stats brutes — on montre image/nom tout de suite, les
-// chiffres restent « ? » jusqu'aux events du premier combat.
+// expose les stats EFFECTIVES dans `stats` (jamais les brutes) — repli « ? »
+// si le champ manque (liste servie par un serveur antérieur).
 function champIdleMeta(champ) {
-  const b = champ.beast;
+  const b = champ.beast, s = b.stats || {};
   return { name: b.name, rarity: b.rarity, image_key: b.image_key, rank: b.rank, preset: b.preset,
-    level: b.level, maxHp: null, atk: null, def: null, spd: null, mag: null, boss: false };
+    level: b.level, maxHp: s.hp ?? null, atk: s.atk ?? null, def: s.def ?? null,
+    spd: s.spd ?? null, mag: s.mag ?? null, boss: false };
 }
 
-function CampCombatCard({ meta, live, side, cref }) {
+function CampCombatCard({ meta, live, side, cref, borrowTag }) {
   if (!meta) {
     return (
       <div className="card" ref={cref} style={{ "--rc": "var(--line)", opacity: 0.5 }}>
@@ -84,12 +85,16 @@ function CampCombatCard({ meta, live, side, cref }) {
   const dead = live && !live.alive;
   return (
     <div className={cx("card", dead && "dead", meta.boss && "camp-boss-card")} ref={cref}
-      style={{ "--rc": meta.boss ? "var(--gold)" : rc, boxShadow: meta.boss ? "0 0 22px rgba(247,147,26,0.5)" : undefined }}>
+      style={{ "--rc": meta.boss ? "var(--gold)" : borrowTag ? "var(--elec)" : rc,
+        boxShadow: meta.boss ? "0 0 22px rgba(247,147,26,0.5)" : borrowTag ? "0 0 14px rgba(0,240,255,0.35)" : undefined }}>
       <div className="art">
         <img src={D.artFor(meta)} alt={meta.name} draggable="false"
           onError={(e) => { const fb = D.ART[meta.image_key]; if (fb && !e.currentTarget.dataset.fb) { e.currentTarget.dataset.fb = "1"; e.currentTarget.src = fb; } }}
           style={meta.boss ? { transform: "scale(1.08)", filter: "drop-shadow(0 0 10px rgba(247,147,26,0.7))" } : undefined} />
         {meta.boss && <div style={{ position: "absolute", top: 6, left: 6, fontSize: 9, fontWeight: 700, color: "var(--gold)", background: "rgba(0,0,0,0.6)", padding: "2px 5px", borderRadius: 4, letterSpacing: 1 }}>{I18N.t("CAMP_BOSS")}</div>}
+        {/* Badge « Prêté par X » DANS la vignette (patron du badge BOSS) : une
+            ligne au-dessus de la carte décalait tout le carré vers le bas. */}
+        {borrowTag && !meta.boss && <div className="mono" style={{ position: "absolute", top: 6, left: 6, maxWidth: "calc(100% - 12px)", fontSize: 9, fontWeight: 700, color: "var(--elec)", background: "rgba(0,0,0,0.6)", padding: "2px 5px", borderRadius: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{borrowTag}</div>}
       </div>
       <div className="body">
         <div className="flex between center" style={{ gap: 6 }}>
@@ -168,7 +173,13 @@ function CampaignCombat({ worldIndex, floorIndex, onBack, onCleared }) {
     if (!playing) {
       const metas = selectedBeasts.map(campMeta);
       const lives = selectedBeasts.map((b) => ({ hp: D.eff(b, "hp"), maxHp: D.eff(b, "hp"), alive: true }));
-      if (champ) { metas.push(champIdleMeta(champ)); lives.push(null); }
+      // Le champion occupe TOUJOURS son slot (2, arrière) : avec 0 ou 1 entité
+      // sélectionnée, un simple push le faisait glisser tout à gauche.
+      if (champ) {
+        while (metas.length < CU.CHAMPION_SLOT) { metas.push(null); lives.push(null); }
+        metas[CU.CHAMPION_SLOT] = champIdleMeta(champ);
+        lives[CU.CHAMPION_SLOT] = null;
+      }
       setP1Meta(metas);
       setP1Live(lives);
     }
@@ -354,19 +365,13 @@ function CampaignCombat({ worldIndex, floorIndex, onBack, onCleared }) {
                 <span className="h2" style={{ color: "var(--elec)", fontSize: 15 }}>{g.ordinalName || g.playerName || I18N.t("AR_YOU")}</span>
                 {round > 0 && <span className="pill mono" style={{ fontSize: 10 }}>{I18N.t("AR_ROUND", round)}</span>}
               </div>
-              {/* minmax(0,1fr) : avec 1fr nu, le min-content de l'étiquette
-                  « Prêté par X » (nowrap) élargissait la colonne du champion
-                  et écrasait les deux autres cartes sur mobile. */}
+              {/* minmax(0,1fr) : avec 1fr nu, le min-content d'un contenu nowrap
+                  élargit sa colonne et écrase les deux autres sur mobile. */}
               <div className="team-row" style={{ gridTemplateColumns: "repeat(3,minmax(0,1fr))" }}>
                 {[0, 1, 2].map((i) => (
-                  <div key={i} style={champ && i === CU.CHAMPION_SLOT ? { border: "1px solid var(--elec)", borderRadius: 10, padding: 2, minWidth: 0 } : undefined}>
-                    {champ && i === CU.CHAMPION_SLOT && (
-                      <div className="mono" style={{ fontSize: 9, color: "var(--elec)", textAlign: "center", marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {I18N.t("CHAMP_BORROWED_TAG", champ.name)}
-                      </div>
-                    )}
-                    <CampCombatCard side="p1" meta={p1Meta[i]} live={p1Live && p1Live[i]} cref={(el) => (p1Refs.current[i] = el)} />
-                  </div>
+                  <CampCombatCard key={i} side="p1" meta={p1Meta[i]} live={p1Live && p1Live[i]}
+                    borrowTag={champ && i === CU.CHAMPION_SLOT ? I18N.t("CHAMP_BORROWED_TAG", champ.name) : null}
+                    cref={(el) => (p1Refs.current[i] = el)} />
                 ))}
               </div>
             </div>
