@@ -256,7 +256,7 @@ function QuizToast() {
     className: "quiz-head"
   }, question.revision ? /*#__PURE__*/React.createElement("div", {
     className: "quiz-tag"
-  }, I18N.t("QUIZ_REVIEW")) : /*#__PURE__*/React.createElement("span", null), /*#__PURE__*/React.createElement("div", {
+  }, question.review_left > 0 ? I18N.t("QUIZ_REVIEW_PAID", question.review_reward || 5) : I18N.t("QUIZ_REVIEW")) : /*#__PURE__*/React.createElement("span", null), /*#__PURE__*/React.createElement("div", {
     className: "quiz-timer"
   }, I18N.t("QUIZ_SECONDS", restant)), verdict && !choixEnAttente && /*#__PURE__*/React.createElement("button", {
     className: "quiz-close",
@@ -277,7 +277,17 @@ function QuizToast() {
     className: cx("quiz-verdict", verdict.correct ? "ok" : "ko")
   }, I18N.t(verdict.correct ? "QUIZ_CORRECT" : "QUIZ_WRONG")), /*#__PURE__*/React.createElement("div", {
     className: "quiz-why"
-  }, verdict.explanation), choixEnAttente && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+  }, verdict.explanation), verdict.revision && verdict.reward > 0 && /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      marginTop: 6,
+      color: "var(--success)",
+      fontSize: 12
+    }
+  }, /*#__PURE__*/React.createElement(FaText, {
+    text: I18N.t("QUIZ_REVIEW_GAIN", verdict.reward),
+    s: 12
+  })), choixEnAttente && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     className: "quiz-dest"
   }, /*#__PURE__*/React.createElement("button", {
     className: "quiz-choice",
