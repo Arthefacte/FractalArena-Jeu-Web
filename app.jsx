@@ -210,7 +210,7 @@ function freshState() {
     championBeastId: null,          // ma designation (badge Equipe)
     championsList: [],              // liste d'emprunt (GET /champions)
     championBorrow: null,           // {owner_wallet, name, beast} — emprunt actif (session)
-    championUses: { uses: [], unseen: 0, totals: null },
+    championUses: { uses: [], unseen: 0, totals: null, days: [] },
     championPoints: 0,              // save.link_points (server-owned)
     market: { listings: [], mine: null },
     // Expéditions : état serveur (GET /expeditions/state) — actives + compteurs.
@@ -2160,7 +2160,7 @@ function App() {
         const r = await fetch(`${API_URL}/champion/uses`, { headers: { "Authorization": `Bearer ${s.authToken}` } });
         const d = await r.json().catch(() => ({}));
         if (!r.ok) return { ok: false };
-        setG((st) => ({ ...st, championUses: { uses: d.uses || [], unseen: d.unseen || 0, totals: d.totals || null } }));
+        setG((st) => ({ ...st, championUses: { uses: d.uses || [], unseen: d.unseen || 0, totals: d.totals || null, days: d.days || [] } }));
         return { ok: true };
       } catch (e) { return { ok: false }; }
     },
