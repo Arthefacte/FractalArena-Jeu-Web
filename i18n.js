@@ -695,6 +695,8 @@
     MKT_RECLAIM: { FR: "Récupérer", EN: "Reclaim", ZH: "取回" },
     MKT_HISTORY: { FR: "Historique", EN: "History", ZH: "历史记录" },
     MKT_SOLD_TO: { FR: "Vendue %d FA", EN: "Sold for %d FA", ZH: "以 %d FA 售出" },
+    MKT_SOLD_LINE: { FR: "Vendue %d FA → net %d FA", EN: "Sold for %d FA → %d FA net", ZH: "以 %d FA 售出 → 净得 %d FA" },
+    MKT_BUYER_LINE: { FR: "Acheteur : %s", EN: "Buyer: %s", ZH: "买家：%s" },
     MKT_LISTED_OK: { FR: "Relique mise en vente !", EN: "Relic listed!", ZH: "遗物已上架！" },
     MKT_BOUGHT_OK: { FR: "Relique achetée !", EN: "Relic purchased!", ZH: "已购买遗物！" },
     MKT_CANCELLED_OK: { FR: "Relique récupérée.", EN: "Relic returned.", ZH: "遗物已取回。" },

@@ -156,11 +156,24 @@ function MarketMine() {
       ))}
 
       {(mine.history || []).length > 0 && <SectionHead title={I18N.t("MKT_HISTORY")} />}
-      {(mine.history || []).map((l) => (
-        <div key={l.id} className="muted mono" style={{ fontSize: 12, padding: "2px 0" }}>
-          {I18N.t("RELIC_" + l.item.type.toUpperCase())} — {l.status === "sold" ? I18N.t("MKT_SOLD_TO", fmt(l.price)) : I18N.t("MKT_CANCEL")}
-        </div>
-      ))}
+      {(mine.history || []).map((l) => {
+        // net/buyer_name viennent du serveur ; repli calculé (5 %) si la réponse
+        // vient d'un serveur antérieur encore en cache.
+        const net = l.status === "sold" ? (l.net ?? l.price - Math.floor(l.price * 0.05)) : null;
+        const when = l.closed_at ? new Date(l.closed_at).toLocaleDateString() : "";
+        return (
+          <div key={l.id} style={{ padding: "6px 0", borderBottom: "1px solid var(--line-soft, var(--line))" }}>
+            <div className="mono" style={{ fontSize: 12 }}>
+              {I18N.t("RELIC_" + l.item.type.toUpperCase())} — {l.status === "sold"
+                ? <FaText text={I18N.t("MKT_SOLD_LINE", fmt(l.price), fmt(net))} s={11} />
+                : I18N.t("MKT_CANCEL")}
+            </div>
+            <div className="muted mono" style={{ fontSize: 10, marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {when}{l.status === "sold" && (l.buyer_name || l.buyer) ? " · " + I18N.t("MKT_BUYER_LINE", l.buyer_name || (String(l.buyer).slice(0, 8) + "…" + String(l.buyer).slice(-4))) : ""}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
