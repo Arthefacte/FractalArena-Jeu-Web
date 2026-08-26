@@ -122,25 +122,55 @@ function RangeeDex({ dex, onVoirRachats }) {
   );
 }
 
-// Rangée burn : cumul détruit à jamais + taux du miroir et son halving.
-// Ne s'affiche que si /burn/status a répondu — pas de valeur fabriquée quand le
-// serveur manque (même règle que RangeeDex) : une panne ne devient pas « 0 brûlé ».
+// Jauge burn : 5e rangée du ticker, même corps et mêmes animations que les pools
+// (barre qui se remplit vers la cérémonie de 100 000, +delta quand ça entre,
+// pulse à la cérémonie). Ne s'affiche que si /burn/status a répondu — pas de
+// valeur fabriquée quand le serveur manque : une panne ne devient pas « 0 brûlé ».
 function RangeeBurn({ burn }) {
   const I = window.FA_I18N;
+  // Ce qui vient d'entrer au compteur (dû qui monte) → même +delta que les pools.
+  const [gain, setGain] = React.useState({ n: 0, montant: 0 });
+  // Une cérémonie vient d'être confirmée (dû qui chute + txid neuf) → pulse or.
+  const [ceremonie, setCeremonie] = React.useState(0);
+  const prev = React.useRef(null); // { owed, txid } du relevé précédent
+  React.useEffect(() => {
+    if (!burn) return;
+    const owed = Number(burn.owed) || 0;
+    const txid = (burn.last_burn && burn.last_burn.txid) || null;
+    const p = prev.current;
+    prev.current = { owed, txid };
+    if (!p) return; // premier relevé : pas d'animation pour du passé
+    if (owed > p.owed) {
+      setGain((g) => ({ n: g.n + 1, montant: owed - p.owed }));
+      const t = setTimeout(() => setGain((g) => ({ n: g.n, montant: 0 })), 1900);
+      return () => clearTimeout(t);
+    }
+    if (owed < p.owed && txid && txid !== p.txid) {
+      setCeremonie((c) => c + 1);
+      if (window.FA_SFX) window.FA_SFX.play("kaching");
+    }
+  }, [burn && burn.owed, burn && burn.last_burn && burn.last_burn.txid]);
   if (!burn || !(burn.total_burned > 0)) return null;
+  const frac = buybackFraction(burn.owed, burn.ceremony_threshold);
   // current_rate ∈ {1, 0.5, 0.25, …} — affiché tel quel, le halving se lit dedans.
   const rateTxt = String(Number(burn.current_rate) || 1);
   return (
-    <div className="bb-burn mono">
-      <div className="bb-line" style={{ gap: 10 }}>
-        <span aria-hidden="true">🔥</span>
-        <span className="bb-burn-cumul"><FaText text={I.t("BURN_ROW", bbFmt(burn.total_burned))} s={10} /></span>
-        <span style={{ flex: 1 }} />
-        <a className="bb-burn-lien" href={"https://fractal.unisat.io/address/" + burn.burn_address}
-           target="_blank" rel="noreferrer">{I.t("BURN_PROOF")} ↗</a>
+    <div
+      key={"g" + gain.n + ":c" + ceremonie}
+      className={"bb-row burn" + (gain.montant > 0 ? " bb-gain" : "") + (ceremonie > 0 ? " bb-rachat" : "")}
+    >
+      <div className="bb-line">
+        <span className="bb-icon">🔥</span>
+        <span className="bb-label">{I.t("BURN_POOL_LABEL")}</span>
+        <div className="bb-bar"><i style={{ width: (frac * 100) + "%" }} /></div>
+        {gain.montant > 0 && <span className="bb-delta">+{bbFmt(gain.montant)}</span>}
+        <span className="bb-nums">{bbFmt(burn.owed)} / {bbFmt(burn.ceremony_threshold)}</span>
       </div>
       <div className="bb-sub">
-        <FaText text={I.t("BURN_SUB", rateTxt, bbFmt(burn.next_halving_at_burned))} s={10} />
+        <FaText text={I.t("BURN_ROW", bbFmt(burn.total_burned)) + " · " + I.t("BURN_SUB", rateTxt, bbFmt(burn.next_halving_at_burned))} s={10} />
+        {" "}
+        <a className="bb-burn-lien" href={"https://fractal.unisat.io/address/" + burn.burn_address}
+           target="_blank" rel="noreferrer">{I.t("BURN_PROOF")} ↗</a>
       </div>
     </div>
   );

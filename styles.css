@@ -1026,9 +1026,9 @@ input { font-family: var(--font-mono); }
   gap: 10px; font-size: 12px; padding: 3px 0;
 }
 
-/* ——— Rangée burn : la destruction de supply, à côté du rachat. ——— */
-.bb-burn { margin-top: 3px; font-size: 10.5px; letter-spacing: 0.04em; }
-.bb-burn-cumul { color: var(--gold); font-weight: 700; white-space: nowrap; }
+/* ——— Jauge burn : 5e rangée du ticker, la destruction de supply. ——— */
+.bb-row.burn .bb-bar > i { background: linear-gradient(90deg, var(--alert), var(--fire)); }
+.bb-row.burn .bb-nums { color: var(--alert); }
 .bb-burn-lien {
   font-family: var(--font-mono); font-size: 10.5px;
   color: var(--elec); white-space: nowrap; text-decoration: none;
