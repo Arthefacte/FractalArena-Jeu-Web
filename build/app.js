@@ -4578,7 +4578,7 @@ function Nav() {
     onClick: () => go(k)
   }, /*#__PURE__*/React.createElement("img", {
     className: "nav-icon",
-    src: `assets/nav-icons/${k}.png?v=74`,
+    src: `assets/nav-icons/${k}.png?v=216`,
     alt: "",
     "aria-hidden": "true",
     draggable: "false"
@@ -4616,7 +4616,7 @@ function Nav() {
     return /*#__PURE__*/React.createElement(MnavSlot, {
       key: k,
       active: g.view === k,
-      icon: `assets/nav-icons/${k}.png?v=74`,
+      icon: `assets/nav-icons/${k}.png?v=216`,
       label: I18N.t(key),
       badge: k === "arene" ? areneBadge : 0,
       onClick: () => go(k)
@@ -4651,7 +4651,7 @@ function Nav() {
     className: cx("fa-sheet-item", g.view === k && "on"),
     onClick: () => go(k)
   }, /*#__PURE__*/React.createElement("img", {
-    src: `assets/nav-icons/${k}.png?v=74`,
+    src: `assets/nav-icons/${k}.png?v=216`,
     alt: "",
     "aria-hidden": "true",
     draggable: "false"

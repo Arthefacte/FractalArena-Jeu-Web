@@ -2587,7 +2587,7 @@ function Nav() {
       <nav className="nav">
         {tabs.map(([k, key]) => (
           <button key={k} className={cx("nav-tab", g.view === k && "on")} onClick={() => go(k)}>
-            <img className="nav-icon" src={`assets/nav-icons/${k}.png?v=74`} alt="" aria-hidden="true" draggable="false" />
+            <img className="nav-icon" src={`assets/nav-icons/${k}.png?v=216`} alt="" aria-hidden="true" draggable="false" />
             <span className="nav-label">{I18N.t(key)}</span>
             {k === "arene" && areneBadge > 0 && (
               <span className="nav-badge" style={{ marginLeft: 4, background: "var(--alert)", color: "#fff", borderRadius: 9, fontSize: 10, padding: "0 5px", fontWeight: 700 }}>
@@ -2610,7 +2610,7 @@ function Nav() {
             <MnavSlot
               key={k}
               active={g.view === k}
-              icon={`assets/nav-icons/${k}.png?v=74`}
+              icon={`assets/nav-icons/${k}.png?v=216`}
               label={I18N.t(key)}
               badge={k === "arene" ? areneBadge : 0}
               onClick={() => go(k)}
@@ -2635,7 +2635,7 @@ function Nav() {
             <div className="fa-sheet-grid">
               {more.map(([k, key]) => (
                 <button key={k} className={cx("fa-sheet-item", g.view === k && "on")} onClick={() => go(k)}>
-                  <img src={`assets/nav-icons/${k}.png?v=74`} alt="" aria-hidden="true" draggable="false" />
+                  <img src={`assets/nav-icons/${k}.png?v=216`} alt="" aria-hidden="true" draggable="false" />
                   <span>{I18N.t(key)}</span>
                   {k === "expeditions" && expReady > 0 && <span className="fa-sheet-dot" aria-hidden="true" />}
                 </button>
