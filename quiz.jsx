@@ -146,6 +146,12 @@ function QuizToast() {
     setEnvoi(false);
     if (!r.ok) { fermer(); return; }
     setVerdict(r.data);
+    // Révision payée : le serveur a DÉJÀ versé les FA verrouillés et il n'y a
+    // aucun choix garder/offrir à attendre — le bandeau suit immédiatement.
+    // (Les questions neuves, elles, ne bougent le solde qu'au choix, via garder().)
+    if (r.data && r.data.revision && r.data.reward > 0) {
+      actions.creditQuizGain(r.data.reward);
+    }
   }
 
   // Les deux issues se confirment pareil. « Garder » n'a rien à envoyer — les FA
