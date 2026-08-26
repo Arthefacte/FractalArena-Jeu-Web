@@ -422,6 +422,10 @@
     TAPE_AGE_H:    { FR: "il y a %s h", EN: "%s h ago", ZH: "%s 小时前" },
     TAPE_AGE_J:    { FR: "il y a %s j", EN: "%s d ago", ZH: "%s 天前" },
     // Rangée DEX du bandeau économie (/dex/status : prix InSwap + rachats vérifiés)
+    // burn — destruction de supply vérifiable (miroir 1:1 + halving)
+    BURN_ROW:   { FR: "%s FA brûlés à jamais", EN: "%s FA burned forever", ZH: "已永久销毁 %s FA" },
+    BURN_PROOF: { FR: "preuve", EN: "proof", ZH: "证明" },
+    BURN_SUB:   { FR: "1 dépensé en jeu = %s brûlé · halving à %s brûlés", EN: "1 spent in game = %s burned · halving at %s burned", ZH: "游戏内每消耗 1 → 销毁 %s · 销毁达 %s 时减半" },
     DEX_PRICE:        { FR: "1 FA = %s FB", EN: "1 FA = %s FB", ZH: "1 FA = %s FB" },
     DEX_CHANGE:       { FR: "%s (24 h)", EN: "%s (24h)", ZH: "%s（24小时）" },
     DEX_VERIFIED_BTN: { FR: "%d rachats vérifiés", EN: "%d verified buybacks", ZH: "%d 次已验证回购" },
