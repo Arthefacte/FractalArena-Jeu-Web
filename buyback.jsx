@@ -122,6 +122,30 @@ function RangeeDex({ dex, onVoirRachats }) {
   );
 }
 
+// Rangée burn : cumul détruit à jamais + taux du miroir et son halving.
+// Ne s'affiche que si /burn/status a répondu — pas de valeur fabriquée quand le
+// serveur manque (même règle que RangeeDex) : une panne ne devient pas « 0 brûlé ».
+function RangeeBurn({ burn }) {
+  const I = window.FA_I18N;
+  if (!burn || !(burn.total_burned > 0)) return null;
+  // current_rate ∈ {1, 0.5, 0.25, …} — affiché tel quel, le halving se lit dedans.
+  const rateTxt = String(Number(burn.current_rate) || 1);
+  return (
+    <div className="bb-burn mono">
+      <div className="bb-line" style={{ gap: 10 }}>
+        <span aria-hidden="true">🔥</span>
+        <span className="bb-burn-cumul"><FaText text={I.t("BURN_ROW", bbFmt(burn.total_burned))} s={10} /></span>
+        <span style={{ flex: 1 }} />
+        <a className="bb-burn-lien" href={"https://fractal.unisat.io/address/" + burn.burn_address}
+           target="_blank" rel="noreferrer">{I.t("BURN_PROOF")} ↗</a>
+      </div>
+      <div className="bb-sub">
+        <FaText text={I.t("BURN_SUB", rateTxt, bbFmt(burn.next_halving_at_burned))} s={10} />
+      </div>
+    </div>
+  );
+}
+
 // Panneau de preuve : la liste des achats DEX des adresses officielles de rachat,
 // telle que renvoyée par le serveur (lecture on-chain via l'Open API InSwap).
 function PanneauRachats({ dex, onClose }) {
@@ -153,6 +177,7 @@ function PanneauRachats({ dex, onClose }) {
 function BuybackTicker() {
   const [bb, setBb] = React.useState(null);
   const [dex, setDex] = React.useState(null);
+  const [burn, setBurn] = React.useState(null);
   const [voirRachats, setVoirRachats] = React.useState(false);
   // Ce qui vient d'entrer, par tier, et un compteur de relevé pour que React
   // remonte les nœuds et rejoue l'animation même si le montant est identique.
@@ -173,12 +198,14 @@ function BuybackTicker() {
     async function load() {
       // /dex/status en parallèle : cache serveur 60 s, donc les réveils fréquents
       // (fa:buyback-refresh à chaque dépense) ne coûtent aucun appel UniSat de plus.
-      const [rb, dx] = await Promise.all([
+      const [rb, dx, br] = await Promise.all([
         fetch(API_URL + "/buyback/status").then((r) => r.json()).catch(() => null),
         fetch(API_URL + "/dex/status").then((r) => (r.ok ? r.json() : null)).catch(() => null),
+        fetch(API_URL + "/burn/status").then((r) => (r.ok ? r.json() : null)).catch(() => null),
       ]);
       if (!alive) return;
       if (dx && dx.dex) setDex(dx.dex);
+      if (br && br.burn) setBurn(br.burn);
       if (rb && rb.buyback && Array.isArray(rb.buyback.pools)) {
         const par = window.FA_JUICE_UI.gainsPools(prevPools.current, rb.buyback.pools, poolsPret.current);
         // AVANT d'écraser prevPools : la détection compare l'ancien relevé au
@@ -256,6 +283,7 @@ function BuybackTicker() {
         />
       ))}
       <RangeeDex dex={dex} onVoirRachats={() => setVoirRachats(true)} />
+      <RangeeBurn burn={burn} />
       <TapeBoursiere pools={bb.pools} gainsSession={cumulGains.current} fraiche={fraiche} cumulOnChain={cumulOnChain} />
       {rachat.n > 0 && Object.keys(rachat.tiers).length > 0 && <PluieOr graine={rachat.n} />}
       {voirRachats && dex && <PanneauRachats dex={dex} onClose={() => setVoirRachats(false)} />}

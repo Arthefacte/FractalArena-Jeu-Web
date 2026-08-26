@@ -1026,6 +1026,15 @@ input { font-family: var(--font-mono); }
   gap: 10px; font-size: 12px; padding: 3px 0;
 }
 
+/* ——— Rangée burn : la destruction de supply, à côté du rachat. ——— */
+.bb-burn { margin-top: 3px; font-size: 10.5px; letter-spacing: 0.04em; }
+.bb-burn-cumul { color: var(--gold); font-weight: 700; white-space: nowrap; }
+.bb-burn-lien {
+  font-family: var(--font-mono); font-size: 10.5px;
+  color: var(--elec); white-space: nowrap; text-decoration: none;
+}
+.bb-burn-lien:hover { text-decoration: underline; }
+
 /* ——— Tape boursière (#7 header vivant) : vraies données qui défilent. ———
    Transform pur sur une piste dupliquée (translateX -50 % en boucle = couture
    invisible). Leçon Mali-G68 : jamais de filtre ni de layout animé ici. */
