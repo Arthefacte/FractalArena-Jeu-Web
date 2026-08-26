@@ -49,7 +49,8 @@ function QuizToast() {
   const ouvert = !!question;
   // Une bonne réponse hors révision rapporte : le joueur doit alors choisir la
   // destination des FA. Tant que ce choix est à l'écran, la bulle l'attend.
-  const gagne = !!(verdict && verdict.correct && !verdict.revision && verdict.reward > 0);
+  // Révisions incluses (décision user 26-08) : tout gain réel ouvre le choix.
+  const gagne = !!(verdict && verdict.correct && verdict.reward > 0);
   const choixEnAttente = gagne && !donne;
   // Le minuteur vit dans une closure figée au rendu où il a démarré ; sans cette
   // ref il lirait un choixEnAttente périmé et confirmerait une conservation après
@@ -146,12 +147,6 @@ function QuizToast() {
     setEnvoi(false);
     if (!r.ok) { fermer(); return; }
     setVerdict(r.data);
-    // Révision payée : le serveur a DÉJÀ versé les FA verrouillés et il n'y a
-    // aucun choix garder/offrir à attendre — le bandeau suit immédiatement.
-    // (Les questions neuves, elles, ne bougent le solde qu'au choix, via garder().)
-    if (r.data && r.data.revision && r.data.reward > 0) {
-      actions.creditQuizGain(r.data.reward);
-    }
   }
 
   // Les deux issues se confirment pareil. « Garder » n'a rien à envoyer — les FA
@@ -263,12 +258,8 @@ function QuizToast() {
             {I18N.t(verdict.correct ? "QUIZ_CORRECT" : "QUIZ_WRONG")}
           </div>
           <div className="quiz-why">{verdict.explanation}</div>
-          {/* Gain de révision : crédité direct, sans choix garder/offrir. */}
-          {verdict.revision && verdict.reward > 0 && (
-            <div className="mono" style={{ marginTop: 6, color: "var(--success)", fontSize: 12 }}>
-              <FaText text={I18N.t("QUIZ_REVIEW_GAIN", verdict.reward)} s={12} />
-            </div>
-          )}
+          {/* Le gain de révision passe par le même choix garder/offrir que les
+              questions neuves (le montant s'affiche dans le bouton « Garder »). */}
           {/* Les deux destinations, même classe, même largeur : le joueur voit
               deux options équivalentes, jamais une injonction à donner. */}
           {choixEnAttente && (
