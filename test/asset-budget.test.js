@@ -106,12 +106,22 @@ test("aucun .glb ne dépasse le budget de fichier ni de VRAM", () => {
   assert.deepStrictEqual(dep, [], "\n  " + dep.join("\n  ") + "\n");
 });
 
+// Exceptions au budget image, chacune justifiée et plafonnée à part.
+// emblem-spin.webp (v222) : repli de la cinématique CHARGÉ À LA DEMANDE
+// uniquement (?cine=bake ou échec 3D — depuis #114/#115 la 3D est le rendu
+// par défaut, ce fichier ne part plus au boot). Le jeton à deux faces impose
+// un TOUR COMPLET (l'ancien demi-tour bouclable reposait sur la symétrie des
+// deux copies identiques) : 132 images au lieu de 88, et la pierre gravée
+// compresse moins bien que l'ancien emblème lisse (427 Ko même à q4).
+const IMAGE_EXCEPTIONS = { "assets/emblem-spin.webp": 600 * 1024 };
+
 test("aucune image servie ne dépasse le budget de poids", () => {
   const dep = [];
   for (const f of files) {
     if (!/\.(png|jpe?g|webp)$/i.test(f)) continue;
     const bytes = fs.statSync(f).size;
-    if (bytes > MAX_IMAGE_FILE) dep.push(`${rel(f)} : ${(bytes / 1024).toFixed(0)} Ko > ${MAX_IMAGE_FILE / 1024} Ko`);
+    const max = IMAGE_EXCEPTIONS[rel(f)] || MAX_IMAGE_FILE;
+    if (bytes > max) dep.push(`${rel(f)} : ${(bytes / 1024).toFixed(0)} Ko > ${max / 1024} Ko`);
   }
   assert.deepStrictEqual(dep, [], "\n  " + dep.join("\n  ") + "\n");
 });
