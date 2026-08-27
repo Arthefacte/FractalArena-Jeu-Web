@@ -249,6 +249,37 @@
     return { cle, detail };
   }
 
+  // ——— Renouvellement glissant de session (serveur PR #127) ———
+  // Dès qu'un jeton de session a plus de 7 jours, le serveur répond avec un
+  // jeton frais dans x-fa-token-refresh. Les appels authentifiés partent de
+  // dizaines d'endroits (app.jsx, écrans, modules) : plutôt que d'instrumenter
+  // chaque site, on enveloppe fetch UNE fois. Le jeton est rangé par writeToken
+  // (même stockage que la connexion) et fa:token-refresh prévient app.jsx pour
+  // que l'état React suive. Sans ça, un joueur actif était déconnecté tous les
+  // 30 jours et repassait par le parcours de signature UniSat (vécu 27-08).
+  (function installTokenRefresh() {
+    if (typeof window.fetch !== "function") return;
+    const fetchOrigine = window.fetch.bind(window);
+    window.fetch = function (input, init) {
+      const p = fetchOrigine(input, init);
+      try {
+        const url = typeof input === "string" ? input : (input && input.url) || "";
+        if (window.FA_API_URL && url.indexOf(window.FA_API_URL) === 0) {
+          p.then((resp) => {
+            try {
+              const neuf = resp.headers && resp.headers.get && resp.headers.get("x-fa-token-refresh");
+              if (neuf) {
+                writeToken(neuf);
+                window.dispatchEvent(new CustomEvent("fa:token-refresh", { detail: { token: neuf } }));
+              }
+            } catch (e) { /* un refresh raté ne casse jamais l'appel porteur */ }
+          }).catch(() => {});
+        }
+      } catch (e) { /* idem : l'enveloppe est best-effort */ }
+      return p;
+    };
+  })();
+
   window.FA_ACCOUNT = {
     KIND_GENERATED, KIND_UNISAT, TOKEN_KEY, KIND_KEY, DEVICE_LINKED_KEY, BANNER_SNOOZE_MS,
     readToken, writeToken, clearToken, readKind, markDeviceLinked, estAppareilLie,
