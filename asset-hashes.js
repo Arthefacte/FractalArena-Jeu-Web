@@ -5,6 +5,7 @@
 window.FA_ASSET_HASHES = {
   "assets/emblem-spin.webp": "87b5337315",
   "assets/emblem.glb": "41eb14a950",
+  "assets/jeton.glb": "0dba0aa8c4",
   "assets/logo3d.glb": "939a8ea4ef",
   "assets/relics/amber_cell.glb": "6874aaf3a8",
   "assets/relics/cobalt_spring.glb": "1735e02360",

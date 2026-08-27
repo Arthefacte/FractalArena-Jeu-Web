@@ -14,7 +14,10 @@ const {
 const I18N = window.FA_I18N;
 // Emblème de la cinématique, en URL versionnée (FA_ASSET_URL, data.js). Sans version,
 // le CDN a servi un 404 mis en cache pendant un jour après l'ajout du fichier.
-const EMBLEM_GLB = typeof window !== 'undefined' && window.FA_ASSET_URL ? window.FA_ASSET_URL('assets/emblem.glb') : 'assets/emblem.glb';
+// Depuis v217 c'est le JETON À DEUX FACES (avers FA / revers badge FB, un seul GLB
+// aux deux vraies faces) : plus besoin de cloner l'emblème dos à dos au chargement.
+// Symbole assumé : chaque rachat verrouille FA et FB ensemble dans la LP, à vie.
+const EMBLEM_GLB = typeof window !== 'undefined' && window.FA_ASSET_URL ? window.FA_ASSET_URL('assets/jeton.glb') : 'assets/jeton.glb';
 
 // Rend la main au navigateur, le temps qu'il peigne une image. L'initialisation
 // 3D s'executait d'une traite : 502 ms mesurees sur un Mali-G68 (sonde v3,
@@ -611,23 +614,14 @@ function Emblem3D(props) {
         const loader = new GLTFLoader();
         loader.load(EMBLEM_GLB, gltf => {
           if (disposed) return;
+          // Le jeton porte déjà ses deux faces (FA/FB) : centrage et échelle suffisent.
           const m1 = gltf.scene;
           const box = new THREE.Box3().setFromObject(m1);
           const size = box.getSize(new THREE.Vector3());
           const center = box.getCenter(new THREE.Vector3());
           const maxDim = Math.max(size.x, size.y, size.z) || 1;
           m1.position.sub(center);
-          const dz = size.z * 0.22;
-          const wrap1 = new THREE.Group();
-          wrap1.add(m1);
-          wrap1.rotation.y = Math.PI;
-          wrap1.position.z = -dz;
-          const m2 = m1.clone();
-          const wrap2 = new THREE.Group();
-          wrap2.add(m2);
-          wrap2.position.z = dz;
-          group.add(wrap1);
-          group.add(wrap2);
+          group.add(m1);
           group.scale.setScalar(2.6 / maxDim);
           window.FA_DIAG && window.FA_DIAG.marque('emblème-charge');
         }, undefined, err => {
@@ -895,23 +889,14 @@ function Cinematique(props) {
         const loader = new GLTFLoader();
         loader.load(EMBLEM_GLB, gltf => {
           if (disposed) return;
+          // Le jeton porte déjà ses deux faces (FA/FB) : centrage et échelle suffisent.
           const m1 = gltf.scene;
           const box = new THREE.Box3().setFromObject(m1);
           const size = box.getSize(new THREE.Vector3());
           const center = box.getCenter(new THREE.Vector3());
           const maxDim = Math.max(size.x, size.y, size.z) || 1;
           m1.position.sub(center);
-          const dz = size.z * 0.22;
-          const wrap1 = new THREE.Group();
-          wrap1.add(m1);
-          wrap1.rotation.y = Math.PI;
-          wrap1.position.z = -dz;
-          const m2 = m1.clone();
-          const wrap2 = new THREE.Group();
-          wrap2.add(m2);
-          wrap2.position.z = dz;
-          group.add(wrap1);
-          group.add(wrap2);
+          group.add(m1);
           group.scale.setScalar(2.6 / maxDim);
           window.FA_DIAG && window.FA_DIAG.marque('emblème-charge');
         }, undefined, err => {
