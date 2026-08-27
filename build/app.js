@@ -4423,7 +4423,7 @@ function Header({
     className: "hdr-title"
   }, "FRACTAL ARENA"), /*#__PURE__*/React.createElement("span", {
     className: "hdr-sub"
-  }, "FRACTAL BITCOIN \xB7 AUTO-BATTLER")), window.FA_API_URL && window.FA_API_URL.includes("localhost") && /*#__PURE__*/React.createElement("span", {
+  }, "AUTO-BATTLER ON-CHAIN")), window.FA_API_URL && window.FA_API_URL.includes("localhost") && /*#__PURE__*/React.createElement("span", {
     className: "pill mono",
     style: {
       background: "rgba(255,59,92,0.14)",
