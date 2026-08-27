@@ -1,8 +1,12 @@
 /* ============================================================
    FRACTAL ARENA — Mobile / portrait overrides
    Active ≤ 640px (téléphone, ou fenêtre étroite / iframe mobile)
+   ET téléphone en PAYSAGE (tactile + hauteur ≤ 500px) : tourné sur
+   le côté, un téléphone fait ~900px de large — sans cette branche il
+   recevait la mise en page PC (sous-titre du header, pastilles chat/
+   quiz/support flottantes hors de la barre — vu le 2026-08-27).
    ============================================================ */
-@media (max-width: 640px) {
+@media (max-width: 640px), ((max-height: 500px) and (orientation: landscape) and (pointer: coarse)) {
 
   /* ---- Containers ---- */
   .container,
