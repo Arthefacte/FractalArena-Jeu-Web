@@ -344,3 +344,15 @@
   .stat-row { gap: 4px; }
   .stat { flex: 1 1 30%; }
 }
+
+/* ============================================================
+   Paysage téléphone : la place horizontale abonde — le titre
+   complet revient (demande user 2026-08-27), compact pour tenir
+   dans le header une ligne. Chargée APRÈS styles.css : bat aussi
+   son @media 720px qui masque .hdr-sub.
+   ============================================================ */
+@media ((max-height: 500px) and (orientation: landscape) and (pointer: coarse)) {
+  .hdr-word { display: flex; }
+  .hdr-title { font-size: 15px; letter-spacing: 3px; }
+  .hdr-sub { display: block; font-size: 8.5px; letter-spacing: 2px; }
+}
