@@ -340,6 +340,20 @@ function App() {
   // language
   useEffect(() => { I18N.setLang(g.lang); }, [g.lang]);
 
+  // Renouvellement glissant de session : l'intercepteur fetch (account-ui.js) a
+  // déjà rangé le jeton frais dans le stockage — ici on aligne l'état React,
+  // sinon les prochains Bearer partiraient encore avec l'ancien jeton.
+  useEffect(() => {
+    const h = (e) => {
+      const t = e && e.detail && e.detail.token;
+      if (t && gRef.current.authToken && t !== gRef.current.authToken) {
+        setG((s) => ({ ...s, authToken: t }));
+      }
+    };
+    window.addEventListener("fa:token-refresh", h);
+    return () => window.removeEventListener("fa:token-refresh", h);
+  }, []);
+
   // #4 accent contextuel : chaque écran teinte l'UI via body[data-view] (cascade CSS pure)
   useEffect(() => { document.body.dataset.view = g.view || "team"; }, [g.view]);
 
