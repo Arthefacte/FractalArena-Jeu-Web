@@ -1,0 +1,63 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<style> html,body{margin:0;background:#0a0e14;} #stage canvas{display:block;} </style>
+<script type="importmap">
+  { "imports": { "three":"../vendor/three-0.160.0/three.module.js", "three/addons/":"../vendor/three-0.160.0/addons/" } }
+</script>
+</head>
+<body>
+<div id="stage"></div>
+<script type="module">
+// Prévisualisation du jeton à deux faces (FA/FB) — mêmes lumières et exposition
+// que bake-spin.html (la scène de la cinématique), angle piloté par ?yaw=deg.
+import * as THREE from "three";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+
+const params = new URLSearchParams(location.search);
+const SIZE = +(params.get("size") || 700);
+const YAW = (+(params.get("yaw") || 30)) * Math.PI / 180;
+const PITCH = (+(params.get("pitch") || 8)) * Math.PI / 180;
+
+const stage = document.getElementById("stage");
+const renderer = new THREE.WebGLRenderer({ alpha: false, antialias: true, preserveDrawingBuffer: true });
+renderer.setSize(SIZE, SIZE, false);
+renderer.setPixelRatio(1);
+renderer.setClearColor(0x0a0e14, 1);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.15;
+stage.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
+camera.position.set(0, 0, 3.2);
+
+const key = new THREE.DirectionalLight(0xffffff, 2.4); key.position.set(2.5, 3, 4); scene.add(key);
+const rim = new THREE.DirectionalLight(0x00f0ff, 1.4); rim.position.set(-3, 1.5, -2.5); scene.add(rim);
+scene.add(new THREE.AmbientLight(0xbfd8ff, 0.5));
+
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+const group = new THREE.Group();
+scene.add(group);
+window.__ready = false; window.__err = null;
+
+const MODEL = params.get("model") || "jeton-fa-fb.glb";
+new GLTFLoader().load("../../fractal-arena-3d/modeles/" + MODEL, (gltf) => {
+  try {
+    group.add(gltf.scene);
+    group.rotation.set(PITCH, YAW, 0);
+    renderer.render(scene, camera);
+    // Pilotage externe (captures animées) : le harnais tourne le groupe et re-rend.
+    window.__group = group;
+    window.__render = () => renderer.render(scene, camera);
+    window.__ready = true;
+  } catch (e) { window.__err = String(e); }
+}, undefined, (e) => { window.__err = String(e && e.message || e); });
+</script>
+</body>
+</html>

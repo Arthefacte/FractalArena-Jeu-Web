@@ -47,9 +47,10 @@ test("les ecrans qui montrent des reliques declenchent le prechargement", () => 
 // revient sans qu'on la voie — c'est exactement ce qui s'était produit.
 test("le budget du premier ecran reste sous 3 Mo", () => {
   const html = lire("index.html");
-  // Les .glb chargés inconditionnellement au boot : uniquement l'emblème de la
-  // cinématique. Les reliques et le logo3d du Totem sont chargés à la demande.
-  const boot = ["assets/emblem.glb"];
+  // Les .glb chargés inconditionnellement au boot : uniquement le jeton à deux
+  // faces (v217 — cinématique, header et connexion partagent EMBLEM_GLB).
+  // Les reliques et le logo3d du Totem sont chargés à la demande.
+  const boot = ["assets/jeton.glb"];
   let total = 0;
   for (const f of boot) {
     total += fs.statSync(path.join(__dirname, "..", f)).size;
