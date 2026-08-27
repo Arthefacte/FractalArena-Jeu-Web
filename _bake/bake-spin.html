@@ -49,7 +49,9 @@ scene.add(group);
 
 window.__ready = false; window.__err = null;
 
-new GLTFLoader().load("../assets/emblem.glb", (gltf) => {
+// v217+ : le jeton à deux faces (FA/FB) remplace l'emblème cloné dos à dos —
+// même GLB et même échelle (2.9, v218) que les deux chargeurs de cinematique.jsx.
+new GLTFLoader().load("../assets/jeton.glb", (gltf) => {
   try {
     const m1 = gltf.scene;
     const box = new THREE.Box3().setFromObject(m1);
@@ -57,12 +59,8 @@ new GLTFLoader().load("../assets/emblem.glb", (gltf) => {
     const center = box.getCenter(new THREE.Vector3());
     const maxDim = Math.max(size.x, size.y, size.z) || 1;
     m1.position.sub(center);
-    const dz = size.z * 0.22;
-    const wrap1 = new THREE.Group(); wrap1.add(m1); wrap1.rotation.y = Math.PI; wrap1.position.z = -dz;
-    const m2 = m1.clone();
-    const wrap2 = new THREE.Group(); wrap2.add(m2); wrap2.position.z = dz;
-    group.add(wrap1); group.add(wrap2);
-    group.scale.setScalar(2.6 / maxDim);
+    group.add(m1);
+    group.scale.setScalar(2.9 / maxDim);
     window.__ready = true;
   } catch (e) { window.__err = String(e); }
 }, undefined, (e) => { window.__err = "GLB: " + String(e && e.message || e); });

@@ -3,7 +3,7 @@
    livraison à l'autre : le navigateur le garde en cache au lieu de le retélécharger.
    Un fichier modifié change d'empreinte, donc d'URL, et le CDN va chercher le neuf. */
 window.FA_ASSET_HASHES = {
-  "assets/emblem-spin.webp": "87b5337315",
+  "assets/emblem-spin.webp": "10b029b6e0",
   "assets/emblem.glb": "41eb14a950",
   "assets/jeton.glb": "0dba0aa8c4",
   "assets/logo3d.glb": "939a8ea4ef",

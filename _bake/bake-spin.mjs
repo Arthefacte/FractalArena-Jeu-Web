@@ -40,15 +40,15 @@ const SIZE = arg("size", 384);
 const Q = arg("q", 16);
 
 // Deux modes :
-//   --boucle (defaut) : un DEMI-tour, 5,5 s, bouclable a l'infini. L'embleme est
-//     fait de deux copies placees symetriquement, son image se repete donc tous
-//     les 180 deg — verifie par SSIM 0,9976 entre la premiere image et celle
-//     d'un demi-tour plus tard (0,52 pour un quart de tour). Deux fois moins
-//     d'images, et l'animation ne s'arrete jamais.
+//   --boucle (defaut) : un TOUR COMPLET, 11 s, bouclable a l'infini. Depuis le
+//     jeton a deux faces (v217, avers FA / revers FB differents), le demi-tour
+//     de l'ancien embleme symetrique ne boucle PLUS — l'image ne se repete
+//     qu'apres 360 deg. Deux fois plus d'images qu'avant : compenser par fps/q
+//     pour rester sous les 400 Ko de test/asset-budget.test.js.
 //   --extrait : les 11,6 s reellement vues dans la cinematique, teinte
-//     prismatique comprise, mais sans boucle possible et deux fois plus lourd.
+//     prismatique comprise, mais sans boucle possible.
 const BOUCLE = !process.argv.includes("--extrait");
-const PERIODE = 11 / 2;                       // spin = 2*PI/11 : demi-tour en 5,5 s
+const PERIODE = 11;                           // spin = 2*PI/11 : tour complet en 11 s
 const T0 = BOUCLE ? 0 : 8.4;                  // cinematique.jsx : l'embleme entre a 8,4 s
 const T1 = BOUCLE ? PERIODE : 20.0;           // CINE_DUR
 // En boucle, la derniere image ne doit PAS repeter la premiere : l'image
