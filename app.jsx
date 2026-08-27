@@ -2487,7 +2487,7 @@ function Header({ liquidPop, lockedPop }) {
         : <img className="hdr-logo" src="assets/LOGO_cut.webp" alt="Fractal Arena" />}
       <div className="hdr-word">
         <span className="hdr-title">FRACTAL ARENA</span>
-        <span className="hdr-sub">FRACTAL BITCOIN · AUTO-BATTLER</span>
+        <span className="hdr-sub">AUTO-BATTLER ON-CHAIN</span>
       </div>
       {window.FA_API_URL && window.FA_API_URL.includes("localhost") &&
         <span className="pill mono" style={{ background: "rgba(255,59,92,0.14)", border: "1px solid var(--alert)", color: "var(--alert)", fontSize: 10, letterSpacing: 2, padding: "3px 8px" }}>LOCAL</span>}
