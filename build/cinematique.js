@@ -622,7 +622,7 @@ function Emblem3D(props) {
           const maxDim = Math.max(size.x, size.y, size.z) || 1;
           m1.position.sub(center);
           group.add(m1);
-          group.scale.setScalar(2.6 / maxDim);
+          group.scale.setScalar(2.9 / maxDim);
           window.FA_DIAG && window.FA_DIAG.marque('emblème-charge');
         }, undefined, err => {
           console.warn('GLB load error', err);
@@ -897,7 +897,7 @@ function Cinematique(props) {
           const maxDim = Math.max(size.x, size.y, size.z) || 1;
           m1.position.sub(center);
           group.add(m1);
-          group.scale.setScalar(2.6 / maxDim);
+          group.scale.setScalar(2.9 / maxDim);
           window.FA_DIAG && window.FA_DIAG.marque('emblème-charge');
         }, undefined, err => {
           console.warn('GLB load error', err);
