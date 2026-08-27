@@ -1080,7 +1080,7 @@ input { font-family: var(--font-mono); }
   .fa-or { display: none; }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 640px), ((max-height: 500px) and (orientation: landscape) and (pointer: coarse)) {
   .bb-ticker { font-size: 11px; padding: 5px 10px; }
   .bb-line { gap: 7px; }
   .bb-label { display: none; }
@@ -1218,7 +1218,7 @@ input { font-family: var(--font-mono); }
    boursière, et elle reste visible sur mobile (elle EST le contenu du bandeau,
    la règle mobile de .fa-tape ne doit pas l'éteindre). */
 .quiz-ticker .fa-tape { margin-top: 0; }
-@media (max-width: 640px) {
+@media (max-width: 640px), ((max-height: 500px) and (orientation: landscape) and (pointer: coarse)) {
   .fa-tape.toujours { display: block; }
 }
 
