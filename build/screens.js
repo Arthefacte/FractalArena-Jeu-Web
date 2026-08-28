@@ -324,6 +324,8 @@ function Team() {
       }, "\u2605") : null
     }), /*#__PURE__*/React.createElement(RelicSlot, {
       beast: b
+    }), /*#__PURE__*/React.createElement(CoreSlot, {
+      beast: b
     }), /*#__PURE__*/React.createElement(TalentSlot, {
       beast: b
     }), /*#__PURE__*/React.createElement("div", {
@@ -410,8 +412,9 @@ function RelicSlot({
   }, []);
   const equipped = beast.relic_id ? (g.equipment || []).find(e => e.id === beast.relic_id) : null;
   const eff = equipped ? D.relicEffect(equipped.type, equipped.rarity) : null;
-  // reliques équipables = non portées, ou déjà sur CETTE bête
-  const available = (g.equipment || []).filter(inst => {
+  // reliques équipables = non portées, ou déjà sur CETTE bête. Le tableau
+  // `equipment` mêle reliques et cores : on ne garde que les reliques.
+  const available = (g.equipment || []).filter(D.isRelicItem).filter(inst => {
     const holder = g.roster.find(b => b.relic_id === inst.id);
     return !holder || holder.id === beast.id;
   });
@@ -499,6 +502,107 @@ function RelicSlot({
     disabled: busy || !beast.relic_id,
     onClick: () => doEquip(null)
   }, I18N.t("RELIC_UNEQUIP"))));
+}
+
+/* --- Slot core sous la carte : effet déclenché en combat, un par bête ---
+   Même présentation que RelicSlot. Un core d'inventaire porte `core_id` (le
+   type, ex. fury_core) ; la bête porte `core_id` = id de l'INSTANCE équipée. */
+function CoreSlot({
+  beast
+}) {
+  const {
+    g,
+    actions,
+    toast
+  } = useFA();
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const equipped = beast.core_id ? (g.equipment || []).find(e => e.id === beast.core_id) : null;
+  // cores équipables = non portés, ou déjà sur CETTE bête
+  const available = (g.equipment || []).filter(D.isCoreItem).filter(inst => {
+    const holder = g.roster.find(b => b.core_id === inst.id);
+    return !holder || holder.id === beast.id;
+  });
+  async function doEquip(coreId) {
+    if (busy) return;
+    setBusy(true);
+    const r = await actions.coreEquip(beast.id, coreId);
+    setBusy(false);
+    setOpen(false);
+    if (!r || !r.ok) toast(r && r.reason || "error", "bad");
+  }
+  const coreLabel = inst => I18N.t("CORE_" + inst.core_id.toUpperCase());
+  const coreDesc = inst => I18N.t("CORE_" + inst.core_id.toUpperCase() + "_D");
+  return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    className: "relic-slot mono",
+    onClick: () => setOpen(true),
+    style: {
+      cursor: "pointer",
+      fontSize: 11,
+      marginTop: 6,
+      padding: "4px 8px",
+      border: "1px solid var(--line)",
+      borderRadius: 8,
+      display: "flex",
+      gap: 6,
+      alignItems: "center"
+    }
+  }, equipped ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: "var(--elec)"
+    }
+  }, "\u2B22"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: D.RARITY_COLORS[equipped.rarity] || "var(--text)"
+    }
+  }, coreLabel(equipped))) : /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: "var(--text-faint)"
+    }
+  }, "\u2B21 ", I18N.t("CORE_NONE"))), open && /*#__PURE__*/React.createElement(Modal, {
+    onClose: () => setOpen(false)
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "h2",
+    style: {
+      fontSize: 14,
+      marginBottom: 10
+    }
+  }, I18N.t("CORE_EQUIP"), " \u2014 ", D.displayName(beast)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 6,
+      maxHeight: "50vh",
+      overflow: "auto"
+    }
+  }, available.length === 0 && /*#__PURE__*/React.createElement("div", {
+    className: "mono muted",
+    style: {
+      fontSize: 12
+    }
+  }, I18N.t("RELIC_INVENTORY"), ": \u2014"), available.map(inst => {
+    const on = beast.core_id === inst.id;
+    return /*#__PURE__*/React.createElement("button", {
+      key: inst.id,
+      className: cx("btn sm", on && "on"),
+      disabled: busy,
+      onClick: () => doEquip(on ? null : inst.id),
+      style: {
+        justifyContent: "flex-start",
+        gap: 8,
+        textAlign: "left"
+      }
+    }, "\u2B22 ", coreLabel(inst), " \xB7 ", /*#__PURE__*/React.createElement("span", {
+      className: "muted"
+    }, coreDesc(inst)), " ", on ? "✓" : "");
+  })), /*#__PURE__*/React.createElement("button", {
+    className: "btn sm block",
+    style: {
+      marginTop: 10
+    },
+    disabled: busy || !beast.core_id,
+    onClick: () => doEquip(null)
+  }, I18N.t("CORE_UNEQUIP"))));
 }
 
 /* --- Bande talents sous la carte : 3 paliers L25/50/75, 1 choix parmi 2 --- */
@@ -1422,14 +1526,14 @@ function ForgeReliques() {
     style: {
       marginBottom: 10
     }
-  }, I18N.t("RELIC_INVENTORY")), (g.equipment || []).length === 0 ? /*#__PURE__*/React.createElement("div", {
+  }, I18N.t("RELIC_INVENTORY")), (g.equipment || []).filter(D.isRelicItem).length === 0 ? /*#__PURE__*/React.createElement("div", {
     className: "mono muted",
     style: {
       fontSize: 13
     }
   }, I18N.t("RELIC_NONE")) : /*#__PURE__*/React.createElement("div", {
     className: "grid-cards"
-  }, (g.equipment || []).map(inst => {
+  }, (g.equipment || []).filter(D.isRelicItem).map(inst => {
     const holder = g.roster.find(b => b.relic_id === inst.id);
     const effect = D.relicEffect(inst.type, inst.rarity);
     return /*#__PURE__*/React.createElement("div", {

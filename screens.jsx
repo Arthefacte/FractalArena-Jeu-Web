@@ -184,6 +184,7 @@ function Team() {
                   <div style={{ position: "absolute", top: 8, left: 8, fontSize: 16, color: "var(--gold, #F7931A)", textShadow: "0 0 8px rgba(247,147,26,0.8)" }}>★</div>
                 ) : null} />
               <RelicSlot beast={b} />
+              <CoreSlot beast={b} />
               <TalentSlot beast={b} />
               <div className="relic-slot mono"
                 style={{ cursor: isChamp ? "default" : "pointer", color: isChamp ? "var(--gold, #F7931A)" : "var(--text-dim)" }}
@@ -236,8 +237,9 @@ function RelicSlot({ beast }) {
   }, []);
   const equipped = beast.relic_id ? (g.equipment || []).find((e) => e.id === beast.relic_id) : null;
   const eff = equipped ? D.relicEffect(equipped.type, equipped.rarity) : null;
-  // reliques équipables = non portées, ou déjà sur CETTE bête
-  const available = (g.equipment || []).filter((inst) => {
+  // reliques équipables = non portées, ou déjà sur CETTE bête. Le tableau
+  // `equipment` mêle reliques et cores : on ne garde que les reliques.
+  const available = (g.equipment || []).filter(D.isRelicItem).filter((inst) => {
     const holder = g.roster.find((b) => b.relic_id === inst.id);
     return !holder || holder.id === beast.id;
   });
@@ -275,6 +277,59 @@ function RelicSlot({ beast }) {
           </div>
           <button className="btn sm block" style={{ marginTop: 10 }} disabled={busy || !beast.relic_id}
             onClick={() => doEquip(null)}>{I18N.t("RELIC_UNEQUIP")}</button>
+        </Modal>
+      )}
+    </>
+  );
+}
+
+/* --- Slot core sous la carte : effet déclenché en combat, un par bête ---
+   Même présentation que RelicSlot. Un core d'inventaire porte `core_id` (le
+   type, ex. fury_core) ; la bête porte `core_id` = id de l'INSTANCE équipée. */
+function CoreSlot({ beast }) {
+  const { g, actions, toast } = useFA();
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const equipped = beast.core_id ? (g.equipment || []).find((e) => e.id === beast.core_id) : null;
+  // cores équipables = non portés, ou déjà sur CETTE bête
+  const available = (g.equipment || []).filter(D.isCoreItem).filter((inst) => {
+    const holder = g.roster.find((b) => b.core_id === inst.id);
+    return !holder || holder.id === beast.id;
+  });
+  async function doEquip(coreId) {
+    if (busy) return; setBusy(true);
+    const r = await actions.coreEquip(beast.id, coreId);
+    setBusy(false); setOpen(false);
+    if (!r || !r.ok) toast((r && r.reason) || "error", "bad");
+  }
+  const coreLabel = (inst) => I18N.t("CORE_" + inst.core_id.toUpperCase());
+  const coreDesc = (inst) => I18N.t("CORE_" + inst.core_id.toUpperCase() + "_D");
+  return (
+    <>
+      <div className="relic-slot mono" onClick={() => setOpen(true)}
+        style={{ cursor: "pointer", fontSize: 11, marginTop: 6, padding: "4px 8px",
+                 border: "1px solid var(--line)", borderRadius: 8, display: "flex", gap: 6, alignItems: "center" }}>
+        {equipped
+          ? (<><span style={{ color: "var(--elec)" }}>⬢</span><span style={{ color: D.RARITY_COLORS[equipped.rarity] || "var(--text)" }}>{coreLabel(equipped)}</span></>)
+          : (<span style={{ color: "var(--text-faint)" }}>⬡ {I18N.t("CORE_NONE")}</span>)}
+      </div>
+      {open && (
+        <Modal onClose={() => setOpen(false)}>
+          <div className="h2" style={{ fontSize: 14, marginBottom: 10 }}>{I18N.t("CORE_EQUIP")} — {D.displayName(beast)}</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: "50vh", overflow: "auto" }}>
+            {available.length === 0 && <div className="mono muted" style={{ fontSize: 12 }}>{I18N.t("RELIC_INVENTORY")}: —</div>}
+            {available.map((inst) => {
+              const on = beast.core_id === inst.id;
+              return (
+                <button key={inst.id} className={cx("btn sm", on && "on")} disabled={busy}
+                  onClick={() => doEquip(on ? null : inst.id)} style={{ justifyContent: "flex-start", gap: 8, textAlign: "left" }}>
+                  ⬢ {coreLabel(inst)} · <span className="muted">{coreDesc(inst)}</span> {on ? "✓" : ""}
+                </button>
+              );
+            })}
+          </div>
+          <button className="btn sm block" style={{ marginTop: 10 }} disabled={busy || !beast.core_id}
+            onClick={() => doEquip(null)}>{I18N.t("CORE_UNEQUIP")}</button>
         </Modal>
       )}
     </>
@@ -751,11 +806,12 @@ function ForgeReliques() {
       }} />
       <div style={{ marginTop: 26 }}>
         <div className="eyebrow" style={{ marginBottom: 10 }}>{I18N.t("RELIC_INVENTORY")}</div>
-        {(g.equipment || []).length === 0 ? (
+        {/* `equipment` mêle reliques et cores : cette grille ne montre que les reliques. */}
+        {(g.equipment || []).filter(D.isRelicItem).length === 0 ? (
           <div className="mono muted" style={{ fontSize: 13 }}>{I18N.t("RELIC_NONE")}</div>
         ) : (
           <div className="grid-cards">
-            {(g.equipment || []).map((inst) => {
+            {(g.equipment || []).filter(D.isRelicItem).map((inst) => {
               const holder = g.roster.find((b) => b.relic_id === inst.id);
               const effect = D.relicEffect(inst.type, inst.rarity);
               return (

@@ -85,6 +85,25 @@ window.FA_ASSET_URL = function (chemin) {
     return "+" + pct + "% " + label;
   }
 
+  // ---- Cores (miroir serveur — data.node.js, fait foi) ----
+  // Slot « effet déclenché en combat » : un seul par bête, pas de rareté en v1
+  // (le champ existe sur les objets mais reste Common → multiplicateur 1.0).
+  const CORE_RARITY_MULT = { Common: 1.0 };
+  const CORES = {
+    fury_core:       { name: "Fury Core",       trigger: "team_kill",          effect: { atk: 0.15, stacking: true } },
+    guardian_core:   { name: "Guardian Core",   trigger: "first_hit_taken",    effect: { shield: 0.20, duration: 1 } },
+    overclock_core:  { name: "Overclock Core",  trigger: "passive",            effect: { first_strike: true } },
+    regen_core:      { name: "Regen Core",      trigger: "round_end",          effect: { heal: 0.08 } },
+    feedback_core:   { name: "Feedback Core",   trigger: "magic_damage_taken", effect: { reflect: 0.15 } },
+    last_stand_core: { name: "Last Stand Core", trigger: "hp_below_30",        effect: { atk: 0.25, def: 0.15 } },
+  };
+  const CORE_KEYS = Object.keys(CORES);
+  // Reliques et cores COEXISTENT dans le même tableau `equipment` : une relique
+  // porte `type`, un core porte `core_id`. Toute liste qui affiche l'un des deux
+  // doit trier avec ces helpers — `RELIC_ + type.toUpperCase()` plante sinon.
+  function isRelicItem(e) { return !!e && typeof e.type === "string"; }
+  function isCoreItem(e) { return !!e && typeof e.core_id === "string"; }
+
   // ---- Presets ----
   const PRESET_COLORS = {
     aggressive: "#FF3B5C", berserker: "#F7931A", tactician: "#9F00FF",
@@ -526,6 +545,7 @@ window.FA_ASSET_URL = function (chemin) {
     RARITY_ORDER, RARITY_LIST, RARITY_COLORS, RARITY_UPGRADE, MINT_ODDS,
     RANK_LIST, RANK_FACTOR, RANK_ODDS, RANK_COLORS, rollRank, artFor,
     RELICS, RELIC_KEYS, RELIC_RARITY_MULT, relicEffect, relicStatDelta,
+    CORES, CORE_KEYS, CORE_RARITY_MULT, isRelicItem, isCoreItem,
     PRESET_COLORS, TYPE_TO_PRESET, TYPE_LABEL, ART,
     TYPE_ADVANTAGE, getTypeMultiplier,
     TEMPLATES, TEMPLATE_KEYS, TEMPLATES_BY_TYPE,

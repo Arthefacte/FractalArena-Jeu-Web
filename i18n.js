@@ -311,6 +311,12 @@
     AR_ROUND: { FR: "Round %d", EN: "Round %d", ZH: "回合 %d" },
     AR_TYPE_ADV: { FR: "%s › %s : +25% dégâts", EN: "%s › %s: +25% damage", ZH: "%s › %s：+25% 伤害" },
     AR_TYPE_DIS: { FR: "%s › %s : -20% dégâts infligés", EN: "%s › %s: -20% damage dealt", ZH: "%s › %s：-20% 造成伤害" },
+    // Indicateurs d'affinité ↑/↓ (arene-ui.js, affinityIndicator) — le
+    // pourcentage est un placeholder : il vient de getTypeMultiplier.
+    AFF_TIP_UP:   { FR: "%s > %s : +%d%% dégâts", EN: "%s > %s: +%d%% damage", ZH: "%s > %s：+%d%% 伤害" },
+    AFF_TIP_DOWN: { FR: "%s < %s : -%d%% dégâts", EN: "%s < %s: -%d%% damage", ZH: "%s < %s：-%d%% 伤害" },
+    AFF_UP_LABEL:   { FR: "Avantage de type", EN: "Type advantage", ZH: "属性优势" },
+    AFF_DOWN_LABEL: { FR: "Désavantage de type", EN: "Type disadvantage", ZH: "属性劣势" },
 
     // arène (pvp)
     AR2_TITLE: { FR: "L'Arène", EN: "The Arena", ZH: "竞技场" },
@@ -672,6 +678,22 @@
     RELIC_UNEQUIP: { FR: "Retirer", EN: "Unequip", ZH: "卸下" },
     RELIC_NONE: { FR: "Aucune relique", EN: "No relic", ZH: "无圣物" },
     RELIC_INVENTORY: { FR: "Inventaire", EN: "Inventory", ZH: "库存" },
+    // Cores — slot « effet déclenché en combat » (un par bête)
+    CORE_FURY_CORE: { FR: "Cœur de Furie", EN: "Fury Core", ZH: "狂怒核心" },
+    CORE_GUARDIAN_CORE: { FR: "Cœur Gardien", EN: "Guardian Core", ZH: "守护核心" },
+    CORE_OVERCLOCK_CORE: { FR: "Cœur d'Overclock", EN: "Overclock Core", ZH: "超频核心" },
+    CORE_REGEN_CORE: { FR: "Cœur de Régénération", EN: "Regen Core", ZH: "再生核心" },
+    CORE_FEEDBACK_CORE: { FR: "Cœur de Rétroaction", EN: "Feedback Core", ZH: "反馈核心" },
+    CORE_LAST_STAND_CORE: { FR: "Cœur du Dernier Rempart", EN: "Last Stand Core", ZH: "背水核心" },
+    CORE_FURY_CORE_D: { FR: "+15% ATK à chaque kill allié (cumulable)", EN: "+15% ATK per team kill (stacks)", ZH: "每次团队击杀 +15% 攻击（可叠加）" },
+    CORE_GUARDIAN_CORE_D: { FR: "Bouclier 20% PV max au premier coup reçu (1 tour)", EN: "20% Max HP shield on first hit taken (1 turn)", ZH: "首次受击获得 20% 最大生命护盾（1回合）" },
+    CORE_OVERCLOCK_CORE_D: { FR: "Attaque en premier si SPD supérieure", EN: "Attacks first if higher SPD", ZH: "速度更高时先手攻击" },
+    CORE_REGEN_CORE_D: { FR: "Soigne 8% PV max en fin de round", EN: "Heals 8% Max HP at end of round", ZH: "回合结束时恢复 8% 最大生命" },
+    CORE_FEEDBACK_CORE_D: { FR: "Renvoie 15% des dégâts magiques subis", EN: "Reflects 15% of magic damage taken", ZH: "反弹 15% 受到的魔法伤害" },
+    CORE_LAST_STAND_CORE_D: { FR: "+25% ATK et +15% DEF sous 30% PV", EN: "+25% ATK and +15% DEF below 30% HP", ZH: "生命低于 30% 时 +25% 攻击和 +15% 防御" },
+    CORE_EQUIP: { FR: "Équiper un core", EN: "Equip a core", ZH: "装备核心" },
+    CORE_UNEQUIP: { FR: "Retirer", EN: "Unequip", ZH: "卸下" },
+    CORE_NONE: { FR: "Aucun core", EN: "No core", ZH: "无核心" },
 
     // ---- Marché (hôtel des ventes reliques) ----
     NAV_MARKET: { FR: "Marché", EN: "Market", ZH: "市场" },

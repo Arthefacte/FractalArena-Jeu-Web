@@ -2333,6 +2333,93 @@ function App() {
         };
       }
     },
+    async coreSummon() {
+      const s = gRef.current;
+      if (!s.wallet || !s.authToken) return {
+        ok: false,
+        reason: "Wallet requis"
+      };
+      const cost = 8000; // CORE_SUMMON_COST serveur
+      if (s.liquid + s.locked < cost) return {
+        ok: false,
+        reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, cost)
+      };
+      try {
+        const resp = await fetch(`${API_URL}/forge/core-summon`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${s.authToken}`
+          },
+          body: JSON.stringify({
+            wallet: s.wallet
+          })
+        });
+        const data = await resp.json();
+        if (data.status === "insufficient_balance") return {
+          ok: false,
+          reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, cost)
+        };
+        if (data.status !== "ok") return {
+          ok: false,
+          reason: data.error || "Erreur serveur"
+        };
+        const sv = await fetch(`${API_URL}/save/${s.wallet}`, svOpts());
+        if (sv.ok) {
+          const {
+            save
+          } = await sv.json();
+          setG(st => serverToState(save, s.wallet, st));
+        }
+        return {
+          ok: true,
+          core: data.core
+        };
+      } catch (e) {
+        return {
+          ok: false,
+          reason: "Erreur réseau"
+        };
+      }
+    },
+    async coreEquip(beastId, coreId) {
+      const s = gRef.current;
+      if (!s.wallet || !s.authToken) return {
+        ok: false,
+        reason: "Wallet requis"
+      };
+      try {
+        const resp = await fetch(`${API_URL}/forge/core-equip`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${s.authToken}`
+          },
+          body: JSON.stringify({
+            wallet: s.wallet,
+            beast_id: beastId,
+            core_id: coreId
+          })
+        });
+        const data = await resp.json();
+        if (data.status !== "ok") return {
+          ok: false,
+          reason: data.error || "Erreur serveur"
+        };
+        if (Array.isArray(data.creatures)) setG(st => ({
+          ...st,
+          roster: data.creatures
+        }));
+        return {
+          ok: true
+        };
+      } catch (e) {
+        return {
+          ok: false,
+          reason: "Erreur réseau"
+        };
+      }
+    },
     // ---- Expéditions (idle) — le serveur fait foi, résolution au claim ----
     // Rafraîchit l'état local (actives + fragments + plafond FA). Silencieux en
     // échec : la pastille et l'écran vivent sur le dernier état connu.

@@ -186,7 +186,8 @@ function MarketMine() {
     expired: [],
     history: []
   };
-  const inventory = g.equipment || [];
+  // Seules les reliques se vendent ici ; `equipment` contient aussi les cores.
+  const inventory = (g.equipment || []).filter(D.isRelicItem);
   // reliques équipées (⚔) = portées par une bête du roster — miroir du repère de screens.jsx (RelicSlot).
   const equippedIds = new Set((g.roster || []).map(c => c && c.relic_id).filter(Boolean));
   const p = parseInt(price, 10);
