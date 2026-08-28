@@ -75,6 +75,29 @@
     return out;
   }
 
+  // Indicateur d'affinité de type — PUREMENT COSMÉTIQUE (le serveur applique
+  // déjà le multiplicateur : engine.node.js, getTypeMultiplier). Chiffres
+  // dérivés de D.getTypeMultiplier / D.TYPE_ADVANTAGE (data.js), jamais en dur.
+  // Pour `myType` face aux types adverses : ↑ si ma bête bat un type adverse
+  // (×1.25), ↓ si un type adverse la bat (×0.80), null si neutre ou inconnu.
+  // L'avantage prime sur le désavantage quand les deux coexistent (même règle
+  // que la Fosse). FA_DATA est lu à l'appel : testable Node sans ordre imposé.
+  function affinityIndicator(myType, enemyTypes) {
+    const D = window.FA_DATA;
+    if (!D || !myType || !Array.isArray(enemyTypes)) return null;
+    let up = null, down = null;
+    for (const t of enemyTypes) {
+      if (!t) continue;
+      const mult = D.getTypeMultiplier(myType, t);
+      if (mult > 1 && !up) {
+        up = { dir: "up", arrow: "↑", color: "var(--success)", vsType: t, pct: Math.round((mult - 1) * 100), tipKey: "AFF_TIP_UP", ariaKey: "AFF_UP_LABEL" };
+      } else if (mult < 1 && !down) {
+        down = { dir: "down", arrow: "↓", color: "var(--alert)", vsType: t, pct: Math.round((1 - mult) * 100), tipKey: "AFF_TIP_DOWN", ariaKey: "AFF_DOWN_LABEL" };
+      }
+    }
+    return up || down;
+  }
+
   // Écart de puissance à un adversaire, en % de la mienne. Le serveur apparie
   // désormais sur la puissance (±25 %) : c'est ce chiffre, pas l'ELO, qui dit si
   // le combat est jouable. 0 si ma puissance est inconnue — jamais d'Infinity.
@@ -91,5 +114,5 @@
     return "hard";
   }
 
-  window.FA_ARENE_UI = { leagueLabel, leagueColor, fmtCountdown, fmtCountdownSec, eventLogLines, entryModes, seasonCountdown, computeSynergiesLabels, powerGapPct, powerGapTone };
+  window.FA_ARENE_UI = { leagueLabel, leagueColor, fmtCountdown, fmtCountdownSec, eventLogLines, entryModes, seasonCountdown, computeSynergiesLabels, affinityIndicator, powerGapPct, powerGapTone };
 })();

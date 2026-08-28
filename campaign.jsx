@@ -53,7 +53,7 @@ function Stars({ n, max, size }) {
 function campMeta(b) {
   return b ? {
     name: D.displayName(b), rarity: b.rarity, image_key: b.image_key, rank: b.rank, preset: b.preset,
-    level: b.level, maxHp: D.eff(b, "hp"), atk: D.eff(b, "atk"), def: D.eff(b, "def"),
+    type: b.type, level: b.level, maxHp: D.eff(b, "hp"), atk: D.eff(b, "atk"), def: D.eff(b, "def"),
     spd: D.eff(b, "spd"), mag: D.eff(b, "mag"), boss: !!b.is_boss,
   } : null;
 }
@@ -64,11 +64,11 @@ function campMeta(b) {
 function champIdleMeta(champ) {
   const b = champ.beast, s = b.stats || {};
   return { name: b.name, rarity: b.rarity, image_key: b.image_key, rank: b.rank, preset: b.preset,
-    level: b.level, maxHp: s.hp ?? null, atk: s.atk ?? null, def: s.def ?? null,
+    type: b.type, level: b.level, maxHp: s.hp ?? null, atk: s.atk ?? null, def: s.def ?? null,
     spd: s.spd ?? null, mag: s.mag ?? null, boss: false };
 }
 
-function CampCombatCard({ meta, live, side, cref, borrowTag }) {
+function CampCombatCard({ meta, live, side, cref, borrowTag, oppTypes }) {
   if (!meta) {
     return (
       <div className="card" ref={cref} style={{ "--rc": "var(--line)", opacity: 0.5 }}>
@@ -95,7 +95,19 @@ function CampCombatCard({ meta, live, side, cref, borrowTag }) {
       </div>
       <div className="body">
         <div className="flex between center" style={{ gap: 6 }}>
-          <div className="cname">{meta.name}</div>
+          <div className="flex center" style={{ gap: 4, minWidth: 0 }}>
+            <div className="cname">{meta.name}</div>
+            {(() => {
+              // Affinité de type face à l'équipe adverse — cosmétique, le
+              // serveur applique déjà le ×1.25 / ×0.80 (arene-ui.js).
+              const aff = window.FA_ARENE_UI.affinityIndicator(meta.type, oppTypes);
+              if (!aff) return null;
+              return (
+                <span title={I18N.t(aff.tipKey, meta.type, aff.vsType, aff.pct)} aria-label={I18N.t(aff.ariaKey)}
+                  style={{ color: aff.color, fontSize: 12, lineHeight: 1, fontWeight: 700, flex: "none" }}>{aff.arrow}</span>
+              );
+            })()}
+          </div>
           <div className="cpreset" style={{ color: D.PRESET_COLORS[meta.preset] }}>{presetLabel(meta.preset)}</div>
         </div>
         {/* « Prêté par X » vit dans le CORPS : au-dessus de la carte il décalait
@@ -237,7 +249,7 @@ function CampaignCombat({ worldIndex, floorIndex, onBack, onCleared }) {
       const u = events.length ? events[0].state.p1[CU.CHAMPION_SLOT] : null;
       metas.push(u ? {
         name: champ.beast.name, rarity: champ.beast.rarity, image_key: champ.beast.image_key,
-        rank: champ.beast.rank, preset: champ.beast.preset, level: champ.beast.level,
+        rank: champ.beast.rank, preset: champ.beast.preset, type: champ.beast.type, level: champ.beast.level,
         maxHp: u.maxHp, atk: u.atk, def: u.def, spd: u.spd, mag: u.mag, boss: false,
       } : null);
     }
@@ -371,6 +383,7 @@ function CampaignCombat({ worldIndex, floorIndex, onBack, onCleared }) {
               <div className="team-row" style={{ gridTemplateColumns: "repeat(3,minmax(0,1fr))" }}>
                 {[0, 1, 2].map((i) => (
                   <CampCombatCard key={i} side="p1" meta={p1Meta[i]} live={p1Live && p1Live[i]}
+                    oppTypes={p2Meta.map((m) => m && m.type)}
                     borrowTag={champ && i === CU.CHAMPION_SLOT ? I18N.t("CHAMP_BORROWED_TAG", champ.name) : null}
                     cref={(el) => (p1Refs.current[i] = el)} />
                 ))}
@@ -389,7 +402,8 @@ function CampaignCombat({ worldIndex, floorIndex, onBack, onCleared }) {
               </div>
               <div className="team-row" style={{ gridTemplateColumns: "repeat(3,minmax(0,1fr))" }}>
                 {[0, 1, 2].map((i) => (
-                  <CampCombatCard key={i} side="p2" meta={p2Meta[i]} live={p2Live && p2Live[i]} cref={(el) => (p2Refs.current[i] = el)} />
+                  <CampCombatCard key={i} side="p2" meta={p2Meta[i]} live={p2Live && p2Live[i]}
+                    oppTypes={p1Meta.map((m) => m && m.type)} cref={(el) => (p2Refs.current[i] = el)} />
                 ))}
               </div>
             </div>

@@ -561,6 +561,21 @@ function Arene() {
     }
   }, D.displayName(b)), /*#__PURE__*/React.createElement("div", null, I18N.t("LINK_TIER"), b.level, " \xB7 ", D.fmtStat(D.eff(b, "atk")), "/", D.fmtStat(D.eff(b, "def"))))))))), pick && (() => {
     const byId = id => g.roster.find(b => b.id === id);
+    // Affinités face à l'équipe adverse affichée — cosmétique (arene-ui.js).
+    const oppTypes = (pick.oppTeam || []).map(b => b && b.type);
+    const affArrow = b => {
+      const aff = b && AU.affinityIndicator(b.type, oppTypes);
+      if (!aff) return null;
+      return /*#__PURE__*/React.createElement("span", {
+        title: I18N.t(aff.tipKey, b.type, aff.vsType, aff.pct),
+        "aria-label": I18N.t(aff.ariaKey),
+        style: {
+          color: aff.color,
+          fontWeight: 700,
+          marginLeft: 3
+        }
+      }, aff.arrow);
+    };
     const toggle = id => setPick(p => {
       if (!p) return p;
       const has = p.ids.includes(id);
@@ -665,7 +680,7 @@ function Arene() {
         style: {
           color: "var(--text-dim)"
         }
-      }, "(", D.TYPE_LABEL ? D.TYPE_LABEL[b.type] || b.type : b.type, ")") : null), /*#__PURE__*/React.createElement("span", {
+      }, "(", D.TYPE_LABEL ? D.TYPE_LABEL[b.type] || b.type : b.type, ")") : null, affArrow(b)), /*#__PURE__*/React.createElement("span", {
         className: "flex gap8"
       }, /*#__PURE__*/React.createElement("button", {
         className: "btn xs",
@@ -699,7 +714,7 @@ function Arene() {
         style: {
           opacity: on ? 1 : 0.7
         }
-      }, b.custom_name || b.name, " \xB7 ", D.TYPE_LABEL ? D.TYPE_LABEL[b.type] || b.type : b.type);
+      }, b.custom_name || b.name, " \xB7 ", D.TYPE_LABEL ? D.TYPE_LABEL[b.type] || b.type : b.type, affArrow(b));
     })), /*#__PURE__*/React.createElement("div", {
       className: "flex gap8",
       style: {

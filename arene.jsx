@@ -240,6 +240,13 @@ function Arene() {
 
       {pick && (() => {
         const byId = (id) => g.roster.find((b) => b.id === id);
+        // Affinités face à l'équipe adverse affichée — cosmétique (arene-ui.js).
+        const oppTypes = (pick.oppTeam || []).map((b) => b && b.type);
+        const affArrow = (b) => {
+          const aff = b && AU.affinityIndicator(b.type, oppTypes);
+          if (!aff) return null;
+          return <span title={I18N.t(aff.tipKey, b.type, aff.vsType, aff.pct)} aria-label={I18N.t(aff.ariaKey)} style={{ color: aff.color, fontWeight: 700, marginLeft: 3 }}>{aff.arrow}</span>;
+        };
         const toggle = (id) => setPick((p) => {
           if (!p) return p;
           const has = p.ids.includes(id);
@@ -272,7 +279,7 @@ function Arene() {
                 const b = byId(pick.ids[i]);
                 return (
                   <div key={i} className="flex between center" style={{ gap: 8, padding: "2px 0", fontSize: 12 }}>
-                    <span>{["Avant", "Milieu", "Arrière"][i]} : {b ? (b.custom_name || b.name) : "—"} {b ? <span style={{ color: "var(--text-dim)" }}>({D.TYPE_LABEL ? (D.TYPE_LABEL[b.type] || b.type) : b.type})</span> : null}</span>
+                    <span>{["Avant", "Milieu", "Arrière"][i]} : {b ? (b.custom_name || b.name) : "—"} {b ? <span style={{ color: "var(--text-dim)" }}>({D.TYPE_LABEL ? (D.TYPE_LABEL[b.type] || b.type) : b.type})</span> : null}{affArrow(b)}</span>
                     <span className="flex gap8">
                       <button className="btn xs" disabled={i === 0} onClick={() => move(i, i - 1)}>↑</button>
                       <button className="btn xs" disabled={i === 2} onClick={() => move(i, i + 1)}>↓</button>
@@ -287,7 +294,7 @@ function Arene() {
                   const on = pick.ids.includes(b.id);
                   return (
                     <button key={b.id} className={cx("btn xs", on && "on")} onClick={() => toggle(b.id)} style={{ opacity: on ? 1 : 0.7 }}>
-                      {(b.custom_name || b.name)} · {D.TYPE_LABEL ? (D.TYPE_LABEL[b.type] || b.type) : b.type}
+                      {(b.custom_name || b.name)} · {D.TYPE_LABEL ? (D.TYPE_LABEL[b.type] || b.type) : b.type}{affArrow(b)}
                     </button>
                   );
                 })}

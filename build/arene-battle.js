@@ -21,12 +21,17 @@ function AB_Unit({
   beast,
   live,
   side,
-  pos
+  pos,
+  oppTypes
 }) {
   const maxHp = live ? live.maxHp : beast ? D.eff(beast, "hp") : 1;
   const hp = live ? Math.max(0, live.hp) : maxHp;
   const frac = maxHp > 0 ? hp / maxHp : 0;
   const dead = live ? live.alive === false : false;
+  // Affinité de type face à l'équipe adverse — cosmétique, le serveur applique
+  // déjà le ×1.25 / ×0.80 (arene-ui.js, affinityIndicator).
+  const aff = window.FA_ARENE_UI.affinityIndicator(beast && beast.type, oppTypes);
+  const affTip = aff ? I18N.t(aff.tipKey, beast.type, aff.vsType, aff.pct) : undefined;
   return /*#__PURE__*/React.createElement("div", {
     className: "ab-unit" + (dead ? " ab-dead" : ""),
     style: {
@@ -75,6 +80,7 @@ function AB_Unit({
       color: "var(--text-dim)"
     }
   }, AB_POS_LABEL[pos])), /*#__PURE__*/React.createElement("div", {
+    title: affTip,
     style: {
       fontSize: 10,
       marginTop: 2,
@@ -83,7 +89,14 @@ function AB_Unit({
       overflow: "hidden",
       textOverflow: "ellipsis"
     }
-  }, beast ? D.displayName(beast) : "—", " \xB7 ", I18N.t("LINK_TIER"), beast ? beast.level : 0), /*#__PURE__*/React.createElement("div", {
+  }, aff && /*#__PURE__*/React.createElement("span", {
+    "aria-label": I18N.t(aff.ariaKey),
+    style: {
+      color: aff.color,
+      fontWeight: 700,
+      marginRight: 2
+    }
+  }, aff.arrow), beast ? D.displayName(beast) : "—", " \xB7 ", I18N.t("LINK_TIER"), beast ? beast.level : 0), /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 2
     }
@@ -217,7 +230,8 @@ function AreneBattle({
     beast: p1Team[i],
     live: liveOf(p1Team, "p1")(i),
     side: "p1",
-    pos: i
+    pos: i,
+    oppTypes: (p2Team || []).map(b => b && b.type)
   }))), /*#__PURE__*/React.createElement("div", {
     style: {
       textAlign: "center",
@@ -243,7 +257,8 @@ function AreneBattle({
     beast: p2Team[i],
     live: liveOf(p2Team, "p2")(i),
     side: "p2",
-    pos: i
+    pos: i,
+    oppTypes: (p1Team || []).map(b => b && b.type)
   }))), /*#__PURE__*/React.createElement("div", {
     ref: logRef,
     className: "log",
