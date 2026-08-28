@@ -694,6 +694,10 @@
     CORE_EQUIP: { FR: "Équiper un core", EN: "Equip a core", ZH: "装备核心" },
     CORE_UNEQUIP: { FR: "Retirer", EN: "Unequip", ZH: "卸下" },
     CORE_NONE: { FR: "Aucun core", EN: "No core", ZH: "无核心" },
+    CORE_SUMMON_TITLE: { FR: "Invoquer un core", EN: "Summon a Core", ZH: "召唤核心" },
+    CORE_SUMMON_HINT: { FR: "Effet déclenché en combat — 1 slot par entité, rareté Common", EN: "Combat-triggered effect — 1 slot per creature, Common rarity", ZH: "战斗触发效果 — 每个生物 1 个槽位，普通稀有度" },
+    CORE_SUMMON_BTN: { FR: "Invoquer un core (%s FA)", EN: "Summon a Core (%s FA)", ZH: "召唤核心（%s FA）" },
+    CORE_SUMMON_OK: { FR: "Core forgé : %s", EN: "Core forged: %s", ZH: "核心锻造完成：%s" },
     // Forge d'équipement : fusion 3 reliques → rareté supérieure, désenchantement
     FG_EQ_TITLE: { FR: "Forge d'équipement", EN: "Equipment forge", ZH: "装备熔炉" },
     FG_EQ_SUB: {

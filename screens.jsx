@@ -737,7 +737,10 @@ function ForgeEquipement() {
   const [sel, setSel] = useState([]);
   const [busy, setBusy] = useState(false);
   const [confirmDis, setConfirmDis] = useState(false);
+  const [coreBusy, setCoreBusy] = useState(false);
   const balance = g.liquid + g.locked;
+  const coreCost = 8000; // CORE_SUMMON_COST serveur
+  const coreBalOk = balance >= coreCost;
   // `equipment` mêle reliques et cores : la forge d'équipement ne montre QUE les reliques.
   const relics = (g.equipment || []).filter(D.isRelicItem);
   const fuse = FUI.relicFuseState({ sel, balance, busy });
@@ -773,6 +776,16 @@ function ForgeEquipement() {
     if (!r.ok) { toast(r.reason, "bad"); return; }
     setSel([]);
     toast(I18N.t("FG_EQ_DIS_OK", r.value != null ? r.value - fee : net), "good");
+  }
+
+  async function doCoreSummon() {
+    if (!coreBalOk || coreBusy) return;
+    setCoreBusy(true);
+    const r = await actions.coreSummon();
+    setCoreBusy(false);
+    if (!r.ok) { toast(r.reason, "bad"); return; }
+    const name = r.core && r.core.core_id ? I18N.t("CORE_" + r.core.core_id.toUpperCase()) : I18N.t("CORE_SUMMON_TITLE");
+    toast(I18N.t("CORE_SUMMON_OK", name), "good");
   }
 
   return (
@@ -828,6 +841,15 @@ function ForgeEquipement() {
             </div>
           </div>
         )}
+      </div>
+      <div className="divider" />
+      <div className="eyebrow" style={{ marginBottom: 4 }}>{I18N.t("CORE_SUMMON_TITLE")}</div>
+      <div className="mono muted" style={{ fontSize: 12, marginBottom: 10 }}>{I18N.t("CORE_SUMMON_HINT")}</div>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+        <button className="btn btn-gold" disabled={!coreBalOk || coreBusy} onClick={doCoreSummon}>
+          {coreBusy ? "…" : <FaText text={I18N.t("CORE_SUMMON_BTN", coreCost)} />}
+        </button>
+        {!coreBalOk && <span className="mono" style={{ fontSize: 12, color: "var(--alert)" }}>{I18N.t("INSUFFICIENT", balance, coreCost)}</span>}
       </div>
     </div>
   );
