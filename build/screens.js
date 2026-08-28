@@ -1346,6 +1346,219 @@ function ForgeFragments({
     }, have, "/", need)));
   })));
 }
+
+/* ---------------- FORGE D'ÉQUIPEMENT ----------------
+   Fusion 3 reliques de même rareté → rareté supérieure, ou désenchantement
+   (détruit la relique, crédite sa valeur moins les frais). Sélection et états
+   des boutons délégués aux helpers purs de forge-ui.js (miroir serveur). */
+function ForgeEquipement() {
+  const {
+    g,
+    actions,
+    toast
+  } = useFA();
+  const FUI = window.FA_FORGE_UI;
+  const [sel, setSel] = useState([]);
+  const [busy, setBusy] = useState(false);
+  const [confirmDis, setConfirmDis] = useState(false);
+  const balance = g.liquid + g.locked;
+  // `equipment` mêle reliques et cores : la forge d'équipement ne montre QUE les reliques.
+  const relics = (g.equipment || []).filter(D.isRelicItem);
+  const fuse = FUI.relicFuseState({
+    sel,
+    balance,
+    busy
+  });
+  const dis = FUI.disenchantState({
+    sel,
+    balance,
+    busy
+  });
+  const selRarity = sel.length ? sel[0].rarity : null;
+  function clic(item) {
+    if (busy) return;
+    const next = FUI.equipSelToggle(sel, item);
+    // null sur une relique = plafond atteint (les cores ne sont pas rendus ici).
+    if (next === null) {
+      toast(I18N.t("FG_EQ_SEL_MAX"), "bad");
+      return;
+    }
+    setSel(next);
+    setConfirmDis(false);
+  }
+  async function doFuse() {
+    if (fuse.disabled) return;
+    setBusy(true);
+    const r = await actions.relicFuse(sel.map(x => x.id));
+    setBusy(false);
+    if (!r.ok) {
+      toast(r.reason, "bad");
+      return;
+    }
+    setSel([]);
+    setConfirmDis(false);
+    toast(I18N.t("FG_SUMMON_OK", I18N.t("RELIC_" + r.relic.type.toUpperCase()), rarityLabel(r.relic.rarity)), "good");
+  }
+  async function doDisenchant() {
+    if (dis.disabled) return;
+    const fee = dis.fee,
+      net = dis.net;
+    setBusy(true);
+    const r = await actions.equipDisenchant(sel[0].id);
+    setBusy(false);
+    setConfirmDis(false);
+    if (!r.ok) {
+      toast(r.reason, "bad");
+      return;
+    }
+    setSel([]);
+    toast(I18N.t("FG_EQ_DIS_OK", r.value != null ? r.value - fee : net), "good");
+  }
+  return /*#__PURE__*/React.createElement("div", {
+    className: "panel oct",
+    style: {
+      border: "1px solid var(--line)",
+      padding: 22,
+      marginTop: 26
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "eyebrow",
+    style: {
+      marginBottom: 4
+    }
+  }, I18N.t("FG_EQ_TITLE")), /*#__PURE__*/React.createElement("div", {
+    className: "mono muted",
+    style: {
+      fontSize: 12,
+      marginBottom: 14
+    }
+  }, I18N.t("FG_EQ_SUB")), relics.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    className: "mono muted",
+    style: {
+      fontSize: 13
+    }
+  }, I18N.t("RELIC_NONE")) : /*#__PURE__*/React.createElement("div", {
+    className: "grid-cards"
+  }, relics.map(inst => {
+    const selected = sel.some(x => x.id === inst.id);
+    const holder = g.roster.find(b => b.relic_id === inst.id);
+    return /*#__PURE__*/React.createElement("div", {
+      key: inst.id,
+      className: "panel oct",
+      onClick: () => clic(inst),
+      style: {
+        border: `1px solid ${selected ? "var(--gold)" : D.RARITY_COLORS[inst.rarity]}`,
+        padding: 12,
+        display: "flex",
+        flexDirection: "column",
+        gap: 6,
+        cursor: "pointer",
+        boxShadow: selected ? "0 0 14px rgba(247,147,26,.35)" : "none",
+        opacity: selRarity && inst.rarity !== selRarity ? 0.55 : 1
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex center gap8"
+    }, /*#__PURE__*/React.createElement(RelicIcon, {
+      type: inst.type,
+      rarity: inst.rarity,
+      size: 24
+    }), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontWeight: 700,
+        fontSize: 13
+      }
+    }, I18N.t("RELIC_" + inst.type.toUpperCase()))), /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: D.RARITY_COLORS[inst.rarity],
+        fontWeight: 600,
+        fontSize: 12
+      }
+    }, rarityLabel(inst.rarity)), holder && /*#__PURE__*/React.createElement("span", {
+      className: "pill",
+      style: {
+        color: "var(--gold)",
+        fontSize: 11
+      }
+    }, "\u2694 ", D.displayName(holder)));
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "divider"
+  }), fuse.maxRarity && /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      fontSize: 12,
+      color: "var(--alert)",
+      marginBottom: 8
+    }
+  }, I18N.t("FG_EQ_MAX_RARITY")), fuse.cost != null && !fuse.maxRarity && /*#__PURE__*/React.createElement("div", {
+    className: "mono muted",
+    style: {
+      fontSize: 12,
+      marginBottom: 8
+    }
+  }, I18N.t("FG_EQ_FUSE_HINT", rarityLabel(selRarity), rarityLabel(fuse.nextRarity))), (fuse.showInsufficient || dis.showInsufficient) && /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      fontSize: 12,
+      color: "var(--alert)",
+      marginBottom: 8
+    }
+  }, I18N.t("INSUFFICIENT", balance, fuse.showInsufficient ? fuse.cost : dis.fee)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)",
+      gap: 10
+    },
+    className: "summon-grid"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "btn btn-gold",
+    disabled: fuse.disabled,
+    onClick: doFuse
+  }, busy ? "…" : /*#__PURE__*/React.createElement(FaText, {
+    text: I18N.t("FG_EQ_FUSE_BTN", fuse.cost || 0)
+  })), !confirmDis ? /*#__PURE__*/React.createElement("button", {
+    className: "btn",
+    disabled: dis.disabled,
+    onClick: () => setConfirmDis(true)
+  }, busy ? "…" : /*#__PURE__*/React.createElement(FaText, {
+    text: I18N.t("FG_EQ_DIS_BTN", dis.net || 0)
+  })) :
+  /*#__PURE__*/
+  // Le désenchantement DÉTRUIT la relique : confirmation obligatoire.
+  React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 6
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "mono",
+    style: {
+      fontSize: 12,
+      color: "var(--alert)"
+    }
+  }, I18N.t("FG_EQ_DIS_CONFIRM")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)",
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "btn",
+    onClick: () => setConfirmDis(false)
+  }, I18N.t("CANCEL")), /*#__PURE__*/React.createElement("button", {
+    className: "btn",
+    disabled: dis.disabled,
+    style: {
+      background: "var(--alert)",
+      borderColor: "#ff8ba4",
+      color: "#14030a",
+      fontWeight: 700
+    },
+    onClick: doDisenchant
+  }, busy ? "…" : /*#__PURE__*/React.createElement(FaText, {
+    text: I18N.t("FG_EQ_DIS_BTN", dis.net || 0)
+  }))))));
+}
 function ForgeReliques() {
   const {
     g,
@@ -1576,7 +1789,7 @@ function ForgeReliques() {
         fontSize: 11
       }
     }, "\u2694 ", D.displayName(holder)));
-  }))), detail && /*#__PURE__*/React.createElement(Modal, {
+  }))), /*#__PURE__*/React.createElement(ForgeEquipement, null), detail && /*#__PURE__*/React.createElement(Modal, {
     onClose: () => setDetail(null),
     accent: D.RARITY_COLORS[detail.rarity]
   }, /*#__PURE__*/React.createElement("div", {

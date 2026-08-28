@@ -694,6 +694,28 @@
     CORE_EQUIP: { FR: "Équiper un core", EN: "Equip a core", ZH: "装备核心" },
     CORE_UNEQUIP: { FR: "Retirer", EN: "Unequip", ZH: "卸下" },
     CORE_NONE: { FR: "Aucun core", EN: "No core", ZH: "无核心" },
+    // Forge d'équipement : fusion 3 reliques → rareté supérieure, désenchantement
+    FG_EQ_TITLE: { FR: "Forge d'équipement", EN: "Equipment forge", ZH: "装备熔炉" },
+    FG_EQ_SUB: {
+      FR: "Fusionne 3 reliques de même rareté en une relique supérieure, ou désenchante-en une contre des FA.",
+      EN: "Fuse 3 relics of the same rarity into a higher one, or disenchant one for FA.",
+      ZH: "将 3 件同稀有度圣物融合为更高稀有度，或分解一件换取 FA。",
+    },
+    FG_EQ_FUSE_BTN: { FR: "Fusionner  −%d FA", EN: "Fuse  −%d FA", ZH: "融合  −%d FA" },
+    FG_EQ_FUSE_HINT: { FR: "3 × %s → 1 × %s (type aléatoire)", EN: "3 × %s → 1 × %s (random type)", ZH: "3 × %s → 1 × %s（类型随机）" },
+    FG_EQ_MAX_RARITY: { FR: "Légendaire : rareté maximale, non fusible", EN: "Legendary: max rarity, cannot be fused", ZH: "传说：已是最高稀有度，无法融合" },
+    FG_EQ_SEL_MAX: { FR: "3 reliques maximum", EN: "3 relics max", ZH: "最多选择 3 件圣物" },
+    FG_EQ_DIS_BTN: { FR: "Désenchanter  +%d FA net", EN: "Disenchant  +%d FA net", ZH: "分解  净得 +%d FA" },
+    FG_EQ_DIS_CONFIRM: { FR: "Sûr ? La relique sera détruite", EN: "Sure? The relic will be destroyed", ZH: "确定？圣物将被销毁" },
+    FG_EQ_DIS_OK: { FR: "+%d FA — relique désenchantée", EN: "+%d FA — relic disenchanted", ZH: "+%d FA——圣物已分解" },
+    // Codes d'erreur serveur relic-fuse / equip-disenchant (1:1 avec forge.js)
+    FG_EQ_ERR_relic_ids_invalide: { FR: "Sélection invalide : 3 reliques requises.", EN: "Invalid selection: 3 relics required.", ZH: "选择无效：需要 3 件圣物。" },
+    FG_EQ_ERR_relique_introuvable: { FR: "Relique introuvable dans ton inventaire.", EN: "Relic not found in your inventory.", ZH: "库存中找不到该圣物。" },
+    FG_EQ_ERR_pas_une_relique: { FR: "Cet objet n'est pas une relique.", EN: "This item is not a relic.", ZH: "该物品不是圣物。" },
+    FG_EQ_ERR_rarity_mismatch: { FR: "Les 3 reliques doivent être de la même rareté.", EN: "All 3 relics must share the same rarity.", ZH: "3 件圣物必须为同一稀有度。" },
+    FG_EQ_ERR_max_rarity: { FR: "Rareté maximale : une Légendaire ne fusionne pas.", EN: "Max rarity: a Legendary cannot be fused.", ZH: "已是最高稀有度：传说圣物无法融合。" },
+    FG_EQ_ERR_objet_introuvable: { FR: "Objet introuvable dans ton inventaire.", EN: "Item not found in your inventory.", ZH: "库存中找不到该物品。" },
+    FG_EQ_ERR_generic: { FR: "Erreur serveur, réessaie.", EN: "Server error, try again.", ZH: "服务器错误，请重试。" },
 
     // ---- Marché (hôtel des ventes reliques) ----
     NAV_MARKET: { FR: "Marché", EN: "Market", ZH: "市场" },

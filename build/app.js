@@ -2382,6 +2382,114 @@ function App() {
         };
       }
     },
+    // Fusion d'équipement : 3 reliques de même rareté → 1 relique de rareté
+    // supérieure (succès 100 %, type aléatoire). Le serveur valide tout ; ici on
+    // traduit ses codes d'erreur et on resynchronise la save (solde + inventaire).
+    async relicFuse(relicIds) {
+      const s = gRef.current;
+      if (!s.wallet || !s.authToken) return {
+        ok: false,
+        reason: "Wallet requis"
+      };
+      const first = (s.equipment || []).find(e => e.id === (relicIds || [])[0]);
+      const cost = first ? D.RELIC_FUSE_COSTS[first.rarity] || 0 : 0;
+      if (s.liquid + s.locked < cost) return {
+        ok: false,
+        reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, cost)
+      };
+      try {
+        const resp = await fetch(`${API_URL}/forge/relic-fuse`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${s.authToken}`
+          },
+          body: JSON.stringify({
+            wallet: s.wallet,
+            relic_ids: relicIds
+          })
+        });
+        const data = await resp.json();
+        if (data.status === "insufficient_balance") return {
+          ok: false,
+          reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, data.cost || cost)
+        };
+        if (data.status !== "ok") return {
+          ok: false,
+          reason: window.FA_FORGE_UI.equipForgeErrText(data.error)
+        };
+        const sv = await fetch(`${API_URL}/save/${s.wallet}`, svOpts());
+        if (sv.ok) {
+          const {
+            save
+          } = await sv.json();
+          setG(st => serverToState(save, s.wallet, st));
+        }
+        return {
+          ok: true,
+          relic: data.relic
+        };
+      } catch (e) {
+        return {
+          ok: false,
+          reason: "Erreur réseau"
+        };
+      }
+    },
+    // Désenchantement : détruit une relique, crédite 20 % de sa valeur en liquid,
+    // débite les frais fixes (→ buyback). Jamais de core (le serveur refuse aussi).
+    async equipDisenchant(itemId) {
+      const s = gRef.current;
+      if (!s.wallet || !s.authToken) return {
+        ok: false,
+        reason: "Wallet requis"
+      };
+      const item = (s.equipment || []).find(e => e.id === itemId);
+      if (s.liquid + s.locked < D.DISENCHANT_FEE) return {
+        ok: false,
+        reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, D.DISENCHANT_FEE)
+      };
+      try {
+        const resp = await fetch(`${API_URL}/forge/equip-disenchant`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${s.authToken}`
+          },
+          body: JSON.stringify({
+            wallet: s.wallet,
+            item_id: itemId
+          })
+        });
+        const data = await resp.json();
+        if (data.status === "insufficient_balance") return {
+          ok: false,
+          reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, D.DISENCHANT_FEE)
+        };
+        if (data.status !== "ok") return {
+          ok: false,
+          reason: window.FA_FORGE_UI.equipForgeErrText(data.error)
+        };
+        const sv = await fetch(`${API_URL}/save/${s.wallet}`, svOpts());
+        if (sv.ok) {
+          const {
+            save
+          } = await sv.json();
+          setG(st => serverToState(save, s.wallet, st));
+        }
+        // Valeur créditée : celle du serveur si présente, sinon le miroir local.
+        const value = data.value != null ? data.value : item ? D.RELIC_BUYBACK[item.rarity] || 0 : 0;
+        return {
+          ok: true,
+          value
+        };
+      } catch (e) {
+        return {
+          ok: false,
+          reason: "Erreur réseau"
+        };
+      }
+    },
     async coreEquip(beastId, coreId) {
       const s = gRef.current;
       if (!s.wallet || !s.authToken) return {

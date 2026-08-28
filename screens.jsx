@@ -727,6 +727,112 @@ function ForgeFragments({ onForged }) {
   );
 }
 
+/* ---------------- FORGE D'ÉQUIPEMENT ----------------
+   Fusion 3 reliques de même rareté → rareté supérieure, ou désenchantement
+   (détruit la relique, crédite sa valeur moins les frais). Sélection et états
+   des boutons délégués aux helpers purs de forge-ui.js (miroir serveur). */
+function ForgeEquipement() {
+  const { g, actions, toast } = useFA();
+  const FUI = window.FA_FORGE_UI;
+  const [sel, setSel] = useState([]);
+  const [busy, setBusy] = useState(false);
+  const [confirmDis, setConfirmDis] = useState(false);
+  const balance = g.liquid + g.locked;
+  // `equipment` mêle reliques et cores : la forge d'équipement ne montre QUE les reliques.
+  const relics = (g.equipment || []).filter(D.isRelicItem);
+  const fuse = FUI.relicFuseState({ sel, balance, busy });
+  const dis = FUI.disenchantState({ sel, balance, busy });
+  const selRarity = sel.length ? sel[0].rarity : null;
+
+  function clic(item) {
+    if (busy) return;
+    const next = FUI.equipSelToggle(sel, item);
+    // null sur une relique = plafond atteint (les cores ne sont pas rendus ici).
+    if (next === null) { toast(I18N.t("FG_EQ_SEL_MAX"), "bad"); return; }
+    setSel(next);
+    setConfirmDis(false);
+  }
+
+  async function doFuse() {
+    if (fuse.disabled) return;
+    setBusy(true);
+    const r = await actions.relicFuse(sel.map((x) => x.id));
+    setBusy(false);
+    if (!r.ok) { toast(r.reason, "bad"); return; }
+    setSel([]); setConfirmDis(false);
+    toast(I18N.t("FG_SUMMON_OK", I18N.t("RELIC_" + r.relic.type.toUpperCase()), rarityLabel(r.relic.rarity)), "good");
+  }
+
+  async function doDisenchant() {
+    if (dis.disabled) return;
+    const fee = dis.fee, net = dis.net;
+    setBusy(true);
+    const r = await actions.equipDisenchant(sel[0].id);
+    setBusy(false);
+    setConfirmDis(false);
+    if (!r.ok) { toast(r.reason, "bad"); return; }
+    setSel([]);
+    toast(I18N.t("FG_EQ_DIS_OK", r.value != null ? r.value - fee : net), "good");
+  }
+
+  return (
+    <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 22, marginTop: 26 }}>
+      <div className="eyebrow" style={{ marginBottom: 4 }}>{I18N.t("FG_EQ_TITLE")}</div>
+      <div className="mono muted" style={{ fontSize: 12, marginBottom: 14 }}>{I18N.t("FG_EQ_SUB")}</div>
+      {relics.length === 0 ? (
+        <div className="mono muted" style={{ fontSize: 13 }}>{I18N.t("RELIC_NONE")}</div>
+      ) : (
+        <div className="grid-cards">
+          {relics.map((inst) => {
+            const selected = sel.some((x) => x.id === inst.id);
+            const holder = g.roster.find((b) => b.relic_id === inst.id);
+            return (
+              <div key={inst.id} className="panel oct" onClick={() => clic(inst)}
+                style={{ border: `1px solid ${selected ? "var(--gold)" : D.RARITY_COLORS[inst.rarity]}`, padding: 12, display: "flex", flexDirection: "column", gap: 6, cursor: "pointer", boxShadow: selected ? "0 0 14px rgba(247,147,26,.35)" : "none", opacity: selRarity && inst.rarity !== selRarity ? 0.55 : 1 }}>
+                <div className="flex center gap8">
+                  <RelicIcon type={inst.type} rarity={inst.rarity} size={24} />
+                  <span style={{ fontWeight: 700, fontSize: 13 }}>{I18N.t("RELIC_" + inst.type.toUpperCase())}</span>
+                </div>
+                <span style={{ color: D.RARITY_COLORS[inst.rarity], fontWeight: 600, fontSize: 12 }}>{rarityLabel(inst.rarity)}</span>
+                {holder && <span className="pill" style={{ color: "var(--gold)", fontSize: 11 }}>⚔ {D.displayName(holder)}</span>}
+              </div>
+            );
+          })}
+        </div>
+      )}
+      <div className="divider" />
+      {fuse.maxRarity && <div className="mono" style={{ fontSize: 12, color: "var(--alert)", marginBottom: 8 }}>{I18N.t("FG_EQ_MAX_RARITY")}</div>}
+      {fuse.cost != null && !fuse.maxRarity && (
+        <div className="mono muted" style={{ fontSize: 12, marginBottom: 8 }}>{I18N.t("FG_EQ_FUSE_HINT", rarityLabel(selRarity), rarityLabel(fuse.nextRarity))}</div>
+      )}
+      {(fuse.showInsufficient || dis.showInsufficient) && (
+        <div className="mono" style={{ fontSize: 12, color: "var(--alert)", marginBottom: 8 }}>{I18N.t("INSUFFICIENT", balance, fuse.showInsufficient ? fuse.cost : dis.fee)}</div>
+      )}
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 10 }} className="summon-grid">
+        <button className="btn btn-gold" disabled={fuse.disabled} onClick={doFuse}>
+          {busy ? "…" : <FaText text={I18N.t("FG_EQ_FUSE_BTN", fuse.cost || 0)} />}
+        </button>
+        {!confirmDis ? (
+          <button className="btn" disabled={dis.disabled} onClick={() => setConfirmDis(true)}>
+            {busy ? "…" : <FaText text={I18N.t("FG_EQ_DIS_BTN", dis.net || 0)} />}
+          </button>
+        ) : (
+          // Le désenchantement DÉTRUIT la relique : confirmation obligatoire.
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <span className="mono" style={{ fontSize: 12, color: "var(--alert)" }}>{I18N.t("FG_EQ_DIS_CONFIRM")}</span>
+            <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 8 }}>
+              <button className="btn" onClick={() => setConfirmDis(false)}>{I18N.t("CANCEL")}</button>
+              <button className="btn" disabled={dis.disabled} style={{ background: "var(--alert)", borderColor: "#ff8ba4", color: "#14030a", fontWeight: 700 }} onClick={doDisenchant}>
+                {busy ? "…" : <FaText text={I18N.t("FG_EQ_DIS_BTN", dis.net || 0)} />}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function ForgeReliques() {
   const { g, actions, toast } = useFA();
   const [last, setLast] = useState(null);
@@ -829,6 +935,7 @@ function ForgeReliques() {
           </div>
         )}
       </div>
+      <ForgeEquipement />
       {detail && (
         <Modal onClose={() => setDetail(null)} accent={D.RARITY_COLORS[detail.rarity]}>
           <div style={{ textAlign: "center", padding: 8 }}>
