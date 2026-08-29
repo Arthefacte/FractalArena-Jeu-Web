@@ -248,7 +248,7 @@ function RangeeBurn({
     s: 10
   }), " ", /*#__PURE__*/React.createElement("a", {
     className: "bb-burn-lien",
-    href: "https://fractal.unisat.io/address/" + burn.burn_address,
+    href: "https://uniscan.cc/fractal/address/" + burn.burn_address,
     target: "_blank",
     rel: "noreferrer"
   }, I.t("BURN_PROOF"), " \u2197")));

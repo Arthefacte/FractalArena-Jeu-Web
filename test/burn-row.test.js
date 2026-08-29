@@ -21,7 +21,9 @@ test("RangeeBurn rend null sans données — pas de repli client sur une donnée
 });
 
 test("le lien de preuve pointe l'explorateur sur l'adresse de burn renvoyée par le serveur", () => {
-  assert.match(SRC, /fractal\.unisat\.io\/address\//, "URL explorateur attendue");
+  // UniScan et pas fractal.unisat.io : la page wallet UniSat affiche Actifs vide
+  // pour 1111...oLvT2 ; UniScan montre badge Burn Address + solde FractalArena.
+  assert.match(SRC, /uniscan\.cc\/fractal\/address\//, "URL explorateur attendue");
   assert.match(SRC, /burn\.burn_address/, "l'adresse vient du serveur, pas d'une constante locale");
 });
 

@@ -169,7 +169,10 @@ function RangeeBurn({ burn }) {
       <div className="bb-sub">
         <FaText text={I.t("BURN_ROW", bbFmt(burn.total_burned)) + " · " + I.t("BURN_SUB", rateTxt, bbFmt(burn.next_halving_at_burned))} s={10} />
         {" "}
-        <a className="bb-burn-lien" href={"https://fractal.unisat.io/address/" + burn.burn_address}
+        {/* UniScan, pas fractal.unisat.io : la page wallet d'UniSat affiche un panneau
+            Actifs vide pour l'adresse de burn — UniScan montre badge « Burn Address »,
+            transactions et le solde FractalArena brûlé. */}
+        <a className="bb-burn-lien" href={"https://uniscan.cc/fractal/address/" + burn.burn_address}
            target="_blank" rel="noreferrer">{I.t("BURN_PROOF")} ↗</a>
       </div>
     </div>
