@@ -36,11 +36,28 @@ test("RangeeBurn est une JAUGE avec les animations des pools (bb-bar, bb-gain, b
   assert.match(corps, /ceremony_threshold/, "la jauge se remplit vers le seuil de cérémonie");
 });
 
+test("le cumul brûlé est un bouton qui ouvre le panneau des burns vérifiés", () => {
+  const i = SRC.indexOf("function RangeeBurn");
+  const corps = SRC.slice(i, SRC.indexOf("\nfunction", i + 10));
+  assert.match(corps, /bb-dex-btn/, "même style de bouton que « rachats vérifiés »");
+  assert.match(corps, /PanneauBurns/, "le clic ouvre PanneauBurns");
+});
+
+test("PanneauBurns : chaque burn de burn.burns avec son txid vers la page de tx UniScan", () => {
+  const i = SRC.indexOf("function PanneauBurns");
+  assert.ok(i > -1, "PanneauBurns attendu dans buyback.jsx");
+  const corps = SRC.slice(i, SRC.indexOf("\nfunction", i + 10));
+  assert.match(corps, /burn\.burns/, "la liste vient du serveur (/burn/status), jamais fabriquée");
+  assert.match(corps, /uniscan\.cc\/fractal\/tx\//, "le txid pointe la page de transaction UniScan");
+  assert.match(corps, /uniscan\.cc\/fractal\/address\//, "le lien vers l'adresse de burn reste offert");
+});
+
 test("clés i18n BURN_* présentes en FR/EN/ZH", () => {
-  for (const key of ["BURN_POOL_LABEL", "BURN_ROW", "BURN_PROOF", "BURN_SUB"]) {
+  for (const key of ["BURN_POOL_LABEL", "BURN_ROW", "BURN_PROOF", "BURN_SUB",
+                     "BURN_MODAL_TITLE", "BURN_MODAL_SUB", "BURN_MODAL_ADDR"]) {
     const i = I18N.indexOf(key + ":");
     assert.ok(i > -1, `clé ${key} attendue dans i18n.js`);
-    const bloc = I18N.slice(i, i + 300);
+    const bloc = I18N.slice(i, i + 450);
     for (const lang of ["FR:", "EN:", "ZH:"]) {
       assert.ok(bloc.includes(lang), `${key} doit avoir sa traduction ${lang.slice(0, 2)}`);
     }

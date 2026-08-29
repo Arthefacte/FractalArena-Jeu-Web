@@ -218,11 +218,12 @@ function RangeeBurn({
       if (window.FA_SFX) window.FA_SFX.play("kaching");
     }
   }, [burn && burn.owed, burn && burn.last_burn && burn.last_burn.txid]);
+  const [voirBurns, setVoirBurns] = React.useState(false);
   if (!burn || !(burn.total_burned > 0)) return null;
   const frac = buybackFraction(burn.owed, burn.ceremony_threshold);
   // current_rate ∈ {1, 0.5, 0.25, …} — affiché tel quel, le halving se lit dedans.
   const rateTxt = String(Number(burn.current_rate) || 1);
-  return /*#__PURE__*/React.createElement("div", {
+  return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     key: "g" + gain.n + ":c" + ceremonie,
     className: "bb-row burn" + (gain.montant > 0 ? " bb-gain" : "") + (ceremonie > 0 ? " bb-rachat" : "")
   }, /*#__PURE__*/React.createElement("div", {
@@ -243,15 +244,84 @@ function RangeeBurn({
     className: "bb-nums"
   }, bbFmt(burn.owed), " / ", bbFmt(burn.ceremony_threshold))), /*#__PURE__*/React.createElement("div", {
     className: "bb-sub"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "bb-dex-btn",
+    onClick: () => setVoirBurns(true)
   }, /*#__PURE__*/React.createElement(FaText, {
-    text: I.t("BURN_ROW", bbFmt(burn.total_burned)) + " · " + I.t("BURN_SUB", rateTxt, bbFmt(burn.next_halving_at_burned)),
+    text: I.t("BURN_ROW", bbFmt(burn.total_burned)),
+    s: 10
+  })), " ", /*#__PURE__*/React.createElement(FaText, {
+    text: "· " + I.t("BURN_SUB", rateTxt, bbFmt(burn.next_halving_at_burned)),
     s: 10
   }), " ", /*#__PURE__*/React.createElement("a", {
     className: "bb-burn-lien",
     href: "https://uniscan.cc/fractal/address/" + burn.burn_address,
     target: "_blank",
     rel: "noreferrer"
-  }, I.t("BURN_PROOF"), " \u2197")));
+  }, I.t("BURN_PROOF"), " \u2197"))), voirBurns && /*#__PURE__*/React.createElement(PanneauBurns, {
+    burn: burn,
+    onClose: () => setVoirBurns(false)
+  }));
+}
+
+// Panneau des burns vérifiés : chaque cérémonie confirmée on-chain (burn
+// fondateur inclus), telle que renvoyée par /burn/status. Le txid pointe la
+// page de transaction UniScan — on y voit les FA entrer à l'adresse de burn.
+function PanneauBurns({
+  burn,
+  onClose
+}) {
+  const I = window.FA_I18N;
+  return /*#__PURE__*/React.createElement(Modal, {
+    onClose: onClose
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "h2",
+    style: {
+      fontSize: 14,
+      marginBottom: 6,
+      textAlign: "center"
+    }
+  }, I.t("BURN_MODAL_TITLE")), /*#__PURE__*/React.createElement("p", {
+    className: "muted",
+    style: {
+      fontSize: 12,
+      margin: "0 0 10px"
+    }
+  }, I.t("BURN_MODAL_SUB")), /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      marginBottom: 10,
+      textAlign: "center"
+    }
+  }, /*#__PURE__*/React.createElement(FaText, {
+    text: I.t("BURN_ROW", bbFmt(burn.total_burned)),
+    s: 12
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "bb-dex-liste"
+  }, (burn.burns || []).map(b => /*#__PURE__*/React.createElement("div", {
+    key: b.txid,
+    className: "bb-dex-item mono"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "muted"
+  }, new Date(b.ts * 1000).toLocaleDateString()), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement(FaText, {
+    text: bbFmt(b.amount) + " FA",
+    s: 11
+  })), /*#__PURE__*/React.createElement("a", {
+    className: "bb-burn-lien",
+    href: "https://uniscan.cc/fractal/tx/" + b.txid,
+    target: "_blank",
+    rel: "noreferrer"
+  }, b.txid.slice(0, 8), "\u2026", b.txid.slice(-6), " \u2197")))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "center",
+      marginTop: 10
+    }
+  }, /*#__PURE__*/React.createElement("a", {
+    className: "btn sm",
+    href: "https://uniscan.cc/fractal/address/" + burn.burn_address,
+    target: "_blank",
+    rel: "noreferrer"
+  }, I.t("BURN_MODAL_ADDR"), " \u2197")));
 }
 
 // Panneau de preuve : la liste des achats DEX des adresses officielles de rachat,

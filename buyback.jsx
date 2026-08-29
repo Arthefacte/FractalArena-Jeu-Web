@@ -150,11 +150,13 @@ function RangeeBurn({ burn }) {
       if (window.FA_SFX) window.FA_SFX.play("kaching");
     }
   }, [burn && burn.owed, burn && burn.last_burn && burn.last_burn.txid]);
+  const [voirBurns, setVoirBurns] = React.useState(false);
   if (!burn || !(burn.total_burned > 0)) return null;
   const frac = buybackFraction(burn.owed, burn.ceremony_threshold);
   // current_rate ∈ {1, 0.5, 0.25, …} — affiché tel quel, le halving se lit dedans.
   const rateTxt = String(Number(burn.current_rate) || 1);
   return (
+    <React.Fragment>
     <div
       key={"g" + gain.n + ":c" + ceremonie}
       className={"bb-row burn" + (gain.montant > 0 ? " bb-gain" : "") + (ceremonie > 0 ? " bb-rachat" : "")}
@@ -167,7 +169,11 @@ function RangeeBurn({ burn }) {
         <span className="bb-nums">{bbFmt(burn.owed)} / {bbFmt(burn.ceremony_threshold)}</span>
       </div>
       <div className="bb-sub">
-        <FaText text={I.t("BURN_ROW", bbFmt(burn.total_burned)) + " · " + I.t("BURN_SUB", rateTxt, bbFmt(burn.next_halving_at_burned))} s={10} />
+        <button className="bb-dex-btn" onClick={() => setVoirBurns(true)}>
+          <FaText text={I.t("BURN_ROW", bbFmt(burn.total_burned))} s={10} />
+        </button>
+        {" "}
+        <FaText text={"· " + I.t("BURN_SUB", rateTxt, bbFmt(burn.next_halving_at_burned))} s={10} />
         {" "}
         {/* UniScan, pas fractal.unisat.io : la page wallet d'UniSat affiche un panneau
             Actifs vide pour l'adresse de burn — UniScan montre badge « Burn Address »,
@@ -176,6 +182,39 @@ function RangeeBurn({ burn }) {
            target="_blank" rel="noreferrer">{I.t("BURN_PROOF")} ↗</a>
       </div>
     </div>
+    {/* Hors du div à key animée : le panneau ne se remonte pas quand le dû bouge. */}
+    {voirBurns && <PanneauBurns burn={burn} onClose={() => setVoirBurns(false)} />}
+    </React.Fragment>
+  );
+}
+
+// Panneau des burns vérifiés : chaque cérémonie confirmée on-chain (burn
+// fondateur inclus), telle que renvoyée par /burn/status. Le txid pointe la
+// page de transaction UniScan — on y voit les FA entrer à l'adresse de burn.
+function PanneauBurns({ burn, onClose }) {
+  const I = window.FA_I18N;
+  return (
+    <Modal onClose={onClose}>
+      <div className="h2" style={{ fontSize: 14, marginBottom: 6, textAlign: "center" }}>{I.t("BURN_MODAL_TITLE")}</div>
+      <p className="muted" style={{ fontSize: 12, margin: "0 0 10px" }}>{I.t("BURN_MODAL_SUB")}</p>
+      <div className="mono" style={{ marginBottom: 10, textAlign: "center" }}>
+        <FaText text={I.t("BURN_ROW", bbFmt(burn.total_burned))} s={12} />
+      </div>
+      <div className="bb-dex-liste">
+        {(burn.burns || []).map((b) => (
+          <div key={b.txid} className="bb-dex-item mono">
+            <span className="muted">{new Date(b.ts * 1000).toLocaleDateString()}</span>
+            <span><FaText text={bbFmt(b.amount) + " FA"} s={11} /></span>
+            <a className="bb-burn-lien" href={"https://uniscan.cc/fractal/tx/" + b.txid}
+               target="_blank" rel="noreferrer">{b.txid.slice(0, 8)}…{b.txid.slice(-6)} ↗</a>
+          </div>
+        ))}
+      </div>
+      <div style={{ textAlign: "center", marginTop: 10 }}>
+        <a className="btn sm" href={"https://uniscan.cc/fractal/address/" + burn.burn_address}
+           target="_blank" rel="noreferrer">{I.t("BURN_MODAL_ADDR")} ↗</a>
+      </div>
+    </Modal>
   );
 }
 
