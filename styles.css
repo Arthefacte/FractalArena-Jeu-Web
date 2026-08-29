@@ -69,7 +69,10 @@ html, body {
   font-family: var(--font-display);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  overflow-x: hidden;
+  /* `clip` et non `hidden` : `hidden` crée un conteneur de scroll (overflow-y
+     forcé à auto) qui casse position:sticky du header/nav. `clip` masque
+     l'overflow horizontal sans faire de body un conteneur de scroll. */
+  overflow-x: clip;
 }
 
 #root { min-height: 100vh; }
