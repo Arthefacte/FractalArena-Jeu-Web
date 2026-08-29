@@ -517,6 +517,14 @@ function CoreSlot({
   } = useFA();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [detail, setDetail] = useState(null);
+  const CV = window.CoreViewer;
+  // Même amorçage paresseux que RelicSlot : les vignettes/viewers de cores
+  // chargent leurs modèles quand le navigateur est libre.
+  useEffect(() => {
+    const M = window.FA_CORE_MODELS;
+    if (M && M.preloadWhenIdle) M.preloadWhenIdle();
+  }, []);
   const equipped = beast.core_id ? (g.equipment || []).find(e => e.id === beast.core_id) : null;
   // cores équipables = non portés, ou déjà sur CETTE bête
   const available = (g.equipment || []).filter(D.isCoreItem).filter(inst => {
@@ -582,23 +590,40 @@ function CoreSlot({
     }
   }, I18N.t("RELIC_INVENTORY"), ": \u2014"), available.map(inst => {
     const on = beast.core_id === inst.id;
-    return /*#__PURE__*/React.createElement("button", {
+    return /*#__PURE__*/React.createElement("div", {
       key: inst.id,
+      style: {
+        display: "flex",
+        gap: 6
+      }
+    }, /*#__PURE__*/React.createElement("button", {
       className: cx("btn sm", on && "on"),
       disabled: busy,
       onClick: () => doEquip(on ? null : inst.id),
       style: {
         justifyContent: "flex-start",
         gap: 8,
-        textAlign: "left"
+        textAlign: "left",
+        flex: 1,
+        minWidth: 0
       }
     }, /*#__PURE__*/React.createElement(CoreIcon, {
       type: inst.core_id,
       rarity: inst.rarity || "Common",
       size: 16
     }), " ", coreLabel(inst), " \xB7 ", /*#__PURE__*/React.createElement("span", {
-      className: "muted"
-    }, coreDesc(inst)), " ", on ? "✓" : "");
+      style: {
+        color: D.RARITY_COLORS[inst.rarity] || "var(--text)",
+        fontWeight: 600
+      }
+    }, rarityLabel(inst.rarity || "Common")), " ", on ? "✓" : ""), /*#__PURE__*/React.createElement("button", {
+      className: "btn sm",
+      style: {
+        flex: "none"
+      },
+      title: coreDesc(inst),
+      onClick: () => setDetail(inst)
+    }, "\u24D8"));
   })), /*#__PURE__*/React.createElement("button", {
     className: "btn sm block",
     style: {
@@ -606,7 +631,41 @@ function CoreSlot({
     },
     disabled: busy || !beast.core_id,
     onClick: () => doEquip(null)
-  }, I18N.t("CORE_UNEQUIP"))));
+  }, I18N.t("CORE_UNEQUIP"))), detail && /*#__PURE__*/React.createElement(Modal, {
+    onClose: () => setDetail(null),
+    accent: D.RARITY_COLORS[detail.rarity]
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "center",
+      padding: 8
+    }
+  }, CV ? /*#__PURE__*/React.createElement(CV, {
+    type: detail.core_id,
+    rarity: detail.rarity || "Common",
+    size: 220
+  }) : /*#__PURE__*/React.createElement(CoreIcon, {
+    type: detail.core_id,
+    rarity: detail.rarity || "Common",
+    size: 48
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontWeight: 700,
+      fontSize: 16,
+      marginTop: 10
+    }
+  }, coreLabel(detail)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: D.RARITY_COLORS[detail.rarity] || "var(--text)",
+      fontWeight: 600,
+      marginTop: 4
+    }
+  }, rarityLabel(detail.rarity || "Common")), /*#__PURE__*/React.createElement("div", {
+    className: "mono muted",
+    style: {
+      fontSize: 13,
+      marginTop: 8
+    }
+  }, coreDesc(detail)))));
 }
 
 /* --- Bande talents sous la carte : 3 paliers L25/50/75, 1 choix parmi 2 --- */
@@ -1366,6 +1425,8 @@ function ForgeEquipement() {
   const [busy, setBusy] = useState(false);
   const [confirmDis, setConfirmDis] = useState(false);
   const [coreBusy, setCoreBusy] = useState(false);
+  const [coreLast, setCoreLast] = useState(null);
+  const CV = window.CoreViewer;
   const balance = g.liquid + g.locked;
   const coreCost = 8000; // CORE_SUMMON_COST serveur
   const coreBalOk = balance >= coreCost;
@@ -1432,6 +1493,7 @@ function ForgeEquipement() {
     }
     const name = r.core && r.core.core_id ? I18N.t("CORE_" + r.core.core_id.toUpperCase()) : I18N.t("CORE_SUMMON_TITLE");
     toast(I18N.t("CORE_SUMMON_OK", name), "good");
+    if (r.core && r.core.core_id) setCoreLast(r.core); // modale résultat : viewer + rareté
   }
   return /*#__PURE__*/React.createElement("div", {
     className: "panel oct",
@@ -1608,7 +1670,47 @@ function ForgeEquipement() {
       fontSize: 12,
       color: "var(--alert)"
     }
-  }, I18N.t("INSUFFICIENT", balance, coreCost))));
+  }, I18N.t("INSUFFICIENT", balance, coreCost))), coreLast && /*#__PURE__*/React.createElement(Modal, {
+    onClose: () => setCoreLast(null),
+    accent: D.RARITY_COLORS[coreLast.rarity]
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "center",
+      padding: 8
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "eyebrow",
+    style: {
+      marginBottom: 10,
+      color: D.RARITY_COLORS[coreLast.rarity] || "var(--text)"
+    }
+  }, I18N.t("CORE_SUMMON_TITLE")), CV ? /*#__PURE__*/React.createElement(CV, {
+    type: coreLast.core_id,
+    rarity: coreLast.rarity || "Common",
+    size: 220
+  }) : /*#__PURE__*/React.createElement(CoreIcon, {
+    type: coreLast.core_id,
+    rarity: coreLast.rarity || "Common",
+    size: 48
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontWeight: 700,
+      fontSize: 16,
+      marginTop: 10
+    }
+  }, I18N.t("CORE_" + coreLast.core_id.toUpperCase())), /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: D.RARITY_COLORS[coreLast.rarity] || "var(--text)",
+      fontWeight: 600,
+      marginTop: 4
+    }
+  }, rarityLabel(coreLast.rarity || "Common")), /*#__PURE__*/React.createElement("div", {
+    className: "mono muted",
+    style: {
+      fontSize: 13,
+      marginTop: 8
+    }
+  }, I18N.t("CORE_" + coreLast.core_id.toUpperCase() + "_D")))));
 }
 function ForgeReliques() {
   const {

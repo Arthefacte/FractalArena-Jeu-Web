@@ -39,8 +39,9 @@ test("CORES : noms et chiffres du design v1", () => {
   assert.strictEqual(D.CORES.last_stand_core.effect.def, 0.15);
 });
 
-test("v1 : pas de rareté de core — Common seul, multiplicateur 1.0", () => {
-  assert.deepStrictEqual(D.CORE_RARITY_MULT, { Common: 1.0 });
+test("rareté de core : 4 paliers, même échelle que les reliques (miroir serveur)", () => {
+  assert.deepStrictEqual(D.CORE_RARITY_MULT, { Common: 1.0, Rare: 1.25, Epic: 1.5, Legendary: 2.0 });
+  assert.deepStrictEqual(D.CORE_RARITY_MULT, D.RELIC_RARITY_MULT);
 });
 
 test("isCoreItem / isRelicItem : trient le tableau equipment mixte", () => {

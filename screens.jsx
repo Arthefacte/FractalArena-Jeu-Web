@@ -290,6 +290,14 @@ function CoreSlot({ beast }) {
   const { g, actions, toast } = useFA();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [detail, setDetail] = useState(null);
+  const CV = window.CoreViewer;
+  // Même amorçage paresseux que RelicSlot : les vignettes/viewers de cores
+  // chargent leurs modèles quand le navigateur est libre.
+  useEffect(() => {
+    const M = window.FA_CORE_MODELS;
+    if (M && M.preloadWhenIdle) M.preloadWhenIdle();
+  }, []);
   const equipped = beast.core_id ? (g.equipment || []).find((e) => e.id === beast.core_id) : null;
   // cores équipables = non portés, ou déjà sur CETTE bête
   const available = (g.equipment || []).filter(D.isCoreItem).filter((inst) => {
@@ -321,15 +329,30 @@ function CoreSlot({ beast }) {
             {available.map((inst) => {
               const on = beast.core_id === inst.id;
               return (
-                <button key={inst.id} className={cx("btn sm", on && "on")} disabled={busy}
-                  onClick={() => doEquip(on ? null : inst.id)} style={{ justifyContent: "flex-start", gap: 8, textAlign: "left" }}>
-                  <CoreIcon type={inst.core_id} rarity={inst.rarity || "Common"} size={16} /> {coreLabel(inst)} · <span className="muted">{coreDesc(inst)}</span> {on ? "✓" : ""}
-                </button>
+                <div key={inst.id} style={{ display: "flex", gap: 6 }}>
+                  <button className={cx("btn sm", on && "on")} disabled={busy}
+                    onClick={() => doEquip(on ? null : inst.id)} style={{ justifyContent: "flex-start", gap: 8, textAlign: "left", flex: 1, minWidth: 0 }}>
+                    <CoreIcon type={inst.core_id} rarity={inst.rarity || "Common"} size={16} /> {coreLabel(inst)} · <span style={{ color: D.RARITY_COLORS[inst.rarity] || "var(--text)", fontWeight: 600 }}>{rarityLabel(inst.rarity || "Common")}</span> {on ? "✓" : ""}
+                  </button>
+                  <button className="btn sm" style={{ flex: "none" }} title={coreDesc(inst)}
+                    onClick={() => setDetail(inst)}>ⓘ</button>
+                </div>
               );
             })}
           </div>
           <button className="btn sm block" style={{ marginTop: 10 }} disabled={busy || !beast.core_id}
             onClick={() => doEquip(null)}>{I18N.t("CORE_UNEQUIP")}</button>
+        </Modal>
+      )}
+      {detail && (
+        <Modal onClose={() => setDetail(null)} accent={D.RARITY_COLORS[detail.rarity]}>
+          <div style={{ textAlign: "center", padding: 8 }}>
+            {CV ? <CV type={detail.core_id} rarity={detail.rarity || "Common"} size={220} />
+                : <CoreIcon type={detail.core_id} rarity={detail.rarity || "Common"} size={48} />}
+            <div style={{ fontWeight: 700, fontSize: 16, marginTop: 10 }}>{coreLabel(detail)}</div>
+            <div style={{ color: D.RARITY_COLORS[detail.rarity] || "var(--text)", fontWeight: 600, marginTop: 4 }}>{rarityLabel(detail.rarity || "Common")}</div>
+            <div className="mono muted" style={{ fontSize: 13, marginTop: 8 }}>{coreDesc(detail)}</div>
+          </div>
         </Modal>
       )}
     </>
@@ -738,6 +761,8 @@ function ForgeEquipement() {
   const [busy, setBusy] = useState(false);
   const [confirmDis, setConfirmDis] = useState(false);
   const [coreBusy, setCoreBusy] = useState(false);
+  const [coreLast, setCoreLast] = useState(null);
+  const CV = window.CoreViewer;
   const balance = g.liquid + g.locked;
   const coreCost = 8000; // CORE_SUMMON_COST serveur
   const coreBalOk = balance >= coreCost;
@@ -786,6 +811,7 @@ function ForgeEquipement() {
     if (!r.ok) { toast(r.reason, "bad"); return; }
     const name = r.core && r.core.core_id ? I18N.t("CORE_" + r.core.core_id.toUpperCase()) : I18N.t("CORE_SUMMON_TITLE");
     toast(I18N.t("CORE_SUMMON_OK", name), "good");
+    if (r.core && r.core.core_id) setCoreLast(r.core); // modale résultat : viewer + rareté
   }
 
   return (
@@ -851,6 +877,18 @@ function ForgeEquipement() {
         </button>
         {!coreBalOk && <span className="mono" style={{ fontSize: 12, color: "var(--alert)" }}>{I18N.t("INSUFFICIENT", balance, coreCost)}</span>}
       </div>
+      {coreLast && (
+        <Modal onClose={() => setCoreLast(null)} accent={D.RARITY_COLORS[coreLast.rarity]}>
+          <div style={{ textAlign: "center", padding: 8 }}>
+            <div className="eyebrow" style={{ marginBottom: 10, color: D.RARITY_COLORS[coreLast.rarity] || "var(--text)" }}>{I18N.t("CORE_SUMMON_TITLE")}</div>
+            {CV ? <CV type={coreLast.core_id} rarity={coreLast.rarity || "Common"} size={220} />
+                : <CoreIcon type={coreLast.core_id} rarity={coreLast.rarity || "Common"} size={48} />}
+            <div style={{ fontWeight: 700, fontSize: 16, marginTop: 10 }}>{I18N.t("CORE_" + coreLast.core_id.toUpperCase())}</div>
+            <div style={{ color: D.RARITY_COLORS[coreLast.rarity] || "var(--text)", fontWeight: 600, marginTop: 4 }}>{rarityLabel(coreLast.rarity || "Common")}</div>
+            <div className="mono muted" style={{ fontSize: 13, marginTop: 8 }}>{I18N.t("CORE_" + coreLast.core_id.toUpperCase() + "_D")}</div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }
