@@ -310,7 +310,7 @@ function CoreSlot({ beast }) {
         style={{ cursor: "pointer", fontSize: 11, marginTop: 6, padding: "4px 8px",
                  border: "1px solid var(--line)", borderRadius: 8, display: "flex", gap: 6, alignItems: "center" }}>
         {equipped
-          ? (<><span style={{ color: "var(--elec)" }}>⬢</span><span style={{ color: D.RARITY_COLORS[equipped.rarity] || "var(--text)" }}>{coreLabel(equipped)}</span></>)
+          ? (<><CoreIcon type={equipped.core_id} rarity={equipped.rarity || "Common"} size={16} /><span style={{ color: D.RARITY_COLORS[equipped.rarity] || "var(--text)" }}>{coreLabel(equipped)}</span></>)
           : (<span style={{ color: "var(--text-faint)" }}>⬡ {I18N.t("CORE_NONE")}</span>)}
       </div>
       {open && (
@@ -323,7 +323,7 @@ function CoreSlot({ beast }) {
               return (
                 <button key={inst.id} className={cx("btn sm", on && "on")} disabled={busy}
                   onClick={() => doEquip(on ? null : inst.id)} style={{ justifyContent: "flex-start", gap: 8, textAlign: "left" }}>
-                  ⬢ {coreLabel(inst)} · <span className="muted">{coreDesc(inst)}</span> {on ? "✓" : ""}
+                  <CoreIcon type={inst.core_id} rarity={inst.rarity || "Common"} size={16} /> {coreLabel(inst)} · <span className="muted">{coreDesc(inst)}</span> {on ? "✓" : ""}
                 </button>
               );
             })}

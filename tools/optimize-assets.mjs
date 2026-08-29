@@ -63,6 +63,17 @@ const CIBLES = [
       meshopt: true, // relic-models.js installe MeshoptDecoder : on garde la compression
       note: "viewer de relique, 220 px",
     })),
+  ...fs
+    .readdirSync(path.join(ROOT, "assets/cores"))
+    .filter((f) => f.endsWith(".glb"))
+    .map((f) => ({
+      src: `assets/cores/${f}`,
+      out: `assets/cores/${f}`,
+      triangles: 30000,
+      textures: { "(baseColor|normal)": 1024, "(emissive|metallicRoughness)": 512 },
+      meshopt: true, // le branchement cores (Claude Code) installera MeshoptDecoder, pattern relic-models.js
+      note: "core d'équipement, ~220 px",
+    })),
 ];
 
 // Les .glb des reliques sont déjà compressés en EXT_meshopt_compression : sans ces dépendances,

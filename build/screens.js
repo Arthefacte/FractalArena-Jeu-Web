@@ -547,11 +547,11 @@ function CoreSlot({
       gap: 6,
       alignItems: "center"
     }
-  }, equipped ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", {
-    style: {
-      color: "var(--elec)"
-    }
-  }, "\u2B22"), /*#__PURE__*/React.createElement("span", {
+  }, equipped ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(CoreIcon, {
+    type: equipped.core_id,
+    rarity: equipped.rarity || "Common",
+    size: 16
+  }), /*#__PURE__*/React.createElement("span", {
     style: {
       color: D.RARITY_COLORS[equipped.rarity] || "var(--text)"
     }
@@ -592,7 +592,11 @@ function CoreSlot({
         gap: 8,
         textAlign: "left"
       }
-    }, "\u2B22 ", coreLabel(inst), " \xB7 ", /*#__PURE__*/React.createElement("span", {
+    }, /*#__PURE__*/React.createElement(CoreIcon, {
+      type: inst.core_id,
+      rarity: inst.rarity || "Common",
+      size: 16
+    }), " ", coreLabel(inst), " \xB7 ", /*#__PURE__*/React.createElement("span", {
       className: "muted"
     }, coreDesc(inst)), " ", on ? "✓" : "");
   })), /*#__PURE__*/React.createElement("button", {
