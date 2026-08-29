@@ -77,14 +77,33 @@ function CoreViewer({
       obj.rotation.set(0.3, 0.6, 0);
       scene.add(obj);
     }
+    function unmountObj() {
+      if (!obj) return;
+      scene.remove(obj);
+      obj.traverse(o => {
+        if (o.isMesh) {
+          const mats = Array.isArray(o.material) ? o.material : [o.material];
+          mats.forEach(m => m && m.dispose());
+          if (objIsPrimitive && o.geometry) o.geometry.dispose(); // primitive = géométrie propre → à disposer (le modèle partage la sienne avec le cache)
+        }
+      });
+      obj = null;
+    }
     function ensure() {
       if (window.FA_CORE_MODELS.isReady(type)) {
         mountObj();
         return;
       }
+      // Les .glb de cores font jusqu'à ~3 Mo : sans repli synchrone, le canvas
+      // resterait VIDE pendant tout le chargement. Primitive tout de suite,
+      // remplacée par le modèle dès qu'il est prêt (rotation conservée).
+      mountPrimitive();
       window.FA_CORE_MODELS.loadModel(type).then(() => {
-        if (disposed || obj) return;
-        if (window.FA_CORE_MODELS.isReady(type)) mountObj();else mountPrimitive();
+        if (disposed || !window.FA_CORE_MODELS.isReady(type)) return;
+        const ry = obj ? obj.rotation.y : 0.6;
+        unmountObj();
+        mountObj();
+        obj.rotation.y = ry;
       });
     }
     ensure();
@@ -115,13 +134,7 @@ function CoreViewer({
       el.removeEventListener("pointerdown", onDown);
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
-      if (obj) obj.traverse(o => {
-        if (o.isMesh) {
-          const mats = Array.isArray(o.material) ? o.material : [o.material];
-          mats.forEach(m => m && m.dispose());
-          if (objIsPrimitive && o.geometry) o.geometry.dispose(); // primitive = géométrie propre → à disposer (le modèle partage la sienne avec le cache)
-        }
-      });
+      unmountObj();
       renderer.dispose();
       renderer.forceContextLoss();
       if (el.parentNode) el.parentNode.removeChild(el);

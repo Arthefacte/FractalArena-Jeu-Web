@@ -766,6 +766,7 @@ function ForgeEquipement() {
   const balance = g.liquid + g.locked;
   const coreCost = 8000; // CORE_SUMMON_COST serveur
   const coreBalOk = balance >= coreCost;
+  const coreOdds = [["Common", 70], ["Rare", 20], ["Epic", 8], ["Legendary", 2]];
   // `equipment` mêle reliques et cores : la forge d'équipement ne montre QUE les reliques.
   const relics = (g.equipment || []).filter(D.isRelicItem);
   const fuse = FUI.relicFuseState({ sel, balance, busy });
@@ -871,11 +872,21 @@ function ForgeEquipement() {
       <div className="divider" />
       <div className="eyebrow" style={{ marginBottom: 4 }}>{I18N.t("CORE_SUMMON_TITLE")}</div>
       <div className="mono muted" style={{ fontSize: 12, marginBottom: 10 }}>{I18N.t("CORE_SUMMON_HINT")}</div>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-        <button className="btn btn-gold" disabled={!coreBalOk || coreBusy} onClick={doCoreSummon}>
+      {/* Panneau d'odds identique à la Forge de reliques (miroir de CORE_SUMMON_ODDS serveur). */}
+      <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 18, maxWidth: 420 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {coreOdds.map(([r, p]) => (
+            <div key={r} className="flex between center">
+              <span className="flex center gap8"><span style={{ width: 10, height: 10, background: D.RARITY_COLORS[r], display: "inline-block", clipPath: "polygon(50% 0,100% 50%,50% 100%,0 50%)" }} /><span style={{ color: D.RARITY_COLORS[r], fontWeight: 600 }}>{rarityLabel(r)}</span></span>
+              <span className="mono" style={{ color: "var(--text-dim)" }}>{p}%</span>
+            </div>
+          ))}
+        </div>
+        <div className="divider" />
+        <button className="btn btn-gold block lg" disabled={!coreBalOk || coreBusy} onClick={doCoreSummon}>
           {coreBusy ? "…" : <FaText text={I18N.t("CORE_SUMMON_BTN", coreCost)} />}
         </button>
-        {!coreBalOk && <span className="mono" style={{ fontSize: 12, color: "var(--alert)" }}>{I18N.t("INSUFFICIENT", balance, coreCost)}</span>}
+        {!coreBalOk && <div className="mono" style={{ fontSize: 12, color: "var(--alert)", marginTop: 8 }}>{I18N.t("INSUFFICIENT", balance, coreCost)}</div>}
       </div>
       {coreLast && (
         <Modal onClose={() => setCoreLast(null)} accent={D.RARITY_COLORS[coreLast.rarity]}>

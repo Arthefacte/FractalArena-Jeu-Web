@@ -1430,6 +1430,7 @@ function ForgeEquipement() {
   const balance = g.liquid + g.locked;
   const coreCost = 8000; // CORE_SUMMON_COST serveur
   const coreBalOk = balance >= coreCost;
+  const coreOdds = [["Common", 70], ["Rare", 20], ["Epic", 8], ["Legendary", 2]];
   // `equipment` mêle reliques et cores : la forge d'équipement ne montre QUE les reliques.
   const relics = (g.equipment || []).filter(D.isRelicItem);
   const fuse = FUI.relicFuseState({
@@ -1652,23 +1653,55 @@ function ForgeEquipement() {
       marginBottom: 10
     }
   }, I18N.t("CORE_SUMMON_HINT")), /*#__PURE__*/React.createElement("div", {
+    className: "panel oct",
+    style: {
+      border: "1px solid var(--line)",
+      padding: 18,
+      maxWidth: 420
+    }
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
-      alignItems: "center",
-      gap: 10,
-      flexWrap: "wrap"
+      flexDirection: "column",
+      gap: 10
     }
-  }, /*#__PURE__*/React.createElement("button", {
-    className: "btn btn-gold",
+  }, coreOdds.map(([r, p]) => /*#__PURE__*/React.createElement("div", {
+    key: r,
+    className: "flex between center"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "flex center gap8"
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      width: 10,
+      height: 10,
+      background: D.RARITY_COLORS[r],
+      display: "inline-block",
+      clipPath: "polygon(50% 0,100% 50%,50% 100%,0 50%)"
+    }
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: D.RARITY_COLORS[r],
+      fontWeight: 600
+    }
+  }, rarityLabel(r))), /*#__PURE__*/React.createElement("span", {
+    className: "mono",
+    style: {
+      color: "var(--text-dim)"
+    }
+  }, p, "%")))), /*#__PURE__*/React.createElement("div", {
+    className: "divider"
+  }), /*#__PURE__*/React.createElement("button", {
+    className: "btn btn-gold block lg",
     disabled: !coreBalOk || coreBusy,
     onClick: doCoreSummon
   }, coreBusy ? "…" : /*#__PURE__*/React.createElement(FaText, {
     text: I18N.t("CORE_SUMMON_BTN", coreCost)
-  })), !coreBalOk && /*#__PURE__*/React.createElement("span", {
+  })), !coreBalOk && /*#__PURE__*/React.createElement("div", {
     className: "mono",
     style: {
       fontSize: 12,
-      color: "var(--alert)"
+      color: "var(--alert)",
+      marginTop: 8
     }
   }, I18N.t("INSUFFICIENT", balance, coreCost))), coreLast && /*#__PURE__*/React.createElement(Modal, {
     onClose: () => setCoreLast(null),

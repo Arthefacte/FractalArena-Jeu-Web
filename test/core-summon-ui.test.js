@@ -19,7 +19,7 @@ function bloc(src, marker, len) {
 }
 
 test("ForgeEquipement : un bouton Invoquer un core branché sur actions.coreSummon", () => {
-  const b = bloc(SCREENS, "function ForgeEquipement", 7000);
+  const b = bloc(SCREENS, "function ForgeEquipement", 9000);
   assert.match(b, /doCoreSummon/, "handler doCoreSummon manquant");
   assert.match(b, /actions\.coreSummon\(\)/, "actions.coreSummon non appelée");
   assert.match(b, /CORE_SUMMON_BTN/, "bouton CORE_SUMMON_BTN manquant");
