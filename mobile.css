@@ -41,34 +41,10 @@
   /* Langue et aide migrent dans le bottom sheet « Plus » */
   .hdr .lang-switch { display: none; }
   .hdr .tut-help { display: none; }
-  .hdr-mtools { display: flex; align-items: center; gap: 4px; }
-  .hdr-mbtn {
-    position: relative;
-    width: clamp(30px, 8.6vw, 36px); height: clamp(30px, 8.6vw, 36px);
-    display: grid; place-items: center; padding: 0;
-    background: var(--bg-panel); border: 1px solid var(--line);
-    color: var(--text-dim); font-size: 14px; cursor: pointer;
-  }
-  .hdr-mbtn.hdr-mcaret { color: var(--elec); font-size: 11px; }
-  .hdr-mbadge {
-    position: absolute; top: -5px; right: -5px;
-    min-width: 16px; height: 16px; padding: 0 3px;
-    display: grid; place-items: center;
-    background: var(--alert); color: #fff;
-    font-size: 9px; font-weight: 700; border-radius: 8px;
-  }
-  /* Point orange pulsant sur la pastille ❓ : un quiz attend d'être ouvert. */
-  .hdr-mdot {
-    position: absolute; top: -3px; right: -3px;
-    width: 9px; height: 9px; border-radius: 50%;
-    background: var(--fire);
-    box-shadow: 0 0 6px rgba(247, 147, 26, .8);
-    animation: faQuizDot 1.6s ease-in-out infinite;
-  }
-  @keyframes faQuizDot {
-    0%, 100% { opacity: .55; transform: scale(.85); }
-    50% { opacity: 1; transform: scale(1.15); }
-  }
+  /* Boutons du header : styles de base dans styles.css (v229 — ils vivent
+     partout). Ici, seul le caret des pools est réactivé : le pli n'existe
+     qu'en mobile. */
+  .hdr-mbtn.hdr-mcaret { display: grid; }
 
   /* ---- Pli des pools : replié derrière le header, tap sur le caret ---- */
   .fa-pools { display: none; }
@@ -224,9 +200,6 @@
   .fa-sheet-item.on { border-color: rgba(247, 147, 26, .6); }
   .fa-sheet-item.on span { color: #ffd6a3; }
   .fa-sheet-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-
-  /* ---- Plus de bulles flottantes : le header porte chat et social ---- */
-  .chat-fab, .room-fab, .quiz-fab { display: none; }
 
   /* ---- vh → dvh : la barre d'URL mobile ne fait plus sauter les listes ---- */
   .app-shell { min-height: 100dvh; }

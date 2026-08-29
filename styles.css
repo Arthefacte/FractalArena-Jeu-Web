@@ -1228,7 +1228,41 @@ input { font-family: var(--font-mono); }
    outils du header, nav 5 slots et sheet masqués ; le pli des pools
    est transparent (display: contents = aucune boîte, rien ne change).
    ============================================================ */
-.hdr-mtools { display: none; }
+/* Outils du header : ❓ quiz, 💬 support, 👥 salon — dans la barre PARTOUT
+   depuis la v229 (plus de bulles flottantes qui recouvraient le contenu).
+   Seul le caret ▼ des pools reste mobile-only : en desktop le bandeau
+   économie est toujours déplié, le caret n'a rien à plier. */
+.hdr-mtools { display: flex; align-items: center; gap: 4px; }
+.hdr-mbtn {
+  position: relative;
+  width: clamp(30px, 8.6vw, 36px); height: clamp(30px, 8.6vw, 36px);
+  display: grid; place-items: center; padding: 0;
+  background: var(--bg-panel); border: 1px solid var(--line);
+  color: var(--text-dim); font-size: 14px; cursor: pointer;
+}
+.hdr-mbtn:hover { border-color: var(--elec); color: var(--text); }
+.hdr-mbtn.hdr-mcaret { display: none; color: var(--elec); font-size: 11px; }
+.hdr-mbadge {
+  position: absolute; top: -5px; right: -5px;
+  min-width: 16px; height: 16px; padding: 0 3px;
+  display: grid; place-items: center;
+  background: var(--alert); color: #fff;
+  font-size: 9px; font-weight: 700; border-radius: 8px;
+}
+/* Point orange pulsant sur la pastille ❓ : un quiz attend d'être ouvert. */
+.hdr-mdot {
+  position: absolute; top: -3px; right: -3px;
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--fire);
+  box-shadow: 0 0 6px rgba(247, 147, 26, .8);
+  animation: faQuizDot 1.6s ease-in-out infinite;
+}
+@keyframes faQuizDot {
+  0%, 100% { opacity: .55; transform: scale(.85); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+/* Les bulles flottantes n'existent plus nulle part — le header porte tout. */
+.chat-fab, .room-fab, .quiz-fab { display: none; }
 .fa-mnav { display: none; }
 .fa-sheet-overlay { display: none; }
 .fa-pools { display: contents; }
