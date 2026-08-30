@@ -43,8 +43,9 @@ test("i18n : les clés CORE_SUMMON_* existent dans les 3 langues, avec %s pour l
     assert.match(I18N, new RegExp(k + ": \\{ FR: \"[^\"]*\", EN: \""), k + " : EN manquant");
     assert.match(I18N, new RegExp(k + ": \\{ FR: \"[^\"]*\", EN: \"[^\"]*\", ZH: \""), k + " : ZH manquant");
   }
-  // %s présent dans les clés à argument, absent de CORE_SUMMON_TITLE/HINT (0-arg)
-  assert.match(I18N, /CORE_SUMMON_BTN: \{ FR: "[^"]*%s[^"]*"/);
+  // % présent dans les clés à argument, absent de CORE_SUMMON_TITLE/HINT (0-arg)
+  // %d (coût numérique) comme FG_SUMMON_BTN — pas de parenthèses, miroir reliques.
+  assert.match(I18N, /CORE_SUMMON_BTN: \{ FR: "[^"]*%d[^"]*"/);
   assert.match(I18N, /CORE_SUMMON_OK: \{ FR: "[^"]*%s[^"]*"/);
   assert.ok(!/CORE_SUMMON_TITLE: \{ FR: "[^"]*%/.test(I18N), "CORE_SUMMON_TITLE ne doit pas porter de %");
   assert.ok(!/CORE_SUMMON_HINT: \{ FR: "[^"]*%/.test(I18N), "CORE_SUMMON_HINT ne doit pas porter de %");
