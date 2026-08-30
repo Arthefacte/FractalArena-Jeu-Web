@@ -536,6 +536,52 @@ window.FA_ASSET_URL = function (chemin) {
     return team;
   }
 
+  // ============================================================
+  //  Contraintes d'étage — MIROIR CLIENT de campaign-mods.js (serveur).
+  //  Le serveur APPLIQUE les contraintes au combat ; le client ne fait
+  //  qu'afficher. Toute divergence ferait afficher une contrainte que le
+  //  serveur n'applique pas — mêmes ids, mêmes effets, mêmes sorties hash32.
+  //  PUR : ni Math.random(), ni horloge, ni I/O.
+  // ============================================================
+  // FNV-1a 32 bits — copie bit à bit de mutators.js (serveur) : le tirage
+  // doit rester identique pour toujours.
+  function hash32(s) {
+    let h = 0x811c9dc5;
+    const str = String(s);
+    for (let i = 0; i < str.length; i++) {
+      h ^= str.charCodeAt(i);
+      h = Math.imul(h, 0x01000193) >>> 0;
+    }
+    return h >>> 0;
+  }
+
+  // `kind` pilote la couleur du chip côté UI : "stat" (shift symétrique,
+  // les deux camps) vs "restrict" (équipement/talent interdit).
+  const CONSTRAINTS = {
+    surchauffe:   { id: "surchauffe",   kind: "stat", effects: { spd: 1.30, def: 0.85 } },
+    blindage:     { id: "blindage",     kind: "stat", effects: { def: 1.35, spd: 0.85 } },
+    decharge:     { id: "decharge",     kind: "stat", effects: { atk: 1.30, hp: 0.80 } },
+    masse:        { id: "masse",        kind: "stat", effects: { hp: 1.40, atk: 0.85 } },
+    resonance:    { id: "resonance",    kind: "stat", effects: { mag: 1.40, atk: 0.85 } },
+    critique:     { id: "critique",     kind: "stat", effects: { crit: 0.18 } },
+    sans_relique: { id: "sans_relique", kind: "restrict" },
+    sans_core:    { id: "sans_core",    kind: "restrict" },
+    sans_talent:  { id: "sans_talent",  kind: "restrict" },
+  };
+  const CONSTRAINT_STAT = ["surchauffe", "blindage", "decharge", "masse", "resonance", "critique"];
+  const CONSTRAINT_RESTRICT = ["sans_relique", "sans_core", "sans_talent"];
+
+  // Affectation déterministe par (monde, étage). Étage 1 : aucune contrainte
+  // (tutorial). Boss : toujours un stat-shift (jamais de restriction — le
+  // boss se gagne avec l'équipement). 25 % de restrictions sur les étages 2-9.
+  function floorConstraint(w, f) {
+    if (f === 0) return null;
+    if (f === BOSS_FLOOR) return CONSTRAINTS[CONSTRAINT_STAT[hash32(`${w}-9`) % 6]];
+    const r = hash32(`${w}-${f}`) % 100;
+    if (r < 25) return CONSTRAINTS[CONSTRAINT_RESTRICT[r % 3]];
+    return CONSTRAINTS[CONSTRAINT_STAT[r % 6]];
+  }
+
   // Titres de campagne : fonction PURE de la progression imbriquée
   // ({ [w]: { stars: number[] } }). Rien à persister — un monde à 30/30 vaut
   // son titre, tous les mondes à 100 % valent en plus le titre Légende.
@@ -569,5 +615,6 @@ window.FA_ASSET_URL = function (chemin) {
     campReward,
     generatePvEEnemy,
     deriveCampaignTitles,
+    CONSTRAINTS, floorConstraint, hash32,
   };
 })();

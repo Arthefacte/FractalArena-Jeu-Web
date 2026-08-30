@@ -83,6 +83,31 @@ function Stars({
     }
   }, out);
 }
+
+// Chip de contrainte d'étage — miroir de campaign-mods.js (serveur) : le
+// serveur APPLIQUE, le client ne fait qu'afficher. Deux couleurs : stat-shift
+// (elec, symétrique aux deux camps) vs restriction d'équipement (alert).
+function ConstraintChip({
+  c,
+  size
+}) {
+  if (!c) return null;
+  const color = c.kind === "restrict" ? "var(--alert)" : "var(--elec)";
+  return /*#__PURE__*/React.createElement("span", {
+    className: "mono",
+    style: {
+      display: "inline-block",
+      fontSize: size || 9,
+      fontWeight: 700,
+      color,
+      border: "1px solid " + color,
+      borderRadius: 4,
+      padding: "2px 6px",
+      background: "rgba(0,0,0,0.35)",
+      lineHeight: 1.35
+    }
+  }, I18N.t("CAMP_MOD_" + c.id));
+}
 function campMeta(b) {
   return b ? {
     name: D.displayName(b),
@@ -577,6 +602,8 @@ function CampaignCombat({
   const worldName = I18N.t("CAMP_W" + (worldIndex + 1) + "_NAME");
   const stars = worldStarsArr(g, worldIndex);
   const curStars = stars[floorIndex] || 0;
+  // Contrainte de l'étage — visible AVANT de lancer startFight (le serveur l'applique).
+  const constraint = D.floorConstraint(worldIndex, floorIndex);
   const freeReady = Date.now() - (g.campaignFreeTs || 0) >= 86400000;
   return /*#__PURE__*/React.createElement("div", {
     className: "container wide"
@@ -608,6 +635,13 @@ function CampaignCombat({
     }
   }, /*#__PURE__*/React.createElement(Stars, {
     n: curStars
+  })), constraint && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 8
+    }
+  }, /*#__PURE__*/React.createElement(ConstraintChip, {
+    c: constraint,
+    size: 12
   }))), /*#__PURE__*/React.createElement("div", {
     className: "flex gap8 wrap"
   }, /*#__PURE__*/React.createElement("span", {
@@ -1045,6 +1079,7 @@ function FloorSelect({
     const unlocked = floorUnlocked(stars, i);
     const isBoss = i === D.BOSS_FLOOR;
     const fs = stars[i] || 0;
+    const constraint = unlocked ? D.floorConstraint(worldIndex, i) : null;
     return /*#__PURE__*/React.createElement("button", {
       key: i,
       disabled: !unlocked,
@@ -1088,7 +1123,13 @@ function FloorSelect({
       style: {
         fontSize: 16
       }
-    }, "\uD83D\uDD12"), isBoss && unlocked && /*#__PURE__*/React.createElement("div", {
+    }, "\uD83D\uDD12"), constraint && /*#__PURE__*/React.createElement("div", {
+      style: {
+        marginTop: 6
+      }
+    }, /*#__PURE__*/React.createElement(ConstraintChip, {
+      c: constraint
+    })), isBoss && unlocked && /*#__PURE__*/React.createElement("div", {
       style: {
         position: "absolute",
         inset: 0,
@@ -1216,7 +1257,15 @@ function WorldSelect({
         fontSize: 17,
         color: unlocked ? "var(--text)" : "var(--text-dim)"
       }
-    }, name), unlocked ? /*#__PURE__*/React.createElement("div", {
+    }, name), /*#__PURE__*/React.createElement("div", {
+      className: "mono",
+      style: {
+        fontSize: 10,
+        color: "var(--text-faint)",
+        marginTop: 2,
+        fontStyle: "italic"
+      }
+    }, I18N.t("CAMP_W" + (w.id + 1) + "_DESC")), unlocked ? /*#__PURE__*/React.createElement("div", {
       style: {
         marginTop: 4
       }

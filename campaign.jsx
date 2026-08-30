@@ -50,6 +50,21 @@ function Stars({ n, max, size }) {
   return <span style={{ letterSpacing: 1 }}>{out}</span>;
 }
 
+// Chip de contrainte d'étage — miroir de campaign-mods.js (serveur) : le
+// serveur APPLIQUE, le client ne fait qu'afficher. Deux couleurs : stat-shift
+// (elec, symétrique aux deux camps) vs restriction d'équipement (alert).
+function ConstraintChip({ c, size }) {
+  if (!c) return null;
+  const color = c.kind === "restrict" ? "var(--alert)" : "var(--elec)";
+  return (
+    <span className="mono" style={{ display: "inline-block", fontSize: size || 9, fontWeight: 700, color,
+      border: "1px solid " + color, borderRadius: 4, padding: "2px 6px",
+      background: "rgba(0,0,0,0.35)", lineHeight: 1.35 }}>
+      {I18N.t("CAMP_MOD_" + c.id)}
+    </span>
+  );
+}
+
 function campMeta(b) {
   return b ? {
     name: D.displayName(b), rarity: b.rarity, image_key: b.image_key, rank: b.rank, preset: b.preset,
@@ -349,6 +364,8 @@ function CampaignCombat({ worldIndex, floorIndex, onBack, onCleared }) {
   const worldName = I18N.t("CAMP_W" + (worldIndex + 1) + "_NAME");
   const stars = worldStarsArr(g, worldIndex);
   const curStars = stars[floorIndex] || 0;
+  // Contrainte de l'étage — visible AVANT de lancer startFight (le serveur l'applique).
+  const constraint = D.floorConstraint(worldIndex, floorIndex);
   const freeReady = Date.now() - (g.campaignFreeTs || 0) >= 86400000;
 
   return (
@@ -361,6 +378,7 @@ function CampaignCombat({ worldIndex, floorIndex, onBack, onCleared }) {
             {isBoss && <span style={{ color: "var(--gold)", marginLeft: 10, fontSize: 16 }}>{I18N.t("CAMP_BOSS")}</span>}
           </div>
           <div style={{ marginTop: 6 }}><Stars n={curStars} /></div>
+          {constraint && <div style={{ marginTop: 8 }}><ConstraintChip c={constraint} size={12} /></div>}
         </div>
         <div className="flex gap8 wrap">
           <span className="pill" style={{ color: "var(--elec)" }}>{I18N.t("CAMP_TICKETS", g.ticketsSilver, g.ticketsGold)}</span>
@@ -532,6 +550,7 @@ function FloorSelect({ worldIndex, onBack, onPickFloor }) {
           const unlocked = floorUnlocked(stars, i);
           const isBoss = i === D.BOSS_FLOOR;
           const fs = stars[i] || 0;
+          const constraint = unlocked ? D.floorConstraint(worldIndex, i) : null;
           return (
             <button key={i} disabled={!unlocked}
               onClick={() => unlocked && onPickFloor(i)}
@@ -548,6 +567,7 @@ function FloorSelect({ worldIndex, onBack, onPickFloor }) {
               {unlocked
                 ? <Stars n={fs} size={16} />
                 : <div className="mono" style={{ fontSize: 16 }}>🔒</div>}
+              {constraint && <div style={{ marginTop: 6 }}><ConstraintChip c={constraint} /></div>}
               {isBoss && unlocked && (
                 <div style={{ position: "absolute", inset: 0, pointerEvents: "none", boxShadow: "inset 0 0 18px rgba(247,147,26,0.18)" }} />
               )}
@@ -601,6 +621,7 @@ function WorldSelect({ onPickWorld }) {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div className="mono" style={{ fontSize: 10, color: "var(--text-dim)" }}>{I18N.t("CAMP_FLOOR_N", w.id + 1)}</div>
                   <div className="h2" style={{ fontSize: 17, color: unlocked ? "var(--text)" : "var(--text-dim)" }}>{name}</div>
+                  <div className="mono" style={{ fontSize: 10, color: "var(--text-faint)", marginTop: 2, fontStyle: "italic" }}>{I18N.t("CAMP_W" + (w.id + 1) + "_DESC")}</div>
                   {unlocked ? (
                     <div style={{ marginTop: 4 }}>
                       <Stars n={Math.round(total / 10)} size={13} />

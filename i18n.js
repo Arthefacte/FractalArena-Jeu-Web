@@ -832,6 +832,47 @@
     CAMP_W5_TITLE: { FR: "Marcheur Genesis", EN: "Genesis Walker", ZH: "创世行者" },
     CAMP_W6_TITLE: { FR: "Survivant du Cœur", EN: "Core Survivor", ZH: "核心幸存者" },
     CAMP_LEGEND_TITLE: { FR: "Légende de la Chaîne", EN: "Legend of the Chain", ZH: "链之传奇" },
+    // Descriptions de saveur des mondes (carte des mondes)
+    CAMP_W1_DESC: {
+      FR: "Là où le premier bloc fut scellé — la chaîne y prend racine.",
+      EN: "Where the first block was sealed — the chain takes root here.",
+      ZH: "第一个方块在此封存——链由此扎根。",
+    },
+    CAMP_W2_DESC: {
+      FR: "Des galeries saturées de hashrate, creusées bloc après bloc.",
+      EN: "Tunnels saturated with hashrate, carved block after block.",
+      ZH: "算力弥漫的矿道，一块接一块地掘进。",
+    },
+    CAMP_W3_DESC: {
+      FR: "Chaque victoire y est inscrite à jamais — le registre n'oublie rien.",
+      EN: "Every victory is written forever — the ledger forgets nothing.",
+      ZH: "每场胜利都被永久记录——账本从不遗忘。",
+    },
+    CAMP_W4_DESC: {
+      FR: "Un maillage de nœuds instables où chaque paquet peut être une embuscade.",
+      EN: "A mesh of unstable nodes where every packet may be an ambush.",
+      ZH: "由不稳定节点织成的网，每个数据包都可能是伏击。",
+    },
+    CAMP_W5_DESC: {
+      FR: "L'origine de toute chose — avant le bloc, il y avait le vide.",
+      EN: "The origin of all things — before the block, there was the void.",
+      ZH: "万物之源——方块之前，唯有虚空。",
+    },
+    CAMP_W6_DESC: {
+      FR: "Le chaos au cœur de la chaîne : tous les types, aucune règle.",
+      EN: "Chaos at the heart of the chain: every type, no rules.",
+      ZH: "链之核心的混沌：所有属性，毫无规则。",
+    },
+    // Contraintes d'étage (miroir de campaign-mods.js serveur, cf. data.js)
+    CAMP_MOD_surchauffe: { FR: "⚡ Surchauffe — VIT +30 %, DÉF −15 %", EN: "⚡ Overheat — SPD +30%, DEF −15%", ZH: "⚡ 过热 — 速度 +30%，防御 −15%" },
+    CAMP_MOD_blindage: { FR: "🛡️ Blindage — DÉF +35 %, VIT −15 %", EN: "🛡️ Plating — DEF +35%, SPD −15%", ZH: "🛡️ 装甲 — 防御 +35%，速度 −15%" },
+    CAMP_MOD_decharge: { FR: "⚔️ Décharge — ATQ +30 %, PV −20 %", EN: "⚔️ Discharge — ATK +30%, HP −20%", ZH: "⚔️ 放电 — 攻击 +30%，生命 −20%" },
+    CAMP_MOD_masse: { FR: "🧱 Masse — PV +40 %, ATQ −15 %", EN: "🧱 Mass — HP +40%, ATK −15%", ZH: "🧱 重压 — 生命 +40%，攻击 −15%" },
+    CAMP_MOD_resonance: { FR: "🔮 Résonance — MAG +40 %, ATQ −15 %", EN: "🔮 Resonance — MAG +40%, ATK −15%", ZH: "🔮 共振 — 魔力 +40%，攻击 −15%" },
+    CAMP_MOD_critique: { FR: "💥 Critique — taux de critique 18 %", EN: "💥 Critical — 18% crit rate", ZH: "💥 暴击 — 暴击率 18%" },
+    CAMP_MOD_sans_relique: { FR: "🚫 Pas de reliques", EN: "🚫 No relics", ZH: "🚫 无圣物" },
+    CAMP_MOD_sans_core: { FR: "🚫 Pas de cores", EN: "🚫 No cores", ZH: "🚫 无核心" },
+    CAMP_MOD_sans_talent: { FR: "🚫 Pas de talents", EN: "🚫 No talents", ZH: "🚫 无天赋" },
 
     // ---- Expéditions (idle) ----
     NAV_EXPEDITIONS: { FR: "Expéditions", EN: "Expeditions", ZH: "远征" },
