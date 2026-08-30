@@ -387,6 +387,7 @@ function Expeditions() {
                 <b className="exq-mono" style={{ color: "var(--success)" }}>+{win.fa} FA</b>
                 <span className="exq-mono exq-dim">+{win.xp} XP</span>
                 <span className="exq-mono" style={{ color: world.color }}>+{win.frags} · {I18N.t("EXP_FRAG")} {win.rank}</span>
+                {win.core_frags > 0 && <span className="exq-mono" style={{ color: world.color }}>+{win.core_frags} · ⬡ {I18N.t("EXP_FRAG_CORE")} {win.rank}</span>}
               </div>
               <div className="exq-lootsep" />
               <div className="exq-lootcol">
@@ -396,6 +397,7 @@ function Expeditions() {
                   : <b className="exq-mono" style={{ color: "var(--alert)" }}>0 FA</b>}
                 <span className="exq-mono exq-dim">+{lose.xp} XP</span>
                 <span className="exq-mono" style={{ color: lose.frags > 0 ? world.color : "var(--text-faint)" }}>+{lose.frags} · {I18N.t("EXP_FRAG")} {lose.rank}</span>
+                {lose.core_frags > 0 && <span className="exq-mono" style={{ color: world.color }}>+{lose.core_frags} · ⬡ {I18N.t("EXP_FRAG_CORE")} {lose.rank}</span>}
               </div>
             </div>
           )}
@@ -495,6 +497,9 @@ function Expeditions() {
     const rw = loot.rewards || {};
     const frags = rw.frags || {};
     const fragRanks = Object.keys(XU.FRAGMENT_COSTS).filter((rk) => (frags[rk] || 0) > 0);
+    // Fragments de core : absents des réponses d'un serveur antérieur — rien ne s'affiche alors.
+    const coreFrags = rw.core_frags || {};
+    const coreFragRanks = Object.keys(XU.CORE_FRAGMENT_COSTS).filter((rk) => (coreFrags[rk] || 0) > 0);
     const failed = loot.success === false;
     const crew = (loot.beastIds || []).map(beastById).filter(Boolean);
     const fa = loot.fa_week || g.expFaWeek || { granted: 0, cap: 5000 };
@@ -533,6 +538,26 @@ function Expeditions() {
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <span className="exq-hex" style={{ color: col, borderColor: col, background: "rgba(255,255,255,.04)" }}>✦</span>
                     <b style={{ flex: 1, minWidth: 0, fontSize: 13 }}>{I18N.t("EXP_FRAG_LINE", rk, frags[rk])}</b>
+                    <b className="exq-mono" style={{ color: col }}>{total} / {need}</b>
+                  </div>
+                  <Bar frac={Math.min(1, total / need)} kind="xp" />
+                </div>
+              );
+            })}
+          </div>
+        )}
+        {coreFragRanks.length > 0 && (
+          <div className="panel" style={{ padding: "12px 13px", display: "flex", flexDirection: "column", gap: 10 }}>
+            {coreFragRanks.map((rk) => {
+              const total = (g.expCoreFragments && g.expCoreFragments[rk]) || 0;
+              const need = XU.CORE_FRAGMENT_COSTS[rk];
+              const col = D.RANK_COLORS[rk];
+              return (
+                <div key={rk} style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    {/* ⬡ = fragment de CORE (le ✦ au-dessus reste la relique) */}
+                    <span className="exq-hex" style={{ color: col, borderColor: col, background: "rgba(255,255,255,.04)" }}>⬡</span>
+                    <b style={{ flex: 1, minWidth: 0, fontSize: 13 }}>{I18N.t("EXP_FRAG_CORE_LINE", rk, coreFrags[rk])}</b>
                     <b className="exq-mono" style={{ color: col }}>{total} / {need}</b>
                   </div>
                   <Bar frac={Math.min(1, total / need)} kind="xp" />

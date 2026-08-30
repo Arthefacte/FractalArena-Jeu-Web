@@ -25,10 +25,12 @@
   }
 
   // Filtre type/rareté + tri prix croissant (id croissant en départage).
+  // `type` matche le type de relique (item.type) OU de core (item.core_id) :
+  // un listing porte l'un des deux champs, jamais les deux.
   function filterListings(listings, f) {
     const q = f || {};
     return (Array.isArray(listings) ? listings : [])
-      .filter((l) => l && l.item && (!q.type || l.item.type === q.type) && (!q.rarity || l.item.rarity === q.rarity))
+      .filter((l) => l && l.item && (!q.type || l.item.type === q.type || l.item.core_id === q.type) && (!q.rarity || l.item.rarity === q.rarity))
       .slice()
       .sort((a, b) => a.price - b.price || a.id - b.id);
   }

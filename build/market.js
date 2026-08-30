@@ -1,9 +1,11 @@
 /* Généré par tools/precompile.mjs depuis market.jsx — NE PAS ÉDITER. */
 (function () {
 /* ============================================================
-   FRACTAL ARENA — Marché (hôtel des ventes reliques)
-   Deux volets : Parcourir (achat) / Mes ventes (lister, annuler,
-   récupérer, historique). Resync du save après chaque mutation.
+   FRACTAL ARENA — Marché (hôtel des ventes reliques + cores)
+   Onglet Reliques / Cores, puis deux volets : Parcourir (achat) /
+   Mes ventes (lister, annuler, récupérer, historique). Resync du
+   save après chaque mutation. Un listing porte item.type (relique)
+   OU item.core_id (core) — mêmes helpers de tri que data.js.
    ============================================================ */
 const {
   useState,
@@ -20,7 +22,8 @@ const {
   FaText,
   Modal,
   SectionHead,
-  RelicIcon
+  RelicIcon,
+  CoreIcon
 } = window;
 const MKT = window.FA_MARKET;
 
@@ -30,6 +33,30 @@ const MKT_ERR_KEYS = ["deja_vendu", "listing_expire", "auto_achat_interdit", "li
 function mktErrMsg(j) {
   const e = j && j.error;
   return MKT_ERR_KEYS.indexOf(e) >= 0 ? I18N.t("MKT_ERR_" + e) : I18N.t("MKT_ERR_generic");
+}
+
+// Rendu d'un objet de listing/inventaire, relique OU core — jamais
+// RELIC_<type> sur un core (type est undefined, la clé brute s'afficherait).
+function ItemIcon({
+  it,
+  size
+}) {
+  return D.isCoreItem(it) ? /*#__PURE__*/React.createElement(CoreIcon, {
+    type: it.core_id,
+    rarity: it.rarity,
+    size: size
+  }) : /*#__PURE__*/React.createElement(RelicIcon, {
+    type: it.type,
+    rarity: it.rarity,
+    size: size
+  });
+}
+function itemLabel(it) {
+  return D.isCoreItem(it) ? I18N.t("CORE_" + it.core_id.toUpperCase()) : I18N.t("RELIC_" + String(it.type || "").toUpperCase());
+}
+// Le volet courant ne montre QUE ses objets : /market/mine renvoie les deux.
+function isKind(kind, it) {
+  return kind === "core" ? D.isCoreItem(it) : D.isRelicItem(it);
 }
 function MarketListingCard({
   l,
@@ -47,9 +74,8 @@ function MarketListingCard({
       padding: 10,
       marginBottom: 8
     }
-  }, /*#__PURE__*/React.createElement(RelicIcon, {
-    type: it.type,
-    rarity: it.rarity,
+  }, /*#__PURE__*/React.createElement(ItemIcon, {
+    it: it,
     size: 36
   }), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -60,7 +86,7 @@ function MarketListingCard({
     style: {
       color: D.RARITY_COLORS[it.rarity]
     }
-  }, I18N.t("RELIC_" + String(it.type || "").toUpperCase()), " \xB7 ", rarityLabel(it.rarity)), /*#__PURE__*/React.createElement("div", {
+  }, itemLabel(it), " \xB7 ", rarityLabel(it.rarity)), /*#__PURE__*/React.createElement("div", {
     className: "muted mono",
     style: {
       fontSize: 12
@@ -76,7 +102,9 @@ function MarketListingCard({
     onClick: () => onBuy(l)
   }, I18N.t("MKT_BUY"))));
 }
-function MarketBrowse() {
+function MarketBrowse({
+  kind
+}) {
   const {
     g,
     actions,
@@ -86,17 +114,20 @@ function MarketBrowse() {
   const [fRarity, setFRarity] = useState("");
   const [confirm, setConfirm] = useState(null); // listing en attente de confirmation
   const [busy, setBusy] = useState(false);
+  const core = kind === "core";
+  // Garde locale par nature : si un serveur mélange les deux dans /listings,
+  // l'autre volet ne fuit pas ici. filterListings matche type OU core_id.
   const listings = MKT.filterListings(g.market && g.market.listings || [], {
     type: fType || null,
     rarity: fRarity || null
-  });
+  }).filter(l => isKind(kind, l.item));
   async function doBuy() {
     if (!confirm || busy) return;
     setBusy(true);
     const j = await actions.marketBuy(confirm.id);
     setBusy(false);
     setConfirm(null);
-    if (j && j.status === "ok") toast(I18N.t("MKT_BOUGHT_OK"), "good");else if (j && j.status === "insufficient_balance") toast(I18N.t("INSUFFICIENT", (g.liquid || 0) + (g.locked || 0), confirm.price), "bad");else toast(mktErrMsg(j), "bad");
+    if (j && j.status === "ok") toast(I18N.t(core ? "MKT_BOUGHT_OK_CORE" : "MKT_BOUGHT_OK"), "good");else if (j && j.status === "insufficient_balance") toast(I18N.t("INSUFFICIENT", (g.liquid || 0) + (g.locked || 0), confirm.price), "bad");else toast(mktErrMsg(j), "bad");
   }
   return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "flex gap8 wrap",
@@ -113,7 +144,10 @@ function MarketBrowse() {
     onChange: e => setFType(e.target.value)
   }, /*#__PURE__*/React.createElement("option", {
     value: ""
-  }, I18N.t("MKT_ALL_TYPES")), Object.keys(D.RELICS).map(k => /*#__PURE__*/React.createElement("option", {
+  }, I18N.t("MKT_ALL_TYPES")), core ? Object.keys(D.CORES).map(k => /*#__PURE__*/React.createElement("option", {
+    key: k,
+    value: k
+  }, I18N.t("CORE_" + k.toUpperCase()))) : Object.keys(D.RELICS).map(k => /*#__PURE__*/React.createElement("option", {
     key: k,
     value: k
   }, I18N.t("RELIC_" + k.toUpperCase())))), /*#__PURE__*/React.createElement("select", {
@@ -135,7 +169,7 @@ function MarketBrowse() {
       textAlign: "center",
       padding: 24
     }
-  }, I18N.t("MKT_EMPTY")), listings.map(l => /*#__PURE__*/React.createElement(MarketListingCard, {
+  }, I18N.t(core ? "MKT_EMPTY_CORE" : "MKT_EMPTY")), listings.map(l => /*#__PURE__*/React.createElement(MarketListingCard, {
     key: l.id,
     l: l,
     own: l.seller === g.wallet,
@@ -154,14 +188,13 @@ function MarketBrowse() {
       textAlign: "center",
       padding: 8
     }
-  }, /*#__PURE__*/React.createElement(RelicIcon, {
-    type: confirm.item.type,
-    rarity: confirm.item.rarity,
+  }, /*#__PURE__*/React.createElement(ItemIcon, {
+    it: confirm.item,
     size: 48
   }), /*#__PURE__*/React.createElement("p", {
     className: "mono"
   }, /*#__PURE__*/React.createElement(FaText, {
-    text: I18N.t("MKT_CONFIRM_TEXT", fmt(confirm.price))
+    text: I18N.t(D.isCoreItem(confirm.item) ? "MKT_CONFIRM_TEXT_CORE" : "MKT_CONFIRM_TEXT", fmt(confirm.price))
   })), /*#__PURE__*/React.createElement("p", {
     className: "muted mono"
   }, /*#__PURE__*/React.createElement(FaText, {
@@ -172,33 +205,43 @@ function MarketBrowse() {
     onClick: doBuy
   }, I18N.t("MKT_BUY")))));
 }
-function MarketMine() {
+function MarketMine({
+  kind
+}) {
   const {
     g,
     actions,
     toast
   } = useFA();
-  const [sel, setSel] = useState(null); // relic_id sélectionnée
+  const [sel, setSel] = useState(null); // id d'objet d'inventaire sélectionné
   const [price, setPrice] = useState("");
   const [busy, setBusy] = useState(false);
-  const mine = g.market && g.market.mine || {
+  const core = kind === "core";
+  const raw = g.market && g.market.mine || {
     active: [],
     expired: [],
     history: []
   };
-  // Seules les reliques se vendent ici ; `equipment` contient aussi les cores.
-  const inventory = (g.equipment || []).filter(D.isRelicItem);
-  // reliques équipées (⚔) = portées par une bête du roster — miroir du repère de screens.jsx (RelicSlot).
-  const equippedIds = new Set((g.roster || []).map(c => c && c.relic_id).filter(Boolean));
+  const mine = {
+    active: (raw.active || []).filter(l => l && isKind(kind, l.item)),
+    expired: (raw.expired || []).filter(l => l && isKind(kind, l.item)),
+    history: (raw.history || []).filter(l => l && isKind(kind, l.item))
+  };
+  // `equipment` mêle reliques et cores : chaque volet ne vend que les siens.
+  const inventory = (g.equipment || []).filter(core ? D.isCoreItem : D.isRelicItem);
+  // objets équipés (⚔) = portés par une bête du roster — la relique est référencée
+  // par c.relic_id, le core par c.core_id (miroir RelicSlot/CoreSlot de screens.jsx).
+  const equippedIds = new Set((g.roster || []).map(c => c && (core ? c.core_id : c.relic_id)).filter(Boolean));
+  const selItem = inventory.find(it => it.id === sel) || null;
   const p = parseInt(price, 10);
   const fees = MKT.isValidPrice(p) ? MKT.listingFees(p) : null;
   async function doList() {
-    if (!sel || !fees || busy) return;
+    if (!selItem || !fees || busy) return;
     setBusy(true);
-    const j = await actions.marketList(sel, p);
+    const j = await actions.marketList(selItem, p);
     setBusy(false);
     if (j && j.status === "ok") {
-      toast(I18N.t("MKT_LISTED_OK"), "good");
+      toast(I18N.t(core ? "MKT_LISTED_OK_CORE" : "MKT_LISTED_OK"), "good");
       setSel(null);
       setPrice("");
     } else if (j && j.status === "insufficient_balance") toast(I18N.t("MKT_ERR_generic"), "bad");else toast(mktErrMsg(j), "bad");
@@ -208,7 +251,7 @@ function MarketMine() {
     setBusy(true);
     const j = await actions.marketCancel(id);
     setBusy(false);
-    if (j && j.status === "ok") toast(I18N.t("MKT_CANCELLED_OK"), "good");else toast(mktErrMsg(j), "bad");
+    if (j && j.status === "ok") toast(I18N.t(core ? "MKT_CANCELLED_OK_CORE" : "MKT_CANCELLED_OK"), "good");else toast(mktErrMsg(j), "bad");
   }
   return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(SectionHead, {
     title: I18N.t("MKT_SELL_TITLE")
@@ -218,7 +261,7 @@ function MarketMine() {
       marginBottom: 6,
       fontSize: 13
     }
-  }, I18N.t("MKT_SELECT_RELIC")), /*#__PURE__*/React.createElement("div", {
+  }, I18N.t(core ? "MKT_SELECT_CORE" : "MKT_SELECT_RELIC")), /*#__PURE__*/React.createElement("div", {
     className: "flex wrap",
     style: {
       gap: 6,
@@ -232,11 +275,10 @@ function MarketMine() {
       justifyContent: "flex-start",
       gap: 6
     }
-  }, /*#__PURE__*/React.createElement(RelicIcon, {
-    type: it.type,
-    rarity: it.rarity,
+  }, /*#__PURE__*/React.createElement(ItemIcon, {
+    it: it,
     size: 18
-  }), " ", I18N.t("RELIC_" + it.type.toUpperCase()), " ", equippedIds.has(it.id) ? "⚔" : ""))), /*#__PURE__*/React.createElement("input", {
+  }), " ", itemLabel(it), " ", equippedIds.has(it.id) ? "⚔" : ""))), /*#__PURE__*/React.createElement("input", {
     className: "field",
     type: "number",
     min: "100",
@@ -265,10 +307,10 @@ function MarketMine() {
     style: {
       marginTop: 8
     },
-    disabled: !sel || !fees || busy,
+    disabled: !selItem || !fees || busy,
     onClick: doList
   }, I18N.t("MKT_LIST_ACTION")), /*#__PURE__*/React.createElement(SectionHead, {
-    title: I18N.t("MKT_MY_ACTIVE", (mine.active || []).length + (mine.expired || []).length)
+    title: I18N.t("MKT_MY_ACTIVE", (raw.active || []).length)
   }), (mine.active || []).map(l => /*#__PURE__*/React.createElement("div", {
     key: l.id,
     className: "oct-sm",
@@ -280,9 +322,8 @@ function MarketMine() {
       padding: 8,
       marginBottom: 6
     }
-  }, /*#__PURE__*/React.createElement(RelicIcon, {
-    type: l.item.type,
-    rarity: l.item.rarity,
+  }, /*#__PURE__*/React.createElement(ItemIcon, {
+    it: l.item,
     size: 24
   }), /*#__PURE__*/React.createElement("span", {
     className: "mono",
@@ -290,7 +331,7 @@ function MarketMine() {
       flex: 1,
       minWidth: 0
     }
-  }, I18N.t("RELIC_" + l.item.type.toUpperCase()), " \xB7 ", /*#__PURE__*/React.createElement(TokenIcon, {
+  }, itemLabel(l.item), " \xB7 ", /*#__PURE__*/React.createElement(TokenIcon, {
     s: 13
   }), " ", fmt(l.price)), /*#__PURE__*/React.createElement("button", {
     className: "btn sm",
@@ -309,9 +350,8 @@ function MarketMine() {
       padding: 8,
       marginBottom: 6
     }
-  }, /*#__PURE__*/React.createElement(RelicIcon, {
-    type: l.item.type,
-    rarity: l.item.rarity,
+  }, /*#__PURE__*/React.createElement(ItemIcon, {
+    it: l.item,
     size: 24
   }), /*#__PURE__*/React.createElement("span", {
     className: "mono",
@@ -319,7 +359,7 @@ function MarketMine() {
       flex: 1,
       minWidth: 0
     }
-  }, I18N.t("RELIC_" + l.item.type.toUpperCase()), " \xB7 ", /*#__PURE__*/React.createElement(TokenIcon, {
+  }, itemLabel(l.item), " \xB7 ", /*#__PURE__*/React.createElement(TokenIcon, {
     s: 13
   }), " ", fmt(l.price)), /*#__PURE__*/React.createElement("button", {
     className: "btn sm",
@@ -343,7 +383,7 @@ function MarketMine() {
       style: {
         fontSize: 12
       }
-    }, I18N.t("RELIC_" + l.item.type.toUpperCase()), " \u2014 ", l.status === "sold" ? /*#__PURE__*/React.createElement(FaText, {
+    }, itemLabel(l.item), " \u2014 ", l.status === "sold" ? /*#__PURE__*/React.createElement(FaText, {
       text: I18N.t("MKT_SOLD_LINE", fmt(l.price), fmt(net)),
       s: 11
     }) : I18N.t("MKT_CANCEL")), /*#__PURE__*/React.createElement("div", {
@@ -364,15 +404,18 @@ function Market() {
     actions
   } = useFA();
   const [tab, setTab] = useState("browse");
+  const [kind, setKind] = useState("relic"); // relic | core — pilote listings ET rendu
+  // Le browse recharge quand l'onglet de nature change : /market/listings porte
+  // item_type=core côté cores (marketRefresh mémorise le volet pour les resync).
   useEffect(() => {
-    actions.marketRefresh();
-  }, [g.authToken]);
+    actions.marketRefresh(kind);
+  }, [g.authToken, kind]);
   // Ici, et pas au boot : c'est le premier écran où une grille de reliques
   // s'affiche. À l'inactivité, pour ne pas disputer le thread au rendu.
   useEffect(() => {
-    const M = window.FA_RELIC_MODELS;
+    const M = kind === "core" ? window.FA_CORE_MODELS : window.FA_RELIC_MODELS;
     if (M && M.preloadWhenIdle) M.preloadWhenIdle();
-  }, []);
+  }, [kind]);
   return /*#__PURE__*/React.createElement("div", {
     className: "container",
     style: {
@@ -384,12 +427,24 @@ function Market() {
   }), /*#__PURE__*/React.createElement("div", {
     className: "subtabs"
   }, /*#__PURE__*/React.createElement("button", {
+    className: cx("subtab", kind === "relic" && "on"),
+    onClick: () => setKind("relic")
+  }, I18N.t("MKT_TAB_RELICS")), /*#__PURE__*/React.createElement("button", {
+    className: cx("subtab", kind === "core" && "on"),
+    onClick: () => setKind("core")
+  }, I18N.t("MKT_TAB_CORES"))), /*#__PURE__*/React.createElement("div", {
+    className: "subtabs"
+  }, /*#__PURE__*/React.createElement("button", {
     className: cx("subtab", tab === "browse" && "on"),
     onClick: () => setTab("browse")
   }, I18N.t("MKT_TAB_BROWSE")), /*#__PURE__*/React.createElement("button", {
     className: cx("subtab", tab === "mine" && "on"),
     onClick: () => setTab("mine")
-  }, I18N.t("MKT_TAB_MINE"))), tab === "browse" ? /*#__PURE__*/React.createElement(MarketBrowse, null) : /*#__PURE__*/React.createElement(MarketMine, null));
+  }, I18N.t("MKT_TAB_MINE"))), tab === "browse" ? /*#__PURE__*/React.createElement(MarketBrowse, {
+    kind: kind
+  }) : /*#__PURE__*/React.createElement(MarketMine, {
+    kind: kind
+  }));
 }
 Object.assign(window, {
   Market

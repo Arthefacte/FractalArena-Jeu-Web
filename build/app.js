@@ -307,6 +307,12 @@ function freshState() {
       A: 0,
       S: 0
     },
+    expCoreFragments: {
+      C: 0,
+      B: 0,
+      A: 0,
+      S: 0
+    },
     expFaWeek: null,
     // { granted, cap, week_ends_in_s }
     expNowOffset: 0 // horloge serveur - horloge locale (compte à rebours honnêtes)
@@ -2564,6 +2570,12 @@ function App() {
             A: 0,
             S: 0
           },
+          expCoreFragments: data.core_fragments || {
+            C: 0,
+            B: 0,
+            A: 0,
+            S: 0
+          },
           expFaWeek: data.fa_week || null,
           expNowOffset: (data.now || Date.now()) - Date.now()
         }));
@@ -2831,6 +2843,66 @@ function App() {
           ok: true,
           relic: data.relic,
           fragments_left: data.fragments_left
+        };
+      } catch (e) {
+        return {
+          ok: false,
+          reason: "generic"
+        };
+      }
+    },
+    // Fragments de core → core : miroir exact de expeditionsCraftRelic
+    // (rang du fragment = rareté du core, route /expeditions/craft-core).
+    async expeditionsCraftCore(rank) {
+      const s = gRef.current;
+      if (!s.wallet || !s.authToken) return {
+        ok: false,
+        reason: "auth"
+      };
+      try {
+        const resp = await fetch(`${API_URL}/expeditions/craft-core`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${s.authToken}`
+          },
+          body: JSON.stringify({
+            rank
+          })
+        });
+        if (resp.status === 401) {
+          const re = await actions.authenticate(gRef.current.wallet);
+          if (!re) {
+            toast(I18N.t("AUTH_EXPIRED"), "bad");
+            return {
+              ok: false,
+              reason: "auth"
+            };
+          }
+          return {
+            ok: false,
+            reason: "retry"
+          };
+        }
+        const data = await resp.json();
+        if (!data.ok) return {
+          ok: false,
+          reason: data.error || "generic"
+        };
+        try {
+          const [sv] = await Promise.all([fetch(`${API_URL}/save/${s.wallet}`, svOpts()), actions.expeditionsState()]);
+          // Même garde d'identité de jeton que le claim.
+          if (sv.ok && gRef.current.authToken === s.authToken) {
+            const {
+              save
+            } = await sv.json();
+            setG(st => serverToState(save, s.wallet, st));
+          }
+        } catch (e2) {/* rafraîchissement raté ≠ craft raté */}
+        return {
+          ok: true,
+          core: data.core,
+          core_fragments_left: data.core_fragments_left
         };
       } catch (e) {
         return {
@@ -4248,11 +4320,15 @@ function App() {
       }
       return j;
     },
-    // ---- Marché (hôtel des ventes reliques) ----
-    async marketRefresh() {
+    // ---- Marché (hôtel des ventes reliques + cores) ----
+    // itemType "relic" | "core" — mémorisé dans g.market : les resync
+    // post-mutation rappellent marketRefresh() SANS argument et doivent
+    // recharger le volet que le joueur regarde, pas retomber sur les reliques.
+    async marketRefresh(itemType) {
       const s = gRef.current;
+      const t = itemType || s.market && s.market.item_type || "relic";
       try {
-        const r = await fetch(`${API_URL}/market/listings`);
+        const r = await fetch(`${API_URL}/market/listings${t === "core" ? "?item_type=core" : ""}`);
         const j = await r.json().catch(() => ({}));
         let mine = null;
         if (s.authToken) {
@@ -4267,7 +4343,8 @@ function App() {
           ...st,
           market: {
             listings: j && j.listings || [],
-            mine
+            mine,
+            item_type: t
           }
         }));
       } catch (e) {/* réseau : on garde l'état précédent */}
@@ -4286,22 +4363,26 @@ function App() {
         }
       } catch (e) {/* silencieux */}
     },
-    async marketList(relicId, price) {
+    // `item` = l'OBJET d'inventaire (relique `type` / core `core_id`), pas un id :
+    // l'action choisit le champ du body (relic_id OU core_id, valeur = item.id) —
+    // le serveur route par la présence du champ.
+    async marketList(item, price) {
       const s = gRef.current;
       if (!s.wallet || !s.authToken) return {
         error: "auth"
       };
+      const body = {
+        wallet: s.wallet,
+        price
+      };
+      if (item && typeof item.core_id === "string") body.core_id = item.id;else body.relic_id = item && item.id;
       const r = await fetch(`${API_URL}/market/list`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Authorization": "Bearer " + s.authToken
         },
-        body: JSON.stringify({
-          wallet: s.wallet,
-          relic_id: relicId,
-          price
-        })
+        body: JSON.stringify(body)
       });
       const j = await r.json().catch(() => ({
         error: "erreur_serveur"

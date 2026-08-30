@@ -26,6 +26,13 @@
   var RISK_MULT = 1.3, FAIL_MULT = 0.35, TICKET_MULT = 1.5;
   var DUST_MIN_H = 8;
   var FRAGMENT_COSTS = { C: 100, B: 250, A: 600, S: 1000 };
+  // Fragments de CORE (BRIEF_CORES_FRAGMENTS_SERVER) : MÊME rythme que les
+  // fragments de relique (le serveur crédite core_frags = copie exacte de
+  // frags), mêmes coûts de forge. Miroir d'APERÇU seulement — le serveur fait
+  // foi : les compteurs viennent de /expeditions/state et le butin réel de
+  // /expeditions/claim (rewards.core_frags).
+  var CORE_FRAG_PER_H = { C: 2, B: 0.9, A: 0.75, S: 0.5 };
+  var CORE_FRAGMENT_COSTS = { C: 100, B: 250, A: 600, S: 1000 };
 
   function durationBonus(h) { return 1 + 0.02 * (h - 1); }
   function scaled(perHour, h) { return Math.round(perHour * h * durationBonus(h)); }
@@ -78,19 +85,22 @@
     if (!w) return null;
     var risky = mode === "risquee";
     var tMult = (ticket === "argent" || ticket === "or") ? TICKET_MULT : 1;
-    var out = { rank: w.frag, xp: 0, fa: 0, frags: 0 };
+    var out = { rank: w.frag, xp: 0, fa: 0, frags: 0, core_frags: 0 };
     if (success) {
       var m = (risky ? RISK_MULT : 1) * tMult;
       out.xp = Math.round(scaled(XP_PER_H, h) * w.loot * m);
       out.fa = Math.round(scaled(FA_PER_H, h) * w.loot * m);
       out.frags = Math.round(scaled(FRAG_PER_H[w.frag], h) * m);
+      out.core_frags = Math.round(scaled(CORE_FRAG_PER_H[w.frag], h) * m);
     } else if (risky) {
-      out.frags = 1;   // on ne rentre jamais les mains vides
+      out.frags = 1;          // on ne rentre jamais les mains vides
+      out.core_frags = 1;     // miroir serveur : FAIL_RISKY_FRAGS sur les deux flux
     } else {
       var f = FAIL_MULT * tMult;
       out.xp = Math.round(scaled(XP_PER_H, h) * f);
       out.fa = Math.round(scaled(FA_PER_H, h) * f);
       out.frags = Math.round(scaled(FRAG_PER_H[w.frag], h) * f);
+      out.core_frags = Math.round(scaled(CORE_FRAG_PER_H[w.frag], h) * f);
     }
     return out;
   }
@@ -121,6 +131,7 @@
 
   window.FA_EXPEDITIONS_UI = {
     WORLDS: WORLDS, FRAGMENT_COSTS: FRAGMENT_COSTS,
+    CORE_FRAG_PER_H: CORE_FRAG_PER_H, CORE_FRAGMENT_COSTS: CORE_FRAGMENT_COSTS,
     DURATION_MIN_H: DURATION_MIN_H, DURATION_MAX_H: DURATION_MAX_H, DUST_MIN_H: DUST_MIN_H,
     XP_PER_H: XP_PER_H, FA_PER_H: FA_PER_H, FRAG_PER_H: FRAG_PER_H,
     RISK_MULT: RISK_MULT, FAIL_MULT: FAIL_MULT, TICKET_MULT: TICKET_MULT,

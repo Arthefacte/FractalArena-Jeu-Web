@@ -700,7 +700,12 @@ function Expeditions() {
       style: {
         color: world.color
       }
-    }, "+", win.frags, " \xB7 ", I18N.t("EXP_FRAG"), " ", win.rank)), /*#__PURE__*/React.createElement("div", {
+    }, "+", win.frags, " \xB7 ", I18N.t("EXP_FRAG"), " ", win.rank), win.core_frags > 0 && /*#__PURE__*/React.createElement("span", {
+      className: "exq-mono",
+      style: {
+        color: world.color
+      }
+    }, "+", win.core_frags, " \xB7 \u2B21 ", I18N.t("EXP_FRAG_CORE"), " ", win.rank)), /*#__PURE__*/React.createElement("div", {
       className: "exq-lootsep"
     }), /*#__PURE__*/React.createElement("div", {
       className: "exq-lootcol"
@@ -723,7 +728,12 @@ function Expeditions() {
       style: {
         color: lose.frags > 0 ? world.color : "var(--text-faint)"
       }
-    }, "+", lose.frags, " \xB7 ", I18N.t("EXP_FRAG"), " ", lose.rank))), allEpic && durH >= XU.DUST_MIN_H && /*#__PURE__*/React.createElement("div", {
+    }, "+", lose.frags, " \xB7 ", I18N.t("EXP_FRAG"), " ", lose.rank), lose.core_frags > 0 && /*#__PURE__*/React.createElement("span", {
+      className: "exq-mono",
+      style: {
+        color: world.color
+      }
+    }, "+", lose.core_frags, " \xB7 \u2B21 ", I18N.t("EXP_FRAG_CORE"), " ", lose.rank))), allEpic && durH >= XU.DUST_MIN_H && /*#__PURE__*/React.createElement("div", {
       className: "exq-epicbox"
     }, /*#__PURE__*/React.createElement("span", {
       style: {
@@ -926,6 +936,9 @@ function Expeditions() {
     const rw = loot.rewards || {};
     const frags = rw.frags || {};
     const fragRanks = Object.keys(XU.FRAGMENT_COSTS).filter(rk => (frags[rk] || 0) > 0);
+    // Fragments de core : absents des réponses d'un serveur antérieur — rien ne s'affiche alors.
+    const coreFrags = rw.core_frags || {};
+    const coreFragRanks = Object.keys(XU.CORE_FRAGMENT_COSTS).filter(rk => (coreFrags[rk] || 0) > 0);
     const failed = loot.success === false;
     const crew = (loot.beastIds || []).map(beastById).filter(Boolean);
     const fa = loot.fa_week || g.expFaWeek || {
@@ -1035,6 +1048,53 @@ function Expeditions() {
           fontSize: 13
         }
       }, I18N.t("EXP_FRAG_LINE", rk, frags[rk])), /*#__PURE__*/React.createElement("b", {
+        className: "exq-mono",
+        style: {
+          color: col
+        }
+      }, total, " / ", need)), /*#__PURE__*/React.createElement(Bar, {
+        frac: Math.min(1, total / need),
+        kind: "xp"
+      }));
+    })), coreFragRanks.length > 0 && /*#__PURE__*/React.createElement("div", {
+      className: "panel",
+      style: {
+        padding: "12px 13px",
+        display: "flex",
+        flexDirection: "column",
+        gap: 10
+      }
+    }, coreFragRanks.map(rk => {
+      const total = g.expCoreFragments && g.expCoreFragments[rk] || 0;
+      const need = XU.CORE_FRAGMENT_COSTS[rk];
+      const col = D.RANK_COLORS[rk];
+      return /*#__PURE__*/React.createElement("div", {
+        key: rk,
+        style: {
+          display: "flex",
+          flexDirection: "column",
+          gap: 5
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          display: "flex",
+          alignItems: "center",
+          gap: 10
+        }
+      }, /*#__PURE__*/React.createElement("span", {
+        className: "exq-hex",
+        style: {
+          color: col,
+          borderColor: col,
+          background: "rgba(255,255,255,.04)"
+        }
+      }, "\u2B21"), /*#__PURE__*/React.createElement("b", {
+        style: {
+          flex: 1,
+          minWidth: 0,
+          fontSize: 13
+        }
+      }, I18N.t("EXP_FRAG_CORE_LINE", rk, coreFrags[rk])), /*#__PURE__*/React.createElement("b", {
         className: "exq-mono",
         style: {
           color: col

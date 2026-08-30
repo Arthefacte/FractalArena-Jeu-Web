@@ -767,6 +767,69 @@ function ForgeFragments({ onForged }) {
   );
 }
 
+// Fragments de core d'expédition → core (rang du fragment = rareté du core).
+// Compteurs dans g.expCoreFragments (GET /expeditions/state), coût 0 FA.
+// Miroir de ForgeFragments, mais reveal LOCAL sans cinématique : le pattern
+// core est celui du summon de ForgeEquipement (modale coreLast, pas FA_FORGE_CINE).
+function ForgeCoreFragments() {
+  const { g, actions, toast } = useFA();
+  const XU = window.FA_EXPEDITIONS_UI;
+  const CV = window.CoreViewer;
+  const [crafting, setCrafting] = useState(false);
+  const [coreLast, setCoreLast] = useState(null);
+  const frags = g.expCoreFragments || { C: 0, B: 0, A: 0, S: 0 };
+  async function doCraft(rk) {
+    if (crafting) return;
+    setCrafting(true);
+    let r = await actions.expeditionsCraftCore(rk);
+    if (!r.ok && r.reason === "retry") r = await actions.expeditionsCraftCore(rk);
+    setCrafting(false);
+    // reason "auth" : app.jsx a déjà affiché AUTH_EXPIRED — pas de second toast.
+    if (!r.ok) { if (r.reason !== "auth") toast(XU.errText(r.reason), "bad"); return; }
+    if (r.core && r.core.core_id) {
+      toast(I18N.t("EXP_FORGE_CORE_OK", I18N.t("CORE_" + r.core.core_id.toUpperCase()), rarityLabel(r.core.rarity || "Common")), "good");
+      setCoreLast(r.core);
+    }
+  }
+  return (
+    <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 22, marginTop: 26 }}>
+      <div className="eyebrow" style={{ marginBottom: 4 }}>{I18N.t("EXP_FORGE_CORE_TITLE")}</div>
+      <div className="mono muted" style={{ fontSize: 12, marginBottom: 14 }}>{I18N.t("EXP_FORGE_CORE_SUB")}</div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {["C", "B", "A", "S"].map((rk) => {
+          const have = frags[rk] || 0;
+          const need = XU.CORE_FRAGMENT_COSTS[rk];
+          const col = D.RANK_COLORS[rk];
+          return (
+            <div key={rk} style={{ display: "grid", gridTemplateColumns: "28px minmax(0,1fr) auto", gap: 12, alignItems: "center" }}>
+              <b style={{ color: col, fontSize: 16, textAlign: "center" }}>{rk}</b>
+              <div style={{ minWidth: 0 }}>
+                <Bar frac={Math.min(1, have / need)} kind="xp" />
+              </div>
+              <button className="btn sm" disabled={have < need || crafting} onClick={() => doCraft(rk)}
+                style={have >= need ? { borderColor: col, color: col, fontWeight: 700 } : {}}>
+                {I18N.t("EXP_FORGE_BTN")} <span className="mono">{have}/{need}</span>
+              </button>
+            </div>
+          );
+        })}
+      </div>
+      {coreLast && (
+        <Modal onClose={() => setCoreLast(null)} accent={D.RARITY_COLORS[coreLast.rarity]}>
+          <div style={{ textAlign: "center", padding: 8 }}>
+            <div className="eyebrow" style={{ marginBottom: 10, color: D.RARITY_COLORS[coreLast.rarity] || "var(--text)" }}>{I18N.t("EXP_FORGE_CORE_TITLE")}</div>
+            {CV ? <CV type={coreLast.core_id} rarity={coreLast.rarity || "Common"} size={220} />
+                : <CoreIcon type={coreLast.core_id} rarity={coreLast.rarity || "Common"} size={48} />}
+            <div style={{ fontWeight: 700, fontSize: 16, marginTop: 10 }}>{I18N.t("CORE_" + coreLast.core_id.toUpperCase())}</div>
+            <div style={{ color: D.RARITY_COLORS[coreLast.rarity] || "var(--text)", fontWeight: 600, marginTop: 4 }}>{rarityLabel(coreLast.rarity || "Common")}</div>
+            <div className="mono muted" style={{ fontSize: 13, marginTop: 8 }}>{I18N.t("CORE_" + coreLast.core_id.toUpperCase() + "_D")}</div>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
 /* ---------------- FORGE D'ÉQUIPEMENT ----------------
    Fusion 3 reliques de même rareté → rareté supérieure, ou désenchantement
    (détruit la relique, crédite sa valeur moins les frais). Sélection et états
@@ -998,6 +1061,7 @@ function ForgeReliques() {
           });
         } else reveal();
       }} />
+      <ForgeCoreFragments />
       <div style={{ marginTop: 26 }}>
         <div className="eyebrow" style={{ marginBottom: 10 }}>{I18N.t("RELIC_INVENTORY")}</div>
         {/* `equipment` mêle reliques et cores : cette grille ne montre que les reliques. */}
