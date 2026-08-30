@@ -404,6 +404,8 @@ function RelicSlot({
   } = useFA();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [detail, setDetail] = useState(null);
+  const RV = window.RelicViewer;
   // L'écran d'équipe montre des vignettes de reliques : on amorce les modèles ici
   // plutôt qu'au boot, et seulement quand le navigateur est libre.
   useEffect(() => {
@@ -480,20 +482,35 @@ function RelicSlot({
   }, I18N.t("RELIC_INVENTORY"), ": \u2014"), available.map(inst => {
     const on = beast.relic_id === inst.id;
     const e = D.relicEffect(inst.type, inst.rarity);
-    return /*#__PURE__*/React.createElement("button", {
+    return /*#__PURE__*/React.createElement("div", {
       key: inst.id,
+      style: {
+        display: "flex",
+        gap: 6
+      }
+    }, /*#__PURE__*/React.createElement("button", {
       className: cx("btn sm", on && "on"),
       disabled: busy,
       onClick: () => doEquip(on ? null : inst.id),
       style: {
         justifyContent: "flex-start",
-        gap: 8
+        gap: 8,
+        textAlign: "left",
+        flex: 1,
+        minWidth: 0
       }
     }, /*#__PURE__*/React.createElement(RelicIcon, {
       type: inst.type,
       rarity: inst.rarity,
       size: 18
-    }), " ", I18N.t("RELIC_" + inst.type.toUpperCase()), " \xB7 ", rarityLabel(inst.rarity), " \xB7 ", D.relicStatDelta(e), " ", on ? "✓" : "");
+    }), " ", I18N.t("RELIC_" + inst.type.toUpperCase()), " \xB7 ", rarityLabel(inst.rarity), " \xB7 ", D.relicStatDelta(e), " ", on ? "✓" : ""), /*#__PURE__*/React.createElement("button", {
+      className: "btn sm",
+      style: {
+        flex: "none"
+      },
+      title: D.relicStatDelta(e),
+      onClick: () => setDetail(inst)
+    }, "\u24D8"));
   })), /*#__PURE__*/React.createElement("button", {
     className: "btn sm block",
     style: {
@@ -501,7 +518,41 @@ function RelicSlot({
     },
     disabled: busy || !beast.relic_id,
     onClick: () => doEquip(null)
-  }, I18N.t("RELIC_UNEQUIP"))));
+  }, I18N.t("RELIC_UNEQUIP"))), detail && /*#__PURE__*/React.createElement(Modal, {
+    onClose: () => setDetail(null),
+    accent: D.RARITY_COLORS[detail.rarity]
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "center",
+      padding: 8
+    }
+  }, RV ? /*#__PURE__*/React.createElement(RV, {
+    type: detail.type,
+    rarity: detail.rarity,
+    size: 220
+  }) : /*#__PURE__*/React.createElement(RelicIcon, {
+    type: detail.type,
+    rarity: detail.rarity,
+    size: 48
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontWeight: 700,
+      fontSize: 16,
+      marginTop: 10
+    }
+  }, I18N.t("RELIC_" + detail.type.toUpperCase())), /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: D.RARITY_COLORS[detail.rarity],
+      fontWeight: 600,
+      marginTop: 4
+    }
+  }, rarityLabel(detail.rarity)), /*#__PURE__*/React.createElement("div", {
+    className: "mono muted",
+    style: {
+      fontSize: 13,
+      marginTop: 8
+    }
+  }, D.relicStatDelta(D.relicEffect(detail.type, detail.rarity))))));
 }
 
 /* --- Slot core sous la carte : effet déclenché en combat, un par bête ---

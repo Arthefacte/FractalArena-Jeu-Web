@@ -229,6 +229,8 @@ function RelicSlot({ beast }) {
   const { g, actions, toast } = useFA();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [detail, setDetail] = useState(null);
+  const RV = window.RelicViewer;
   // L'écran d'équipe montre des vignettes de reliques : on amorce les modèles ici
   // plutôt qu'au boot, et seulement quand le navigateur est libre.
   useEffect(() => {
@@ -268,15 +270,30 @@ function RelicSlot({ beast }) {
               const on = beast.relic_id === inst.id;
               const e = D.relicEffect(inst.type, inst.rarity);
               return (
-                <button key={inst.id} className={cx("btn sm", on && "on")} disabled={busy}
-                  onClick={() => doEquip(on ? null : inst.id)} style={{ justifyContent: "flex-start", gap: 8 }}>
-                  <RelicIcon type={inst.type} rarity={inst.rarity} size={18} /> {I18N.t("RELIC_" + inst.type.toUpperCase())} · {rarityLabel(inst.rarity)} · {D.relicStatDelta(e)} {on ? "✓" : ""}
-                </button>
+                <div key={inst.id} style={{ display: "flex", gap: 6 }}>
+                  <button className={cx("btn sm", on && "on")} disabled={busy}
+                    onClick={() => doEquip(on ? null : inst.id)} style={{ justifyContent: "flex-start", gap: 8, textAlign: "left", flex: 1, minWidth: 0 }}>
+                    <RelicIcon type={inst.type} rarity={inst.rarity} size={18} /> {I18N.t("RELIC_" + inst.type.toUpperCase())} · {rarityLabel(inst.rarity)} · {D.relicStatDelta(e)} {on ? "✓" : ""}
+                  </button>
+                  <button className="btn sm" style={{ flex: "none" }} title={D.relicStatDelta(e)}
+                    onClick={() => setDetail(inst)}>ⓘ</button>
+                </div>
               );
             })}
           </div>
           <button className="btn sm block" style={{ marginTop: 10 }} disabled={busy || !beast.relic_id}
             onClick={() => doEquip(null)}>{I18N.t("RELIC_UNEQUIP")}</button>
+        </Modal>
+      )}
+      {detail && (
+        <Modal onClose={() => setDetail(null)} accent={D.RARITY_COLORS[detail.rarity]}>
+          <div style={{ textAlign: "center", padding: 8 }}>
+            {RV ? <RV type={detail.type} rarity={detail.rarity} size={220} />
+                : <RelicIcon type={detail.type} rarity={detail.rarity} size={48} />}
+            <div style={{ fontWeight: 700, fontSize: 16, marginTop: 10 }}>{I18N.t("RELIC_" + detail.type.toUpperCase())}</div>
+            <div style={{ color: D.RARITY_COLORS[detail.rarity], fontWeight: 600, marginTop: 4 }}>{rarityLabel(detail.rarity)}</div>
+            <div className="mono muted" style={{ fontSize: 13, marginTop: 8 }}>{D.relicStatDelta(D.relicEffect(detail.type, detail.rarity))}</div>
+          </div>
         </Modal>
       )}
     </>
