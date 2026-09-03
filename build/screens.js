@@ -221,7 +221,18 @@ function Team() {
       fontSize: 13,
       marginTop: 4
     }
-  }, I18N.t("TEAM_HINT"))), /*#__PURE__*/React.createElement("div", {
+  }, I18N.t("TEAM_HINT")), (g.ordinalName || g.playerName) && /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      fontSize: 13,
+      marginTop: 6,
+      color: "var(--elec)"
+    }
+  }, /*#__PURE__*/React.createElement(LpBadge, {
+    tier: g.lpTier,
+    fa: g.lpFa,
+    size: 18
+  }), g.lpTier ? " " : "", g.ordinalName || g.playerName)), /*#__PURE__*/React.createElement("div", {
     className: "flex gap12 center"
   }, /*#__PURE__*/React.createElement("span", {
     className: "pill",

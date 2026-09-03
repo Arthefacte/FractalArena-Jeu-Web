@@ -91,16 +91,16 @@
     LB_LOADING: { FR: "Chargement…", EN: "Loading…", ZH: "加载中…" },
     LB_ERROR: { FR: "Classement indisponible, réessaie.", EN: "Ranking unavailable, try again.", ZH: "排行榜不可用，请重试。" },
 
-    // --- Liquidity Guardian (badge LP + titres, seuils 50k / 200k) ---
+    // --- Liquidity Guardian (badge LP + titres, seuils 50k / 500k VERROUILLÉS) ---
     LP_TIER_G1: { FR: "Market Maker", EN: "Market Maker", ZH: "做市商" },
     LP_TIER_G2: { FR: "Prime Market Maker", EN: "Prime Market Maker", ZH: "首席做市商" },
     LP_PANEL_TITLE: { FR: "Liquidity Guardian", EN: "Liquidity Guardian", ZH: "流动性守护者" },
     LP_PANEL_HINT: {
-      FR: "Fournis de la liquidité FA sur InSwap : dès 50 000 FA tu portes le logo du jeu (2D) et le titre Market Maker, dès 200 000 FA le logo 3D et le titre Prime Market Maker.",
-      EN: "Provide FA liquidity on InSwap: from 50,000 FA you wear the game logo (2D) and the Market Maker title, from 200,000 FA the 3D logo and the Prime Market Maker title.",
-      ZH: "在 InSwap 上提供 FA 流动性：达到 50,000 FA 即可佩戴游戏徽标（2D）和做市商称号，达到 200,000 FA 则为 3D 徽标和首席做市商称号。",
+      FR: "Verrouille de la liquidité FA sur InSwap : dès 50 000 FA verrouillés tu portes le logo du jeu (2D) et le titre Market Maker, dès 500 000 FA le logo 3D et le titre Prime Market Maker.",
+      EN: "Lock FA liquidity on InSwap: from 50,000 locked FA you wear the game logo (2D) and the Market Maker title, from 500,000 FA the 3D logo and the Prime Market Maker title.",
+      ZH: "在 InSwap 上锁定 FA 流动性：锁定达到 50,000 FA 即可佩戴游戏徽标（2D）和做市商称号，达到 500,000 FA 则为 3D 徽标和首席做市商称号。",
     },
-    LP_STATUS_NONE: { FR: "Aucun palier LP pour l'instant — il faut au moins 50 000 FA en liquidité.", EN: "No LP tier yet — at least 50,000 FA in liquidity required.", ZH: "尚无 LP 等级——需要至少 50,000 FA 的流动性。" },
+    LP_STATUS_NONE: { FR: "Aucun palier LP pour l'instant — il faut au moins 50 000 FA en liquidité verrouillée.", EN: "No LP tier yet — at least 50,000 FA in locked liquidity required.", ZH: "尚无 LP 等级——需要至少 50,000 FA 的锁定流动性。" },
     LP_REFRESH_BTN: { FR: "Rafraîchir mon statut LP", EN: "Refresh my LP status", ZH: "刷新我的 LP 状态" },
     LP_REFRESH_OK: { FR: "Statut LP mis à jour", EN: "LP status updated", ZH: "LP 状态已更新" },
     LP_REFRESH_ERR: { FR: "Vérification LP indisponible, réessaie.", EN: "LP check unavailable, try again.", ZH: "LP 验证不可用，请重试。" },

@@ -24,7 +24,8 @@ const {
   Modal,
   SectionHead,
   PostureSelect,
-  TokenIcon
+  TokenIcon,
+  LpBadge
 } = window;
 
 // ---- helpers progression ----
@@ -699,7 +700,11 @@ function CampaignCombat({
       color: "var(--elec)",
       fontSize: 15
     }
-  }, g.ordinalName || g.playerName || I18N.t("AR_YOU")), round > 0 && /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement(LpBadge, {
+    tier: g.lpTier,
+    fa: g.lpFa,
+    size: 18
+  }), g.lpTier ? " " : "", g.ordinalName || g.playerName || I18N.t("AR_YOU")), round > 0 && /*#__PURE__*/React.createElement("span", {
     className: "pill mono",
     style: {
       fontSize: 10

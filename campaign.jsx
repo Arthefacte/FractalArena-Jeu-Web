@@ -6,7 +6,7 @@
    ============================================================ */
 const { useState, useEffect, useRef, useMemo } = React;
 const D = window.FA_DATA, I18N = window.FA_I18N;
-const { useFA, cx, fmt, presetLabel, rarityLabel, Bar, Modal, SectionHead, PostureSelect, TokenIcon } = window;
+const { useFA, cx, fmt, presetLabel, rarityLabel, Bar, Modal, SectionHead, PostureSelect, TokenIcon, LpBadge } = window;
 
 // ---- helpers progression ----
 function worldStarsArr(g, i) {
@@ -393,7 +393,7 @@ function CampaignCombat({ worldIndex, floorIndex, onBack, onCleared }) {
           <div className="flex center arena-board-row" style={{ gap: 18, alignItems: "stretch" }}>
             <div style={{ flex: 1 }}>
               <div className="flex between center" style={{ marginBottom: 10 }}>
-                <span className="h2" style={{ color: "var(--elec)", fontSize: 15 }}>{g.ordinalName || g.playerName || I18N.t("AR_YOU")}</span>
+                <span className="h2" style={{ color: "var(--elec)", fontSize: 15 }}><LpBadge tier={g.lpTier} fa={g.lpFa} size={18} />{g.lpTier ? " " : ""}{g.ordinalName || g.playerName || I18N.t("AR_YOU")}</span>
                 {round > 0 && <span className="pill mono" style={{ fontSize: 10 }}>{I18N.t("AR_ROUND", round)}</span>}
               </div>
               {/* minmax(0,1fr) : avec 1fr nu, le min-content d'un contenu nowrap

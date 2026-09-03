@@ -109,7 +109,7 @@ function LpBoard({
     fa: h.fa,
     size: 16,
     flat: true
-  }), h.tier ? " " : "", /*#__PURE__*/React.createElement("span", {
+  }), h.tier ? " " : "", h.name ? h.name : /*#__PURE__*/React.createElement("span", {
     className: "mono"
   }, short(h.address))), /*#__PURE__*/React.createElement("span", {
     className: "lb-val"

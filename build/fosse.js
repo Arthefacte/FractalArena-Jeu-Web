@@ -19,7 +19,8 @@ const {
   rarityLabel,
   Bar,
   Modal,
-  TokenIcon
+  TokenIcon,
+  LpBadge
 } = window;
 const {
   cosmeticEnemyScale
@@ -734,7 +735,11 @@ function Fosse() {
       color: "var(--elec)",
       fontSize: 15
     }
-  }, g.ordinalName || g.playerTitle || g.playerName || I18N.t("AR_YOU")), round > 0 && /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement(LpBadge, {
+    tier: g.lpTier,
+    fa: g.lpFa,
+    size: 18
+  }), g.lpTier ? " " : "", g.ordinalName || g.playerTitle || g.playerName || I18N.t("AR_YOU")), round > 0 && /*#__PURE__*/React.createElement("span", {
     className: "pill mono",
     style: {
       fontSize: 10

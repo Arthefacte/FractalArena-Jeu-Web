@@ -258,18 +258,22 @@ function CoreIcon({ type, rarity, size }) {
 }
 
 // Badge Liquidity Guardian : le logo du jeu à côté du pseudo quand le joueur
-// tient un palier LP sur InSwap (server-owned, null sous 50k FA). G1 = rendu 2D
-// (assets/LOGO_cut.webp), G2 = logo 3D animé (window.Emblem3D, même GLB que le
-// header) avec repli 2D silencieux si la 3D n'est pas montée. `flat` force le
-// 2D même pour G2 : une liste (leaderboard) ne doit pas empiler des canvas
-// WebGL. Tooltip : titre + montant LP quand il est connu.
+// tient un palier LP VERROUILLÉE sur InSwap (server-owned, null sous 50k FA).
+// G1 = rendu 2D (assets/LOGO_cut.webp), G2 = logo 3D animé (window.Emblem3D,
+// même GLB que le header) avec repli 2D silencieux si la 3D n'est pas montée.
+// `flat` force le 2D même pour G2 : une liste (leaderboard) ne doit pas empiler
+// des canvas WebGL. Tooltip : titre + montant LP quand il est connu.
 function LpBadge({ tier, fa, size = 22, flat = false }) {
   if (tier !== "G1" && tier !== "G2") return null;
   const tip = I18N.t(tier === "G2" ? "LP_TIER_G2" : "LP_TIER_G1") + (fa > 0 ? ` · ${fmt(fa)} FA` : "");
   if (tier === "G2" && !flat && window.Emblem3D) {
+    // Plancher 28px pour le canvas WebGL : sous ça le jeton 3D n'est qu'une
+    // tache de pixels (le user le prenait pour le 2D) — mieux vaut un badge un
+    // peu plus grand que le nom qu'un logo 3D illisible.
+    const s3d = Math.max(size, 28);
     return (
       <span className="lp-badge" title={tip} aria-label={tip}
-        style={{ display: "inline-block", width: size, height: size, verticalAlign: "middle" }}>
+        style={{ display: "inline-block", width: s3d, height: s3d, verticalAlign: "middle" }}>
         <window.Emblem3D />
       </span>
     );

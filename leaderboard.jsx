@@ -49,7 +49,9 @@ function LpBoard({ myWallet }) {
                 {/* Badge plat (2D) même pour G2 : cent canvas WebGL dans une
                     liste tueraient le mobile — la 3D reste le badge du joueur. */}
                 {h.tier && <LpBadge tier={h.tier} fa={h.fa} size={16} flat />}{h.tier ? " " : ""}
-                <span className="mono">{short(h.address)}</span>
+                {/* Nom ordinal (.fb) joint par le serveur depuis player_saves ;
+                    l'adresse raccourcie n'est que le repli des wallets sans compte. */}
+                {h.name ? h.name : <span className="mono">{short(h.address)}</span>}
               </span>
               <span className="lb-val">{fmt(h.fa)}</span>
             </div>

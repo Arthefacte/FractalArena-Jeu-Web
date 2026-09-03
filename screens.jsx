@@ -139,6 +139,13 @@ function Team() {
           <div className="eyebrow">{I18N.t("TEAM_COUNT", g.roster.length)}</div>
           <div className="h1" style={{ marginBottom: 0 }}>{I18N.t("TEAM_TITLE")}</div>
           <div className="muted mono" style={{ fontSize: 13, marginTop: 4 }}>{I18N.t("TEAM_HINT")}</div>
+          {/* Le badge Liquidity Guardian suit le pseudo partout — ici le bandeau
+              d'équipe est le premier écran vu après connexion. */}
+          {(g.ordinalName || g.playerName) && (
+            <div className="mono" style={{ fontSize: 13, marginTop: 6, color: "var(--elec)" }}>
+              <LpBadge tier={g.lpTier} fa={g.lpFa} size={18} />{g.lpTier ? " " : ""}{g.ordinalName || g.playerName}
+            </div>
+          )}
         </div>
         <div className="flex gap12 center">
           <span className="pill" style={{ color: selCount === 3 ? "var(--success)" : "var(--text-dim)", fontSize: 13 }}>{I18N.t("TEAM_SELECTED", selCount)}</span>
@@ -1502,9 +1509,9 @@ function Perso() {
             <div className="muted mono" style={{ fontSize: 12, marginTop: 8 }}>{I18N.t("PE_BADGE_DESC", g.holderDays)}</div>
             <Bar frac={g.holderDays / 360} kind="xp" className="" />
           </div>
-          {/* Liquidity Guardian : badge (logo 2D dès 50k, 3D dès 200k) + titre
-              selon la liquidité FA tenue sur InSwap. Palier server-owned et
-              fail-closed — le bouton re-vérifie sans reload. */}
+          {/* Liquidity Guardian : badge (logo 2D dès 50k, 3D dès 500k) + titre
+              selon la liquidité FA VERROUILLÉE sur InSwap. Palier server-owned
+              et fail-closed — le bouton re-vérifie sans reload. */}
           <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 20, marginTop: 16 }}>
             <div className="flex between center">
               <span className="h2" style={{ fontSize: 15 }}>💧 {I18N.t("LP_PANEL_TITLE")}</span>
