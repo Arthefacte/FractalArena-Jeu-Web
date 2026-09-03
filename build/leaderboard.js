@@ -107,8 +107,7 @@ function LpBoard({
   }, h.tier && /*#__PURE__*/React.createElement(LpBadge, {
     tier: h.tier,
     fa: h.fa,
-    size: 16,
-    flat: true
+    size: 16
   }), h.tier ? " " : "", h.name ? h.name : /*#__PURE__*/React.createElement("span", {
     className: "mono"
   }, short(h.address))), /*#__PURE__*/React.createElement("span", {

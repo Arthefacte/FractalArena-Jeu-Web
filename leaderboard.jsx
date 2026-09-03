@@ -46,9 +46,9 @@ function LpBoard({ myWallet }) {
             <div key={h.address} className={cx("lb-row", h.address === myWallet && "mine", i < 3 && "top" + (i + 1))}>
               <span className="lb-rank">#{i + 1}</span>
               <span className="lb-name">
-                {/* Badge plat (2D) même pour G2 : cent canvas WebGL dans une
-                    liste tueraient le mobile — la 3D reste le badge du joueur. */}
-                {h.tier && <LpBadge tier={h.tier} fa={h.fa} size={16} flat />}{h.tier ? " " : ""}
+                {/* Logo 3D pour G2 (plancher 28px de LpBadge) : au plus une
+                    poignée de G2 dans la liste, le canvas WebGL reste tenable. */}
+                {h.tier && <LpBadge tier={h.tier} fa={h.fa} size={16} />}{h.tier ? " " : ""}
                 {/* Nom ordinal (.fb) joint par le serveur depuis player_saves ;
                     l'adresse raccourcie n'est que le repli des wallets sans compte. */}
                 {h.name ? h.name : <span className="mono">{short(h.address)}</span>}

@@ -69,12 +69,13 @@ test("screens.jsx : le badge est à côté du pseudo (profil) et le panneau LP a
   assert.match(screens, /LP_PANEL_HINT/, "texte d'aide (seuils) manquant");
 });
 
-test("leaderboard.jsx : onglet LP branché sur fetchLpLeaderboard, 503 affiché, badge plat", () => {
+test("leaderboard.jsx : onglet LP branché sur fetchLpLeaderboard, 503 affiché, badge 3D pour G2", () => {
   assert.match(leaderboard, /LB_SEC_LP/, "bouton de section LP manquant");
   const b = bloc(leaderboard, "function LpBoard", 3200);
   assert.match(b, /fetchLpLeaderboard\(\)/, "fetch du classement LP manquant");
   assert.match(b, /LP_LB_UNAVAILABLE/, "message InSwap injoignable manquant");
-  assert.match(b, /<LpBadge[^\n]*flat/, "badge de liste : 2D obligatoire (pas de canvas par ligne)");
+  assert.match(b, /<LpBadge[^\n]*size=\{16\}/, "badge présent dans la liste");
+  assert.ok(!/<LpBadge[^\n]*flat/.test(b), "plus de flat : le 3D s'affiche pour G2");
   assert.match(b, /fmt\(h\.fa\)/, "montant fa formaté comme les soldes");
   // L'onglet LP ne doit PAS partir sur /leaderboard?board=lp ni sur le polling 20 s.
   assert.match(leaderboard, /if \(board === "lp"\) return undefined;/, "le polling générique doit ignorer l'onglet LP");
