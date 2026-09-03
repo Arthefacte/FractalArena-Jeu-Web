@@ -126,6 +126,11 @@ function serverToState(save, addr, s) {
     // figée en base par l'ancien client (le nom qu'il fabriquait) repassait devant.
     playerName: save.display_name || "",
     playerTitle: save.player_title || "",
+    // Palier Liquidity Guardian (server-owned, fail-closed) : null sous 50k FA
+    // de liquidité InSwap, "G1" ≥ 50k (logo 2D), "G2" ≥ 200k (logo 3D). Le
+    // montant lui-même (lpFa) n'arrive que par POST /lp/refresh — on préserve
+    // la dernière valeur connue (spread ...s ci-dessus).
+    lpTier: save.lp_tier || null,
     holderDays: save.holder_badge_days ?? 0,
     championPoints: save.link_points ?? 0,   // server-owned (Champion de soutien)
     lang: save.lang || s.lang || "FR",
@@ -194,6 +199,8 @@ function freshState() {
     campaignFreeTs: 0,      // dernier usage de l'entrée gratuite quotidienne
     playerName: "",
     playerTitle: "",
+    lpTier: null,    // palier Liquidity Guardian ("G1"/"G2"/null) — server-owned
+    lpFa: null,      // montant LP connu (POST /lp/refresh), null tant que non vérifié
     ordinalName: "",
     holderDays: 0,
     options: { sound: true, speed: 1 },
@@ -380,7 +387,7 @@ function App() {
     }, 1500);
   }, [g.liquid, g.locked, g.roster, g.freeFights, g.totalFights,
       g.ticketsSilver, g.ticketsGold, g.session.wins, g.session.losses,
-      g.playerName, g.ordinalName, g.playerTitle, g.lang, g.authToken]);
+      g.playerName, g.ordinalName, g.playerTitle, g.lpTier, g.lang, g.authToken]);
 
   // daily reset — même règle que le serveur (minuit UTC), plus 24 h glissantes :
   // l'ancienne fenêtre laissait des loops épuisés à l'écran jusqu'au prochain combat.
@@ -1708,6 +1715,48 @@ function App() {
         if (!resp.ok) return { ok: false };
         const data = await resp.json();
         return { ok: true, top: data.top || [], you: data.you || null };
+      } catch (e) {
+        return { ok: false };
+      }
+    },
+    // --- Liquidity Guardian ---
+    // Re-vérifie la position LP InSwap du joueur (POST /lp/refresh, Bearer).
+    // Le serveur monte ET descend le palier, et pose/retire NOS titres. On adopte
+    // {fa, lp_tier} tout de suite (badge sans reload), puis on re-lit /save pour
+    // resynchroniser le titre affiché (display_name/player_title) — même geste
+    // que setTitle.
+    async refreshLp() {
+      const s = gRef.current;
+      if (!s.wallet || !s.authToken) return { ok: false, reason: "auth" };
+      try {
+        const resp = await fetch(`${API_URL}/lp/refresh`, {
+          method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
+          body: JSON.stringify({ wallet: s.wallet }),
+        });
+        if (resp.status === 401) {
+          const re = await actions.authenticate(gRef.current.wallet);
+          if (!re) { toast(I18N.t("AUTH_EXPIRED"), "bad"); return { ok: false, reason: "auth" }; }
+          return { ok: false, reason: "retry" };
+        }
+        if (!resp.ok) return { ok: false, reason: `Erreur ${resp.status}` };
+        const data = await resp.json();
+        if (data.status !== "ok") return { ok: false, reason: data.error || "Erreur serveur" };
+        setG((st) => ({ ...st, lpTier: data.lp_tier || null, lpFa: data.fa ?? null }));
+        const sv = await fetch(`${API_URL}/save/${s.wallet}`, svOpts());
+        if (sv.ok) { const { save } = await sv.json(); setG((st) => serverToState(save, s.wallet, st)); }
+        return { ok: true, fa: data.fa ?? null, lp_tier: data.lp_tier || null };
+      } catch (e) { return { ok: false, reason: "network" }; }
+    },
+    // Classement public des fournisseurs de liquidité (GET /lp/leaderboard).
+    // 503 = InSwap injoignable : distingué d'une vraie erreur pour afficher un
+    // message honnête plutôt qu'un classement faussement vide.
+    async fetchLpLeaderboard() {
+      try {
+        const resp = await fetch(`${API_URL}/lp/leaderboard`);
+        if (resp.status === 503) return { ok: false, unavailable: true };
+        if (!resp.ok) return { ok: false };
+        const data = await resp.json();
+        return { ok: true, holders: data.holders || [] };
       } catch (e) {
         return { ok: false };
       }

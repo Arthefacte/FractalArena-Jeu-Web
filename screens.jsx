@@ -3,7 +3,7 @@
    ============================================================ */
 const { useState, useEffect, useMemo } = React;
 const D = window.FA_DATA, I18N = window.FA_I18N;
-const { useFA, cx, fmt, presetLabel, rarityLabel, Bar, StatGrid, CreatureCard, Modal, SectionHead, MiniStats, RelicIcon, TokenIcon, FaText, UnisatAppBridge } = window;
+const { useFA, cx, fmt, presetLabel, rarityLabel, Bar, StatGrid, CreatureCard, Modal, SectionHead, MiniStats, RelicIcon, TokenIcon, FaText, UnisatAppBridge, LpBadge } = window;
 const API_URL = window.FA_API_URL;
 
 /* ---------------- PRESTIGE DU QUIZ ----------------
@@ -1437,6 +1437,18 @@ function Perso() {
   const [name, setName] = useState("");
   const [title, setTitle] = useState(g.playerTitle || "");
   const [busy, setBusy] = useState(false);
+  const [lpBusy, setLpBusy] = useState(false);
+
+  // Re-vérification LP à la demande : le serveur seul décide du palier (il
+  // monte ET descend) — ici on ne fait que déclencher et raconter le résultat.
+  async function doLpRefresh() {
+    if (lpBusy) return;
+    setLpBusy(true);
+    const r = await actions.refreshLp();
+    setLpBusy(false);
+    if (!r.ok) { toast(I18N.t("LP_REFRESH_ERR"), "bad"); return; }
+    toast(I18N.t("LP_REFRESH_OK"), "good");
+  }
 
   async function doRename() {
     if (!sel || !name.trim() || busy) return;
@@ -1489,6 +1501,28 @@ function Perso() {
             <div className="muted" style={{ fontSize: 11, marginTop: 8, lineHeight: 1.4, fontStyle: "italic" }}>{I18N.t("PE_BADGE_HINT")}</div>
             <div className="muted mono" style={{ fontSize: 12, marginTop: 8 }}>{I18N.t("PE_BADGE_DESC", g.holderDays)}</div>
             <Bar frac={g.holderDays / 360} kind="xp" className="" />
+          </div>
+          {/* Liquidity Guardian : badge (logo 2D dès 50k, 3D dès 200k) + titre
+              selon la liquidité FA tenue sur InSwap. Palier server-owned et
+              fail-closed — le bouton re-vérifie sans reload. */}
+          <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 20, marginTop: 16 }}>
+            <div className="flex between center">
+              <span className="h2" style={{ fontSize: 15 }}>💧 {I18N.t("LP_PANEL_TITLE")}</span>
+              {g.lpTier ? (
+                <span className="pill" style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "var(--elec)" }}>
+                  <LpBadge tier={g.lpTier} fa={g.lpFa} size={18} />
+                  {I18N.t(g.lpTier === "G2" ? "LP_TIER_G2" : "LP_TIER_G1")}
+                </span>
+              ) : (
+                <span className="pill">—</span>
+              )}
+            </div>
+            <div className="muted" style={{ fontSize: 11, marginTop: 8, lineHeight: 1.4 }}>{I18N.t("LP_PANEL_HINT")}</div>
+            {g.lpFa != null && (
+              <div className="muted mono" style={{ fontSize: 12, marginTop: 8 }}><TokenIcon s={13} /> {fmt(g.lpFa)}</div>
+            )}
+            {!g.lpTier && <div className="muted mono" style={{ fontSize: 11, marginTop: 8 }}>{I18N.t("LP_STATUS_NONE")}</div>}
+            <button className="btn btn-elec block" style={{ marginTop: 12 }} disabled={lpBusy} onClick={doLpRefresh}>{lpBusy ? "…" : "↻ " + I18N.t("LP_REFRESH_BTN")}</button>
           </div>
           {/* Champion de soutien : points de lien — affichage seul en v1 (aucun
               achat par points ; ils se gagnent quand le champion sert). */}
@@ -1649,6 +1683,7 @@ function Options() {
             {/* Repli sur le nom décidé par le serveur (display_name) et non sur l'adresse
                 du compte : pour un compte créé sans portefeuille, celle-ci a été
                 fabriquée par le serveur et n'appartient pas au joueur. */}
+            <LpBadge tier={g.lpTier} fa={g.lpFa} size={18} />{g.lpTier ? " " : ""}
             {(prestigeAffiche ? prestigeAffiche + " " : "")}
             {g.ordinalName
               ? ((g.playerTitle ? g.playerTitle + " " : "") + g.ordinalName)

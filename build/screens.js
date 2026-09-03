@@ -25,7 +25,8 @@ const {
   RelicIcon,
   TokenIcon,
   FaText,
-  UnisatAppBridge
+  UnisatAppBridge,
+  LpBadge
 } = window;
 const API_URL = window.FA_API_URL;
 
@@ -2947,6 +2948,21 @@ function Perso() {
   const [name, setName] = useState("");
   const [title, setTitle] = useState(g.playerTitle || "");
   const [busy, setBusy] = useState(false);
+  const [lpBusy, setLpBusy] = useState(false);
+
+  // Re-vérification LP à la demande : le serveur seul décide du palier (il
+  // monte ET descend) — ici on ne fait que déclencher et raconter le résultat.
+  async function doLpRefresh() {
+    if (lpBusy) return;
+    setLpBusy(true);
+    const r = await actions.refreshLp();
+    setLpBusy(false);
+    if (!r.ok) {
+      toast(I18N.t("LP_REFRESH_ERR"), "bad");
+      return;
+    }
+    toast(I18N.t("LP_REFRESH_OK"), "good");
+  }
   async function doRename() {
     if (!sel || !name.trim() || busy) return;
     setBusy(true);
@@ -3091,6 +3107,62 @@ function Perso() {
     kind: "xp",
     className: ""
   })), /*#__PURE__*/React.createElement("div", {
+    className: "panel oct",
+    style: {
+      border: "1px solid var(--line)",
+      padding: 20,
+      marginTop: 16
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex between center"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "h2",
+    style: {
+      fontSize: 15
+    }
+  }, "\uD83D\uDCA7 ", I18N.t("LP_PANEL_TITLE")), g.lpTier ? /*#__PURE__*/React.createElement("span", {
+    className: "pill",
+    style: {
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 6,
+      color: "var(--elec)"
+    }
+  }, /*#__PURE__*/React.createElement(LpBadge, {
+    tier: g.lpTier,
+    fa: g.lpFa,
+    size: 18
+  }), I18N.t(g.lpTier === "G2" ? "LP_TIER_G2" : "LP_TIER_G1")) : /*#__PURE__*/React.createElement("span", {
+    className: "pill"
+  }, "\u2014")), /*#__PURE__*/React.createElement("div", {
+    className: "muted",
+    style: {
+      fontSize: 11,
+      marginTop: 8,
+      lineHeight: 1.4
+    }
+  }, I18N.t("LP_PANEL_HINT")), g.lpFa != null && /*#__PURE__*/React.createElement("div", {
+    className: "muted mono",
+    style: {
+      fontSize: 12,
+      marginTop: 8
+    }
+  }, /*#__PURE__*/React.createElement(TokenIcon, {
+    s: 13
+  }), " ", fmt(g.lpFa)), !g.lpTier && /*#__PURE__*/React.createElement("div", {
+    className: "muted mono",
+    style: {
+      fontSize: 11,
+      marginTop: 8
+    }
+  }, I18N.t("LP_STATUS_NONE")), /*#__PURE__*/React.createElement("button", {
+    className: "btn btn-elec block",
+    style: {
+      marginTop: 12
+    },
+    disabled: lpBusy,
+    onClick: doLpRefresh
+  }, lpBusy ? "…" : "↻ " + I18N.t("LP_REFRESH_BTN"))), /*#__PURE__*/React.createElement("div", {
     className: "panel oct",
     style: {
       border: "1px solid var(--line)",
@@ -3335,7 +3407,11 @@ function Options() {
       fontWeight: 700,
       color: g.ordinalName ? "var(--elec)" : "var(--text-faint)"
     }
-  }, prestigeAffiche ? prestigeAffiche + " " : "", g.ordinalName ? (g.playerTitle ? g.playerTitle + " " : "") + g.ordinalName : g.playerName || "—")), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement(LpBadge, {
+    tier: g.lpTier,
+    fa: g.lpFa,
+    size: 18
+  }), g.lpTier ? " " : "", prestigeAffiche ? prestigeAffiche + " " : "", g.ordinalName ? (g.playerTitle ? g.playerTitle + " " : "") + g.ordinalName : g.playerName || "—")), /*#__PURE__*/React.createElement("div", {
     className: "mono",
     style: {
       fontSize: 10.5,
