@@ -50,7 +50,6 @@ function LpBoard({ myWallet }) {
                     liste tueraient le mobile — la 3D reste le badge du joueur. */}
                 {h.tier && <LpBadge tier={h.tier} fa={h.fa} size={16} flat />}{h.tier ? " " : ""}
                 <span className="mono">{short(h.address)}</span>
-                {h.tier && <span className="muted" style={{ marginLeft: 6, fontSize: 10 }}>{I18N.t(h.tier === "G2" ? "LP_TIER_G2" : "LP_TIER_G1")}</span>}
               </span>
               <span className="lb-val">{fmt(h.fa)}</span>
             </div>

@@ -111,13 +111,7 @@ function LpBoard({
     flat: true
   }), h.tier ? " " : "", /*#__PURE__*/React.createElement("span", {
     className: "mono"
-  }, short(h.address)), h.tier && /*#__PURE__*/React.createElement("span", {
-    className: "muted",
-    style: {
-      marginLeft: 6,
-      fontSize: 10
-    }
-  }, I18N.t(h.tier === "G2" ? "LP_TIER_G2" : "LP_TIER_G1"))), /*#__PURE__*/React.createElement("span", {
+  }, short(h.address))), /*#__PURE__*/React.createElement("span", {
     className: "lb-val"
   }, fmt(h.fa))))));
 }
