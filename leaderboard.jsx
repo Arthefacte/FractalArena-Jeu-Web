@@ -156,6 +156,9 @@ function Leaderboard() {
                     {ago.n === null ? I18N.t(ago.key) : I18N.t(ago.key, ago.n)}
                   </span>;
                 })()}
+                {/* Badge LP (logo seul, 2D G1 / 3D G2) — le titre texte reste
+                    strippé du nom côté serveur, on n'ajoute que le logo. */}
+                {row.tier && <LpBadge tier={row.tier} size={16} />}{row.tier ? " " : ""}
                 {row.name}
               </span>
               <span className="lb-val">{row.value}</span>

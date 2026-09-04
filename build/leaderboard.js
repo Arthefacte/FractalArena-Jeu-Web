@@ -283,7 +283,10 @@ function Leaderboard() {
         color: "var(--text-faint)"
       }
     }, ago.n === null ? I18N.t(ago.key) : I18N.t(ago.key, ago.n));
-  })(), row.name), /*#__PURE__*/React.createElement("span", {
+  })(), row.tier && /*#__PURE__*/React.createElement(LpBadge, {
+    tier: row.tier,
+    size: 16
+  }), row.tier ? " " : "", row.name), /*#__PURE__*/React.createElement("span", {
     className: "lb-val"
   }, row.value))), st.you && /*#__PURE__*/React.createElement("div", {
     className: "lb-row mine"
