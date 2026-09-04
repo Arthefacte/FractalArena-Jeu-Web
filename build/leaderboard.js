@@ -13,7 +13,8 @@ const {
   cx,
   fmt,
   SectionHead,
-  LpBadge
+  LpBadge,
+  MarqueeName
 } = window;
 const I18N = window.FA_I18N;
 const LU = window.FA_LB_LIVE_UI;
@@ -103,12 +104,12 @@ function LpBoard({
   }, /*#__PURE__*/React.createElement("span", {
     className: "lb-rank"
   }, "#", i + 1), /*#__PURE__*/React.createElement("span", {
-    className: "lb-name"
+    className: "lb-name lb-name-flex"
   }, h.tier && /*#__PURE__*/React.createElement(LpBadge, {
     tier: h.tier,
     fa: h.fa,
     size: 16
-  }), h.tier ? " " : "", h.name ? h.name : /*#__PURE__*/React.createElement("span", {
+  }), h.name ? /*#__PURE__*/React.createElement(MarqueeName, null, h.name) : /*#__PURE__*/React.createElement("span", {
     className: "mono"
   }, short(h.address))), /*#__PURE__*/React.createElement("span", {
     className: "lb-val"
@@ -264,7 +265,7 @@ function Leaderboard() {
   }, /*#__PURE__*/React.createElement("span", {
     className: "lb-rank"
   }, "#", row.rank), /*#__PURE__*/React.createElement("span", {
-    className: "lb-name"
+    className: "lb-name lb-name-flex"
   }, row.live && /*#__PURE__*/React.createElement("span", {
     title: I18N.t("LB_LIVE_HINT"),
     style: {
@@ -286,7 +287,7 @@ function Leaderboard() {
   })(), row.tier && /*#__PURE__*/React.createElement(LpBadge, {
     tier: row.tier,
     size: 16
-  }), row.tier ? " " : "", row.name), /*#__PURE__*/React.createElement("span", {
+  }), /*#__PURE__*/React.createElement(MarqueeName, null, row.name)), /*#__PURE__*/React.createElement("span", {
     className: "lb-val"
   }, row.value))), st.you && /*#__PURE__*/React.createElement("div", {
     className: "lb-row mine"

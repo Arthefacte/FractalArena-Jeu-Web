@@ -283,4 +283,38 @@ function LpBadge({ tier, fa, size = 22, flat = false }) {
     style={{ display: "inline-block", verticalAlign: "middle", objectFit: "contain" }} />;
 }
 
-Object.assign(window, { FA_Ctx, useFA, cx, fmt, presetLabel, rarityLabel, Coin, TokenIcon, FaText, Bar, StatGrid, CreatureCard, Modal, SectionHead, MiniStats, PostureSelect, RelicIcon, CoreIcon, LpBadge });
+// Nom de joueur avec marquee au survol : un nom composé (titre 32 + ordinal 24
+// côté serveur) peut dépasser la largeur de la ligne du classement. Deux spans :
+// la fenêtre de clip (.lb-name-txt, ellipse au repos) et le texte (.lb-name-scroll)
+// — c'est le texte interne que le CSS translate, une boîte qui porte son propre
+// overflow:hidden clipperait relativement à elle-même et ne révélerait rien.
+// Si le texte déborde : classe `over` + --dx (pixels d'excédent, le défilement
+// s'arrête pile à la fin) + --marquee-dur (vitesse constante quel que soit le
+// nom). Un nom qui tient ne reçoit ni classe ni style — inerte comme avant.
+function MarqueeName({ children }) {
+  const ref = useRef(null);
+  const [dx, setDx] = useState(0);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return undefined;
+    const measure = () => setDx(Math.max(0, el.scrollWidth - el.clientWidth));
+    measure();
+    let ro = null;
+    if (typeof ResizeObserver !== "undefined") {
+      ro = new ResizeObserver(measure);
+      ro.observe(el);
+      if (el.parentElement) ro.observe(el.parentElement);
+    }
+    window.addEventListener("resize", measure);
+    return () => { if (ro) ro.disconnect(); window.removeEventListener("resize", measure); };
+  }, [children]);
+  return (
+    <span ref={ref} className={cx("lb-name-txt", dx > 0 && "over")}
+      title={dx > 0 && typeof children === "string" ? children : undefined}
+      style={dx > 0 ? { "--dx": dx + "px", "--marquee-dur": (1.2 + dx / 50).toFixed(2) + "s" } : undefined}>
+      <span className="lb-name-scroll">{children}</span>
+    </span>
+  );
+}
+
+Object.assign(window, { FA_Ctx, useFA, cx, fmt, presetLabel, rarityLabel, Coin, TokenIcon, FaText, Bar, StatGrid, CreatureCard, Modal, SectionHead, MiniStats, PostureSelect, RelicIcon, CoreIcon, LpBadge, MarqueeName });

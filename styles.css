@@ -835,6 +835,28 @@ input { font-family: var(--font-mono); }
 .lb-row .lb-rank { width: 44px; font-family: var(--font-mono); color: var(--text-dim); font-weight: 700; }
 .lb-row .lb-name { flex: 1; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .lb-row .lb-val { font-family: var(--font-mono); font-weight: 700; color: var(--elec); }
+/* Marquee du nom au survol : .lb-name-flex passe la cellule nom en flex pour que
+   .lb-name-txt (fenêtre de clip du nom seul, posée par MarqueeName) mesure
+   exactement la place restante après pastille/« il y a X »/badge — eux ne
+   bougent jamais. Au survol de la rangée, le texte interne défile de l'excédent
+   (--dx) puis boucle ; sans débordement, aucune classe et rien ne bouge. */
+.lb-row .lb-name.lb-name-flex { display: flex; align-items: center; }
+.lb-row .lb-name.lb-name-flex > * { flex: 0 0 auto; }
+.lb-row .lb-name.lb-name-flex > .lb-name-txt { flex: 0 1 auto; }
+.lb-row .lb-name.lb-name-flex .lp-badge { margin-right: 6px; }
+.lb-name-txt { min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lb-name-txt .lb-name-scroll { display: inline-block; }
+.lb-row:hover .lb-name-txt.over, .lb-name-txt.over:hover { text-overflow: clip; }
+.lb-row:hover .lb-name-txt.over .lb-name-scroll,
+.lb-name-txt.over:hover .lb-name-scroll { animation: lb-marquee var(--marquee-dur, 3s) linear infinite; }
+@keyframes lb-marquee {
+  0%, 12% { transform: translateX(0); }
+  88%, 100% { transform: translateX(calc(-1 * var(--dx))); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lb-row:hover .lb-name-txt.over .lb-name-scroll,
+  .lb-name-txt.over:hover .lb-name-scroll { animation: none; }
+}
 .lb-row.top1 { border-color: var(--gold); }
 .lb-row.top1 .lb-rank, .lb-row.top1 .lb-val { color: var(--gold); }
 .lb-row.top2 { border-color: #C0CCDA; }

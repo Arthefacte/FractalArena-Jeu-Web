@@ -2,7 +2,7 @@
    FRACTAL ARENA — Leaderboard (écran classement)
    ============================================================ */
 const { useState, useEffect, useRef } = React;
-const { useFA, cx, fmt, SectionHead, LpBadge } = window;
+const { useFA, cx, fmt, SectionHead, LpBadge, MarqueeName } = window;
 const I18N = window.FA_I18N;
 const LU = window.FA_LB_LIVE_UI;
 
@@ -45,13 +45,15 @@ function LpBoard({ myWallet }) {
           {st.holders.map((h, i) => (
             <div key={h.address} className={cx("lb-row", h.address === myWallet && "mine", i < 3 && "top" + (i + 1))}>
               <span className="lb-rank">#{i + 1}</span>
-              <span className="lb-name">
+              {/* lb-name-flex : cellule en flex pour que MarqueeName mesure la
+                  place restante après le badge (marquee du nom seul au survol). */}
+              <span className="lb-name lb-name-flex">
                 {/* Logo 3D pour G2 (plancher 28px de LpBadge) : au plus une
                     poignée de G2 dans la liste, le canvas WebGL reste tenable. */}
-                {h.tier && <LpBadge tier={h.tier} fa={h.fa} size={16} />}{h.tier ? " " : ""}
+                {h.tier && <LpBadge tier={h.tier} fa={h.fa} size={16} />}
                 {/* Nom ordinal (.fb) joint par le serveur depuis player_saves ;
                     l'adresse raccourcie n'est que le repli des wallets sans compte. */}
-                {h.name ? h.name : <span className="mono">{short(h.address)}</span>}
+                {h.name ? <MarqueeName>{h.name}</MarqueeName> : <span className="mono">{short(h.address)}</span>}
               </span>
               <span className="lb-val">{fmt(h.fa)}</span>
             </div>
@@ -145,7 +147,9 @@ function Leaderboard() {
               style={{ transition: "background 0.8s ease",
                 background: flash.has(LU.rowKey(row)) ? "rgba(0,240,255,0.14)" : undefined }}>
               <span className="lb-rank">#{row.rank}</span>
-              <span className="lb-name">
+              {/* lb-name-flex : cellule en flex, pastille/« il y a X »/badge sont
+                  des items fixes — seul le nom (MarqueeName) défile au survol. */}
+              <span className="lb-name lb-name-flex">
                 {/* Recence AVANT le nom : .lb-name coupe a l'ellipse, un nom long
                     perso avalait le point vert / le « il y a X » sur mobile. */}
                 {row.live && <span title={I18N.t("LB_LIVE_HINT")}
@@ -158,8 +162,8 @@ function Leaderboard() {
                 })()}
                 {/* Badge LP (logo seul, 2D G1 / 3D G2) — le titre texte reste
                     strippé du nom côté serveur, on n'ajoute que le logo. */}
-                {row.tier && <LpBadge tier={row.tier} size={16} />}{row.tier ? " " : ""}
-                {row.name}
+                {row.tier && <LpBadge tier={row.tier} size={16} />}
+                <MarqueeName>{row.name}</MarqueeName>
               </span>
               <span className="lb-val">{row.value}</span>
             </div>
