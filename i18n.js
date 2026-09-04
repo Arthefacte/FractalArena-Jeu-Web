@@ -1015,6 +1015,11 @@
       EN: "An expedition is already running to this world.",
       ZH: "该世界已有远征进行中。",
     },
+    EXP_ERR_destination_a_reclamer: {
+      FR: "Réclame d'abord le butin de l'expédition terminée.",
+      EN: "Claim the finished expedition's loot first.",
+      ZH: "请先领取已完成远征的战利品。",
+    },
     EXP_ERR_expedition_en_cours: {
       FR: "L'expédition n'est pas terminée.",
       EN: "The expedition isn't over yet.",

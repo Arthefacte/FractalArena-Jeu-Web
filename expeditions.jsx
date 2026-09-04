@@ -48,12 +48,6 @@ function Expeditions() {
   const [rfx, setRfx] = useState(null);            // { worldId, ids, success } : retour du portail
   const [loot, setLoot] = useState(null);          // { success, rewards, fa_week, worldId, beastIds }
   const [confirmRecall, setConfirmRecall] = useState(false);
-  // Fenêtres d'épuisement locales (échec Risquée : +30 min après ends_at),
-  // CUMULÉES — deux échecs successifs sur des destinations différentes gardent
-  // chacun leur fenêtre. Le serveur garde de toute façon ; ceci rend
-  // l'indisponibilité VISIBLE dans le sélecteur au lieu d'un 409 sec (perdu au
-  // rechargement ou au changement d'écran — acceptable v1).
-  const [exhausted, setExhausted] = useState([]);   // [{ ids: [], until: ms }]
   const [, setTick] = useState(0);
   const fxTimer = useRef(null);
   const fxWorldRef = useRef(null);   // monde de l'anim en cours (lu par endFx, jamais périmé)
@@ -86,6 +80,9 @@ function Expeditions() {
   const byDest = {};
   exps.forEach((e) => { byDest[e.destination] = e; });
   const busyIds = new Set(exps.flatMap((e) => (Array.isArray(e.beast_ids) ? e.beast_ids : [])));
+  // Épuisement post-échec Risquée : servi par GET /expeditions/state (g.expExhausted),
+  // donc fiable après rechargement — `until` est en epoch ms serveur.
+  const exhausted = Array.isArray(g.expExhausted) ? g.expExhausted : [];
   const exhaustedIds = new Set(exhausted.flatMap((x) => (x.until > now ? x.ids : [])));
   const roster = Array.isArray(g.roster) ? g.roster : [];
   const beastById = (id) => roster.find((b) => b && b.id === id);
@@ -146,12 +143,6 @@ function Expeditions() {
     setBusyCall(false);
     if (!r.ok) { setClaiming(false); if (r.reason !== "auth") toast(expErr(r.reason), "bad"); return; }
     setClaiming(false);   // le portail de retour prend le relais (même batch React : pas de trou)
-    if (r.success === false && e.mode === "risquee") {
-      // Échec Risquée : le serveur tient les bêtes indisponibles jusqu'à
-      // ends_at + 30 min — on AJOUTE cette fenêtre (les fenêtres échues sortent).
-      const until = new Date(e.ends_at).getTime() + 30 * 60e3;
-      setExhausted((xs) => [...xs.filter((x) => x.until > Date.now()), { ids: e.beast_ids || [], until }]);
-    }
     setLoot({ success: r.success, rewards: r.rewards, fa_week: r.fa_week, worldId: e.destination, beastIds: e.beast_ids || [] });
     setSelWorld(e.destination);
     setView("loot");

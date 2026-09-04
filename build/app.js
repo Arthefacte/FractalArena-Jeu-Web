@@ -324,7 +324,9 @@ function freshState() {
     },
     expFaWeek: null,
     // { granted, cap, week_ends_in_s }
-    expNowOffset: 0 // horloge serveur - horloge locale (compte à rebours honnêtes)
+    expNowOffset: 0,
+    // horloge serveur - horloge locale (compte à rebours honnêtes)
+    expExhausted: [] // [{ ids, until }] — épuisement post-échec Risquée (serveur, epoch ms)
   };
 }
 
@@ -2586,7 +2588,8 @@ function App() {
             S: 0
           },
           expFaWeek: data.fa_week || null,
-          expNowOffset: (data.now || Date.now()) - Date.now()
+          expNowOffset: (data.now || Date.now()) - Date.now(),
+          expExhausted: Array.isArray(data.exhausted) ? data.exhausted : []
         }));
         return {
           ok: true

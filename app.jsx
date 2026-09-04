@@ -226,6 +226,7 @@ function freshState() {
     expCoreFragments: { C: 0, B: 0, A: 0, S: 0 },
     expFaWeek: null,       // { granted, cap, week_ends_in_s }
     expNowOffset: 0,       // horloge serveur - horloge locale (compte à rebours honnêtes)
+    expExhausted: [],      // [{ ids, until }] — épuisement post-échec Risquée (serveur, epoch ms)
   };
 }
 
@@ -1485,6 +1486,7 @@ function App() {
           expCoreFragments: data.core_fragments || { C: 0, B: 0, A: 0, S: 0 },
           expFaWeek: data.fa_week || null,
           expNowOffset: (data.now || Date.now()) - Date.now(),
+          expExhausted: Array.isArray(data.exhausted) ? data.exhausted : [],
         }));
         return { ok: true };
       } catch (e) { return { ok: false }; }
