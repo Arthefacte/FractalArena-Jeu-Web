@@ -170,6 +170,23 @@ test("l'etape crypto restante se deduit de l'etat serveur", () => {
     "parcours termine : plus rien a demander, la fenetre ne doit plus surgir");
 });
 
+test("compte natif : l'etape « lier » n'existe pas, son wallet EST son compte", () => {
+  // Un joueur venu avec UniSat n'a rien a lier : lui montrer le bouton de liaison
+  // l'enverrait vers un ecran qui refuse (le serveur interdit de lier un compte
+  // natif). Le flux saute directement a la poussiere puis au txid.
+  const { A } = load();
+  const fini = { eligible: true, game_done: true, dust_sent: false, txid_verified: false };
+
+  assert.strictEqual(A.discoveryNextAction(fini, "", true), "dust",
+    "natif sans linkedWallet : on attend la poussiere, jamais « link »");
+  assert.strictEqual(A.discoveryNextAction({ ...fini, dust_sent: true }, "", true), "txid",
+    "natif, poussiere arrivee : il peut coller son txid");
+  assert.strictEqual(A.discoveryNextAction({ ...fini, dust_sent: true, txid_verified: true }, "", true), null,
+    "natif, parcours termine : plus rien a demander");
+  assert.strictEqual(A.discoveryNextAction(fini, "", false), "link",
+    "retro-compat : un compte genere garde son etape de liaison");
+});
+
 test("rien n'est propose tant que le volet jeu n'est pas fini", () => {
   const { A } = load();
   assert.strictEqual(

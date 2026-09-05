@@ -94,11 +94,11 @@ function Quests() {
     // La sixième étape vient d'être réclamée : le volet crypto s'ouvre de
     // lui-même. C'est le seul moment où le joueur est là, et jusqu'ici la seule
     // porte était un bandeau qu'il pouvait avoir fermé pour 24 h.
-    if (ACC.discoveryNextAction(apres, g.linkedWallet)) setFinish(true);
+    if (ACC.discoveryNextAction(apres, g.linkedWallet, g.accountKind === ACC.KIND_UNISAT)) setFinish(true);
   };
 
   // Ce qu'il reste à faire du volet crypto, décidé par le serveur (null = rien).
-  const etapeCrypto = ACC.discoveryNextAction(disc, g.linkedWallet);
+  const etapeCrypto = ACC.discoveryNextAction(disc, g.linkedWallet, g.accountKind === ACC.KIND_UNISAT);
 
   // Visible tant qu'il reste une étape à réclamer, OU une étape crypto à faire :
   // un tutoriel terminé ne doit plus occuper l'écran, mais un parcours fini dont

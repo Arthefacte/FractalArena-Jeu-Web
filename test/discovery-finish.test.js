@@ -75,6 +75,23 @@ test("le gain de l'epreuve du txid est annonce, et lu du serveur", () => {
   assert.match(A, /DISC_TXID_REWARD/, "le joueur doit voir ce que l'etape rapporte avant de la faire");
 });
 
+test("un compte natif est tenu pour deja lie par le volet crypto", () => {
+  // Son wallet EST son compte : lui montrer LinkWalletButton l'enverrait vers un
+  // ecran que le serveur refuse. Le volet doit deriver « lie » du kind aussi.
+  assert.match(A, /const lie = !!g\.linkedWallet \|\| g\.accountKind === ACC\.KIND_UNISAT/,
+    "CryptoVolet doit tenir un compte natif pour lie sans passer par linkedWallet");
+});
+
+test("les appelants de discoveryNextAction passent le drapeau natif", () => {
+  // Sans lui, la fenetre « Bien joue » et le panneau du parcours proposeraient
+  // encore « link » a un natif — l'etape que le volet, lui, ne montre plus.
+  const natif = /discoveryNextAction\([a-z]+, g\.linkedWallet, g\.accountKind === ACC\.KIND_UNISAT\)/g;
+  assert.strictEqual((A.match(natif) || []).length, 1,
+    "DiscoveryFinish (account.jsx) doit passer le drapeau natif");
+  assert.strictEqual((Q.match(natif) || []).length, 2,
+    "les deux appels du panneau du parcours (quests.jsx) doivent passer le drapeau natif");
+});
+
 // --- i18n ---
 
 const bloc = (cle) => {

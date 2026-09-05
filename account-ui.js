@@ -155,10 +155,13 @@
   // parcours. Avant, la seule porte etait un bandeau fermable qui se taisait
   // ensuite 24 h : un joueur qui l'avait ferme finissait ses six etapes sans
   // qu'aucun ecran ne lui propose de lier son portefeuille.
-  function discoveryNextAction(disc, linkedWallet) {
+  // `isNative` : un compte venu avec UniSat n'a rien a lier — son wallet EST son
+  // compte, et le serveur refuse d'ailleurs de lier un compte natif. Pour lui,
+  // l'etape « link » n'existe pas : poussiere puis txid directement.
+  function discoveryNextAction(disc, linkedWallet, isNative) {
     if (!disc || !disc.eligible || !disc.game_done) return null;
     if (disc.txid_verified) return null;
-    if (!linkedWallet) return "link";
+    if (!linkedWallet && !isNative) return "link";
     return disc.dust_sent ? "txid" : "dust";
   }
 

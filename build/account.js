@@ -438,7 +438,8 @@ function CryptoVolet({
   } = useFA();
   const [txid, setTxid] = useState("");
   const [sending, setSending] = useState(false);
-  const lie = !!g.linkedWallet;
+  // Un natif est « deja lie » par nature : son wallet EST son compte.
+  const lie = !!g.linkedWallet || g.accountKind === ACC.KIND_UNISAT;
   const submitTxid = async () => {
     setSending(true);
     let r;
@@ -548,7 +549,7 @@ function DiscoveryFinish({
   // portefeuille » même une fois le portefeuille lié (constaté en prod le
   // 2026-07-30, à l'étape txid) : un écran qui décrit une étape déjà franchie
   // fait douter le joueur de ce qu'il vient de faire.
-  const etape = ACC.discoveryNextAction(disc, g.linkedWallet);
+  const etape = ACC.discoveryNextAction(disc, g.linkedWallet, g.accountKind === ACC.KIND_UNISAT);
   return /*#__PURE__*/React.createElement(Modal, {
     onClose: onClose,
     accent: "var(--gold)"
