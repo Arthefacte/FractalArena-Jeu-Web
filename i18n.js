@@ -571,6 +571,14 @@
     WL_H_SENT: { FR: "envoyé ✓", EN: "sent ✓", ZH: "已发送 ✓" },
     WL_H_FAILED: { FR: "échoué — remboursé", EN: "failed — refunded", ZH: "失败——已退款" },
     WL_H_NO_TXID: { FR: "txid à venir", EN: "txid coming", ZH: "txid 稍后可见" },
+    // Erreurs dépôt/retrait — localisées (05/09 : un joueur ZH les voyait en dur en FR).
+    WL_DEP_ALREADY_USED: { FR: "Ce TXID a déjà été utilisé", EN: "This TXID has already been used", ZH: "该 TXID 已被使用" },
+    WL_DEP_WRONG_RECIPIENT: { FR: "Transaction non destinée au Reward Pool", EN: "Transaction not sent to the Reward Pool", ZH: "交易未发送到奖励池" },
+    WL_DEP_SENDER_UNVERIFIED: { FR: "Expéditeur non vérifiable — assure-toi d'avoir envoyé depuis ton propre wallet", EN: "Sender could not be verified — make sure you sent from your own wallet", ZH: "无法验证发送方——请确认你是从自己的钱包发送的" },
+    WL_DEP_NOT_FOUND: { FR: "Dépôt non détecté on-chain — attends les confirmations puis réessaie", EN: "Deposit not detected on-chain — wait for confirmations and retry", ZH: "链上未检测到充值——请等待确认后重试" },
+    WL_WD_COOLDOWN: { FR: "Un seul retrait toutes les 24 h — prochain disponible dans %d h", EN: "One withdrawal per 24 h — next available in %d h", ZH: "每 24 小时仅可提现一次——%d 小时后可用" },
+    WL_WD_ERROR: { FR: "Erreur retrait serveur", EN: "Withdrawal server error", ZH: "提现服务器错误" },
+    WL_NET_ERROR: { FR: "Erreur réseau — réessaie", EN: "Network error — retry", ZH: "网络错误——请重试" },
     AUTH_EXPIRED: { FR: "Session expirée — reconnecte-toi.", EN: "Session expired — please reconnect.", ZH: "会话已过期，请重新连接。" },
     // Diagnostic d'authentification : chaque cause appelle un geste DIFFÉRENT du
     // joueur. Les confondre dans un message unique le laisse sans solution —

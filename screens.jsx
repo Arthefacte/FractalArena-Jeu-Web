@@ -1330,14 +1330,16 @@ function DepositModal({ onClose }) {
         toast(I18N.t("WL_DEP_OK", data.credited), "good");
         onClose();
       } else if (data.status === "already_used") {
-        toast("Ce TXID a déjà été utilisé", "bad");
+        toast(I18N.t("WL_DEP_ALREADY_USED"), "bad");
       } else if (data.status === "wrong_recipient") {
-        toast("Transaction non destinée au Reward Pool", "bad");
+        toast(I18N.t("WL_DEP_WRONG_RECIPIENT"), "bad");
+      } else if (data.status === "sender_unverified") {
+        toast(I18N.t("WL_DEP_SENDER_UNVERIFIED"), "bad");
       } else {
-        toast(data.error || "Dépôt non détecté on-chain", "bad");
+        toast(I18N.t("WL_DEP_NOT_FOUND"), "bad");
       }
     } catch (e) {
-      toast("Erreur réseau — réessaie", "bad");
+      toast(I18N.t("WL_NET_ERROR"), "bad");
     } finally {
       setBusy(false);
     }
@@ -1399,14 +1401,14 @@ function WithdrawModal({ onClose }) {
         onClose();
       } else if (data.status === "cooldown") {
         actions.deposit(n);
-        setCdMsg(`Un seul retrait toutes les 24 h — prochain disponible dans ${data.hours_left} h.`);
+        setCdMsg(I18N.t("WL_WD_COOLDOWN", data.hours_left));
       } else {
         actions.deposit(n);
-        toast(data.error || "Erreur retrait serveur", "bad");
+        toast(I18N.t("WL_WD_ERROR"), "bad");
       }
     } catch (e) {
       actions.deposit(n);
-      toast("Erreur réseau — retrait annulé", "bad");
+      toast(I18N.t("WL_NET_ERROR"), "bad");
     } finally {
       setBusy(false);
     }
