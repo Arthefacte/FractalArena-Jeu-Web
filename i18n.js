@@ -94,7 +94,7 @@
     LB_DELTA_UP: { FR: "Monté de %d place(s)", EN: "Up %d place(s)", ZH: "上升 %d 名" },
     LB_DELTA_DOWN: { FR: "Descendu de %d place(s)", EN: "Down %d place(s)", ZH: "下降 %d 名" },
     LB_DELTA_STABLE: { FR: "Rang stable", EN: "Rank unchanged", ZH: "排名无变化" },
-    LB_DELTA_NEW: { FR: "Nouveau dans le top 100", EN: "New in the top 100", ZH: "新进入前 100 名" },
+    LB_DELTA_NEW: { FR: "Nouveau joueur", EN: "New player", ZH: "新玩家" },
 
     // --- Liquidity Guardian (badge LP + titres, seuils 50k / 500k VERROUILLÉS) ---
     LP_TIER_G1: { FR: "Market Maker", EN: "Market Maker", ZH: "做市商" },

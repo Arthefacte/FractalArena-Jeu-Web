@@ -264,7 +264,7 @@ function Leaderboard() {
     }
   }, /*#__PURE__*/React.createElement("span", {
     className: "lb-rank"
-  }, "#", row.rank, row.rank <= 100 && (row.delta == null ? /*#__PURE__*/React.createElement("span", {
+  }, "#", row.rank, row.delta == null ? /*#__PURE__*/React.createElement("span", {
     className: "lb-delta new",
     title: I18N.t("LB_DELTA_NEW")
   }, "\uD83C\uDD95") : row.delta > 0 ? /*#__PURE__*/React.createElement("span", {
@@ -276,7 +276,7 @@ function Leaderboard() {
   }, "\u25BC", -row.delta) : /*#__PURE__*/React.createElement("span", {
     className: "lb-delta stable",
     title: I18N.t("LB_DELTA_STABLE")
-  }, "\u2550"))), /*#__PURE__*/React.createElement("span", {
+  }, "\u2550")), /*#__PURE__*/React.createElement("span", {
     className: "lb-name lb-name-flex"
   }, row.live && /*#__PURE__*/React.createElement("span", {
     title: I18N.t("LB_LIVE_HINT"),

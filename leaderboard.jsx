@@ -148,11 +148,11 @@ function Leaderboard() {
                 background: flash.has(LU.rowKey(row)) ? "rgba(0,240,255,0.14)" : undefined }}>
               <span className="lb-rank">
                 #{row.rank}
-                {/* Mouvement vs le snapshot quotidien (delta serveur) : hors du
-                    top 100 le snapshot ne couvre pas la ligne → pas d'indicateur.
-                    delta null = absent du snapshot d'hier = nouveau dans le top.
+                {/* Mouvement vs le snapshot quotidien (delta serveur) : tous les
+                    rangs sont couverts (le snapshot stocke tout le monde depuis le
+                    05/09). delta null = absent du snapshot d'hier = nouveau compte.
                     ▲/▼ sont des glyphes texte recolorables en CSS, pas des emojis. */}
-                {row.rank <= 100 && (
+                {
                   row.delta == null
                     ? <span className="lb-delta new" title={I18N.t("LB_DELTA_NEW")}>🆕</span>
                     : row.delta > 0
@@ -160,7 +160,7 @@ function Leaderboard() {
                       : row.delta < 0
                         ? <span className="lb-delta down" title={I18N.t("LB_DELTA_DOWN", -row.delta)}>▼{-row.delta}</span>
                         : <span className="lb-delta stable" title={I18N.t("LB_DELTA_STABLE")}>═</span>
-                )}
+                }
               </span>
               {/* lb-name-flex : cellule en flex, pastille/« il y a X »/badge sont
                   des items fixes — seul le nom (MarqueeName) défile au survol. */}
