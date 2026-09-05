@@ -13,7 +13,7 @@
            opacity:0; pointer-events:none; z-index:20; }
   /* image révélée (stand-in du Totem) */
   #reveal { position:fixed; inset:0; display:grid; place-items:center; opacity:0; pointer-events:none; z-index:15; transition:opacity .9s ease, transform .9s ease; transform:scale(.85); }
-  #reveal img { max-width:min(80vw,80vh); max-height:min(80vw,80vh); border-radius:14px;
+  #reveal img { max-width:min(42vw,42vh); max-height:min(42vw,42vh); border-radius:14px;
                 box-shadow:0 0 40px rgba(0,240,255,.35), 0 0 80px rgba(247,147,26,.2); }
   #ui { position:fixed; left:0; right:0; bottom:18px; text-align:center; z-index:30; color:#9fb4d8; font-size:12px; letter-spacing:1px; }
   #ui button { font-family:monospace; background:#0a1326; color:#cfe1ff; border:1px solid #25406e; padding:9px 16px; border-radius:8px; cursor:pointer; letter-spacing:1px; }
@@ -25,12 +25,12 @@
 <body>
 <div id="stage"></div>
 <div id="flash"></div>
-<div id="reveal"><img id="revealImg" src="assets/HASHBYTE.png" alt="" /></div>
+<div id="reveal"><img id="revealImg" src="assets/HASHBYTE.webp" alt="" /></div>
 <div id="err"></div>
 <div id="ui">
   <button id="replay">▶ Rejouer l'invocation</button>
   <label style="margin-left:14px;"><input type="checkbox" id="inspect" /> inspecter (souris)</label>
-  <div id="hint">médaillon = ton logo3d.glb · image révélée = stand-in (HASHBYTE.png)</div>
+  <div id="hint">médaillon = ton jeton.glb · image révélée = stand-in (HASHBYTE.webp)</div>
 </div>
 
 <script type="importmap">
@@ -47,6 +47,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 
@@ -71,17 +72,14 @@ scene.background = new THREE.Color(0x000000);
 const camera = new THREE.PerspectiveCamera(38, innerWidth/innerHeight, 0.1, 100);
 camera.position.set(0, 0, 6);
 
-// environnement pour reflets métalliques (PBR)
 const pmrem = new THREE.PMREMGenerator(renderer);
 scene.environment = pmrem.fromScene(new RoomEnvironment(renderer), 0.04).texture;
 
-// éclairage teinté orange/cyan (identité du logo)
 scene.add(new THREE.AmbientLight(0x404858, 0.6));
 const key = new THREE.DirectionalLight(0xffffff, 2.2); key.position.set(3,4,5); scene.add(key);
 const orange = new THREE.PointLight(0xff7a1a, 60, 30); orange.position.set(-4,-1,3); scene.add(orange);
 const cyan = new THREE.PointLight(0x00f0ff, 60, 30); cyan.position.set(4,2,2); scene.add(cyan);
 
-// groupe qui tourne (recto-verso = 2 instances dos-à-dos)
 const pivot = new THREE.Group();
 scene.add(pivot);
 
@@ -89,14 +87,30 @@ const controls = new OrbitControls(camera, renderer.domElement);
 controls.enabled = false; controls.enablePan = false;
 document.getElementById('inspect').addEventListener('change', e => { controls.enabled = e.target.checked; });
 
-// post-process bloom (fait rayonner l'énergie orange/cyan)
+// aberration chromatique maison (vendor/minified : pas de RGBShiftShader partout)
+const ChromaticAberrationShader = {
+  uniforms: { tDiffuse: { value: null }, amount: { value: 0.0 }, uCenter: { value: new THREE.Vector2(0.5, 0.5) } },
+  vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+  fragmentShader: `
+    uniform sampler2D tDiffuse; uniform float amount; uniform vec2 uCenter; varying vec2 vUv;
+    void main() {
+      vec2 dir = vUv - uCenter; vec2 off = dir * amount;
+      float r = texture2D(tDiffuse, vUv - off).r;
+      float g = texture2D(tDiffuse, vUv).g;
+      float b = texture2D(tDiffuse, vUv + off).b;
+      gl_FragColor = vec4(r, g, b, 1.0);
+    }`,
+};
+
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
 const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.7, 0.6, 0.85);
 composer.addPass(bloom);
+const caPass = new ShaderPass(ChromaticAberrationShader);
+composer.addPass(caPass);
 composer.addPass(new OutputPass());
 
-// ----- étincelles (volent autour du médaillon, intensité pilotée par l'énergie) -----
+// étincelles en tourbillon
 const SPARK_N = 240;
 const sparkPos = new Float32Array(SPARK_N * 3);
 const sparkCol = new Float32Array(SPARK_N * 3);
@@ -118,25 +132,28 @@ const sparkGeo = new THREE.BufferGeometry();
 sparkGeo.setAttribute('position', new THREE.BufferAttribute(sparkPos, 3));
 sparkGeo.setAttribute('color', new THREE.BufferAttribute(sparkCol, 3));
 const sparkMat = new THREE.PointsMaterial({ size: 0.04, vertexColors: true, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false });
-const sparks = new THREE.Points(sparkGeo, sparkMat); scene.add(sparks);
-function updateSparks(dt){
-  for (let i = 0; i < SPARK_N; i++){
-    sparkPos[i*3]   += sparkVel[i].x * dt;
-    sparkPos[i*3+1] += sparkVel[i].y * dt;
-    sparkPos[i*3+2] += sparkVel[i].z * dt;
-    const d = Math.hypot(sparkPos[i*3], sparkPos[i*3+1], sparkPos[i*3+2]);
-    if (d > 2.6) seedSpark(i);
-  }
-  sparkGeo.attributes.position.needsUpdate = true;
+scene.add(new THREE.Points(sparkGeo, sparkMat));
+
+// onde de choc : anneau qui éclate au flash
+const ringGeo = new THREE.TorusGeometry(1, 0.02, 16, 80);
+const ringMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false });
+const ring = new THREE.Mesh(ringGeo, ringMat); ring.renderOrder = 999; scene.add(ring);
+
+let energy = 0;
+function applyEnergy(e){
+  energy = e;
+  bloom.strength   = 0.10 + 2.6 * e;
+  orange.intensity = 5 + 70 * e;
+  cyan.intensity   = 5 + 70 * e;
+  sparkMat.opacity = Math.min(1, e * 1.25);
+  sparkMat.size    = 0.03 + 0.05 * e;
+  caPass.uniforms.amount.value = e > 0.3 ? (e - 0.3) * 0.008 : 0;
 }
 
 let model = null;
-const emissiveMats = [];   // énergie orange/cyan modulée en crescendo
 const loader = new GLTFLoader();
-loader.load('assets/logo3d.glb', (gltf) => {
-  const root = gltf.scene;
-  // MATÉRIAU 100% D'ORIGINE (Meshy) — on ne touche à RIEN (ni metalness, ni roughness, ni brillance/émissif).
-  // normaliser taille + centrer
+loader.load('assets/jeton.glb', (gltf) => {
+  const root = gltf.scene; // MATÉRIAU 100% D'ORIGINE (Meshy)
   const box = new THREE.Box3().setFromObject(root);
   const size = box.getSize(new THREE.Vector3());
   const center = box.getCenter(new THREE.Vector3());
@@ -144,79 +161,86 @@ loader.load('assets/logo3d.glb', (gltf) => {
   const scale = 2.6 / maxDim;
   root.position.sub(center);
   const wrap = new THREE.Group(); wrap.add(root); wrap.scale.setScalar(scale);
-
-  // recto-verso = 2 instances dos-à-dos, DÉCALÉES sur Z d'une demi-profondeur
-  // (pas d'interpénétration) → le « FA » en relief sur les deux faces de la pièce.
-  const depth = (size.z * scale) || 0.2;
-  const front = wrap;
-  const back = wrap.clone(true);
-  front.position.z =  depth / 2;
-  back.position.z  = -depth / 2;
-  back.rotation.y  = Math.PI;
-  pivot.add(front); pivot.add(back);
+  pivot.add(wrap);
   model = pivot;
   play();
 }, undefined, (e) => showErr('chargement GLB : ' + (e?.message || e)));
 
-// ---- timeline cinématique ----
-let t0 = null, raf = null, phase = 'idle', windT0 = 0, spinT0 = 0, lastNow = 0;
-const INTRO_DUR = 1.5;  // logo brut émerge du noir + zoom caméra
-const WIND_DUR  = 3.8;  // 2 allers-retours lents
-const WIND_AMP  = 1.05; // amplitude du balancement (rad)
-const SPIN_DUR  = 2.8;  // accélération jusqu'au flash
-const CAM_FAR = 9.5, CAM_NEAR = 5.6;
+let t0 = null, raf = null, phase = 'idle', windT0 = 0, spinT0 = 0, lastNow = 0, ringT0 = 0;
+const INTRO_DUR = 1.5, WIND_DUR = 4.5, WIND_TURNS = 3, SPIN_DUR = 2.8, CAM_FAR = 9.5, CAM_NEAR = 5.6;
 const easeOut = x => 1 - Math.pow(1 - x, 3);
 
-// Illumination en crescendo : e ∈ [~0.04 .. 1]. Pilote bloom + lumières + émissif + étincelles.
-function applyEnergy(e){
-  bloom.strength   = 0.10 + 2.6 * e;
-  orange.intensity = 5 + 70 * e;
-  cyan.intensity   = 5 + 70 * e;
-  for (const { m, base } of emissiveMats) m.emissiveIntensity = base * (0.10 + 0.95 * e);
-  sparkMat.opacity = Math.min(1, e * 1.25);
-  sparkMat.size    = 0.03 + 0.05 * e;
-}
 function setCam(z){ if (!controls.enabled){ camera.position.set(0, 0, z); camera.lookAt(0, 0, 0); } }
 function play(){
   flashEl.style.transition = 'none'; flashEl.style.opacity = 0;
   revealEl.style.opacity = 0; revealEl.style.transform = 'scale(.85)';
   pivot.rotation.y = 0; renderer.toneMappingExposure = 0.08; setCam(CAM_FAR);
+  ringT0 = 0; ringMat.opacity = 0; ring.scale.setScalar(0.2);
   applyEnergy(0.04); t0 = performance.now(); lastNow = t0; phase = 'intro';
+}
+function triggerFlash(){
+  flashEl.style.transition = 'opacity .18s ease-out';
+  flashEl.style.opacity = 1;
+  ring.scale.setScalar(0.2); ringMat.opacity = 0.9; ringT0 = performance.now();
+  for (let i = 0; i < SPARK_N; i++) seedSpark(i); // bouffée d'étincelles
+  setTimeout(() => {
+    revealEl.style.opacity = 1; revealEl.style.transform = 'scale(1)';
+    flashEl.style.transition = 'opacity .8s ease-in'; flashEl.style.opacity = 0;
+    bloom.strength = 0.7; phase = 'settle';
+  }, 200);
 }
 function frame(now){
   raf = requestAnimationFrame(frame);
   const dt = Math.min(0.05, (now - (lastNow || now)) / 1000); lastNow = now;
   controls.update();
-  updateSparks(dt);
+  // étincelles : dérive + tourbillon + aspiration (scalés par l'énergie)
+  for (let i = 0; i < SPARK_N; i++){
+    const ix = i * 3;
+    sparkPos[ix]   += sparkVel[i].x * dt;
+    sparkPos[ix+1] += sparkVel[i].y * dt;
+    sparkPos[ix+2] += sparkVel[i].z * dt;
+    const sx = sparkPos[ix], sz = sparkPos[ix+2];
+    const rXZ = Math.hypot(sx, sz) + 1e-4;
+    const swirl = (0.5 + 3.5 * energy) * dt;
+    sparkPos[ix]   += (-sz / rXZ) * swirl;
+    sparkPos[ix+2] += ( sx / rXZ) * swirl;
+    const pull = 1.2 * energy * dt;
+    sparkPos[ix]   -= (sx / rXZ) * pull;
+    sparkPos[ix+2] -= (sz / rXZ) * pull;
+    if (Math.hypot(sparkPos[ix], sparkPos[ix+1], sparkPos[ix+2]) > 2.6) seedSpark(i);
+  }
+  sparkGeo.attributes.position.needsUpdate = true;
+  // onde de choc : expansion + fondu
+  if (ringT0) {
+    const t = (now - ringT0) / 1000;
+    if (t >= 0.7) { ringT0 = 0; ringMat.opacity = 0; }
+    else { ring.scale.setScalar(0.2 + t * 6); ringMat.opacity = 0.9 * (1 - t / 0.7); }
+  }
   if (model && phase === 'intro'){
-    // le logo brut émerge du noir (expo montante) + la caméra zoome ; commence à tourner tout doucement
     const k = Math.min((now - t0) / 1000 / INTRO_DUR, 1), e = easeOut(k);
     setCam(CAM_FAR + (CAM_NEAR - CAM_FAR) * e);
     renderer.toneMappingExposure = 0.08 + (1.15 - 0.08) * e;
     pivot.rotation.y = 0.15 * e;
-    applyEnergy(0.04 + 0.04 * e);                     // logo BRUT, à peine éclairé
+    applyEnergy(0.04 + 0.04 * e);
     if (k >= 1){ phase = 'wind'; windT0 = now; }
   } else if (model && phase === 'wind'){
-    const t = (now - windT0) / 1000;
-    pivot.rotation.y = 0.15 + WIND_AMP * Math.sin((t / WIND_DUR) * Math.PI * 2 * 2);
-    applyEnergy(0.08 + 0.20 * (t / WIND_DUR));        // commence à s'illuminer
+    const t = (now - windT0) / 1000, k = Math.min(t / WIND_DUR, 1);
+    pivot.rotation.y = 0.15 + WIND_TURNS * Math.PI * 2 * k; // quelques tours complets avant l'accélération
+    if (!controls.enabled) { camera.position.x = Math.sin((t / WIND_DUR) * Math.PI * 2) * 0.5; camera.position.y = Math.sin((t / WIND_DUR) * Math.PI * 4) * 0.25; camera.lookAt(0,0,0); }
+    applyEnergy(0.08 + 0.20 * (t / WIND_DUR));
     if (t >= WIND_DUR){ phase = 'spin'; spinT0 = now; }
   } else if (model && phase === 'spin'){
     const t = (now - spinT0) / 1000, k = Math.min(t / SPIN_DUR, 1);
-    pivot.rotation.y += (0.8 + 24 * (k*k)) * dt;      // accélère
-    applyEnergy(0.28 + 0.72 * (k*k));                 // crescendo jusqu'au pic
+    pivot.rotation.y += (WIND_TURNS * Math.PI * 2 / WIND_DUR + 20 * (k*k)) * dt; // continue la vitesse du wind puis accélère
+    if (!controls.enabled) { camera.position.x = (Math.random()-0.5) * 0.06 * (k*k); camera.position.y = (Math.random()-0.5) * 0.06 * (k*k); camera.position.z = CAM_NEAR - 0.6 * k; camera.lookAt(0,0,0); }
+    applyEnergy(0.28 + 0.72 * (k*k));
     if (t >= SPIN_DUR){ phase = 'flash'; triggerFlash(); }
+  } else if (model && phase === 'settle'){
+    pivot.rotation.y += (WIND_TURNS * Math.PI * 2 / WIND_DUR) * dt; // retour à la vitesse lente de début
+    if (!controls.enabled) { camera.position.x += (0 - camera.position.x) * 0.08; camera.position.y += (0 - camera.position.y) * 0.08; camera.position.z += (CAM_NEAR - camera.position.z) * 0.06; camera.lookAt(0,0,0); }
+    applyEnergy(0.12);
   }
   composer.render();
-}
-function triggerFlash(){
-  flashEl.style.transition = 'opacity .18s ease-out';
-  flashEl.style.opacity = 1;
-  setTimeout(() => {                 // au pic du flash : reveal de l'image + retombée
-    revealEl.style.opacity = 1; revealEl.style.transform = 'scale(1)';
-    flashEl.style.transition = 'opacity .8s ease-in'; flashEl.style.opacity = 0;
-    bloom.strength = 0.7; phase = 'done';
-  }, 200);
 }
 requestAnimationFrame(frame);
 
