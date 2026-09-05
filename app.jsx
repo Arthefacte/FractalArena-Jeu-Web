@@ -1186,6 +1186,20 @@ function App() {
       });
       // record-pool / record-airdrop / record-burn supprimés : le serveur route les pools dans POST /fight
       setG((st) => ({ ...st, serverFight: null }));
+      // L'auto-désarmement à 0 charge se fait CÔTÉ SERVEUR (fight.js), mais /fight ne
+      // renvoie que les charges (pas le flag armed) → on relit /boosts/status pour ne
+      // pas laisser la pastille Fosse / le switch Boosts affichés "armés" après la
+      // consommation de la dernière charge (sinon l'UI reste armée jusqu'au rechargement).
+      const addr = gRef.current.wallet;
+      if (addr) {
+        fetch(`${API_URL}/boosts/status/${addr}`)
+          .then((r) => r.json())
+          .then((bd) => {
+            const bm = mapBoostStatus(bd);
+            setG((st) => ({ ...st, boosts: bm.charges, boostsArmed: bm.armed }));
+          })
+          .catch(() => {});
+      }
       // Le réveil des pools retenu pendant le replay part maintenant que le combat
       // est réglé — seulement si une mise a réellement nourri les pools (défaite
       // payante) ; une victoire n'y verse rien, inutile de relire /buyback/status.
