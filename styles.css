@@ -862,6 +862,24 @@ input { font-family: var(--font-mono); }
 .lb-row.top2 { border-color: #C0CCDA; }
 .lb-row.top3 { border-color: #CD7F32; }
 .lb-row.mine { border-color: var(--elec); background: rgba(0,240,255,.06); }
+/* Mouvement de rang vs le snapshot quotidien (▲/▼/═/🆕, top 100 seulement).
+   Apparition douce à chaque (re)rendu de l'indicateur — subtile, cohérente avec
+   le flash live des rangées, rien d'ostentatoire. */
+.lb-delta {
+  font-size: 10px; margin-left: 4px; font-weight: 700; line-height: 1;
+  display: inline-block; animation: lb-delta-in .3s ease-out;
+}
+.lb-delta.up    { color: var(--success); }
+.lb-delta.down  { color: var(--alert); }
+.lb-delta.stable{ color: var(--text-faint); }
+.lb-delta.new   { color: var(--gold); }
+@keyframes lb-delta-in {
+  from { opacity: 0; transform: translateY(2px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lb-delta { animation: none; }
+}
 
 /* ============ Quêtes quotidiennes ============ */
 .q-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
