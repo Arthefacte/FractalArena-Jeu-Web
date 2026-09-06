@@ -163,6 +163,7 @@ function serverToState(save, addr, s) {
     // disparaître au rechargement pour un joueur ayant déjà tout fini.
     campaignTitles: D.deriveCampaignTitles(nestProgress(save.campaign_progress)),
     campaignFreeTs: Number(save.campaign_free_ts) || 0,
+    campaignWeekly: save.campaign_weekly || {},
     session: {
       wins: save.session_wins ?? 0,
       losses: save.session_losses ?? 0,
@@ -261,6 +262,8 @@ function freshState() {
     // Progression Campagne PvE (locale uniquement, persistée dans localStorage).
     // campaignProgress : { [worldIndex]: { stars: number[10] } }
     campaignProgress: {},
+    campaignWeekly: {},
+    // { "w-9": lastClearMs } — défi hebdo des boss (serveur)
     campaignTitles: [],
     // clés i18n des titres débloqués (ex "CAMP_W1_TITLE")
     campaignFreeTs: 0,
@@ -3879,6 +3882,7 @@ function App() {
           ticketsGold: data.tickets_gold ?? st.ticketsGold,
           campaignProgress: nested,
           campaignFreeTs: data.campaign_free_ts ?? st.campaignFreeTs,
+          campaignWeekly: data.campaign_weekly ?? st.campaignWeekly,
           campaignTitles: titles
         }));
         return {

@@ -59,6 +59,50 @@ function campFreeCompact(ms) {
   return `${sec}s`;
 }
 
+// Cooldown hebdo → durée grossière lisible « 2j » / « 12h » (arrondi au
+// supérieur : on n'annonce jamais « dispo » avant le serveur). Plancher 1h.
+function campWeeklyDur(ms) {
+  const h = Math.max(1, Math.ceil(ms / 3600000));
+  if (h >= 24) return I18N.t("CAMP_WEEKLY_DAYS", Math.ceil(h / 24));
+  return I18N.t("CAMP_WEEKLY_HOURS", h);
+}
+
+// Badge « défi hebdo » d'une tuile de boss déjà clear — MIROIR d'affichage
+// de D.bossWeeklyState (le serveur tranche). Aucune logique de combat ici.
+function WeeklyBadge({
+  state
+}) {
+  const ready = state.available;
+  const label = ready ? I18N.t("CAMP_WEEKLY_READY") : I18N.t("CAMP_WEEKLY_COOLDOWN", campWeeklyDur(state.remainingMs));
+  const title = I18N.t("CAMP_WEEKLY_REWARD") + " · " + I18N.t("CAMP_WEEKLY_HINT");
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 6
+    },
+    title: title
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "mono",
+    style: {
+      display: "inline-block",
+      fontSize: 9,
+      fontWeight: 700,
+      letterSpacing: 0.5,
+      padding: "2px 7px",
+      borderRadius: 999,
+      color: ready ? "var(--elec)" : "var(--text-dim)",
+      border: "1px solid " + (ready ? "var(--elec)" : "var(--line)"),
+      background: ready ? "rgba(0,240,255,0.10)" : "transparent"
+    }
+  }, I18N.t("CAMP_WEEKLY_BADGE"), " \u2014 ", label), /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      fontSize: 9,
+      color: "var(--text-faint)",
+      marginTop: 3
+    }
+  }, I18N.t("CAMP_WEEKLY_REWARD")));
+}
+
 // ---- petits visuels ----
 function Stars({
   n,
@@ -1043,6 +1087,14 @@ function FloorSelect({
   const worldName = I18N.t("CAMP_W" + (worldIndex + 1) + "_NAME");
   const total = stars.reduce((a, b) => a + b, 0);
   const world = D.WORLDS[worldIndex];
+  // Défi hebdo du boss : état SERVI par le serveur (g.campaignWeekly, forme
+  // plate { "w-9": lastClearMs }). `now` lu une fois par rendu — pas de
+  // ticker, le re-render au rechargement suffit.
+  const now = Date.now();
+  const bossKey = worldIndex + "-" + D.BOSS_FLOOR;
+  const weekly = D.bossWeeklyState({
+    [bossKey]: stars[D.BOSS_FLOOR] || 0
+  }, g.campaignWeekly || {}, worldIndex, now);
   return /*#__PURE__*/React.createElement("div", {
     className: "container"
   }, /*#__PURE__*/React.createElement("div", {
@@ -1134,7 +1186,9 @@ function FloorSelect({
       }
     }, /*#__PURE__*/React.createElement(ConstraintChip, {
       c: constraint
-    })), isBoss && unlocked && /*#__PURE__*/React.createElement("div", {
+    })), isBoss && weekly.cleared && /*#__PURE__*/React.createElement(WeeklyBadge, {
+      state: weekly
+    }), isBoss && unlocked && /*#__PURE__*/React.createElement("div", {
       style: {
         position: "absolute",
         inset: 0,
