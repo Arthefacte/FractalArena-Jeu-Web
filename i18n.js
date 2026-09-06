@@ -837,6 +837,7 @@
     CAMP_WEEKLY_COOLDOWN: { FR: "Reviens dans %s", EN: "Back in %s", ZH: "%s 后可挑战" },
     CAMP_WEEKLY_REWARD: { FR: "50 % FA + 1 ticket Argent", EN: "50% FA + 1 Silver ticket", ZH: "50% FA + 1 银票" },
     CAMP_WEEKLY_HINT: { FR: "Défi proportionnel à ton équipe", EN: "Challenge scaled to your team", ZH: "难度随队伍提升" },
+    CAMP_WEEKLY_CRUMB: { FR: "+%d FA", EN: "+%d FA", ZH: "+%d FA" },
     CAMP_WEEKLY_DAYS: { FR: "%dj", EN: "%dd", ZH: "%d天" },
     CAMP_WEEKLY_HOURS: { FR: "%dh", EN: "%dh", ZH: "%d小时" },
     CAMP_REWARD_LOCKED: { FR: "+%d FRACTALARENA 🔒", EN: "+%d FRACTALARENA 🔒", ZH: "+%d FRACTALARENA 🔒" },

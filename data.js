@@ -26,7 +26,7 @@ window.FA_API_URL = (typeof location !== "undefined" &&
 // l'installation alors que la prod servait le nouveau depuis une heure.
 // Ne sert plus que de REPLI : un asset absent du manifeste doit rester cache-busté
 // plutôt que servi indéfiniment par le CDN.
-window.FA_ASSET_V = "253";
+window.FA_ASSET_V = "254";
 
 // L'URL porte l'empreinte du CONTENU du fichier (asset-hashes.js, généré au build),
 // et non la version du jeu. Versionner par la version du jeu — ce que faisait la
@@ -597,21 +597,23 @@ window.FA_ASSET_URL = function (chemin) {
   }
 
   // ============================================================
-  //  Défi hebdo des boss — MIROIR CLIENT de campaign.js (serveur).
-  //  Le serveur tranche le re-clear (cooldown, récompense créditée) ; le
-  //  client ne fait qu'AFFICHER « dispo » / « reviens dans X ». Mêmes
-  //  constantes, mêmes conditions, sinon on annonce « dispo » là où le
-  //  serveur refuse. PUR : `now` passé en paramètre, aucune horloge interne.
+  //  Défi hebdo — TOUS les étages clear — MIROIR CLIENT de campaign.js
+  //  (serveur). Le serveur tranche le re-clear (cooldown, récompense
+  //  créditée) ; le client ne fait qu'AFFICHER « dispo » / « reviens dans
+  //  X ». Mêmes constantes, mêmes conditions, sinon on annonce « dispo » là
+  //  où le serveur refuse. PUR : `now` passé en paramètre, aucune horloge
+  //  interne.
   //  - progress / weekly sont la forme PLATE servie par le serveur
-  //    ({ "w-f": stars } / { "w-9": lastClearMs }).
-  //  - Un boss est « défi hebdo » ssi progress["w-9"] > 0 (déjà clear).
+  //    ({ "w-f": stars } / { "w-f": lastClearMs }).
+  //  - Un étage f est « défi hebdo » ssi progress["w-f"] > 0 (déjà clear).
+  //  - Cooldown 7 j PAR étage (clé "w-f").
   // ============================================================
   const WEEKLY_COOLDOWN_MS = 7 * 24 * 3600 * 1000;
   // Aperçu de récompense (le serveur fait foi sur le montant crédité) :
-  // 50 % du locked FA du boss + 1 ticket Argent, jamais d'Or.
+  // boss = 50 % du locked FA du boss + 1 ticket Argent, jamais d'Or.
   const WEEKLY_REWARD = { faRatio: 0.5, silver: 1, gold: 0 };
-  function bossWeeklyState(progress, weekly, w, now) {
-    const key = w + "-" + BOSS_FLOOR;
+  function floorWeeklyState(progress, weekly, w, f, now) {
+    const key = w + "-" + f;
     const cleared = Number((progress || {})[key] || 0) > 0;
     if (!cleared) return { cleared: false, available: false, remainingMs: 0 };
     const last = Number((weekly || {})[key] || 0);
@@ -621,6 +623,21 @@ window.FA_ASSET_URL = function (chemin) {
       available: elapsed >= WEEKLY_COOLDOWN_MS,
       remainingMs: Math.max(0, WEEKLY_COOLDOWN_MS - elapsed),
     };
+  }
+  // Rétro-compat : ancien point d'entrée limité au boss.
+  function bossWeeklyState(progress, weekly, w, now) {
+    return floorWeeklyState(progress, weekly, w, BOSS_FLOOR, now);
+  }
+  // Aperçu PUR de la récompense du re-clear hebdo (miroir serveur) :
+  //  - boss (f = BOSS_FLOOR) : 50 % du locked FA (116 → 58) + 1 Argent,
+  //    difficulté power-scalée → hint « proportionnel à ton équipe ».
+  //  - non-boss : miette floor((12 + 4f) / 4) FA (3..11), pas de ticket,
+  //    difficulté fixe → pas de hint.
+  function weeklyRewardPreview(w, f) {
+    if (f === BOSS_FLOOR) {
+      return { fa: Math.floor(campReward(BOSS_FLOOR, true) * WEEKLY_REWARD.faRatio), silver: WEEKLY_REWARD.silver, hint: true };
+    }
+    return { fa: Math.floor((12 + 4 * f) / 4), silver: 0, hint: false };
   }
 
   window.FA_DATA = {
@@ -643,6 +660,6 @@ window.FA_ASSET_URL = function (chemin) {
     generatePvEEnemy,
     deriveCampaignTitles,
     CONSTRAINTS, floorConstraint, hash32,
-    WEEKLY_COOLDOWN_MS, WEEKLY_REWARD, bossWeeklyState,
+    WEEKLY_COOLDOWN_MS, WEEKLY_REWARD, floorWeeklyState, bossWeeklyState, weeklyRewardPreview,
   };
 })();

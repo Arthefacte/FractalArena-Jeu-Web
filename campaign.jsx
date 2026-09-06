@@ -47,12 +47,16 @@ function campWeeklyDur(ms) {
   return I18N.t("CAMP_WEEKLY_HOURS", h);
 }
 
-// Badge « défi hebdo » d'une tuile de boss déjà clear — MIROIR d'affichage
-// de D.bossWeeklyState (le serveur tranche). Aucune logique de combat ici.
-function WeeklyBadge({ state }) {
+// Badge « défi hebdo » d'une tuile d'étage déjà clear (boss OU non-boss) —
+// MIROIR d'affichage de D.floorWeeklyState (le serveur tranche). `preview`
+// = D.weeklyRewardPreview(w, f) : boss → « 50 % FA + 1 Argent » + mention
+// « proportionnel à ton équipe » ; non-boss → miette « +X FA », sans mention.
+// Aucune logique de combat ici.
+function WeeklyBadge({ state, preview }) {
   const ready = state.available;
   const label = ready ? I18N.t("CAMP_WEEKLY_READY") : I18N.t("CAMP_WEEKLY_COOLDOWN", campWeeklyDur(state.remainingMs));
-  const title = I18N.t("CAMP_WEEKLY_REWARD") + " · " + I18N.t("CAMP_WEEKLY_HINT");
+  const reward = preview.hint ? I18N.t("CAMP_WEEKLY_REWARD") : I18N.t("CAMP_WEEKLY_CRUMB", preview.fa);
+  const title = preview.hint ? reward + " · " + I18N.t("CAMP_WEEKLY_HINT") : reward;
   return (
     <div style={{ marginTop: 6 }} title={title}>
       <span className="mono" style={{
@@ -64,7 +68,7 @@ function WeeklyBadge({ state }) {
       }}>
         {I18N.t("CAMP_WEEKLY_BADGE")} — {label}
       </span>
-      <div className="mono" style={{ fontSize: 9, color: "var(--text-faint)", marginTop: 3 }}>{I18N.t("CAMP_WEEKLY_REWARD")}</div>
+      <div className="mono" style={{ fontSize: 9, color: "var(--text-faint)", marginTop: 3 }}>{reward}</div>
     </div>
   );
 }
@@ -563,12 +567,13 @@ function FloorSelect({ worldIndex, onBack, onPickFloor }) {
   const worldName = I18N.t("CAMP_W" + (worldIndex + 1) + "_NAME");
   const total = stars.reduce((a, b) => a + b, 0);
   const world = D.WORLDS[worldIndex];
-  // Défi hebdo du boss : état SERVI par le serveur (g.campaignWeekly, forme
-  // plate { "w-9": lastClearMs }). `now` lu une fois par rendu — pas de
-  // ticker, le re-render au rechargement suffit.
+  // Défi hebdo de TOUS les étages clear : état SERVI par le serveur
+  // (g.campaignWeekly, forme plate { "w-f": lastClearMs }). `now` lu une
+  // fois par rendu — pas de ticker, le re-render au rechargement suffit.
   const now = Date.now();
-  const bossKey = worldIndex + "-" + D.BOSS_FLOOR;
-  const weekly = D.bossWeeklyState({ [bossKey]: stars[D.BOSS_FLOOR] || 0 }, g.campaignWeekly || {}, worldIndex, now);
+  const progressFlat = {};
+  stars.forEach((s, f) => { progressFlat[worldIndex + "-" + f] = s || 0; });
+  const campaignWeekly = g.campaignWeekly || {};
 
   return (
     <div className="container">
@@ -587,6 +592,7 @@ function FloorSelect({ worldIndex, onBack, onPickFloor }) {
           const isBoss = i === D.BOSS_FLOOR;
           const fs = stars[i] || 0;
           const constraint = unlocked ? D.floorConstraint(worldIndex, i) : null;
+          const weekly = D.floorWeeklyState(progressFlat, campaignWeekly, worldIndex, i, now);
           return (
             <button key={i} disabled={!unlocked}
               onClick={() => unlocked && onPickFloor(i)}
@@ -604,7 +610,7 @@ function FloorSelect({ worldIndex, onBack, onPickFloor }) {
                 ? <Stars n={fs} size={16} />
                 : <div className="mono" style={{ fontSize: 16 }}>🔒</div>}
               {constraint && <div style={{ marginTop: 6 }}><ConstraintChip c={constraint} /></div>}
-              {isBoss && weekly.cleared && <WeeklyBadge state={weekly} />}
+              {weekly.cleared && <WeeklyBadge state={weekly} preview={D.weeklyRewardPreview(worldIndex, i)} />}
               {isBoss && unlocked && (
                 <div style={{ position: "absolute", inset: 0, pointerEvents: "none", boxShadow: "inset 0 0 18px rgba(247,147,26,0.18)" }} />
               )}
