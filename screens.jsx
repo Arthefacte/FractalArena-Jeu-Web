@@ -122,7 +122,7 @@ function Team() {
     if (g.championBeastId === b.id) return;
     const r = await actions.championSet(b.id);
     if (r.ok) toast(I18N.t("CHAMP_DESIGNATED_OK", D.displayName(b)), "good");
-    else toast(r.reason || "error", "bad");
+    else toast(I18N.localizeServerError(r.reason), "bad");
   }
 
   function toggle(b) {
@@ -256,7 +256,7 @@ function RelicSlot({ beast }) {
     if (busy) return; setBusy(true);
     const r = await actions.relicEquip(beast.id, relicId);
     setBusy(false); setOpen(false);
-    if (!r || !r.ok) toast((r && r.reason) || "error", "bad");
+    if (!r || !r.ok) toast(I18N.localizeServerError(r && r.reason), "bad");
   }
   return (
     <>
@@ -332,7 +332,7 @@ function CoreSlot({ beast }) {
     if (busy) return; setBusy(true);
     const r = await actions.coreEquip(beast.id, coreId);
     setBusy(false); setOpen(false);
-    if (!r || !r.ok) toast((r && r.reason) || "error", "bad");
+    if (!r || !r.ok) toast(I18N.localizeServerError(r && r.reason), "bad");
   }
   const coreLabel = (inst) => I18N.t("CORE_" + inst.core_id.toUpperCase());
   const coreDesc = (inst) => I18N.t("CORE_" + inst.core_id.toUpperCase() + "_D");
@@ -398,7 +398,7 @@ function TalentSlot({ beast }) {
     setBusy(true);
     const r = await actions.chooseTalent(beast.id, Number(tierKey), talentId);
     setBusy(false);
-    if (!r.ok) { toast(r.reason, "bad"); return; }
+    if (!r.ok) { toast(I18N.localizeServerError(r.reason), "bad"); return; }
     toast(I18N.t("TAL_TITLE") + " ✓", "good");
   };
 
@@ -500,7 +500,7 @@ function ForgeFusion() {
     const r = await actions.fuse(sel[0], sel[1], gold);
     setFuseBusy(false);
     // bete_en_expedition : garde serveur des Expéditions — code traduit, pas brut.
-    if (!r.ok) { toast(r.reason === "bete_en_expedition" ? I18N.t("EXP_ERR_bete_en_expedition") : r.reason, "bad"); return; }
+    if (!r.ok) { toast(I18N.localizeServerError(r.reason), "bad"); return; }
     const showFuseResult = () => {
       if (r.success) {
         if (r.result?.premium) toast(I18N.t("FG_FUSE_PREMIUM", rarityLabel(r.result?.rarity)), "good");
@@ -606,7 +606,7 @@ function ForgeReroll() {
     setRerollBusy(true);
     const r = await actions.reroll(sel, locks);
     setRerollBusy(false);
-    if (!r.ok) { toast(r.reason, "bad"); return; }
+    if (!r.ok) { toast(I18N.localizeServerError(r.reason), "bad"); return; }
     setPreview(r.preview);
   }
   async function onValidate() {
@@ -614,13 +614,13 @@ function ForgeReroll() {
     const r = await actions.rerollConfirm(sel);
     setRerollBusy(false);
     setPreview(null);
-    if (r.ok) toast(I18N.t("FG_REROLL_OK"), "good"); else toast(r.reason, "bad");
+    if (r.ok) toast(I18N.t("FG_REROLL_OK"), "good"); else toast(I18N.localizeServerError(r.reason), "bad");
   }
   async function onAgain() {
     setRerollBusy(true);
     const r = await actions.reroll(sel, locks);
     setRerollBusy(false);
-    if (!r.ok) { toast(r.reason, "bad"); return; }
+    if (!r.ok) { toast(I18N.localizeServerError(r.reason), "bad"); return; }
     setPreview(r.preview);
   }
   async function onKeep() {
@@ -628,7 +628,7 @@ function ForgeReroll() {
     const r = await actions.rerollDiscard(sel);
     setRerollBusy(false);
     setPreview(null);
-    if (r.ok) toast(I18N.t("REROLL_KEPT_OLD", r.refunded || 0), "good"); else toast(r.reason, "bad");
+    if (r.ok) toast(I18N.t("REROLL_KEPT_OLD", r.refunded || 0), "good"); else toast(I18N.localizeServerError(r.reason), "bad");
   }
   return (
     <div>
@@ -681,7 +681,7 @@ function ForgeSummon() {
     setRolling(true); setLast(null);
     const r = await actions.summon();
     setRolling(false);
-    if (!r.ok) { toast(r.reason, "bad"); return; }
+    if (!r.ok) { toast(I18N.localizeServerError(r.reason), "bad"); return; }
     const reveal = () => {
       setLast(r.beast);
       toast(I18N.t("FG_SUMMON_OK", D.displayName(r.beast), I18N.t("FG_RANK") + " " + (r.beast.rank || "C")), "good");
@@ -874,7 +874,7 @@ function ForgeEquipement() {
     setBusy(true);
     const r = await actions.relicFuse(sel.map((x) => x.id));
     setBusy(false);
-    if (!r.ok) { toast(r.reason, "bad"); return; }
+    if (!r.ok) { toast(I18N.localizeServerError(r.reason), "bad"); return; }
     setSel([]); setConfirmDis(false);
     toast(I18N.t("FG_SUMMON_OK", I18N.t("RELIC_" + r.relic.type.toUpperCase()), rarityLabel(r.relic.rarity)), "good");
   }
@@ -886,7 +886,7 @@ function ForgeEquipement() {
     const r = await actions.equipDisenchant(sel[0].id);
     setBusy(false);
     setConfirmDis(false);
-    if (!r.ok) { toast(r.reason, "bad"); return; }
+    if (!r.ok) { toast(I18N.localizeServerError(r.reason), "bad"); return; }
     setSel([]);
     toast(I18N.t("FG_EQ_DIS_OK", r.value != null ? r.value - fee : net), "good");
   }
@@ -896,7 +896,7 @@ function ForgeEquipement() {
     setCoreBusy(true);
     const r = await actions.coreSummon();
     setCoreBusy(false);
-    if (!r.ok) { toast(r.reason, "bad"); return; }
+    if (!r.ok) { toast(I18N.localizeServerError(r.reason), "bad"); return; }
     const name = r.core && r.core.core_id ? I18N.t("CORE_" + r.core.core_id.toUpperCase()) : I18N.t("CORE_SUMMON_TITLE");
     toast(I18N.t("CORE_SUMMON_OK", name), "good");
     if (r.core && r.core.core_id) setCoreLast(r.core); // modale résultat : viewer + rareté
@@ -1004,7 +1004,7 @@ function ForgeReliques() {
     setRolling(true); setLast(null);
     const r = await actions.relicSummon();
     setRolling(false);
-    if (!r.ok) { toast(r.reason, "bad"); return; }
+    if (!r.ok) { toast(I18N.localizeServerError(r.reason), "bad"); return; }
     const revealRelic = () => {
       setLast(r.relic);
       toast(I18N.t("FG_SUMMON_OK", I18N.t("RELIC_" + r.relic.type.toUpperCase()), rarityLabel(r.relic.rarity)), "good");
@@ -1134,7 +1134,7 @@ function Boosts() {
     setBuyingKey(key);
     const r = await actions.buyBoost(key);
     setBuyingKey(null);
-    if (!r.ok) { toast(r.reason, "bad"); return; }
+    if (!r.ok) { toast(I18N.localizeServerError(r.reason), "bad"); return; }
     toast(I18N.t("BO_BOUGHT"), "good");
   }
   async function arm(key) {
@@ -1142,7 +1142,7 @@ function Boosts() {
     setTogglingKey(key);
     const r = await actions.toggleBoost(key, !g.boostsArmed[key]);
     setTogglingKey(null);
-    if (!r.ok) { toast(r.reason, "bad"); return; }
+    if (!r.ok) { toast(I18N.localizeServerError(r.reason), "bad"); return; }
     toast(I18N.t(r.armed ? "BO_ARMED_ON" : "BO_ARMED_OFF"), r.armed ? "good" : "info");
   }
   return (
@@ -1371,7 +1371,7 @@ function WithdrawModal({ onClose }) {
     setCdMsg("");
     const n = parseInt(amt, 10) || 0;
     const r = actions.withdraw(n);            // validation min/max + débit optimiste client
-    if (!r.ok) { toast(r.reason, "bad"); return; }
+    if (!r.ok) { toast(I18N.localizeServerError(r.reason), "bad"); return; }
     setBusy(true);
     try {
       // Step-up : signature UniSat fraîche → token retrait
@@ -1464,7 +1464,7 @@ function Perso() {
     setBusy(true);
     const r = await actions.rename(sel, name.trim().slice(0, 24));
     setBusy(false);
-    if (!r.ok) { toast(r.reason, "bad"); return; }
+    if (!r.ok) { toast(I18N.localizeServerError(r.reason), "bad"); return; }
     toast(I18N.t("PE_RENAMED"), "good"); setName("");
   }
   async function doTitle() {
@@ -1472,7 +1472,7 @@ function Perso() {
     setBusy(true);
     const r = await actions.setTitle(title.trim().slice(0, 32));
     setBusy(false);
-    if (!r.ok) { toast(r.reason, "bad"); return; }
+    if (!r.ok) { toast(I18N.localizeServerError(r.reason), "bad"); return; }
     toast(I18N.t("PE_TITLE_SET"), "good");
   }
   return (

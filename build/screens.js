@@ -195,7 +195,7 @@ function Team() {
   async function designate(b) {
     if (g.championBeastId === b.id) return;
     const r = await actions.championSet(b.id);
-    if (r.ok) toast(I18N.t("CHAMP_DESIGNATED_OK", D.displayName(b)), "good");else toast(r.reason || "error", "bad");
+    if (r.ok) toast(I18N.t("CHAMP_DESIGNATED_OK", D.displayName(b)), "good");else toast(I18N.localizeServerError(r.reason), "bad");
   }
   function toggle(b) {
     if (g.selected.includes(b.id)) actions.toggleSelect(b.id);else if (busyIds.has(b.id)) toast(I18N.t("EXP_ERR_bete_en_expedition"), "bad");else if (selCount >= 3) toast(I18N.t("TEAM_FULL"), "bad");else actions.toggleSelect(b.id);
@@ -438,7 +438,7 @@ function RelicSlot({
     const r = await actions.relicEquip(beast.id, relicId);
     setBusy(false);
     setOpen(false);
-    if (!r || !r.ok) toast(r && r.reason || "error", "bad");
+    if (!r || !r.ok) toast(I18N.localizeServerError(r && r.reason), "bad");
   }
   return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     className: "relic-slot mono",
@@ -600,7 +600,7 @@ function CoreSlot({
     const r = await actions.coreEquip(beast.id, coreId);
     setBusy(false);
     setOpen(false);
-    if (!r || !r.ok) toast(r && r.reason || "error", "bad");
+    if (!r || !r.ok) toast(I18N.localizeServerError(r && r.reason), "bad");
   }
   const coreLabel = inst => I18N.t("CORE_" + inst.core_id.toUpperCase());
   const coreDesc = inst => I18N.t("CORE_" + inst.core_id.toUpperCase() + "_D");
@@ -752,7 +752,7 @@ function TalentSlot({
     const r = await actions.chooseTalent(beast.id, Number(tierKey), talentId);
     setBusy(false);
     if (!r.ok) {
-      toast(r.reason, "bad");
+      toast(I18N.localizeServerError(r.reason), "bad");
       return;
     }
     toast(I18N.t("TAL_TITLE") + " ✓", "good");
@@ -900,7 +900,7 @@ function ForgeFusion() {
     setFuseBusy(false);
     // bete_en_expedition : garde serveur des Expéditions — code traduit, pas brut.
     if (!r.ok) {
-      toast(r.reason === "bete_en_expedition" ? I18N.t("EXP_ERR_bete_en_expedition") : r.reason, "bad");
+      toast(I18N.localizeServerError(r.reason), "bad");
       return;
     }
     const showFuseResult = () => {
@@ -1134,7 +1134,7 @@ function ForgeReroll() {
     const r = await actions.reroll(sel, locks);
     setRerollBusy(false);
     if (!r.ok) {
-      toast(r.reason, "bad");
+      toast(I18N.localizeServerError(r.reason), "bad");
       return;
     }
     setPreview(r.preview);
@@ -1144,14 +1144,14 @@ function ForgeReroll() {
     const r = await actions.rerollConfirm(sel);
     setRerollBusy(false);
     setPreview(null);
-    if (r.ok) toast(I18N.t("FG_REROLL_OK"), "good");else toast(r.reason, "bad");
+    if (r.ok) toast(I18N.t("FG_REROLL_OK"), "good");else toast(I18N.localizeServerError(r.reason), "bad");
   }
   async function onAgain() {
     setRerollBusy(true);
     const r = await actions.reroll(sel, locks);
     setRerollBusy(false);
     if (!r.ok) {
-      toast(r.reason, "bad");
+      toast(I18N.localizeServerError(r.reason), "bad");
       return;
     }
     setPreview(r.preview);
@@ -1161,7 +1161,7 @@ function ForgeReroll() {
     const r = await actions.rerollDiscard(sel);
     setRerollBusy(false);
     setPreview(null);
-    if (r.ok) toast(I18N.t("REROLL_KEPT_OLD", r.refunded || 0), "good");else toast(r.reason, "bad");
+    if (r.ok) toast(I18N.t("REROLL_KEPT_OLD", r.refunded || 0), "good");else toast(I18N.localizeServerError(r.reason), "bad");
   }
   return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "flex between center wrap",
@@ -1262,7 +1262,7 @@ function ForgeSummon() {
     const r = await actions.summon();
     setRolling(false);
     if (!r.ok) {
-      toast(r.reason, "bad");
+      toast(I18N.localizeServerError(r.reason), "bad");
       return;
     }
     const reveal = () => {
@@ -1664,7 +1664,7 @@ function ForgeEquipement() {
     const r = await actions.relicFuse(sel.map(x => x.id));
     setBusy(false);
     if (!r.ok) {
-      toast(r.reason, "bad");
+      toast(I18N.localizeServerError(r.reason), "bad");
       return;
     }
     setSel([]);
@@ -1680,7 +1680,7 @@ function ForgeEquipement() {
     setBusy(false);
     setConfirmDis(false);
     if (!r.ok) {
-      toast(r.reason, "bad");
+      toast(I18N.localizeServerError(r.reason), "bad");
       return;
     }
     setSel([]);
@@ -1692,7 +1692,7 @@ function ForgeEquipement() {
     const r = await actions.coreSummon();
     setCoreBusy(false);
     if (!r.ok) {
-      toast(r.reason, "bad");
+      toast(I18N.localizeServerError(r.reason), "bad");
       return;
     }
     const name = r.core && r.core.core_id ? I18N.t("CORE_" + r.core.core_id.toUpperCase()) : I18N.t("CORE_SUMMON_TITLE");
@@ -1967,7 +1967,7 @@ function ForgeReliques() {
     const r = await actions.relicSummon();
     setRolling(false);
     if (!r.ok) {
-      toast(r.reason, "bad");
+      toast(I18N.localizeServerError(r.reason), "bad");
       return;
     }
     const revealRelic = () => {
@@ -2282,7 +2282,7 @@ function Boosts() {
     const r = await actions.buyBoost(key);
     setBuyingKey(null);
     if (!r.ok) {
-      toast(r.reason, "bad");
+      toast(I18N.localizeServerError(r.reason), "bad");
       return;
     }
     toast(I18N.t("BO_BOUGHT"), "good");
@@ -2293,7 +2293,7 @@ function Boosts() {
     const r = await actions.toggleBoost(key, !g.boostsArmed[key]);
     setTogglingKey(null);
     if (!r.ok) {
-      toast(r.reason, "bad");
+      toast(I18N.localizeServerError(r.reason), "bad");
       return;
     }
     toast(I18N.t(r.armed ? "BO_ARMED_ON" : "BO_ARMED_OFF"), r.armed ? "good" : "info");
@@ -2833,7 +2833,7 @@ function WithdrawModal({
     const n = parseInt(amt, 10) || 0;
     const r = actions.withdraw(n); // validation min/max + débit optimiste client
     if (!r.ok) {
-      toast(r.reason, "bad");
+      toast(I18N.localizeServerError(r.reason), "bad");
       return;
     }
     setBusy(true);
@@ -2982,7 +2982,7 @@ function Perso() {
     const r = await actions.rename(sel, name.trim().slice(0, 24));
     setBusy(false);
     if (!r.ok) {
-      toast(r.reason, "bad");
+      toast(I18N.localizeServerError(r.reason), "bad");
       return;
     }
     toast(I18N.t("PE_RENAMED"), "good");
@@ -2994,7 +2994,7 @@ function Perso() {
     const r = await actions.setTitle(title.trim().slice(0, 32));
     setBusy(false);
     if (!r.ok) {
-      toast(r.reason, "bad");
+      toast(I18N.localizeServerError(r.reason), "bad");
       return;
     }
     toast(I18N.t("PE_TITLE_SET"), "good");

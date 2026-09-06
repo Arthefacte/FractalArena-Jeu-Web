@@ -280,7 +280,7 @@ function CampaignCombat({ worldIndex, floorIndex, onBack, onCleared }) {
         return;
       }
       // bete_en_expedition : garde serveur des Expéditions — code traduit, pas brut.
-      toast(resp.reason === "bete_en_expedition" ? I18N.t("EXP_ERR_bete_en_expedition") : resp.reason, "bad");
+      toast(I18N.localizeServerError(resp.reason), "bad");
       return;
     }
 

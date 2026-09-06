@@ -135,7 +135,7 @@ function BoostPills() {
     setBusy(key);
     const r = await actions.toggleBoost(key, !g.boostsArmed[key]);
     setBusy(null);
-    if (!r.ok) { toast(r.reason, "bad"); return; }
+    if (!r.ok) { toast(I18N.localizeServerError(r.reason), "bad"); return; }
     toast(I18N.t(r.armed ? "BO_ARMED_ON" : "BO_ARMED_OFF"), r.armed ? "good" : "info");
   }
   return (
@@ -234,7 +234,7 @@ function Fosse() {
     const bet = await actions.callFight({ free, betTier, isLoop: isLoopRun });
     if (!bet.ok) {
       // bete_en_expedition : garde serveur des Expéditions — code traduit, pas brut.
-      const msg = bet.reason === "bete_en_expedition" ? I18N.t("EXP_ERR_bete_en_expedition") : (bet.reason || I18N.t("AR_INSUFF"));
+      const msg = bet.reason ? I18N.localizeServerError(bet.reason) : I18N.t("AR_INSUFF");
       toast(msg, "bad"); if (isLoopRun) { loopRef.current = false; setLoop(false); } return;
     }
     if (bet.note) toast(bet.note, "info");

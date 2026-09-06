@@ -1388,6 +1388,7 @@
     QUIZ_CONTRIBUTED: { FR: "%d FA versés au rachat", EN: "%d FA given to the buyback", ZH: "已向回购池投入 %d FA" },
     QUIZ_SHOWN:       { FR: "Titre affiché", EN: "Displayed title", ZH: "展示的称号" },
     QUIZ_NONE:        { FR: "Aucun", EN: "None", ZH: "不展示" },
+    ERR_GENERIC:      { FR: "Une erreur est survenue", EN: "Something went wrong", ZH: "出错了" },
   };
 
   let lang = "FR";
@@ -1417,5 +1418,14 @@
     return args.length ? fmt(s, args) : s;
   }
 
-  window.FA_I18N = { t, setLang, getLang, detectLang, T };
+  // Localise une erreur serveur : code neutre connu → clé dédiée, sinon
+  // fallback générique localisé. JAMAIS la chaîne brute (un joueur ZH/EN
+  // verrait du français). Audit 2026-09-06 (P2.1).
+  function localizeServerError(code) {
+    if (!code) return t("ERR_GENERIC");
+    if (code === "bete_en_expedition") return t("EXP_ERR_bete_en_expedition");
+    return t("ERR_GENERIC");
+  }
+
+  window.FA_I18N = { t, setLang, getLang, detectLang, T, localizeServerError };
 })();
