@@ -40,6 +40,15 @@ function hhmm(ts) {
   catch (e) { return ""; }
 }
 
+// Choisit la langue d'affichage d'un message : si le message est déjà dans la
+// langue du lecteur (ou sans langue source), on garde l'original ; sinon on prend
+// la traduction (tr) dans cette langue, avec repli sur l'original.
+function pickRoomText(m, lang) {
+  if (!m) return "";
+  if (!m.src_lang || m.src_lang === lang) return m.content || "";
+  return (m.tr && m.tr[lang]) || m.content || "";
+}
+
 function RoomPanel({ messages, myWallet, muted, onMute, onSend, onClose }) {
   const [input, setInput] = useState("");
   const listRef = useRef(null);
@@ -82,7 +91,7 @@ function RoomPanel({ messages, myWallet, muted, onMute, onSend, onClose }) {
                   </button>
                 )}
               </div>
-              <div className="text">{m.content}</div>
+              <div className="text">{pickRoomText(m, I18N.getLang())}</div>
             </div>
           );
         })}

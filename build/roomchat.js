@@ -67,6 +67,15 @@ function hhmm(ts) {
     return "";
   }
 }
+
+// Choisit la langue d'affichage d'un message : si le message est déjà dans la
+// langue du lecteur (ou sans langue source), on garde l'original ; sinon on prend
+// la traduction (tr) dans cette langue, avec repli sur l'original.
+function pickRoomText(m, lang) {
+  if (!m) return "";
+  if (!m.src_lang || m.src_lang === lang) return m.content || "";
+  return m.tr && m.tr[lang] || m.content || "";
+}
 function RoomPanel({
   messages,
   myWallet,
@@ -125,7 +134,7 @@ function RoomPanel({
       onClick: () => onMute(m.wallet)
     }, I18N.t("ROOM_MUTE"))), /*#__PURE__*/React.createElement("div", {
       className: "text"
-    }, m.content));
+    }, pickRoomText(m, I18N.getLang())));
   })), /*#__PURE__*/React.createElement("div", {
     className: "room-input"
   }, /*#__PURE__*/React.createElement("textarea", {
