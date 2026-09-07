@@ -26,7 +26,7 @@ window.FA_API_URL = (typeof location !== "undefined" &&
 // l'installation alors que la prod servait le nouveau depuis une heure.
 // Ne sert plus que de REPLI : un asset absent du manifeste doit rester cache-busté
 // plutôt que servi indéfiniment par le CDN.
-window.FA_ASSET_V = "256";
+window.FA_ASSET_V = "257";
 
 // L'URL porte l'empreinte du CONTENU du fichier (asset-hashes.js, généré au build),
 // et non la version du jeu. Versionner par la version du jeu — ce que faisait la
@@ -212,6 +212,7 @@ window.FA_ASSET_URL = function (chemin) {
     BET: { bronze: 10, silver: 25, gold: 50 },
     BET_GAIN: { bronze: 7, silver: 17, gold: 35 }, // net win
     PAYOUT_MULT: 1.7,
+    LP_PAYOUT_MULT: { G1: 1.9, G2: 2.1 }, // bonus liquidité (miroir fight.js payoutMultForTier)
     MILESTONE_EVERY: 50,
     MILESTONE_REWARD: 50,
     LOOP_SILVER_MAX: 100,

@@ -405,6 +405,13 @@ function Fosse() {
     { k: "gold", c: "var(--gold)" },
   ];
 
+  // Multiplicateur de gain tenant compte du tier LP (bonus liquidité) :
+  // G1 → 1.9, G2 → 2.1, sinon base 1.7 — miroir du serveur (fight.js payoutMultForTier).
+  const payoutMult = g.lpTier ? (D.ECON.LP_PAYOUT_MULT[g.lpTier] || D.ECON.PAYOUT_MULT) : D.ECON.PAYOUT_MULT;
+  const netGain = g.lpTier
+    ? Math.round(D.ECON.BET[betTier] * payoutMult) - D.ECON.BET[betTier]
+    : D.ECON.BET_GAIN[betTier];
+
   return (
     <div className="container wide">
       <div className="flex between center wrap" style={{ marginBottom: 14, gap: 12 }}>
@@ -496,7 +503,7 @@ function Fosse() {
                 </button>
               ))}
             </div>
-            {betTier && <div className="mono" style={{ fontSize: 11, color: "var(--text-dim)", marginTop: 6 }}>+<TokenIcon s={11} /> {D.ECON.BET_GAIN[betTier]} {I18N.t("RES_NET")} · ×{D.ECON.PAYOUT_MULT}</div>}
+            {betTier && <div className="mono" style={{ fontSize: 11, color: g.lpTier ? "var(--gold)" : "var(--text-dim)", marginTop: 6 }}>+<TokenIcon s={11} /> {netGain} {I18N.t("RES_NET")} · ×{payoutMult}</div>}
           </div>
 
           <label className="flex between center" style={{ cursor: "pointer", padding: "8px 0", borderTop: "1px solid var(--line-soft)", borderBottom: "1px solid var(--line-soft)" }}>
