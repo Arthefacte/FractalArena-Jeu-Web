@@ -25,7 +25,7 @@ test("relicFuse : POST /forge/relic-fuse authentifié, body relic_ids, resync /s
   assert.ok(!/https?:\/\//.test(b), "URL en dur interdite");
   assert.match(b, /relic_ids/, "relic_ids absent du body");
   assert.match(b, /svOpts\(\)/, "resync /save manquant (solde + inventaire bougent)");
-  assert.match(b, /serverToState/);
+  assert.match(b, /applySave\(save, s\.wallet, s\.authToken\)/, "la réponse /save doit passer par la garde d'identité applySave");
 });
 
 test("equipDisenchant : POST /forge/equip-disenchant authentifié, body item_id, resync /save", () => {
@@ -36,7 +36,7 @@ test("equipDisenchant : POST /forge/equip-disenchant authentifié, body item_id,
   assert.ok(!/https?:\/\//.test(b), "URL en dur interdite");
   assert.match(b, /item_id/, "item_id absent du body");
   assert.match(b, /svOpts\(\)/, "resync /save manquant");
-  assert.match(b, /serverToState/);
+  assert.match(b, /applySave\(save, s\.wallet, s\.authToken\)/, "la réponse /save doit passer par la garde d'identité applySave");
 });
 
 test("les deux actions traduisent les codes serveur (jamais de code brut au joueur)", () => {

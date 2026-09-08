@@ -38,7 +38,7 @@ test("app.jsx : refreshLp poste sur /lp/refresh, authentifié, et adopte la rép
   assert.match(b, /lpTier: data\.lp_tier \|\| null/, "le palier retourné doit être adopté");
   assert.match(b, /lpFa: data\.fa/, "le montant LP retourné doit être adopté");
   assert.match(b, /svOpts\(\)/, "re-fetch /save manquant (le titre a pu changer)");
-  assert.match(b, /serverToState/);
+  assert.match(b, /applySave\(save, s\.wallet, s\.authToken\)/, "la réponse /save doit passer par la garde d'identité applySave");
 });
 
 test("app.jsx : fetchLpLeaderboard lit /lp/leaderboard et distingue le 503 (InSwap down)", () => {

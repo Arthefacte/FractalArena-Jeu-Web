@@ -29,7 +29,7 @@ test("app.jsx : expeditionsCraftCore poste sur /expeditions/craft-core, authenti
   assert.ok(!/https?:\/\//.test(b), "URL en dur interdite");
   assert.match(b, /401/, "retry 401 manquant");
   assert.match(b, /svOpts\(\)/, "re-fetch /save manquant (equipment bouge)");
-  assert.match(b, /serverToState/);
+  assert.match(b, /applySave\(save, s\.wallet, s\.authToken\)/, "la réponse /save doit passer par la garde d'identité applySave");
   assert.match(b, /core: data\.core/, "le core forgé doit être retourné");
 });
 

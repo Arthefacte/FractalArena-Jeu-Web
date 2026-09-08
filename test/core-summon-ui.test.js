@@ -34,7 +34,7 @@ test("coreSummon (app.jsx) : route, Bearer, coût 8000, resync /save", () => {
   assert.match(b, /Authorization/, "Bearer manquant");
   assert.match(b, /8000/, "coût 8000 manquant");
   assert.match(b, /svOpts\(\)/, "resync /save manquante");
-  assert.match(b, /serverToState/);
+  assert.match(b, /applySave\(save, s\.wallet, s\.authToken\)/, "la réponse /save doit passer par la garde d'identité applySave");
 });
 
 test("i18n : les clés CORE_SUMMON_* existent dans les 3 langues, avec %s pour les args", () => {

@@ -27,7 +27,7 @@ test("expeditionsClaim : retry 401 + re-fetch /save (XP/FA/tickets bougent)", ()
   const b = bloc("async expeditionsClaim", 2200);
   assert.match(b, /401/);
   assert.match(b, /svOpts\(\)/);
-  assert.match(b, /serverToState/);
+  assert.match(b, /applySave\(save, s\.wallet, s\.authToken\)/, "la réponse /save doit passer par la garde d'identité applySave");
 });
 
 test("expeditionsStart : le ticket part au serveur et le compteur local baisse", () => {

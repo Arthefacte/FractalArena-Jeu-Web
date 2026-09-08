@@ -507,6 +507,23 @@ function App() {
     return { liquid, locked };
   }
 
+  // Applique une réponse /save SEULEMENT si le compte et le jeton n'ont pas changé
+  // depuis l'envoi de la requête. Empêche une réponse périmée (déconnexion ou
+  // changement de compte pendant la requête — plusieurs secondes sur mobile) de
+  // réécrire wallet/liquid/roster avec un « compte fantôme » sans jeton (audit
+  // web 2026-09-08, P1#4). `addr` et `tokenAtRequest` sont ceux capturés AU
+  // MOMENT de l'envoi, jamais relus après l'await. La comparaison se fait dans
+  // l'updater (état le plus frais, y compris un disconnect encore en file
+  // d'attente que gRef n'a pas vu), et rendre `st` tel quel = aucun re-rendu.
+  // `patch(next, st)` : retouche optionnelle du nouvel état (boosts, selected).
+  function applySave(save, addr, tokenAtRequest, patch) {
+    setG((st) => {
+      if (st.wallet !== addr || st.authToken !== tokenAtRequest) return st;
+      const next = serverToState(save, addr, st);
+      return patch ? patch(next, st) : next;
+    });
+  }
+
   const actions = useMemo(() => ({
     setLang(l) { I18N.setLang(l); setG((s) => ({ ...s, lang: l })); },
     setOption(k, v) { setG((s) => ({ ...s, options: { ...s.options, [k]: v } })); },
@@ -551,6 +568,9 @@ function App() {
         // token explicite (juste après authenticate) sinon celui en mémoire : la lecture
         // /save est authentifiée dès la connexion (le state React n'est pas encore à jour).
         const saveOpts = token ? { headers: { Authorization: `Bearer ${token}` } } : svOpts();
+        // Jeton capturé À L'ENVOI : c'est lui, et pas g.authToken relu après l'await,
+        // qui décide si la réponse est encore celle du compte courant (cf. applySave).
+        const tokenAtRequest = token || (gRef.current && gRef.current.authToken) || "";
         const [saveResp, boostsResp, totemResp] = await Promise.all([
           fetch(`${API_URL}/save/${addr}`, saveOpts),
           fetch(`${API_URL}/boosts/status/${addr}`),
@@ -562,6 +582,14 @@ function App() {
           const { save } = await saveResp.json();
           const boostsData = boostsResp.ok ? await boostsResp.json() : null;
           setG((s) => {
+            // Garde d'identité sur le JETON seul (pas via applySave) : c'est cet
+            // appel qui POSE le wallet à la première connexion (connectUnisat,
+            // createAccount, recoverAccount, claimDeviceLink), il n'est pas encore
+            // en state. Scénario visé : au démarrage, wallet restauré du blob et
+            // UI utilisable pendant que l'auto-connexion lit /save ; le joueur
+            // fait Options → Déconnexion avant la réponse → sans cette garde,
+            // serverToState réécrivait wallet/liquid/roster sans authToken.
+            if (s.authToken !== tokenAtRequest) return s;
             const next = serverToState(save, addr, s);
             if (boostsData) { const bm = mapBoostStatus(boostsData); next.boosts = bm.charges; next.boostsArmed = bm.armed; }
             next.ordinalName = save.ordinal_name || ""; // nom ordinal du serveur, vide si absent
@@ -1232,7 +1260,7 @@ function App() {
         const [svResp, bResp] = await Promise.all([fetch(`${API_URL}/save/${s.wallet}`, svOpts()), fetch(`${API_URL}/boosts/status/${s.wallet}`)]);
         if (svResp.ok && bResp.ok) {
           const [{ save }, bd] = await Promise.all([svResp.json(), bResp.json()]);
-          setG((st) => { const n = serverToState(save, s.wallet, st); const bm = mapBoostStatus(bd); n.boosts = bm.charges; n.boostsArmed = bm.armed; return n; });
+          applySave(save, s.wallet, s.authToken, (n) => { const bm = mapBoostStatus(bd); n.boosts = bm.charges; n.boostsArmed = bm.armed; return n; });
         }
         return { ok: true };
       } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
@@ -1292,7 +1320,7 @@ function App() {
         const sv = await fetch(`${API_URL}/save/${s.wallet}`, svOpts());
         if (sv.ok) {
           const { save } = await sv.json();
-          setG((st) => { const n = serverToState(save, s.wallet, st); n.selected = st.selected.filter((x) => n.roster.some((r) => r.id === x)); return n; });
+          applySave(save, s.wallet, s.authToken, (n, st) => { n.selected = st.selected.filter((x) => n.roster.some((r) => r.id === x)); return n; });
         }
         return { ok: true, success: data.status === "success", result: { rarity: data.new_rarity || a.rarity, premium } };
       } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
@@ -1315,7 +1343,7 @@ function App() {
         if (data.status !== "ok") return { ok: false, reason: data.error || "Erreur serveur" };
         // Mode pending : rien n'est appliqué ; on resynchronise le solde (débité) et on renvoie l'aperçu.
         const sv = await fetch(`${API_URL}/save/${s.wallet}`, svOpts());
-        if (sv.ok) { const { save } = await sv.json(); setG((st) => serverToState(save, s.wallet, st)); }
+        if (sv.ok) { const { save } = await sv.json(); applySave(save, s.wallet, s.authToken); }
         return { ok: true, preview: { old_stats: data.old_stats, new_stats: data.new_stats, cost: data.cost, next_reroll_cost: data.next_reroll_cost, locks: Array.isArray(data.locks) ? data.locks : [] } };
       } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
     },
@@ -1330,7 +1358,7 @@ function App() {
         const data = await resp.json();
         if (data.status !== "ok") return { ok: false, reason: data.error || "Erreur serveur" };
         const sv = await fetch(`${API_URL}/save/${s.wallet}`, svOpts());
-        if (sv.ok) { const { save } = await sv.json(); setG((st) => serverToState(save, s.wallet, st)); }
+        if (sv.ok) { const { save } = await sv.json(); applySave(save, s.wallet, s.authToken); }
         return { ok: true };
       } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
     },
@@ -1345,7 +1373,7 @@ function App() {
         const data = await resp.json();
         if (data.status !== "ok") return { ok: false, reason: data.error || "Erreur serveur" };
         const sv = await fetch(`${API_URL}/save/${s.wallet}`, svOpts());
-        if (sv.ok) { const { save } = await sv.json(); setG((st) => serverToState(save, s.wallet, st)); }
+        if (sv.ok) { const { save } = await sv.json(); applySave(save, s.wallet, s.authToken); }
         return { ok: true, refunded: data.refunded };
       } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
     },
@@ -1364,7 +1392,7 @@ function App() {
         if (data.status === "insufficient_balance") return { ok: false, reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, cost) };
         if (data.status !== "ok") return { ok: false, reason: data.error || "Erreur serveur" };
         const sv = await fetch(`${API_URL}/save/${s.wallet}`, svOpts());
-        if (sv.ok) { const { save } = await sv.json(); setG((st) => serverToState(save, s.wallet, st)); }
+        if (sv.ok) { const { save } = await sv.json(); applySave(save, s.wallet, s.authToken); }
         return { ok: true, beast: data.beast };
       } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
     },
@@ -1383,7 +1411,7 @@ function App() {
         if (data.status === "insufficient_balance") return { ok: false, reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, cost) };
         if (data.status !== "ok") return { ok: false, reason: data.error || "Erreur serveur" };
         const sv = await fetch(`${API_URL}/save/${s.wallet}`, svOpts());
-        if (sv.ok) { const { save } = await sv.json(); setG((st) => serverToState(save, s.wallet, st)); }
+        if (sv.ok) { const { save } = await sv.json(); applySave(save, s.wallet, s.authToken); }
         return { ok: true, relic: data.relic };
       } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
     },
@@ -1417,7 +1445,7 @@ function App() {
         if (data.status === "insufficient_balance") return { ok: false, reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, cost) };
         if (data.status !== "ok") return { ok: false, reason: data.error || "Erreur serveur" };
         const sv = await fetch(`${API_URL}/save/${s.wallet}`, svOpts());
-        if (sv.ok) { const { save } = await sv.json(); setG((st) => serverToState(save, s.wallet, st)); }
+        if (sv.ok) { const { save } = await sv.json(); applySave(save, s.wallet, s.authToken); }
         return { ok: true, core: data.core };
       } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
     },
@@ -1440,7 +1468,7 @@ function App() {
         if (data.status === "insufficient_balance") return { ok: false, reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, data.cost || cost) };
         if (data.status !== "ok") return { ok: false, reason: window.FA_FORGE_UI.equipForgeErrText(data.error) };
         const sv = await fetch(`${API_URL}/save/${s.wallet}`, svOpts());
-        if (sv.ok) { const { save } = await sv.json(); setG((st) => serverToState(save, s.wallet, st)); }
+        if (sv.ok) { const { save } = await sv.json(); applySave(save, s.wallet, s.authToken); }
         return { ok: true, relic: data.relic };
       } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
     },
@@ -1461,7 +1489,7 @@ function App() {
         if (data.status === "insufficient_balance") return { ok: false, reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, D.DISENCHANT_FEE) };
         if (data.status !== "ok") return { ok: false, reason: window.FA_FORGE_UI.equipForgeErrText(data.error) };
         const sv = await fetch(`${API_URL}/save/${s.wallet}`, svOpts());
-        if (sv.ok) { const { save } = await sv.json(); setG((st) => serverToState(save, s.wallet, st)); }
+        if (sv.ok) { const { save } = await sv.json(); applySave(save, s.wallet, s.authToken); }
         // Valeur créditée : celle du serveur si présente, sinon le miroir local.
         const value = data.value != null ? data.value : (item ? D.RELIC_BUYBACK[item.rarity] || 0 : 0);
         return { ok: true, value };
@@ -1572,9 +1600,9 @@ function App() {
         try {
           // Les deux GET sont indépendants : en parallèle (latence mobile ÷ 2).
           const [sv] = await Promise.all([fetch(`${API_URL}/save/${s.wallet}`, svOpts()), actions.expeditionsState()]);
-          // Garde d'identité de jeton : une /save de l'ancien compte arrivée
+          // Garde d'identité (applySave) : une /save de l'ancien compte arrivée
           // après un changement ne doit pas réécrire toute la session.
-          if (sv.ok && gRef.current.authToken === s.authToken) { const { save } = await sv.json(); setG((st) => serverToState(save, s.wallet, st)); }
+          if (sv.ok) { const { save } = await sv.json(); applySave(save, s.wallet, s.authToken); }
         } catch (e2) { /* rafraîchissement raté ≠ claim raté */ }
         return { ok: true, success: data.success, rewards: data.rewards, fa_week: data.fa_week, level_events: data.level_events };
       } catch (e) { return { ok: false, reason: "generic" }; }
@@ -1632,8 +1660,8 @@ function App() {
         if (!data.ok) return { ok: false, reason: data.error || "generic" };
         try {
           const [sv] = await Promise.all([fetch(`${API_URL}/save/${s.wallet}`, svOpts()), actions.expeditionsState()]);
-          // Même garde d'identité de jeton que le claim.
-          if (sv.ok && gRef.current.authToken === s.authToken) { const { save } = await sv.json(); setG((st) => serverToState(save, s.wallet, st)); }
+          // Même garde d'identité (applySave) que le claim.
+          if (sv.ok) { const { save } = await sv.json(); applySave(save, s.wallet, s.authToken); }
         } catch (e2) { /* rafraîchissement raté ≠ craft raté */ }
         return { ok: true, relic: data.relic, fragments_left: data.fragments_left };
       } catch (e) { return { ok: false, reason: "generic" }; }
@@ -1659,8 +1687,8 @@ function App() {
         if (!data.ok) return { ok: false, reason: data.error || "generic" };
         try {
           const [sv] = await Promise.all([fetch(`${API_URL}/save/${s.wallet}`, svOpts()), actions.expeditionsState()]);
-          // Même garde d'identité de jeton que le claim.
-          if (sv.ok && gRef.current.authToken === s.authToken) { const { save } = await sv.json(); setG((st) => serverToState(save, s.wallet, st)); }
+          // Même garde d'identité (applySave) que le claim.
+          if (sv.ok) { const { save } = await sv.json(); applySave(save, s.wallet, s.authToken); }
         } catch (e2) { /* rafraîchissement raté ≠ craft raté */ }
         return { ok: true, core: data.core, core_fragments_left: data.core_fragments_left };
       } catch (e) { return { ok: false, reason: "generic" }; }
@@ -1688,7 +1716,7 @@ function App() {
           // ne doit pas se présenter comme un échec du pick (solde resynchronisé plus tard).
           try {
             const sv = await fetch(`${API_URL}/save/${s.wallet}`, svOpts());
-            if (sv.ok) { const { save } = await sv.json(); setG((st) => serverToState(save, s.wallet, st)); }
+            if (sv.ok) { const { save } = await sv.json(); applySave(save, s.wallet, s.authToken); }
           } catch (e) { /* solde momentanément non resynchronisé */ }
         }
         return { ok: true, cost: data.cost };
@@ -1765,7 +1793,7 @@ function App() {
         if (data.status !== "ok") return { ok: false, reason: data.error || "Erreur serveur" };
         setG((st) => ({ ...st, lpTier: data.lp_tier || null, lpFa: data.fa ?? null }));
         const sv = await fetch(`${API_URL}/save/${s.wallet}`, svOpts());
-        if (sv.ok) { const { save } = await sv.json(); setG((st) => serverToState(save, s.wallet, st)); }
+        if (sv.ok) { const { save } = await sv.json(); applySave(save, s.wallet, s.authToken); }
         return { ok: true, fa: data.fa ?? null, lp_tier: data.lp_tier || null };
       } catch (e) { return { ok: false, reason: "network" }; }
     },
@@ -2086,7 +2114,7 @@ function App() {
         const data = await resp.json();
         if (data.status !== "ok") return { ok: false, reason: data.error || "Erreur serveur" };
         const sv = await fetch(`${API_URL}/save/${s.wallet}`, svOpts());
-        if (sv.ok) { const { save } = await sv.json(); setG((st) => serverToState(save, s.wallet, st)); }
+        if (sv.ok) { const { save } = await sv.json(); applySave(save, s.wallet, s.authToken); }
         return { ok: true };
       } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
     },
@@ -2103,7 +2131,7 @@ function App() {
         const data = await resp.json();
         if (data.status !== "ok") return { ok: false, reason: data.error || "Erreur serveur" };
         const sv = await fetch(`${API_URL}/save/${s.wallet}`, svOpts());
-        if (sv.ok) { const { save } = await sv.json(); setG((st) => serverToState(save, s.wallet, st)); }
+        if (sv.ok) { const { save } = await sv.json(); applySave(save, s.wallet, s.authToken); }
         return { ok: true };
       } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
     },
@@ -2433,7 +2461,7 @@ function App() {
       if (!s.wallet) return;
       try {
         const sv = await fetch(`${API_URL}/save/${s.wallet}`, svOpts());
-        if (sv.ok) { const { save } = await sv.json(); setG((st) => serverToState(save, s.wallet, st)); }
+        if (sv.ok) { const { save } = await sv.json(); applySave(save, s.wallet, s.authToken); }
       } catch (e) { /* silencieux */ }
     },
     // `item` = l'OBJET d'inventaire (relique `type` / core `core_id`), pas un id :
