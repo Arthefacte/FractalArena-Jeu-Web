@@ -21,7 +21,12 @@ const API_URL = window.FA_API_URL;
 // accès au compte et ne doit survivre ni dans l'historique ni dans un partage
 // d'URL. Consommé par DeviceLinkClaimGate ; fait aussi sauter la cinématique
 // (le code expire en 2 minutes).
-const BOOT_LINK_CODE = (() => {
+// `let`, pas `const` : la gate est rendue dans 3 branches d'App, et un claim
+// réussi pose `wallet` → App change de branche → la gate est démontée puis
+// REMONTÉE avec `useState(BOOT_LINK_CODE)`. Si le code vivait encore ici, la
+// modale ressurgirait par-dessus le jeu juste après le toast « liaison faite ».
+// Le claim le remet donc à null AVANT l'await (le remontage a lieu pendant).
+let BOOT_LINK_CODE = (() => {
   const DL = window.FA_DEVICE_LINK;
   const c = DL ? DL.parseLinkHash(window.location.hash) : null;
   if (c) window.history.replaceState(null, "", window.location.pathname + window.location.search);
@@ -2666,6 +2671,9 @@ function DeviceLinkClaimGate() {
 
   const claim = async () => {
     setBusy(true);
+    // Consommé hors React, avant l'await : si App remonte la gate pendant le
+    // claim (bascule vers la branche connectée), elle relit null et reste fermée.
+    BOOT_LINK_CODE = null;
     const r = await actions.claimDeviceLink(code);
     setBusy(false);
     setCode(null);

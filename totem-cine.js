@@ -68,7 +68,9 @@ function initCtx() {
   const scene = new THREE.Scene(); scene.background = new THREE.Color(0x000000);
   const camera = new THREE.PerspectiveCamera(38, innerWidth / innerHeight, 0.1, 100); camera.position.set(0, 0, CAM_FAR);
   const pmrem = new THREE.PMREMGenerator(renderer);
-  scene.environment = pmrem.fromScene(new RoomEnvironment(renderer), 0.04).texture;
+  const room = new RoomEnvironment(renderer);
+  const envRT = pmrem.fromScene(room, 0.04); // cible conservée : c'est elle qu'on dispose (pas seulement sa texture)
+  scene.environment = envRT.texture;
   scene.add(new THREE.AmbientLight(0x404858, 0.6));
   const key = new THREE.DirectionalLight(0xffffff, 2.2); key.position.set(3, 4, 5); scene.add(key);
   const orange = new THREE.PointLight(0xff7a1a, 5, 30); orange.position.set(-4, -1, 3); scene.add(orange);
@@ -98,9 +100,44 @@ function initCtx() {
   composer.addPass(bloom);
   const ca = new ShaderPass(ChromaticAberrationShader);
   composer.addPass(ca);
-  composer.addPass(new OutputPass());
-  addEventListener('resize', () => { camera.aspect = innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); composer.setSize(innerWidth, innerHeight); });
-  ctx = { renderer, scene, camera, pivot, composer, bloom, ca, orange, cyan, sGeo, sMat, pos, vel, N, seed, dom, ring, ringMat, ringT0: 0, energy: 0, gltf: null, loading: null };
+  const output = new OutputPass();
+  composer.addPass(output);
+  // Handler NOMMÉ (retiré dans finish) : anonyme, il survivait à la cinématique
+  // et réallouait les cibles plein écran à chaque rotation, overlay caché.
+  const onResize = () => { camera.aspect = innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); composer.setSize(innerWidth, innerHeight); };
+  window.addEventListener('resize', onResize);
+  ctx = { renderer, scene, camera, pivot, composer, bloom, ca, output, pmrem, room, envRT, orange, cyan, sGeo, sMat, pos, vel, N, seed, dom, ring, ringMat, onResize, ringT0: 0, energy: 0, gltf: null, loading: null };
+}
+
+// Libère TOUT ce que initCtx/loadModel ont alloué : cibles de rendu plein écran
+// × DPR (composer + mips du bloom), texture PMREM, GLB, listener resize, DOM de
+// l'overlay, puis le contexte WebGL lui-même. Sans ça, ~100 Mo de VRAM restaient
+// retenus toute la session sur mobile, jusqu'à faire perdre son contexte à
+// l'emblème 3D du header. Le prochain play() repart de zéro via initCtx().
+function disposeCtx() {
+  const c = ctx; if (!c) return;
+  ctx = null;
+  try {
+    window.removeEventListener('resize', c.onResize);
+    c.composer.dispose();
+    c.bloom.dispose(); c.ca.dispose(); c.output.dispose(); // RenderPass ne possède rien
+    c.pmrem.dispose(); c.room.dispose();
+    c.scene.environment = null; c.envRT.dispose(); // framebuffer + texture PMREM
+    c.scene.traverse(o => {
+      if (o.geometry) o.geometry.dispose();
+      const mats = Array.isArray(o.material) ? o.material : (o.material ? [o.material] : []);
+      for (const m of mats) {
+        for (const k in m) { const v = m[k]; if (v && v.isTexture) v.dispose(); }
+        m.dispose();
+      }
+    });
+    c.scene.clear();
+    c.renderer.forceContextLoss();
+    c.renderer.dispose();
+    for (const n of [c.dom.root, c.dom.flash, c.dom.reveal]) if (n && n.parentNode) n.parentNode.removeChild(n);
+  } catch (e) {
+    console.warn('[totem-cine] dispose partiel', e);
+  }
 }
 
 function loadModel(glbUrl) {
@@ -129,8 +166,9 @@ function applyEnergy(e) {
 }
 
 function finish(onDone) {
-  if (ctx) ctx.running = false; // stoppe la boucle de rendu
+  if (ctx) ctx.running = false; // stoppe la boucle de rendu (tick relit ce flag avant de rendre)
   if (ctx && ctx.dom) { ctx.dom.root.style.display = 'none'; ctx.dom.reveal.style.opacity = 0; ctx.dom.reveal.style.transform = 'scale(.85)'; }
+  disposeCtx(); // ctx === null ensuite : rien ne reste en VRAM entre deux invocations
   if (typeof onDone === 'function') onDone();
 }
 
@@ -156,6 +194,7 @@ function runTimeline(onDone) {
     }, 170);
   }
   function tick(now) {
+    if (!c.running) return; // finish() a pu disposer le contexte entre deux frames : ne rien toucher
     const dt = Math.min(0.05, (now - last) / 1000); last = now;
     for (let i = 0; i < c.N; i++) {
       const ix = i * 3;

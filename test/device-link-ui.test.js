@@ -88,8 +88,8 @@ test("cablage : scripts charges, gate montee, panneau present, recover branche",
 });
 
 test("le hash est lu au chargement, efface de la barre, et saute la cinematique", () => {
-  const i = APP.indexOf("const BOOT_LINK_CODE");
-  assert.ok(i > 0, "BOOT_LINK_CODE introuvable");
+  const i = APP.indexOf("let BOOT_LINK_CODE");
+  assert.ok(i > 0, "BOOT_LINK_CODE introuvable (doit etre un `let` : consomme par le claim)");
   const bloc = APP.slice(i, i + 600);
   assert.match(bloc, /parseLinkHash/, "le hash doit passer par la normalisation, jamais brut");
   assert.match(bloc, /replaceState/, "un lien de liaison ne doit pas survivre dans l'historique");
@@ -103,6 +103,22 @@ test("la gate est montee AUSSI sans session (telephone vierge)", () => {
   const sansWallet = APP.slice(APP.indexOf("if (!g.wallet) {"), APP.indexOf("const VIEWS"));
   const occurrences = (sansWallet.match(/<DeviceLinkClaimGate \/>/g) || []).length;
   assert.strictEqual(occurrences, 2, "gate absente d'une branche sans-wallet");
+});
+
+test("le code de boot est consomme hors React, AVANT l'await du claim", () => {
+  // Un claim reussi pose `wallet` → App change de branche → la gate est
+  // demontee puis remontee avec useState(BOOT_LINK_CODE). Si le code vivait
+  // encore dans la variable de module, la modale ressurgirait par-dessus le
+  // jeu juste apres le toast « liaison faite » (telephone vierge, 2026-09-08).
+  const i = APP.indexOf("function DeviceLinkClaimGate");
+  assert.ok(i > 0, "DeviceLinkClaimGate introuvable");
+  const bloc = APP.slice(i, i + 1500);
+  const iClaim = bloc.indexOf("const claim = async");
+  const iNull = bloc.indexOf("BOOT_LINK_CODE = null");
+  const iAwait = bloc.indexOf("await actions.claimDeviceLink");
+  assert.ok(iClaim > 0 && iNull > 0 && iAwait > 0, "claim / consommation / await introuvables");
+  assert.ok(iNull > iClaim && iNull < iAwait,
+    "BOOT_LINK_CODE doit etre remis a null dans claim(), avant l'await (le remontage a lieu pendant)");
 });
 
 test("le kind du compte vient du serveur, jamais devine", () => {
