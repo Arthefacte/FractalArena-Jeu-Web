@@ -593,13 +593,14 @@ function App() {
     },
 
     async connectWallet(addr, token) {
+      // Jeton capturé À L'ENVOI : c'est lui, et pas g.authToken relu après l'await,
+      // qui décide si la réponse est encore celle du compte courant (cf. applySave).
+      // Déclaré HORS du try : le catch réseau en a besoin pour la même garde.
+      const tokenAtRequest = token || (gRef.current && gRef.current.authToken) || "";
       try {
         // token explicite (juste après authenticate) sinon celui en mémoire : la lecture
         // /save est authentifiée dès la connexion (le state React n'est pas encore à jour).
         const saveOpts = token ? { headers: { Authorization: `Bearer ${token}` } } : svOpts();
-        // Jeton capturé À L'ENVOI : c'est lui, et pas g.authToken relu après l'await,
-        // qui décide si la réponse est encore celle du compte courant (cf. applySave).
-        const tokenAtRequest = token || (gRef.current && gRef.current.authToken) || "";
         const [saveResp, boostsResp, totemResp] = await Promise.all([
           fetch(`${API_URL}/save/${addr}`, saveOpts),
           fetch(`${API_URL}/boosts/status/${addr}`),
@@ -631,6 +632,8 @@ function App() {
           });
           return false; // joueur existant
         } else if (saveResp.status === 404) {
+          // Garde d'identité : ne pas créer de compte fantôme si déconnecté entre-temps.
+          if (gRef.current.authToken !== tokenAtRequest) return false;
           newPlayerRef.current = true; // parrainage : la prochaine écriture est une CRÉATION
           setG((s) => ({
             ...freshState(),
@@ -678,6 +681,9 @@ function App() {
         }
       } catch (e) {
         // fallback local si réseau KO (pas de réponse /save du tout).
+        // Garde d'identité : même protection que la branche ok — si le joueur
+        // s'est déconnecté pendant la lecture, on ne pose pas wallet en fantôme.
+        if (gRef.current.authToken !== tokenAtRequest) return false;
         // IMPORTANT (audit web 2026-09-08, P2#12) : on NE FABRIQUE PAS les soldes
         // de bienvenue ni le roster de départ ici — un compte EXISTANT sur un appareil
         // neuf (blob vide, donc s.roster.length === 0) se voyait afficher des soldes
