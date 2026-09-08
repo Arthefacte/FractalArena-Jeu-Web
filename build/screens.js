@@ -3621,7 +3621,31 @@ function Options() {
     style: {
       fontSize: 12
     }
-  }, "\u2014"))), /*#__PURE__*/React.createElement(DeviceLinkPanel, null), /*#__PURE__*/React.createElement("div", {
+  }, "\u2014"))), /*#__PURE__*/React.createElement(DeviceLinkPanel, null), g.wallet && /*#__PURE__*/React.createElement("div", {
+    className: "panel oct",
+    style: {
+      border: "1px solid var(--line)",
+      padding: 20,
+      marginBottom: 16
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex between center",
+    style: {
+      gap: 14
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "mono",
+    style: {
+      fontSize: 13,
+      color: "var(--text-dim)"
+    }
+  }, I18N.t("REF_HINT")), /*#__PURE__*/React.createElement("button", {
+    className: "btn btn-elec sm",
+    style: {
+      flex: "none"
+    },
+    onClick: () => actions.setView("parrainage")
+  }, "\u25C8 ", I18N.t("OP_REFERRAL_BTN")))), /*#__PURE__*/React.createElement("div", {
     className: "panel oct",
     style: {
       border: "1px solid var(--line)",

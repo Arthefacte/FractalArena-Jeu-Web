@@ -1772,6 +1772,16 @@ function Options() {
 
       <DeviceLinkPanel />
 
+      {/* Parrainage (spec 2026-09-07) : écran dédié, hors barre de nav — comme « Lien ». */}
+      {g.wallet && (
+        <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 20, marginBottom: 16 }}>
+          <div className="flex between center" style={{ gap: 14 }}>
+            <span className="mono" style={{ fontSize: 13, color: "var(--text-dim)" }}>{I18N.t("REF_HINT")}</span>
+            <button className="btn btn-elec sm" style={{ flex: "none" }} onClick={() => actions.setView("parrainage")}>◈ {I18N.t("OP_REFERRAL_BTN")}</button>
+          </div>
+        </div>
+      )}
+
       <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 22, display: "flex", flexDirection: "column", gap: 20 }}>
         <Row label={I18N.t("OP_LANG")}>
           <div className="lang-switch">

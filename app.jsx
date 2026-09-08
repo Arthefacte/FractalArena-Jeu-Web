@@ -4,7 +4,7 @@
 const { useState, useEffect, useRef, useMemo, useCallback } = React;
 const D = window.FA_DATA, I18N = window.FA_I18N, LOOP = window.FA_LOOP;
 const { FA_Ctx, useFA, cx, fmt, Coin, Bar } = window;
-const { Team, Fosse, Arene, Forge, Wallet, Boosts, Perso, Options, ChatFab, RoomFab, Leaderboard, Quests, Campaign, Tour, LoginGate, TutorialGate, Link, Cinematique, Market, LockedBanner, Expeditions } = window;
+const { Team, Fosse, Arene, Forge, Wallet, Boosts, Perso, Options, ChatFab, RoomFab, Leaderboard, Quests, Campaign, Tour, LoginGate, TutorialGate, Link, Cinematique, Market, LockedBanner, Expeditions, Referral } = window;
 const SAVE_KEY = "fractal_arena_v1";
 // Stockage du bearer : delegue a FA_ACCOUNT (account-ui.js), qui applique la regle
 // decidee le 2026-07-27 — sessionStorage pour un compte UniSat (efface a la fermeture
@@ -32,6 +32,16 @@ let BOOT_LINK_CODE = (() => {
   if (c) window.history.replaceState(null, "", window.location.pathname + window.location.search);
   return c;
 })();
+// Code de parrain (?ref=CODE, spec 2026-09-07) : lu UNE fois au boot, hors du
+// state React et JAMAIS dans le blob localStorage. Il ne sert qu'aux TROIS
+// points de création d'un compte (POST /account/create, POST /claim-airdrop,
+// POST /save d'un joueur nouveau) — le serveur ne le lit qu'à l'INSERT de la
+// ligne, jamais au DO UPDATE : un joueur déjà connecté qui arrive avec ?ref=
+// n'est PAS rattaché (anti-Sybil, pas de rattachement différé). `let` : le
+// code est consommé (null) dès qu'une création a été acceptée par le serveur.
+let BOOT_REF_CODE = window.FA_REFERRAL ? window.FA_REFERRAL.parseRefSearch(window.location.search) : null;
+const refBody = () => (window.FA_REFERRAL ? window.FA_REFERRAL.refBody(BOOT_REF_CODE) : {});
+const refConsumed = () => { BOOT_REF_CODE = null; };
 // Toujours via ACC : `window.unisat` peut être un portefeuille FORKÉ qui a squatté
 // le global. Voir ACC.provider() dans account-ui.js.
 const HAS_UNISAT = () => ACC.hasProvider();
@@ -319,6 +329,11 @@ function App() {
     return t ? { headers: { Authorization: `Bearer ${t}` } } : {};
   };
   const saveTimerRef = useRef(null);
+  // Levé par la branche 404 de connectWallet (SEUL endroit qui fabrique un
+  // nouveau joueur) : tant qu'il est levé, l'autosave POST /save porte le code
+  // de parrain — c'est lui qui crée la ligne si /claim-airdrop a échoué.
+  // Baissé dès que le serveur a accepté une création (ligne existante ensuite).
+  const newPlayerRef = useRef(false);
 
   // Reconnexion à l'ouverture : si un token est encore valide en sessionStorage (rechargement
   // de l'onglet), on l'utilise directement → pas de re-signature, et la save se recharge AVEC
@@ -389,8 +404,14 @@ function App() {
       if (!s.wallet || !s.authToken) return;
       fetch(`${API_URL}/save/${s.wallet}`, {
         method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
-        body: JSON.stringify(stateToServer(s)),
-      }).then((r) => (r.ok ? r.json() : null)).then((data) => {
+        // Parrainage : `ref` UNIQUEMENT pour un joueur nouveau (drapeau levé en 404),
+        // jamais sur un resync — le serveur l'ignore de toute façon hors INSERT.
+        body: JSON.stringify({ ...stateToServer(s), ...(newPlayerRef.current ? refBody() : {}) }),
+      }).then((r) => {
+        // Ligne créée (ou déjà là) : le code de parrain n'a plus d'usage.
+        if (r.ok) { newPlayerRef.current = false; refConsumed(); }
+        return r.ok ? r.json() : null;
+      }).then((data) => {
         // creatures SERVER-OWNED : on adopte le roster faisant foi renvoyé par le serveur
         // (roster de départ généré serveur pour un nouveau joueur, resync sinon). Compare
         // par signature pour ne PAS reboucler l'autosave quand c'est déjà synchrone.
@@ -610,6 +631,7 @@ function App() {
           });
           return false; // joueur existant
         } else if (saveResp.status === 404) {
+          newPlayerRef.current = true; // parrainage : la prochaine écriture est une CRÉATION
           setG((s) => ({
             ...freshState(),
             lang: s.lang,
@@ -689,17 +711,34 @@ function App() {
         if (sv.ok) { const { save } = await sv.json(); applySave(save, s.wallet, s.authToken); }
       } catch (e) { /* silencieux */ }
     },
+    // Écran Parrainage : GET /referral/:wallet (Bearer de session, wallet propre →
+    // 403 si le jeton ne correspond pas, 404 si joueur inconnu). État LOCAL de
+    // l'écran, rien dans le blob. Best-effort : l'écran affiche un message discret.
+    async fetchReferral() {
+      const s = gRef.current;
+      if (!s.wallet || !s.authToken) return { ok: false, reason: "auth" };
+      try {
+        const r = await fetch(`${API_URL}/referral/${encodeURIComponent(s.wallet)}`, svOpts());
+        if (!r.ok) return { ok: false, reason: r.status === 403 || r.status === 404 ? String(r.status) : "server" };
+        const data = await r.json();
+        return { ok: true, data };
+      } catch (e) {
+        return { ok: false, reason: "network" };
+      }
+    },
     // Réclame l'airdrop de bienvenue APRÈS authentification (le serveur exige désormais
     // un token wallet sur /claim-airdrop). Best-effort : un échec sera retenté à la
     // prochaine connexion tant que airdrop_claimed reste FALSE côté serveur.
     async claimAirdropIfNew(addr, token, isNew) {
       if (!isNew || !addr || !token) return;
       try {
-        await fetch(`${API_URL}/claim-airdrop`, {
+        // Parrainage : le claim est un chemin de création (INSERT de la ligne) → `ref`.
+        const r = await fetch(`${API_URL}/claim-airdrop`, {
           method: "POST",
           headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
-          body: JSON.stringify({ wallet: addr }),
+          body: JSON.stringify({ wallet: addr, ...refBody() }),
         });
+        if (r.ok) { newPlayerRef.current = false; refConsumed(); }
       } catch (e) { /* retentable à la prochaine connexion */ }
     },
     // NE JAMAIS échouer en silence ici. Les quatre causes possibles (pas
@@ -782,13 +821,15 @@ function App() {
     // disparaissent. Aucune autre route ne les relit.
     async createAccount() {
       try {
+        // Parrainage : `{ ref }` si un code bien formé est présent, `{}` sinon.
         const r = await fetch(`${API_URL}/account/create`, {
-          method: "POST", headers: { "Content-Type": "application/json" }, body: "{}",
+          method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(refBody()),
         });
         if (r.status === 429) return { ok: false, reason: "rate" };
         if (!r.ok) return { ok: false, reason: "server" };
         const d = await r.json();
         if (!d.wallet || !d.token) return { ok: false, reason: "server" };
+        refConsumed(); // ligne créée côté serveur : le code n'a plus d'usage
         // accountKind + authToken en UN SEUL setG : entre deux setG separes par un await,
         // l'effet de persistance (qui depend de [g]) peut s'executer avec authToken encore
         // vide et appeler clearToken(), effacant le jeton tout juste ecrit. Un onglet ferme
@@ -2557,7 +2598,7 @@ function App() {
     );
   }
 
-  const VIEWS = { team: Team, fosse: Fosse, arene: Arene, campaign: Campaign, tour: Tour, expeditions: Expeditions, quests: Quests, forge: Forge, market: Market, wallet: Wallet, boosts: Boosts, perso: Perso, leaderboard: Leaderboard, options: Options, lien: Link };
+  const VIEWS = { team: Team, fosse: Fosse, arene: Arene, campaign: Campaign, tour: Tour, expeditions: Expeditions, quests: Quests, forge: Forge, market: Market, wallet: Wallet, boosts: Boosts, perso: Perso, leaderboard: Leaderboard, options: Options, lien: Link, parrainage: Referral };
 
   const View = VIEWS[g.view] || Team;
 

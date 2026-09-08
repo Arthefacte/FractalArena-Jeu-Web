@@ -673,6 +673,27 @@
     OP_RESET_CONFIRM: { FR: "Effacer toute la progression ?", EN: "Erase all progress?", ZH: "清除所有进度？" },
     OP_RESET_DONE: { FR: "Progression réinitialisée", EN: "Progress reset", ZH: "进度已重置" },
     OP_DISCONNECT: { FR: "Déconnecter le wallet", EN: "Disconnect wallet", ZH: "断开钱包" },
+    OP_REFERRAL_BTN: { FR: "Parrainage", EN: "Referral", ZH: "推荐好友" },
+
+    // parrainage (spec 2026-09-07)
+    REF_EYEBROW:    { FR: "PARRAINAGE", EN: "REFERRAL", ZH: "推荐" },
+    REF_TITLE:      { FR: "Parraine tes amis", EN: "Refer your friends", ZH: "推荐好友" },
+    REF_HINT: {
+      FR: "Tu gagnes 5 % des gains nets de tes filleuls dans La Fosse, à vie, en FA verrouillés — en plus, ils gardent tout.",
+      EN: "You earn 5% of your referees' net Pit winnings, for life, in locked FA — on top, they keep everything.",
+      ZH: "你将终身获得好友在深坑净收益的 5%，以锁定 FA 形式额外发放——他们的收益不受影响。",
+    },
+    REF_CODE_LABEL: { FR: "Ton code", EN: "Your code", ZH: "你的推荐码" },
+    REF_COPY:       { FR: "Copier", EN: "Copy", ZH: "复制" },
+    REF_COPIED:     { FR: "Copié !", EN: "Copied!", ZH: "已复制！" },
+    REF_LINK_LABEL: { FR: "Ton lien de parrainage", EN: "Your referral link", ZH: "你的推荐链接" },
+    REF_EARNED:     { FR: "Total gagné grâce à tes filleuls", EN: "Total earned from your referees", ZH: "通过好友累计获得" },
+    REF_REFEREES:   { FR: "Tes filleuls", EN: "Your referees", ZH: "你推荐的好友" },
+    REF_NONE:       { FR: "Aucun filleul pour l'instant — partage ton lien !", EN: "No referees yet — share your link!", ZH: "暂无推荐好友——分享你的链接吧！" },
+    REF_REFERRER:   { FR: "Ton parrain :", EN: "Your referrer:", ZH: "你的推荐人：" },
+    REF_LOADING:    { FR: "Chargement…", EN: "Loading…", ZH: "加载中…" },
+    REF_ERROR:      { FR: "Parrainage indisponible pour le moment, réessaie plus tard.", EN: "Referral unavailable right now, try again later.", ZH: "推荐功能暂时不可用，请稍后再试。" },
+    REF_BACK:       { FR: "← Retour aux options", EN: "← Back to options", ZH: "← 返回设置" },
 
     // misc
     INSUFFICIENT: { FR: "Solde insuffisant (%d / %d)", EN: "Insufficient balance (%d / %d)", ZH: "余额不足（%d / %d）" },
