@@ -216,7 +216,22 @@ function Fosse() {
   }, [playing]);
 
   // cleanup on unmount
-  useEffect(() => () => { loopRef.current = false; runIdRef.current++; if (stepRef.current) clearTimeout(stepRef.current); }, []);
+  useEffect(() => () => {
+    loopRef.current = false; runIdRef.current++; if (stepRef.current) clearTimeout(stepRef.current);
+    // Quitter l'écran pendant un replay : le serveur a DÉJÀ réglé le combat (mise
+    // prélevée, solde final dans serverFight) mais seul settleBattle applique ce
+    // solde et libère serverFight. Sans ce règlement, le solde affiché reste faux
+    // (mise partie, gain jamais crédité) et reveillePools (app.jsx) court-circuite
+    // le ticker de rachat tant que serverFight n'est pas null. On règle donc ici
+    // le strict nécessaire — pas de log ni de pop d'XP (composant démonté), et
+    // surtout pas de suite de boucle.
+    const ctx = battleRef.current;
+    if (ctx) {
+      battleRef.current = null;
+      const { battle, isLoopRun, free, effTier, bet } = ctx;
+      actions.resolveFight({ win: battle.winner === "p1", free, betTier: effTier, betAmount: bet.betAmount, fromLocked: bet.fromLocked, isLoop: isLoopRun });
+    }
+  }, []);
 
   function log(text, cls) { setLogLines((L) => [...L.slice(-120), { text, cls }]); }
   useEffect(() => { if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight; }, [logLines]);

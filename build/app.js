@@ -363,6 +363,8 @@ function loadState() {
       // ids orphelins d'une session précédente → vidés, réconciliés à la connexion
       ordinalName: "",
       // sera écrasé par le nom serveur à la connexion (branche 200)
+      serverFight: null,
+      // un replay ne survit jamais au rechargement (blobs antérieurs à l'exclusion)
       options: Object.assign(freshState().options, s.options || {}, {
         speed: 1
       }),
@@ -487,10 +489,14 @@ function App() {
   useEffect(() => {
     // authToken EXCLU du blob localStorage (sinon volable trivialement par une XSS) ; il est
     // stocké à part via ACC, dans le storage adapté au type de compte (accountKind).
+    // serverFight EXCLU aussi : c'est l'état transitoire d'un replay en cours. Persisté,
+    // il survivrait au rechargement et gèlerait le ticker de rachat (reveillePools)
+    // avec un solde faux, aucun resolveFight ne venant jamais le libérer.
     try {
       localStorage.setItem(SAVE_KEY, JSON.stringify({
         ...g,
-        authToken: ""
+        authToken: "",
+        serverFight: null
       }));
     } catch (e) {}
     writeToken(g.authToken, g.accountKind);

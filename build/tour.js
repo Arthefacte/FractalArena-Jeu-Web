@@ -565,6 +565,9 @@ function Tour() {
   const [autoRecap, setAutoRecap] = useState(null); // { startFloor, bestFloor, tiers:[], silver, gold }
   const stopRef = React.useRef(false);
   const runningRef = React.useRef(false);
+  // Vivant tant que l'écran est monté : la boucle d'auto-combat (onAuto) le relit
+  // après chaque await pour sortir dès le démontage, sans attendre le tour suivant.
+  const mountedRef = React.useRef(true);
   async function refresh() {
     const r = await actions.towerState();
     if (r.ok) setSt({
@@ -598,6 +601,12 @@ function Tour() {
   // Champion de soutien : la liste d'emprunt se charge en entrant dans la Tour.
   useEffect(() => {
     actions.championsList();
+  }, []);
+  // Démontage : l'auto-combat s'arrête. Sans ce cleanup la boucle `while (!stopRef.current)`
+  // d'onAuto continuait ses POST /tower/fight (et ses setState) sur un composant mort.
+  useEffect(() => () => {
+    stopRef.current = true;
+    mountedRef.current = false;
   }, []);
   if (!g.wallet || !g.authToken) {
     return /*#__PURE__*/React.createElement("div", {
@@ -764,6 +773,7 @@ function Tour() {
         if (champRef.current && CU.championRunState(curState, champRef.current.beast.id).dead) champRef.current = null;
         const curChamp = champRef.current;
         const r = await actions.towerFight(curChamp ? fittest.slice(0, 2) : fittest, posture, curChamp);
+        if (!mountedRef.current) break; // écran quitté pendant l'appel : plus rien à afficher ni à relancer
         if (!r.ok) {
           if (r.reason === "trop_rapide") {
             await sleep(300);
@@ -809,6 +819,7 @@ function Tour() {
         }
         if (stopRef.current) break;
         await sleep(350);
+        if (!mountedRef.current) break;
       }
     } finally {
       runningRef.current = false;
