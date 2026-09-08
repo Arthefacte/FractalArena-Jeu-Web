@@ -30,6 +30,7 @@ function Link() {
   const TU = window.FA_TOTEM_UI;
   const t = g.totem;
   const dormant = !t || t.tier <= 0;
+  const [invokeBusy, setInvokeBusy] = React.useState(false); // anti double-clic sur l'invocation (audit P2#17)
   return /*#__PURE__*/React.createElement("div", {
     className: "container link-screen",
     style: {
@@ -66,6 +67,7 @@ function Link() {
       marginTop: 2
     }
   }, I18N.t("LINK_TIER"), " ", t ? t.tier : 0, " \xB7 ", TU.tierName(t ? t.tier : 0)), t && t.canInvoke && /*#__PURE__*/React.createElement("button", {
+    disabled: invokeBusy,
     style: {
       margin: "16px auto 0",
       display: "block",
@@ -76,15 +78,24 @@ function Link() {
       color: "#05070f",
       border: "none",
       borderRadius: 10,
-      cursor: "pointer"
+      cursor: invokeBusy ? "default" : "pointer",
+      opacity: invokeBusy ? 0.6 : 1
     },
     onClick: () => {
+      if (invokeBusy) return;
       const img = t.artByTier && t.artByTier[t.tier] || TU.totemArtFallback(t.type);
       const tier = t.tier;
+      setInvokeBusy(true);
       window.FA_TOTEM_CINE.play({
         imageUrl: img,
         fallbackUrl: TU.totemArtFallback(t.type),
-        onDone: () => actions.invokeTotem(tier)
+        onDone: async () => {
+          try {
+            await actions.invokeTotem(tier);
+          } finally {
+            setInvokeBusy(false);
+          }
+        }
       });
     }
   }, I18N.t("TOTEM_INVOKE_BTN")), dormant && /*#__PURE__*/React.createElement("p", {

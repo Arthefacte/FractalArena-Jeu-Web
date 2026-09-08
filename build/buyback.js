@@ -408,13 +408,19 @@ function BuybackTicker() {
   const cumulGains = React.useRef({});
   const prevPools = React.useRef([]);
   const poolsPret = React.useRef(false);
+  // Jeton de séquence : deux réponses inversées écrasaient prevPools avec un
+  // relevé plus ancien (faux « +delta », pluie d'or fantôme). On n'applique que
+  // la réponse la plus récente (audit web 2026-09-08, P2#15).
+  const loadSeq = React.useRef(0);
   React.useEffect(() => {
     let alive = true;
     async function load() {
+      const seq = ++loadSeq.current;
       // /dex/status en parallèle : cache serveur 60 s, donc les réveils fréquents
       // (fa:buyback-refresh à chaque dépense) ne coûtent aucun appel UniSat de plus.
       const [rb, dx, br] = await Promise.all([fetch(API_URL + "/buyback/status").then(r => r.json()).catch(() => null), fetch(API_URL + "/dex/status").then(r => r.ok ? r.json() : null).catch(() => null), fetch(API_URL + "/burn/status").then(r => r.ok ? r.json() : null).catch(() => null)]);
       if (!alive) return;
+      if (seq !== loadSeq.current) return; // réponse périmée : une plus récente est arrivée
       if (dx && dx.dex) setDex(dx.dex);
       if (br && br.burn) setBurn(br.burn);
       if (rb && rb.buyback && Array.isArray(rb.buyback.pools)) {

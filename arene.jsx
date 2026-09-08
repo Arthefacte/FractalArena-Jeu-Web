@@ -31,6 +31,7 @@ function Arene() {
   const [pick, setPick] = useState(null); // { target, revanche, ids:[id,id,id], oppTeam, posture, oppPosture } ou null
   const [nowTs, setNowTs] = useState(Date.now());
   const [defPosture, setDefPosture] = useState("equilibre");
+  const seasonFlipTried = useRef(false); // anti-rafale : une seule tentative + backoff
 
   useEffect(() => { if (g.wallet) { actions.pvpRefresh().then(() => actions.pvpAttacksSeen()); actions.pvpDefenseOf(g.wallet).then((r) => setDefPosture((r && r.posture) || "equilibre")); } }, [g.wallet]);
   useEffect(() => {
@@ -38,8 +39,15 @@ function Arene() {
     return () => clearInterval(id);
   }, []);
   // Bascule auto en mode jouable quand l'heure d'ouverture est atteinte.
+  // Sans garde, chaque client martelait pvpRefresh() (5 fetchs) à CHAQUE seconde
+  // tant que le serveur n'avait pas basculé `live` (audit web 2026-09-08, P2#10).
+  // Une seule tentative, puis on n'insiste que toutes les ~30 s.
   useEffect(() => {
-    if (pvp.season && pvp.season.live === false && Date.now() >= Number(pvp.season.starts_at)) actions.pvpRefresh();
+    const open = pvp.season && pvp.season.live === false && Date.now() >= Number(pvp.season.starts_at);
+    if (!open) return;
+    if (seasonFlipTried.current && Date.now() - seasonFlipTried.current < 30000) return;
+    seasonFlipTried.current = Date.now();
+    actions.pvpRefresh();
   }, [nowTs]);
 
   const defenseReady = g.selected.length === 3;

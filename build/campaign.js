@@ -1410,6 +1410,7 @@ function Campaign() {
   });
   if (nav.screen === "combat") {
     return /*#__PURE__*/React.createElement(CampaignCombat, {
+      key: nav.world + "-" + nav.floor,
       worldIndex: nav.world,
       floorIndex: nav.floor,
       onBack: () => setNav({

@@ -263,6 +263,7 @@
   (function installTokenRefresh() {
     if (typeof window.fetch !== "function") return;
     const fetchOrigine = window.fetch.bind(window);
+    let lastRefreshTs = 0; // dédupe : un seul refresh par fenêtre d'1 s (audit P2#11)
     window.fetch = function (input, init) {
       const p = fetchOrigine(input, init);
       try {
@@ -272,6 +273,9 @@
             try {
               const neuf = resp.headers && resp.headers.get && resp.headers.get("x-fa-token-refresh");
               if (neuf) {
+                const now = Date.now();
+                if (now - lastRefreshTs < 1000) return; // un refresh vient déjà d'être appliqué
+                lastRefreshTs = now;
                 writeToken(neuf);
                 window.dispatchEvent(new CustomEvent("fa:token-refresh", { detail: { token: neuf } }));
               }

@@ -446,6 +446,9 @@ function App() {
   const [accSecrets, setAccSecrets] = useState(null);
   const gRef = useRef(g);
   gRef.current = g;
+  // Jeton de séquence du marché : une réponse « relic » arrivant après « core »
+  // laissait item_type faux et rechargait le mauvais volet (audit P2#18).
+  const marketSeqRef = useRef(0);
   // Options fetch pour les lectures /save : joint le Bearer du joueur connecté (preuve de
   // propriété). Rétro-compatible : le serveur l'ignore tant que la route n'est pas auth-gatée,
   // et le prendra en compte ensuite (corrige l'IDOR en lecture sur /save/:wallet — audit 2026-06-24).
@@ -933,46 +936,47 @@ function App() {
           throw new Error("server " + saveResp.status);
         }
       } catch (e) {
-        // fallback local si réseau KO
+        // fallback local si réseau KO (pas de réponse /save du tout).
+        // IMPORTANT (audit web 2026-09-08, P2#12) : on NE FABRIQUE PAS les soldes
+        // de bienvenue ni le roster de départ ici — un compte EXISTANT sur un appareil
+        // neuf (blob vide, donc s.roster.length === 0) se voyait afficher des soldes
+        // fictifs persistés jusqu'au prochain /save réussi. La branche 404 ci-dessus
+        // (réponse serveur normale) reste le SEUL endroit qui fabrique un nouveau joueur.
+        // Ici on conserve le wallet et on affiche un état « non synchronisé ».
         setG(s => {
-          const isNew = !s.roster.length;
-          if (isNew) {
-            return {
-              ...freshState(),
-              lang: s.lang,
-              options: s.options,
-              // Contrairement à la branche 404 (réponse serveur normale), ce fallback ne
-              // s'exécute QUE si le réseau a lâché — fréquent sur mobile. Sans reinjecter
-              // accountKind/onchainVerified/authToken depuis s, freshState() les remet à
-              // ""/true/"" : un compte généré perdrait sa nature (son jeton part alors en
-              // sessionStorage, effacé à la fermeture d'onglet, et disparaît carrément du
-              // state ici) et le bandeau gains-verrouillés disparaîtrait pour de bon
-              // (audit IMPORTANT 4a, 2026-07-27).
-              accountKind: s.accountKind,
-              onchainVerified: s.onchainVerified,
-              authToken: s.authToken,
-              wallet: addr,
-              view: "team",
-              playerName: ACC.localDisplayName(addr, s.accountKind),
-              roster: D.starterRoster(),
-              locked: D.ECON.WELCOME_LOCKED,
-              liquid: D.ECON.WELCOME_LIQUID,
-              ticketsSilver: D.ECON.WELCOME_TICKETS_SILVER,
-              ticketsGold: 0,
-              freeFights: D.ECON.FREE_FIGHTS_PER_DAY,
-              freeResetTs: Date.now()
-            };
-          }
+          // Préserve accountKind/onchainVerified/authToken (un compte généré perdrait
+          // sa nature si on les remettait à leur défaut — audit IMPORTANT 4a).
           return {
             ...s,
+            accountKind: s.accountKind,
+            onchainVerified: s.onchainVerified,
+            authToken: s.authToken,
             wallet: addr,
+            view: "team",
             playerName: ACC.localDisplayName(addr, s.accountKind),
-            ordinalName: "",
-            selected: [],
-            view: "team"
+            ordinalName: ""
           };
         });
       }
+    },
+    // Resync /save « léger » d'un compte DÉJÀ connecté (solde après retrait, etc.) :
+    // jeton de SESSION (svOpts) + garde d'identité applySave. À utiliser à la place de
+    // connectWallet(wallet, jetonStepUp) : relire /save avec le jeton de portée
+    // `withdraw` peut répondre 401 (scope non accepté) → connectWallet déconnectait
+    // un compte généré ou faisait re-signer un compte UniSat juste après un retrait
+    // réussi (audit web 2026-09-08, P2#6). Best-effort : un échec laisse l'état tel quel.
+    async resyncSave() {
+      const s = gRef.current;
+      if (!s.wallet || !s.authToken) return;
+      try {
+        const sv = await fetch(`${API_URL}/save/${s.wallet}`, svOpts());
+        if (sv.ok) {
+          const {
+            save
+          } = await sv.json();
+          applySave(save, s.wallet, s.authToken);
+        }
+      } catch (e) {/* silencieux */}
     },
     // Réclame l'airdrop de bienvenue APRÈS authentification (le serveur exige désormais
     // un token wallet sur /claim-airdrop). Best-effort : un échec sera retenté à la
@@ -1827,6 +1831,12 @@ function App() {
       if (srv !== null) {
         win = srv.won ?? false; // override le résultat local par le résultat serveur
       }
+      // Le résumé (modale de fin, pop d'XP, log de level-up) est calculé ICI, en pur,
+      // à partir de `srv` : il est rendu synchroniquement à la Fosse, qui le lit dès
+      // le retour. Le remplir DANS l'updater setG dépendait de l'exécution « eager »
+      // de React 18 — désactivée dès qu'une autre mise à jour d'App est en attente —
+      // et rendait alors une modale « +0 FA / +0 XP » (audit web 2026-09-08, P2#7).
+      // L'updater ci-dessous ne fait plus que fusionner l'état.
       const summary = {
         payout: 0,
         net: 0,
@@ -1840,6 +1850,25 @@ function App() {
         levelUps: [],
         rarityUps: []
       };
+      if (srv && srv.milestone) summary.milestone = true;
+      if (win) {
+        const base = free ? D.ECON.BET.bronze : betAmount;
+        const payout = Math.floor(base * D.ECON.PAYOUT_MULT);
+        summary.payout = payout;
+        summary.net = payout - betAmount;
+        // lucky strike / momentum / catalyseur : appliqués et crédités CÔTÉ SERVEUR
+        // (déjà inclus dans le solde srv) — on ne fait qu'afficher.
+        if (srv && srv.lucky_bonus > 0) summary.luckyBonus = srv.lucky_bonus;
+        if (srv && srv.momentum_bonus > 0) summary.momentumBonus = srv.momentum_bonus;
+        if (srv && srv.catalyst_unlocked > 0) summary.catalystUnlocked = srv.catalyst_unlocked;
+        // xp / level-ups : ATTRIBUÉS CÔTÉ SERVEUR (infalsifiable). On affiche les valeurs
+        // renvoyées ; le roster serveur est adopté dans l'updater (plus de calcul d'XP local).
+        summary.xp = srv ? srv.xp ?? 0 : 0;
+        const lvEvents = srv && srv.level_events ? srv.level_events : [];
+        summary.levelUps = lvEvents.filter(e => e.type === "levelup");
+        summary.rarityUps = lvEvents.filter(e => e.type === "rarity_up");
+      }
+      if (srv && srv.win_streak !== undefined) summary.winStreak = srv.win_streak;
       setG(s => {
         // Solde final serveur appliqué ICI (fin du combat), pas au lancement → le gain
         // n'apparaît qu'une fois le replay terminé.
@@ -1856,27 +1885,10 @@ function App() {
         const boosts = {
           ...s.boosts
         };
-        if (srv && srv.milestone) summary.milestone = true;
         if (win) {
           session.wins += 1;
-          const base = free ? D.ECON.BET.bronze : betAmount;
-          const payout = Math.floor(base * D.ECON.PAYOUT_MULT);
-          const net = payout - betAmount;
           // liquid/locked = solde serveur, initialisé en tête de ce setG (au settle)
-          summary.payout = payout;
-          summary.net = net;
-          if (!free) session.net += net;
-          // lucky strike / momentum / catalyseur : appliqués et crédités CÔTÉ SERVEUR
-          // (déjà inclus dans le solde srv) — on ne fait qu'afficher.
-          if (srv && srv.lucky_bonus > 0) summary.luckyBonus = srv.lucky_bonus;
-          if (srv && srv.momentum_bonus > 0) summary.momentumBonus = srv.momentum_bonus;
-          if (srv && srv.catalyst_unlocked > 0) summary.catalystUnlocked = srv.catalyst_unlocked;
-          // xp / level-ups : ATTRIBUÉS CÔTÉ SERVEUR (infalsifiable). On affiche les valeurs
-          // renvoyées ; le roster serveur est adopté plus bas (plus de calcul d'XP local).
-          summary.xp = srv ? srv.xp ?? 0 : 0;
-          const lvEvents = srv && srv.level_events ? srv.level_events : [];
-          summary.levelUps = lvEvents.filter(e => e.type === "levelup");
-          summary.rarityUps = lvEvents.filter(e => e.type === "rarity_up");
+          if (!free) session.net += summary.net;
         } else {
           session.losses += 1;
           if (!free) {
@@ -1884,7 +1896,6 @@ function App() {
             session.net -= betAmount;
           }
         }
-        if (srv && srv.win_streak !== undefined) summary.winStreak = srv.win_streak;
         // boosts : TOUTES les charges sont consommées CÔTÉ SERVEUR dans /fight,
         // uniquement sur victoire et seulement si armées → on resynchronise simplement.
         if (srv && srv.boosts) {
@@ -3273,7 +3284,7 @@ function App() {
         const data = await resp.json();
         setG(st => ({
           ...st,
-          locked: data.new_locked
+          locked: Number(data.new_locked ?? st.locked)
         }));
         return {
           ok: true,
@@ -3686,7 +3697,7 @@ function App() {
         const data = await resp.json();
         setG(st => ({
           ...st,
-          locked: data.new_locked
+          locked: Number(data.new_locked ?? st.locked)
         }));
         toast(I18N.t("LOGIN_REWARD_GRANTED", data.reward_granted), "good");
         return {
@@ -4058,6 +4069,7 @@ function App() {
           gold: 0,
           tiers: []
         };
+        rw.tiers = Array.isArray(rw.tiers) ? rw.tiers : []; // contrat serveur : tiers peut manquer
         if ((rw.fa || 0) > 0 || (rw.silver || 0) > 0 || (rw.gold || 0) > 0) {
           // Paliers crédités serveur en FA LIQUIDES (contrairement à la campagne) + tickets.
           setG(st => ({
@@ -4489,6 +4501,7 @@ function App() {
     async marketRefresh(itemType) {
       const s = gRef.current;
       const t = itemType || s.market && s.market.item_type || "relic";
+      const seq = ++marketSeqRef.current;
       try {
         const r = await fetch(`${API_URL}/market/listings${t === "core" ? "?item_type=core" : ""}`);
         const j = await r.json().catch(() => ({}));
@@ -4501,6 +4514,7 @@ function App() {
           });
           if (rm.ok) mine = await rm.json().catch(() => null);
         }
+        if (seq !== marketSeqRef.current) return; // réponse périmée : un onglet plus récent a été demandé
         setG(st => ({
           ...st,
           market: {
@@ -4669,7 +4683,9 @@ function App() {
   }), /*#__PURE__*/React.createElement(PoolsFold, null, /*#__PURE__*/React.createElement(BuybackTicker, null), /*#__PURE__*/React.createElement(window.QuizTicker, null)), /*#__PURE__*/React.createElement(Nav, null), /*#__PURE__*/React.createElement("div", {
     className: "view-anim",
     key: g.view
-  }, /*#__PURE__*/React.createElement(View, null))), /*#__PURE__*/React.createElement(ChatFab, null), /*#__PURE__*/React.createElement(RoomFab, null), /*#__PURE__*/React.createElement(Toasts, {
+  }, /*#__PURE__*/React.createElement(View, null))), /*#__PURE__*/React.createElement(ChatFab, {
+    key: g.wallet
+  }), /*#__PURE__*/React.createElement(RoomFab, null), /*#__PURE__*/React.createElement(Toasts, {
     toasts: toasts
   }), /*#__PURE__*/React.createElement(window.PwaOfflineGate, {
     etat: etatReseau,

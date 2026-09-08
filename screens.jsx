@@ -613,8 +613,8 @@ function ForgeReroll() {
     setRerollBusy(true);
     const r = await actions.rerollConfirm(sel);
     setRerollBusy(false);
-    setPreview(null);
-    if (r.ok) toast(I18N.t("FG_REROLL_OK"), "good"); else toast(I18N.localizeServerError(r.reason), "bad");
+    if (r.ok) { setPreview(null); toast(I18N.t("FG_REROLL_OK"), "good"); }
+    else toast(I18N.localizeServerError(r.reason), "bad");
   }
   async function onAgain() {
     setRerollBusy(true);
@@ -627,8 +627,8 @@ function ForgeReroll() {
     setRerollBusy(true);
     const r = await actions.rerollDiscard(sel);
     setRerollBusy(false);
-    setPreview(null);
-    if (r.ok) toast(I18N.t("REROLL_KEPT_OLD", r.refunded || 0), "good"); else toast(I18N.localizeServerError(r.reason), "bad");
+    if (r.ok) { setPreview(null); toast(I18N.t("REROLL_KEPT_OLD", r.refunded || 0), "good"); }
+    else toast(I18N.localizeServerError(r.reason), "bad");
   }
   return (
     <div>
@@ -1397,7 +1397,10 @@ function WithdrawModal({ onClose }) {
         toast(I18N.t("WL_WD_OK", n), "good");
         // Resync du solde avec le serveur (qui a déjà déduit) : l'affichage reflète
         // immédiatement le vrai solde au lieu de rester sur le débit optimiste.
-        try { await actions.connectWallet(g.wallet, a.token); } catch (e) { /* best-effort */ }
+        // Avec le jeton de SESSION (resyncSave → svOpts + applySave), jamais avec
+        // `a.token` : ce jeton step-up a la portée `withdraw`, /save peut le refuser
+        // (401) et connectWallet déconnectait alors le compte (audit 2026-09-08, P2#6).
+        try { await actions.resyncSave(); } catch (e) { /* best-effort */ }
         onClose();
       } else if (data.status === "cooldown") {
         actions.deposit(n);

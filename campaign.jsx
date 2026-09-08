@@ -715,6 +715,7 @@ function Campaign() {
   if (nav.screen === "combat") {
     return (
       <CampaignCombat
+        key={nav.world + "-" + nav.floor}
         worldIndex={nav.world} floorIndex={nav.floor}
         onBack={() => setNav({ screen: "floors", world: nav.world, floor: 0 })}
         onCleared={(nextFloor) => setNav({ screen: "combat", world: nav.world, floor: nextFloor })}
