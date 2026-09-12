@@ -10,6 +10,7 @@ function RelicViewer({ type, rarity, size }) {
     renderer.setSize(px, px);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     mount.appendChild(renderer.domElement);
+    renderer.domElement.style.display = "block";
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
     camera.position.set(0, 0, 4.2);
@@ -99,6 +100,6 @@ function RelicViewer({ type, rarity, size }) {
     };
   }, [type, rarity, px]);
 
-  return <div ref={ref} style={{ width: px, height: px, margin: "0 auto" }} />;
+  return <div ref={ref} style={{ width: px, height: px, margin: "0 auto", position: "relative", zIndex: 1 }} />;
 }
 window.RelicViewer = RelicViewer;

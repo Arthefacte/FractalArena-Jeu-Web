@@ -19,6 +19,7 @@ function RelicViewer({
     renderer.setSize(px, px);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     mount.appendChild(renderer.domElement);
+    renderer.domElement.style.display = "block";
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
     camera.position.set(0, 0, 4.2);
@@ -148,7 +149,9 @@ function RelicViewer({
     style: {
       width: px,
       height: px,
-      margin: "0 auto"
+      margin: "0 auto",
+      position: "relative",
+      zIndex: 1
     }
   });
 }
