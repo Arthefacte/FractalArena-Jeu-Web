@@ -3137,7 +3137,10 @@ function App() {
             "Authorization": `Bearer ${s.authToken}`
           },
           body: JSON.stringify({
-            messages: last20
+            messages: last20,
+            ...(s.lang ? {
+              lang: s.lang
+            } : {})
           })
         });
         if (resp.status === 429) return {

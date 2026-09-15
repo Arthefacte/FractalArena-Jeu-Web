@@ -1801,7 +1801,7 @@ function App() {
         const resp = await fetch(`${API_URL}/chat`, {
           method: "POST",
           headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
-          body: JSON.stringify({ messages: last20 }),
+          body: JSON.stringify({ messages: last20, ...(s.lang ? { lang: s.lang } : {}) }),
         });
         if (resp.status === 429) return { ok: false, rateLimited: true };
         const data = await resp.json();
