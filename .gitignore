@@ -10,3 +10,6 @@ node_modules/
 # .design-sync/_tools/build.mjs + gen-cards/gen-docs/gen-readme).
 ds-bundle/*
 !ds-bundle/_src/
+
+# Plans internes Claude Code — retirés du dépôt public (conservés en local + _studio)
+docs/superpowers/
