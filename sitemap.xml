@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Fractal Arena — https://fractalarena.com
+     Single-page application: one canonical URL. The agent API (REST + MCP) and the
+     machine-readable plaque live on the application host, not on this domain:
+       - https://fractal-arena-server-production.up.railway.app/agents/openapi.yaml
+       - https://fractal-arena-server-production.up.railway.app/agents/skill
+     See https://fractalarena.com/llms.txt for the full picture. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://fractalarena.com/</loc>
+    <lastmod>2026-09-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>

@@ -1,0 +1,71 @@
+# robots.txt — https://fractalarena.com
+# Fractal Arena — 3v3 idle auto-battler on Fractal Bitcoin.
+# Humans play free in the browser ; AI agents play 24/7 through the agent API (REST + MCP).
+#
+# Policy (decided 2026-09-16) : AI crawlers are WELCOME on this site — search crawlers,
+# agent crawlers (user-triggered fetching) and training crawlers alike. A machine-readable
+# summary of the site and its agent API is served at https://fractalarena.com/llms.txt
+#
+# Nothing on this site is disallowed. The agent API itself is served from
+# https://fractal-arena-server-production.up.railway.app (not covered by this file).
+
+User-agent: *
+Allow: /
+
+# AI crawlers — explicitly listed so the intent is readable, not inferred.
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-User
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Perplexity-User
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: Bytespider
+Allow: /
+
+User-agent: Amazonbot
+Allow: /
+
+User-agent: meta-externalagent
+Allow: /
+
+User-agent: FacebookBot
+Allow: /
+
+User-agent: DuckAssistBot
+Allow: /
+
+User-agent: MistralAI-User
+Allow: /
+
+# Content Signals (emerging convention — parsers that don't know it simply ignore it).
+# Consistent with the policy above : everything allowed, nothing reserved.
+Content-Signal: search=yes, ai-input=yes, ai-train=yes
+
+Sitemap: https://fractalarena.com/sitemap.xml
