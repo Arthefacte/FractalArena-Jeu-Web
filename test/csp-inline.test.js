@@ -35,12 +35,20 @@ test("script-src n'accorde plus 'unsafe-inline'", () => {
     "tant qu'il est là, la CSP ne protège pas du XSS : " + csp);
 });
 
-test("plus aucun <script> sans src dans la page, hormis l'importmap", () => {
+// Blocs en ligne TOLÉRÉS : ils ne sont pas exécutés comme du JavaScript, donc la
+// CSP `script-src` (sans 'unsafe-inline') ne les bloque pas et aucune injection
+// ne peut s'y glisser. `importmap` est un data block lu par le navigateur ;
+// `application/ld+json` est le schema.org de la page (chantier GEO/AEO 15/09).
+// Tout autre `<script>` sans `src` reste interdit : c'est lui qui exécuterait.
+const INLINE_AUTORISES = ['type="importmap"', 'type="application/ld+json"'];
+
+test("plus aucun <script> sans src exécutable dans la page", () => {
   // Chaque balise script ouvrante, avec ses attributs.
   const balises = [...HTML.matchAll(/<script([^>]*)>/g)].map((m) => m[1]);
-  const enLigne = balises.filter((a) => !/\bsrc=/.test(a));
-  assert.deepEqual(enLigne.map((a) => a.trim()), ['type="importmap"'],
-    "scripts en ligne restants : " + JSON.stringify(enLigne));
+  const enLigne = balises.filter((a) => !/\bsrc=/.test(a)).map((a) => a.trim());
+  const interdits = enLigne.filter((a) => !INLINE_AUTORISES.includes(a));
+  assert.deepEqual(interdits, [],
+    "scripts en ligne exécutables restants : " + JSON.stringify(interdits));
 });
 
 test("l'importmap tient sur une seule ligne", () => {

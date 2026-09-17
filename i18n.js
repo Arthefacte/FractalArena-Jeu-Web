@@ -435,10 +435,16 @@
     RES_BUYBACK:   { FR: "Rachat", EN: "Buyback", ZH: "回购" },
     BB_RESERVE:    { FR: "Buyback", EN: "Buyback", ZH: "回购" },
     BB_POOL_LABEL: { FR: "Rachat · %s", EN: "Buyback · %s", ZH: "回购 · %s" },
-    BB_BOUGHT_SUB: { FR: "· %s FA rachetés depuis le lancement", EN: "· %s FA bought back since launch", ZH: "· 自上线累计回购 %s FA" },
-    BB_TICK_TITLE: { FR: "100% de chaque mise et de chaque forge rachète FRACTALARENA sur le marché, puis le verrouille à vie.",
-                     EN: "100% of every bet and forge buys FRACTALARENA on the market, then locks it for life.",
-                     ZH: "每次下注和锻造的 100% 都会在市场上回购 FRACTALARENA，然后永久锁定。" },
+    // Cumul vérifié on-chain (/dex/status, ou sa dernière valeur connue) : nomme
+    // l'unité, la source et la nature — ne peut pas être confondu avec une part
+    // de pool instantanée (la position LP d'InSwap est un stock proportionnel).
+    BB_BOUGHT_SUB: { FR: "· %s FA rachetés sur le marché — cumul vérifié on-chain", EN: "· %s FA bought back on the market — verified on-chain, cumulative", ZH: "· 累计市场回购 %s FA（链上可验证）" },
+    // Repli base (somme des tranches) : nature différente, libellé différent —
+    // il ne se réclame pas de l'on-chain.
+    BB_BOUGHT_SUB_DB: { FR: "· %s FA déduits des pools de rachat", EN: "· %s FA debited from the buyback pools", ZH: "· 回购池已扣减 %s FA" },
+    BB_TICK_TITLE: { FR: "100% de chaque mise et de chaque forge rachète FRACTALARENA sur le marché, puis le verrouille à vie. Les FA rachetés sont soit brûlés en direct, soit remis en pool avec leurs tokens LP brûlés : la part de pool affichée est une proportion instantanée, jamais un cumul.",
+                     EN: "100% of every bet and forge buys FRACTALARENA on the market, then locks it for life. Bought-back FA is either burned outright or paired back into the pool with its LP tokens burned: the displayed pool share is an instantaneous proportion, never a cumulative total.",
+                     ZH: "每次下注和锻造的 100% 都会在市场上回购 FRACTALARENA，然后永久锁定。回购的 FA 要么直接销毁，要么与 LP 代币一并销毁后重新注入池中：显示的池份额为即时比例，并非累计值。" },
     // Tape boursière (#7 header vivant) — les montants suivent la convention
     // FaText « %s FA » (logo + nombre à l'écran, jamais l'écriture FA).
     TAPE_RACHAT:   { FR: "RACHAT %s · %s FA", EN: "BUYBACK %s · %s FA", ZH: "回购 %s · %s FA" },

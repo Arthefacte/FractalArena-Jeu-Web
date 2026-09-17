@@ -20,6 +20,75 @@ function bbFmt(n) {
   return Math.round(n || 0).toLocaleString("en-US");
 }
 
+// ——— Cumul racheté : ce qu'on affiche, et ce que le chiffre EST.
+// Le total on-chain (/dex/status) fait foi : la somme des tranches (total_bought)
+// sous-déclare les restes sous-seuil (carryover). Quand /dex/status manque, on
+// garde la dernière valeur on-chain connue (localStorage) plutôt que de faire
+// RECULER le compteur devant le joueur (constaté le 2026-09-17 : le bandeau
+// retombait sur la base sous un libellé « depuis le lancement » inchangé). Sans
+// mémoire, la somme des tranches — sous son propre libellé, qui ne se réclame
+// pas de l'on-chain. Helpers purs, exposés sur window comme buybackFraction.
+const BB_CUMUL_KEY = "fa:buyback-cumul-onchain";
+
+// Nombre fini > 0, sinon 0 : null, undefined, "abc", NaN, -5, Infinity, objets
+// et booléens retombent tous à 0 — jamais de NaN ni de négatif à l'écran.
+function nombrePositif(v) {
+  if (v === null || v === undefined || typeof v === "boolean" || typeof v === "object") return 0;
+  const n = Number(v);
+  return Number.isFinite(n) && n > 0 ? n : 0;
+}
+
+// Pur. value = ce qu'on affiche ; source = ce que le chiffre EST (le libellé en dépend).
+//   onchain > 0   → { value: onchain,  source: "onchain" }
+//   sinon stored  → { value: stored,   source: "stored" }   (dernière valeur on-chain connue)
+//   sinon         → { value: tranches, source: "tranches" }
+function resolveBoughtTotal({ onchain, tranches, stored } = {}) {
+  const oc = nombrePositif(onchain);
+  if (oc > 0) return { value: oc, source: "onchain" };
+  const st = nombrePositif(stored);
+  if (st > 0) return { value: st, source: "stored" };
+  return { value: nombrePositif(tranches), source: "tranches" };
+}
+
+// "onchain" et "stored" sont le même chiffre (un cumul vérifié on-chain, mémorisé
+// ou non) ; "tranches" est d'une autre nature et son libellé le dit.
+function cleLibelleCumul(source) {
+  return source === "tranches" ? "BB_BOUGHT_SUB_DB" : "BB_BOUGHT_SUB";
+}
+
+// D'un rendu à l'autre, le nombre affiché ne recule jamais : si le parent re-rend
+// avec une valeur plus faible, on garde la précédente (et sa source). À égalité,
+// la nouvelle résolution l'emporte (source à jour).
+function plancherCumul(prev, next) {
+  const vp = prev ? nombrePositif(prev.value) : 0;
+  const vn = next ? nombrePositif(next.value) : 0;
+  if (next && vn >= vp) return { value: vn, source: next.source || "tranches" };
+  if (prev) return { value: vp, source: prev.source || "tranches" };
+  return { value: 0, source: "tranches" };
+}
+
+// Lecture/écriture derrière try/catch : localStorage peut être indisponible ou
+// lever (mode privé, iframe interstitielle, quota) — l'échec ne casse jamais le
+// rendu. Lecture : nombre > 0 connu, sinon 0.
+function lireCumulOnChain(storage) {
+  try { return storage ? nombrePositif(storage.getItem(BB_CUMUL_KEY)) : 0; } catch (e) { return 0; }
+}
+// Écriture : seulement une valeur > 0, et jamais plus faible que celle déjà
+// connue (la mémoire ne recule pas non plus). Renvoie true si écrit.
+function ecrireCumulOnChain(storage, valeur) {
+  const v = nombrePositif(valeur);
+  if (!storage || v <= 0) return false;
+  try {
+    if (v <= lireCumulOnChain(storage)) return false;
+    storage.setItem(BB_CUMUL_KEY, String(v));
+    return true;
+  } catch (e) { return false; }
+}
+// L'accès même à window.localStorage peut lever (SecurityError en iframe).
+function storageLocal() {
+  try { return window.localStorage || null; } catch (e) { return null; }
+}
+
 // Une rangée = une jambe économique (liquidité ou rachat).
 // `gain` : ce qui vient d'entrer dans ce pool, à annoncer une fois. La rangée
 // s'allume et le montant s'affiche — sinon un don part sans que rien ne bouge à
@@ -268,6 +337,15 @@ function BuybackTicker() {
   // relevé plus ancien (faux « +delta », pluie d'or fantôme). On n'applique que
   // la réponse la plus récente (audit web 2026-09-08, P2#15).
   const loadSeq = React.useRef(0);
+  // Cumul racheté : dernière valeur on-chain connue (session précédente), relue
+  // une fois au montage ; et plancher d'affichage — le nombre ne recule jamais
+  // d'un rendu à l'autre, même si le parent re-rend avec une valeur plus faible.
+  const [cumulStocke] = React.useState(() => lireCumulOnChain(storageLocal()));
+  const cumulAffiche = React.useRef(null);
+  const cumulOnChainBrut = dex && dex.buyback_totals ? dex.buyback_totals.fa : 0;
+  React.useEffect(() => {
+    ecrireCumulOnChain(storageLocal(), cumulOnChainBrut);
+  }, [cumulOnChainBrut]);
 
   React.useEffect(() => {
     let alive = true;
@@ -337,13 +415,16 @@ function BuybackTicker() {
   if (!bb || !bb.pools || !bb.pools.length) return null;
 
   const I = window.FA_I18N;
-  // Le total on-chain (/dex/status) fait foi dès qu'il est connu : la somme des
-  // tranches (total_bought) sous-déclare les restes sous-seuil (carryover).
-  // Même choix que la vitrine arthefacte.com — les deux affichent le même chiffre.
-  const cumulOnChain = (dex && dex.buyback_totals && Number(dex.buyback_totals.fa)) || 0;
-  const totalBought = cumulOnChain > 0
-    ? cumulOnChain
-    : bb.pools.reduce((s, p) => s + (p.total_bought || 0), 0);
+  // Le total on-chain fait foi dès qu'il est connu (même choix que la vitrine
+  // arthefacte.com — les deux affichent le même chiffre) ; sinon la dernière
+  // valeur on-chain connue ; sinon la somme des tranches, sous son propre
+  // libellé. Puis le plancher : jamais moins qu'au rendu précédent.
+  const cumul = plancherCumul(cumulAffiche.current, resolveBoughtTotal({
+    onchain: cumulOnChainBrut,
+    tranches: bb.pools.reduce((s, p) => s + (p.total_bought || 0), 0),
+    stored: cumulStocke,
+  }));
+  cumulAffiche.current = cumul;
   const last = bb.pools.length - 1;
   return (
     <div className="bb-ticker" title={I.t("BB_TICK_TITLE")}>
@@ -357,16 +438,21 @@ function BuybackTicker() {
           label={I.t("BB_POOL_LABEL", bbFmt(p.tier))}
           total={p.total}
           threshold={p.threshold}
-          sub={i === last ? I.t("BB_BOUGHT_SUB", bbFmt(totalBought)) : null}
+          sub={i === last ? I.t(cleLibelleCumul(cumul.source), bbFmt(cumul.value)) : null}
         />
       ))}
       <RangeeDex dex={dex} onVoirRachats={() => setVoirRachats(true)} />
       <RangeeBurn burn={burn} />
-      <TapeBoursiere pools={bb.pools} gainsSession={cumulGains.current} fraiche={fraiche} cumulOnChain={cumulOnChain} />
+      {/* La tape reçoit la valeur RÉSOLUE (plancher compris) : même chiffre que
+          le sous-titre, jamais plus faible qu'un précédent de la session. */}
+      <TapeBoursiere pools={bb.pools} gainsSession={cumulGains.current} fraiche={fraiche} cumulOnChain={cumul.value} />
       {rachat.n > 0 && Object.keys(rachat.tiers).length > 0 && <PluieOr graine={rachat.n} />}
       {voirRachats && dex && <PanneauRachats dex={dex} onClose={() => setVoirRachats(false)} />}
     </div>
   );
 }
 
-Object.assign(window, { BuybackTicker, buybackFraction });
+Object.assign(window, {
+  BuybackTicker, buybackFraction,
+  resolveBoughtTotal, plancherCumul, cleLibelleCumul, lireCumulOnChain, ecrireCumulOnChain, BB_CUMUL_KEY,
+});
