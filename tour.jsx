@@ -437,7 +437,7 @@ function Tour() {
             {view.map(({ beast, hpFrac, dead }) => (
               <TourBeastTile key={beast.id} beast={beast} hpFrac={hpFrac} dead={dead}
                 selIdx={g.selected.indexOf(beast.id)}
-                onToggle={() => actions.toggleSelect(beast.id)} />
+                onToggle={() => actions.toggleSelect(beast.id, ownNeeded)} />
             ))}
           </div>
 
@@ -479,7 +479,7 @@ function Tour() {
                 )}
                 {engage.ok
                   ? <button className="btn btn-fire lg" onClick={onFight} disabled={busy}>{I18N.t("TOUR_FIGHT", run.floor)}</button>
-                  : <span className="mono" style={{ fontSize: 12, color: "var(--alert)" }}>{I18N.t("TOUR_NEED3")}</span>}
+                  : <span className="mono" style={{ fontSize: 12, color: "var(--alert)" }}>{I18N.t(champ ? "CHAMP_NEED2" : "TOUR_NEED3")}</span>}
               </div>
             </div>
           )}

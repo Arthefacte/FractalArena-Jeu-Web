@@ -1086,10 +1086,13 @@ function App() {
       setG((s) => ({ ...freshState(), lang: s.lang, options: s.options }));
     },
 
-    toggleSelect(id) {
+    toggleSelect(id, cap = 3) {
       setG((s) => {
         const has = s.selected.includes(id);
-        let selected = has ? s.selected.filter((x) => x !== id) : (s.selected.length < 3 ? [...s.selected, id] : s.selected);
+        // `cap` : plafond de sélection. 3 par défaut (arène/PvP) ; 2 quand un champion
+        // de soutien est emprunté (il occupe le slot AR) — sinon on laisserait cocher
+        // une 3e entité propre qui serait jetée silencieusement au combat (slice(0,2)).
+        let selected = has ? s.selected.filter((x) => x !== id) : (s.selected.length < cap ? [...s.selected, id] : s.selected);
         return { ...s, selected };
       });
     },
@@ -2441,7 +2444,14 @@ function App() {
         return { ok: true, champions: d.champions || [] };
       } catch (e) { return { ok: false }; }
     },
-    championPickBorrow(entry) { setG((st) => ({ ...st, championBorrow: entry })); },
+    championPickBorrow(entry) {
+      setG((st) => {
+        // Le champion occupe le slot 2 (AR) : on garde au plus 2 entités propres, sinon
+        // la 3e déjà cochée serait jetée silencieusement au combat (slice(0,2)).
+        const cap = window.FA_CHAMPION_UI.requiredOwnCount(true);
+        return { ...st, championBorrow: entry, selected: st.selected.slice(0, cap) };
+      });
+    },
     championClearBorrow() { setG((st) => ({ ...st, championBorrow: null })); },
     async championUses() {
       const s = gRef.current;

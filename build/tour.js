@@ -950,7 +950,7 @@ function Tour() {
     hpFrac: hpFrac,
     dead: dead,
     selIdx: g.selected.indexOf(beast.id),
-    onToggle: () => actions.toggleSelect(beast.id)
+    onToggle: () => actions.toggleSelect(beast.id, ownNeeded)
   }))), !autoRunning && /*#__PURE__*/React.createElement("div", {
     style: {
       marginBottom: 14
@@ -1035,7 +1035,7 @@ function Tour() {
       fontSize: 12,
       color: "var(--alert)"
     }
-  }, I18N.t("TOUR_NEED3"))))), /*#__PURE__*/React.createElement(TourLeaderboard, null), showStart && /*#__PURE__*/React.createElement(TourStartModal, {
+  }, I18N.t(champ ? "CHAMP_NEED2" : "TOUR_NEED3"))))), /*#__PURE__*/React.createElement(TourLeaderboard, null), showStart && /*#__PURE__*/React.createElement(TourStartModal, {
     state: st,
     score: st.score,
     balance: g.liquid + g.locked,
