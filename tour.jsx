@@ -340,6 +340,9 @@ function Tour() {
     let curState = run.roster_state || {};
     let curFloor = run.floor;
     const startFloor = run.floor;
+    // Équipe préférée = la sélection manuelle au lancement de l'auto (figée) :
+    // ces entités jouent jusqu'à la mort, une morte est remplacée par la plus en forme.
+    const preferred = g.selected.slice();
     const sessionTiers = []; let sSilver = 0, sGold = 0, sessionBest = 0, sCommission = 0;
     let over = false;
     // Le champion suit l'auto-combat : les 2 plus en forme + lui. S'il tombe ou
@@ -348,11 +351,11 @@ function Tour() {
     const champRef = { current: champ };
     try {
       while (!stopRef.current) {
-        const fittest = TU.pickFittest3(g.roster, curState);
-        if (!fittest) { over = true; break; } // < 3 vivantes → run terminé
+        const ownTeam = TU.pickPreferred3(preferred, g.roster, curState);
+        if (!ownTeam) { over = true; break; } // < 3 vivantes → run terminé
         if (champRef.current && CU.championRunState(curState, champRef.current.beast.id).dead) champRef.current = null;
         const curChamp = champRef.current;
-        const r = await actions.towerFight(curChamp ? fittest.slice(0, 2) : fittest, posture, curChamp);
+        const r = await actions.towerFight(curChamp ? ownTeam.slice(0, 2) : ownTeam, posture, curChamp);
         if (!mountedRef.current) break; // écran quitté pendant l'appel : plus rien à afficher ni à relancer
         if (!r.ok) {
           if (r.reason === "trop_rapide") { await sleep(300); continue; } // throttle serveur : ré-attente

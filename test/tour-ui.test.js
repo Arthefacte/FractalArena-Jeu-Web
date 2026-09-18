@@ -105,3 +105,23 @@ test("pickFittest3 : départage stable par ordre du roster à hp_frac égal", ()
   const rs = { a: { hp_frac: 0.5 }, b: { hp_frac: 0.5 }, c: { hp_frac: 0.5 }, d: { hp_frac: 0.5 } };
   assert.deepStrictEqual(TU.pickFittest3(roster, rs), ["a", "b", "c"]);
 });
+
+test("pickPreferred3 : les sélectionnées vivantes d'abord, ordre de sélection conservé", () => {
+  const roster = [{ id: "a" }, { id: "b" }, { id: "c" }, { id: "d" }, { id: "e" }];
+  assert.deepStrictEqual(TU.pickPreferred3(["c", "b", "a"], roster, {}), ["c", "b", "a"]);
+  // sélection plus courte : complétée par les plus en forme (ordre du roster à hp_frac égal)
+  assert.deepStrictEqual(TU.pickPreferred3(["a"], roster, {}), ["a", "b", "c"]);
+});
+
+test("pickPreferred3 : une sélectionnée morte est remplacée par la plus en forme", () => {
+  const roster = [{ id: "a" }, { id: "b" }, { id: "c" }, { id: "d" }, { id: "e" }];
+  const rs = { b: { hp_frac: 0, dead: true } };
+  assert.deepStrictEqual(TU.pickPreferred3(["a", "b", "c"], roster, rs), ["a", "c", "d"]);
+});
+
+test("pickPreferred3 : dédoublonne et null si < 3 vivantes", () => {
+  const roster = [{ id: "a" }, { id: "b" }, { id: "c" }, { id: "d" }, { id: "e" }];
+  assert.deepStrictEqual(TU.pickPreferred3(["a", "a", "c"], roster, {}), ["a", "c", "b"]);
+  const rs = { a: { hp_frac: 0, dead: true }, b: { hp_frac: 0, dead: true }, c: { hp_frac: 0, dead: true } };
+  assert.strictEqual(TU.pickPreferred3(["a", "b", "c"], roster, rs), null);
+});

@@ -106,6 +106,35 @@
     return sorted.slice(0, 3).map((b) => b.id);
   }
 
+  // Auto-combat : les sélectionnées jouent jusqu'à la mort, chaque morte est
+  // remplacée par la plus en forme disponible. L'ordre de sélection est conservé
+  // (formation) ; le complément trie par hp_frac décroissant, départage par ordre
+  // du roster. null si < 3 vivantes → signal d'arrêt de la boucle auto.
+  function pickPreferred3(selected, roster, rosterState) {
+    const list = roster || [];
+    const sel = Array.isArray(selected) ? selected : [];
+    const alive = list.filter((b) => b && !isDeadInRun(rosterState, b.id));
+    if (alive.length < 3) return null;
+    const byId = new Map(list.map((b) => [b.id, b]));
+    const chosen = [];
+    const used = new Set();
+    for (const id of sel) {
+      if (chosen.length >= 3) break;
+      const b = byId.get(id);
+      if (b && !isDeadInRun(rosterState, id) && !used.has(id)) { chosen.push(id); used.add(id); }
+    }
+    const idx = new Map(list.map((b, i) => [b.id, i]));
+    const rest = alive.filter((b) => !used.has(b.id)).sort((a, b) => {
+      const d = hpFracOf(rosterState, b.id) - hpFracOf(rosterState, a.id);
+      return d !== 0 ? d : idx.get(a.id) - idx.get(b.id);
+    });
+    for (const b of rest) {
+      if (chosen.length >= 3) break;
+      chosen.push(b.id); used.add(b.id);
+    }
+    return chosen;
+  }
+
   /* Mutateurs de la Tour — formatage seul. Les VALEURS viennent du serveur
      (/tower/state), jamais d'un miroir local : c'est délibéré, le miroir
      TIERS/ENTRY_COST ci-dessus a déjà créé une classe de bug par dérive. */
@@ -147,5 +176,5 @@
     return Array.isArray(list) ? list.map(formatMutator) : [];
   }
 
-  window.FA_TOUR_UI = { RERUN_COSTS, entryCost, nextCost, TIERS, tiersView, hpFracOf, isDeadInRun, rosterRunView, aliveCount, validateEngage, nextTier, pickFittest3, formatMutator, formatMutators };
+  window.FA_TOUR_UI = { RERUN_COSTS, entryCost, nextCost, TIERS, tiersView, hpFracOf, isDeadInRun, rosterRunView, aliveCount, validateEngage, nextTier, pickFittest3, pickPreferred3, formatMutator, formatMutators };
 })();
