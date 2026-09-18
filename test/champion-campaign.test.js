@@ -16,6 +16,7 @@ test("CampaignCombat integre le champion : liste, rangee, envoi, erreur traduite
   assert.match(SRC, /championClearBorrow/);
   assert.match(SRC, /CHAMP_BORROWED_TAG/);
   assert.match(SRC, /CHAMP_NEED2/);
+  assert.match(SRC, /myWallet=\{g\.wallet\}/);
 });
 
 test("le resultat affiche la commission versee (jamais le wallet brut)", () => {

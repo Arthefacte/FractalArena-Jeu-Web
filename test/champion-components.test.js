@@ -38,3 +38,9 @@ test("App monte ChampionUsesModal quand unseen > 0", () => {
 test("pas de rar-tag/lvl-tag sur la vignette de la tuile champion", () => {
   assert.ok(!/rar-tag|lvl-tag/.test(SRC));
 });
+
+test("ChampionRow retire le champion du joueur connecte (myWallet)", () => {
+  // On ne s'emprunte pas a soi-meme : la rangee filtre owner_wallet === mon wallet.
+  assert.match(SRC, /myWallet/);
+  assert.match(SRC, /c\.owner_wallet !== myWallet/);
+});

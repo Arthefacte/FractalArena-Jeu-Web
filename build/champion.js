@@ -132,9 +132,13 @@ function ChampionRow({
   activeOwner,
   onPick,
   onClear,
-  runState
+  runState,
+  myWallet
 }) {
-  const list = Array.isArray(champions) ? champions : [];
+  // Jamais son PROPRE champion dans « Champions alliés » : on ne s'emprunte pas à
+  // soi-même (le champion désigné est déjà dans le roster). Le serveur renvoie la
+  // liste publique complète, c'est ici qu'on retire la ligne du joueur connecté.
+  const list = (Array.isArray(champions) ? champions : []).filter(c => c.owner_wallet !== myWallet);
   return /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 10

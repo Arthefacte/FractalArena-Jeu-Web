@@ -916,6 +916,7 @@ function CampaignCombat({
   }, isBoss ? "⚔️ " + bossName : I18N.t("CAMP_FIGHT"))), !playing && /*#__PURE__*/React.createElement(window.ChampionRow, {
     champions: g.championsList,
     activeOwner: champ ? champ.owner_wallet : null,
+    myWallet: g.wallet,
     onPick: e => actions.championPickBorrow(e),
     onClear: () => actions.championClearBorrow()
   }))), result && /*#__PURE__*/React.createElement(CampResultModal, {

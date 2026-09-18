@@ -48,8 +48,11 @@ function ChampionTile({ entry, active, dead, onClick, hpFrac }) {
 
 /* Rangée « Champions alliés » — Campagne et Tour. runState (Tour) grise un
    champion tombé dans le run courant. Re-cliquer la tuile active la retire. */
-function ChampionRow({ champions, activeOwner, onPick, onClear, runState }) {
-  const list = Array.isArray(champions) ? champions : [];
+function ChampionRow({ champions, activeOwner, onPick, onClear, runState, myWallet }) {
+  // Jamais son PROPRE champion dans « Champions alliés » : on ne s'emprunte pas à
+  // soi-même (le champion désigné est déjà dans le roster). Le serveur renvoie la
+  // liste publique complète, c'est ici qu'on retire la ligne du joueur connecté.
+  const list = (Array.isArray(champions) ? champions : []).filter((c) => c.owner_wallet !== myWallet);
   return (
     <div style={{ marginTop: 10 }}>
       <div className="h2" style={{ fontSize: 13, color: "var(--elec)", marginBottom: 6 }}>{I18N.t("CHAMP_ROW_TITLE")}</div>

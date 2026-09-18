@@ -497,6 +497,7 @@ function CampaignCombat({ worldIndex, floorIndex, onBack, onCleared }) {
           )}
           {!playing && (
             <window.ChampionRow champions={g.championsList} activeOwner={champ ? champ.owner_wallet : null}
+              myWallet={g.wallet}
               onPick={(e) => actions.championPickBorrow(e)} onClear={() => actions.championClearBorrow()} />
           )}
         </div>

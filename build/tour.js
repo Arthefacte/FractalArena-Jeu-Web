@@ -959,6 +959,7 @@ function Tour() {
     champions: g.championsList,
     activeOwner: champ ? champ.owner_wallet : null,
     runState: rosterState,
+    myWallet: g.wallet,
     onPick: e => actions.championPickBorrow(e),
     onClear: () => actions.championClearBorrow()
   }), champ && /*#__PURE__*/React.createElement("div", {

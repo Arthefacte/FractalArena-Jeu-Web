@@ -39,4 +39,6 @@ test("la selection est plafonnee a 2 avec un champion (pas de 4e entite jetee)",
   const APP = fs.readFileSync(path.join(__dirname, "..", "app.jsx"), "utf8");
   assert.match(APP, /toggleSelect\(id, cap = 3\)/);
   assert.match(APP, /requiredOwnCount\(true\)/);
+  // La Tour passe mon wallet a ChampionRow : mon propre champion est retire de la liste.
+  assert.match(SRC, /myWallet=\{g\.wallet\}/);
 });
