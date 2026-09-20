@@ -630,6 +630,10 @@ input { font-family: var(--font-mono); }
   background: rgba(3,5,11,0.78); backdrop-filter: blur(7px);
   padding: 24px;
   animation: ovIn .2s ease-out;
+  /* Contexte d'empilement explicite : la couche GPU du canvas WebGL des viewers 3D
+     (CoreViewer / RelicViewer) est composée à l'intérieur de l'overlay, jamais
+     réordonnée par rapport au reste de la page. */
+  isolation: isolate;
 }
 /* Fondu d'opacité, pas de backdrop-filter animé : faire monter un flou de 0 à 7 px sur un
    `position:fixed; inset:0` obligeait le navigateur à re-flouter tout l'écran à chaque frame,
@@ -648,8 +652,15 @@ input { font-family: var(--font-mono); }
   max-height: calc(100vh - 48px);
   max-height: calc(100dvh - 48px);
   overflow-y: auto;
+  /* Le canvas WebGL des viewers 3D (z-index: 1 sur son wrapper) doit être ordonné
+     DANS la modale, devant le texte : on force ici un contexte d'empilement propre,
+     sinon Chromium peut composer la couche du canvas sous le texte selon le GPU. */
+  isolation: isolate;
 }
-@keyframes modalIn { from { transform: translateY(16px) scale(0.97); } to { transform: translateY(0) scale(1); } }
+/* Fondu d'opacité uniquement (même logique que `ovIn`) : un `transform` animé sur
+   l'ancêtre direct d'un canvas WebGL déclenche une mauvaise composition GPU (modèle 3D
+   rendu derrière le texte et coupé par le bord de la modale) sur certains drivers. */
+@keyframes modalIn { from { opacity: 0; } to { opacity: 1; } }
 .modal.wide { max-width: 640px; }
 
 .field {
