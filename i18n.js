@@ -115,7 +115,7 @@
 
     // header
     LOCKED_CHIP: { FR: "Verrouillé", EN: "Locked", ZH: "锁定" },
-    FB_CHIP_TITLE: { FR: "Solde FB de ton wallet lié (on-chain)", EN: "FB balance of your linked wallet (on-chain)", ZH: "你关联钱包的 FB 余额（链上）" },
+    FB_CHIP_TITLE: { FR: "FB gagné via le jeu (cagnotte) — envoyé à ton wallet lié", EN: "FB won through the game (jackpot) — sent to your linked wallet", ZH: "游戏内赢得的 FB（彩池）— 已发送至你关联的钱包" },
 
     // onboarding
     OB_TAG: { FR: "AUTO-BATTLER ON-CHAIN", EN: "ON-CHAIN AUTO-BATTLER", ZH: "链上自动战斗" },

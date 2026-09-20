@@ -4953,8 +4953,8 @@ function Header({
   // non-lus du salon arrive par événement depuis RoomFab.
   const [poolsOpen, setPoolsOpen] = useState(false);
   const [roomUnread, setRoomUnread] = useState(0);
-  // Solde FB du wallet lié (cagnotte 1 FB) : lecture on-chain via le serveur,
-  // rafraîchie chaque minute — jamais fabriquée côté client.
+  // FB gagné via le jeu (parts de cagnotte payées, cumulées) : lecture serveur,
+  // rafraîchie chaque minute — ce n'est PAS le solde total du wallet.
   const [fbBal, setFbBal] = useState(null);
   useEffect(() => {
     if (!g.wallet || !g.authToken) {
@@ -4964,7 +4964,7 @@ function Header({
     let alive = true;
     const load = async () => {
       try {
-        const r = await fetch(API_URL + "/wallet/fb-balance", {
+        const r = await fetch(API_URL + "/wallet/fb-earned", {
           headers: {
             Authorization: `Bearer ${g.authToken}`
           }
@@ -5054,9 +5054,14 @@ function Header({
     title: I18N.t("FB_CHIP_TITLE")
   }, /*#__PURE__*/React.createElement("b", {
     className: "chip-amount"
-  }, fbFmt(fbBal.fb_sats)), /*#__PURE__*/React.createElement("span", {
+  }, fbFmt(fbBal.fb_earned_sats)), /*#__PURE__*/React.createElement("span", {
     className: "chip-lbl"
-  }, " FB")), g.locked > 0 && /*#__PURE__*/React.createElement("span", {
+  }, " FB"), Number(fbBal.fb_pending_sats) > 0 && /*#__PURE__*/React.createElement("span", {
+    className: "chip-lbl",
+    style: {
+      color: "var(--text-dim)"
+    }
+  }, "(+", fbFmt(fbBal.fb_pending_sats), ")")), g.locked > 0 && /*#__PURE__*/React.createElement("span", {
     key: "lk" + lockedPop.n,
     className: cx("chip", "locked", lockedPop.n > 0 && "pop")
   }, /*#__PURE__*/React.createElement("img", {
