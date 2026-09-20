@@ -2786,7 +2786,7 @@ function fbFmt(sats) {
 // revient en douceur à sa position de base. La caméra est calée sur la boîte
 // englobante du modèle : la pièce remplit le canvas, quelle que soit son échelle
 // interne. Repli silencieux sur `fallback` si WebGL/GLB indisponible.
-function Jeton3D({ px = 56, fallback = null }) {
+function Jeton3D({ px = 56, fallback = null, face = "fa" }) {
   const ref = React.useRef(null);
   const [ko, setKo] = React.useState(false);
   React.useEffect(() => {
@@ -2802,9 +2802,33 @@ function Jeton3D({ px = 56, fallback = null }) {
         const url = window.FA_ASSET_URL ? window.FA_ASSET_URL("assets/jeton.glb") : "assets/jeton.glb";
         const gltf = await new Promise((res, rej) => new GLTFLoader().load(url, res, undefined, rej));
         if (!alive) return;
+        // Pièce mono-face : le médaillon jeton.glb porte FA d'un côté et FB de
+        // l'autre. On garde la face demandée, on retire l'autre et on la remplace
+        // par un miroir (scale.z = -1) de la bonne face → FA/FA ou FB/FB. Les
+        // matériaux passent en DoubleSide pour que le relief miroir s'éclaire.
+        const faceNodes = [], otherNodes = [];
+        gltf.scene.traverse((o) => {
+          if (/^(FA|FB)/.test(o.name)) {
+            ((face === "fa" ? /^FA/ : /^FB/).test(o.name) ? faceNodes : otherNodes).push(o);
+          }
+        });
+        otherNodes.forEach((o) => o.parent && o.parent.remove(o));
+        faceNodes.forEach((o) => {
+          const m = o.clone();
+          m.scale.z *= -1;
+          m.traverse((c) => {
+            if (c.isMesh && c.material) {
+              const mats = Array.isArray(c.material) ? c.material : [c.material];
+              mats.forEach((mm) => { mm.side = THREE.DoubleSide; mm.needsUpdate = true; });
+            }
+          });
+          o.parent && o.parent.add(m);
+        });
         renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(px, px);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.25;
         mount.appendChild(renderer.domElement);
         renderer.domElement.style.display = "block";
         scene = new THREE.Scene();
@@ -2817,8 +2841,11 @@ function Jeton3D({ px = 56, fallback = null }) {
         const camera = new THREE.PerspectiveCamera(38, 1, Math.max(0.01, radius / 50), radius * 20);
         camera.position.set(0, 0, dist);
         camera.lookAt(center);
-        const key = new THREE.DirectionalLight(0xffffff, 1.4); key.position.set(2, 3, 4); scene.add(key);
-        scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+        // Éclairage généreux : la pièce doit rester lisible, pas sombre.
+        const key = new THREE.DirectionalLight(0xffffff, 2.2); key.position.set(2, 3, 4); scene.add(key);
+        scene.add(new THREE.DirectionalLight(0xfff2dd, 1.0)); scene.children[scene.children.length - 1].position.set(-3, -1, 2);
+        scene.add(new THREE.HemisphereLight(0xfff2dd, 0x2a2a35, 0.7));
+        scene.add(new THREE.AmbientLight(0xffffff, 1.05));
         obj = gltf.scene;
         obj.position.sub(center);
         obj.rotation.set(0.3, BASE_Y, 0);
@@ -2929,7 +2956,7 @@ function Header({ liquidPop, lockedPop }) {
         {fbBal && fbBal.status === "ok" && (
           <span className="chip fb" title={I18N.t("FB_CHIP_TITLE")}>
             <b className="chip-amount">{fbFmt(fbBal.fb_earned_sats)}</b>
-            <Jeton3D px={56} fallback={<span className="chip-lbl">FB</span>} />
+            <Jeton3D px={56} fallback={<span className="chip-lbl">FB</span>} face="fb" />
             {Number(fbBal.fb_pending_sats) > 0 && (
               <span className="chip-lbl" style={{ color: "var(--text-dim)" }}>(+{fbFmt(fbBal.fb_pending_sats)})</span>
             )}
