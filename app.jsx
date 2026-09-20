@@ -2897,14 +2897,14 @@ function Header({ liquidPop, lockedPop }) {
       <div className="hdr-spacer" />
       <div className="flex gap8 center wrap" style={{ justifyContent: "flex-end" }}>
         <span key={"lq" + liquidPop.n} className={cx("chip", "liquid", liquidPop.n > 0 && "pop")}>
-          <Jeton3D px={16} fallback={<img src="assets/TOKEN.png" alt="" width="16" height="16" style={{ display: "block" }} />} />
+          <Jeton3D px={28} fallback={<img src="assets/TOKEN.png" alt="" width="28" height="28" style={{ display: "block" }} />} />
           {fmt(g.liquid)}
           <ChipDelta delta={liquidPop.delta} />
         </span>
         {fbBal && fbBal.status === "ok" && (
           <span className="chip fb" title={I18N.t("FB_CHIP_TITLE")}>
             <b className="chip-amount">{fbFmt(fbBal.fb_earned_sats)}</b>
-            <Jeton3D px={16} fallback={<span className="chip-lbl">FB</span>} />
+            <Jeton3D px={28} fallback={<span className="chip-lbl">FB</span>} />
             {Number(fbBal.fb_pending_sats) > 0 && (
               <span className="chip-lbl" style={{ color: "var(--text-dim)" }}>(+{fbFmt(fbBal.fb_pending_sats)})</span>
             )}
@@ -2912,7 +2912,7 @@ function Header({ liquidPop, lockedPop }) {
         )}
         {g.locked > 0 && (
           <span key={"lk" + lockedPop.n} className={cx("chip", "locked", lockedPop.n > 0 && "pop")}>
-            <Jeton3D px={16} fallback={<img src="assets/TOKEN.png" alt="" width="16" height="16" style={{ display: "block" }} />} />
+            <Jeton3D px={28} fallback={<img src="assets/TOKEN.png" alt="" width="28" height="28" style={{ display: "block" }} />} />
             <b className="chip-amount">{fmt(g.locked)}</b><span className="chip-lbl"> {I18N.t("LOCKED_CHIP")}</span>
             <ChipDelta delta={lockedPop.delta} />
           </span>

@@ -5121,12 +5121,12 @@ function Header({
     key: "lq" + liquidPop.n,
     className: cx("chip", "liquid", liquidPop.n > 0 && "pop")
   }, /*#__PURE__*/React.createElement(Jeton3D, {
-    px: 16,
+    px: 28,
     fallback: /*#__PURE__*/React.createElement("img", {
       src: "assets/TOKEN.png",
       alt: "",
-      width: "16",
-      height: "16",
+      width: "28",
+      height: "28",
       style: {
         display: "block"
       }
@@ -5139,7 +5139,7 @@ function Header({
   }, /*#__PURE__*/React.createElement("b", {
     className: "chip-amount"
   }, fbFmt(fbBal.fb_earned_sats)), /*#__PURE__*/React.createElement(Jeton3D, {
-    px: 16,
+    px: 28,
     fallback: /*#__PURE__*/React.createElement("span", {
       className: "chip-lbl"
     }, "FB")
@@ -5152,12 +5152,12 @@ function Header({
     key: "lk" + lockedPop.n,
     className: cx("chip", "locked", lockedPop.n > 0 && "pop")
   }, /*#__PURE__*/React.createElement(Jeton3D, {
-    px: 16,
+    px: 28,
     fallback: /*#__PURE__*/React.createElement("img", {
       src: "assets/TOKEN.png",
       alt: "",
-      width: "16",
-      height: "16",
+      width: "28",
+      height: "28",
       style: {
         display: "block"
       }
