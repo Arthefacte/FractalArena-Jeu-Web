@@ -4932,6 +4932,14 @@ function DeviceLinkClaimGate() {
     onClick: claim
   }, I18N.t("DEVLINK_CLAIM_BTN")));
 }
+
+// Solde FB (sats) → unités FB affichées : le FB est du Fractal Bitcoin natif,
+// 8 décimales. 4 décimales dès que c'est lisible, sinon 6 — jamais « 0.00000000 ».
+function fbFmt(sats) {
+  const v = (Number(sats) || 0) / 1e8;
+  if (v === 0) return "0";
+  return v >= 0.01 ? v.toFixed(4) : v.toFixed(6);
+}
 function Header({
   liquidPop,
   lockedPop
@@ -4945,6 +4953,35 @@ function Header({
   // non-lus du salon arrive par événement depuis RoomFab.
   const [poolsOpen, setPoolsOpen] = useState(false);
   const [roomUnread, setRoomUnread] = useState(0);
+  // Solde FB du wallet lié (cagnotte 1 FB) : lecture on-chain via le serveur,
+  // rafraîchie chaque minute — jamais fabriquée côté client.
+  const [fbBal, setFbBal] = useState(null);
+  useEffect(() => {
+    if (!g.wallet || !g.authToken) {
+      setFbBal(null);
+      return;
+    }
+    let alive = true;
+    const load = async () => {
+      try {
+        const r = await fetch(API_URL + "/wallet/fb-balance", {
+          headers: {
+            Authorization: `Bearer ${g.authToken}`
+          }
+        });
+        if (!alive) return;
+        if (r.ok) setFbBal(await r.json());else setFbBal(null);
+      } catch (e) {
+        if (alive) setFbBal(null);
+      }
+    };
+    load();
+    const id = setInterval(load, 60000);
+    return () => {
+      alive = false;
+      clearInterval(id);
+    };
+  }, [g.wallet, g.authToken]);
   // Un quiz attend : point orange pulsant sur la pastille ❓. L'état vient de
   // QuizToast (fa:quiz-ready) — plus aucune bulle ne s'ouvre toute seule.
   const [quizReady, setQuizReady] = useState(false);
@@ -5012,7 +5049,14 @@ function Header({
     }
   }), fmt(g.liquid), /*#__PURE__*/React.createElement(ChipDelta, {
     delta: liquidPop.delta
-  })), g.locked > 0 && /*#__PURE__*/React.createElement("span", {
+  })), fbBal && fbBal.status === "ok" && /*#__PURE__*/React.createElement("span", {
+    className: "chip fb",
+    title: I18N.t("FB_CHIP_TITLE")
+  }, /*#__PURE__*/React.createElement("b", {
+    className: "chip-amount"
+  }, fbFmt(fbBal.fb_sats)), /*#__PURE__*/React.createElement("span", {
+    className: "chip-lbl"
+  }, " FB")), g.locked > 0 && /*#__PURE__*/React.createElement("span", {
     key: "lk" + lockedPop.n,
     className: cx("chip", "locked", lockedPop.n > 0 && "pop")
   }, /*#__PURE__*/React.createElement("img", {

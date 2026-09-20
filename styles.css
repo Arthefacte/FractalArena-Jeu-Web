@@ -184,6 +184,9 @@ input { font-family: var(--font-mono); }
 /* Le montant reprend la couleur que l'écran Portefeuille donne au verrouillé :
    le chiffre se lit, le mot « Verrouillé » reste en retrait. */
 .chip.locked .chip-amount { color: var(--fire); font-weight: 700; }
+/* Le solde FB du wallet lié : or, comme la cagnotte qu'il reçoit. */
+.chip.fb { border-color: var(--line); }
+.chip.fb .chip-amount { color: var(--gold); font-weight: 700; }
 /* Le crédit qui s'échappe du chip et s'efface. `position: absolute` : il ne
    pousse rien, donc le bandeau ne se réagence pas à chaque gain.
    Il descend au lieu de monter — le bandeau est collé en haut de l'écran
