@@ -466,10 +466,14 @@ function BuybackTicker() {
     stored: cumulStocke,
   }));
   cumulAffiche.current = cumul;
-  const last = bb.pools.length - 1;
+  // Le burn n'a pas de jauge de poche sous le rachat : son unique affichage est
+  // la rangée de cérémonie (RangeeBurn — envoi wallet vers l'adresse morte).
+  // Un seul « brûlage » dans le ticker, pas deux (correction user 20/09).
+  const rows = bb.pools.filter((p) => p.tier !== "burn");
+  const last = rows.length - 1;
   return (
     <div className="bb-ticker" title={I.t("BB_TICK_TITLE")}>
-      {bb.pools.map((p, i) => (
+      {rows.map((p, i) => (
         <TickerRow
           key={p.tier + ":" + (gains.par[p.tier] ? gains.n : 0) + ":" + (rachat.tiers[p.tier] ? rachat.n : 0)}
           gain={gains.par[p.tier] || 0}
