@@ -4940,6 +4940,87 @@ function fbFmt(sats) {
   if (v === 0) return "0";
   return v >= 0.01 ? v.toFixed(4) : v.toFixed(6);
 }
+
+// Médaillon FB 3D (assets/jeton.glb, le même que la cinématique) — rotation
+// lente dans le chip, repli « FB » texte si WebGL/GLB indisponible (jamais vide).
+function JetonFB3D({
+  px = 18
+}) {
+  const ref = React.useRef(null);
+  const [ko, setKo] = React.useState(false);
+  React.useEffect(() => {
+    const THREE = window.__FA_THREE;
+    const mount = ref.current;
+    if (!THREE || !mount) {
+      setKo(true);
+      return;
+    }
+    let alive = true,
+      raf = 0,
+      renderer = null,
+      scene = null,
+      obj = null;
+    (async () => {
+      try {
+        const {
+          GLTFLoader
+        } = await import("three/addons/loaders/GLTFLoader.js");
+        const url = window.FA_ASSET_URL ? window.FA_ASSET_URL("assets/jeton.glb") : "assets/jeton.glb";
+        const gltf = await new Promise((res, rej) => new GLTFLoader().load(url, res, undefined, rej));
+        if (!alive) return;
+        renderer = new THREE.WebGLRenderer({
+          antialias: true,
+          alpha: true
+        });
+        renderer.setSize(px, px);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        mount.appendChild(renderer.domElement);
+        renderer.domElement.style.display = "block";
+        scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
+        camera.position.set(0, 0, 4.2);
+        const key = new THREE.DirectionalLight(0xffffff, 1.4);
+        key.position.set(2, 3, 4);
+        scene.add(key);
+        scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+        obj = gltf.scene;
+        obj.rotation.set(0.3, 0.6, 0);
+        scene.add(obj);
+        const tick = () => {
+          if (!alive) return;
+          obj.rotation.y += 0.012;
+          renderer.render(scene, camera);
+          raf = requestAnimationFrame(tick);
+        };
+        tick();
+      } catch (e) {
+        if (alive) setKo(true);
+      }
+    })();
+    return () => {
+      alive = false;
+      cancelAnimationFrame(raf);
+      if (obj && scene) scene.remove(obj);
+      if (renderer) {
+        renderer.dispose();
+        if (renderer.domElement.parentNode) renderer.domElement.parentNode.removeChild(renderer.domElement);
+      }
+    };
+  }, [px]);
+  if (ko) return /*#__PURE__*/React.createElement("span", {
+    className: "chip-lbl"
+  }, "FB");
+  return /*#__PURE__*/React.createElement("span", {
+    ref: ref,
+    "aria-hidden": "true",
+    style: {
+      width: px,
+      height: px,
+      display: "inline-flex",
+      flex: "0 0 auto"
+    }
+  });
+}
 function Header({
   liquidPop,
   lockedPop
@@ -5054,9 +5135,9 @@ function Header({
     title: I18N.t("FB_CHIP_TITLE")
   }, /*#__PURE__*/React.createElement("b", {
     className: "chip-amount"
-  }, fbFmt(fbBal.fb_earned_sats)), /*#__PURE__*/React.createElement("span", {
-    className: "chip-lbl"
-  }, " FB"), Number(fbBal.fb_pending_sats) > 0 && /*#__PURE__*/React.createElement("span", {
+  }, fbFmt(fbBal.fb_earned_sats)), /*#__PURE__*/React.createElement(JetonFB3D, {
+    px: 18
+  }), Number(fbBal.fb_pending_sats) > 0 && /*#__PURE__*/React.createElement("span", {
     className: "chip-lbl",
     style: {
       color: "var(--text-dim)"
