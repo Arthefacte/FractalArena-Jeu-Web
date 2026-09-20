@@ -465,11 +465,11 @@
     TAPE_AGE_H:    { FR: "il y a %s h", EN: "%s h ago", ZH: "%s 小时前" },
     TAPE_AGE_J:    { FR: "il y a %s j", EN: "%s d ago", ZH: "%s 天前" },
     // Rangée DEX du bandeau économie (/dex/status : prix InSwap + rachats vérifiés)
-    // burn — destruction de supply vérifiable (miroir 1:1 + halving)
+    // burn — destruction de supply vérifiable (poche 1/3 + halving)
     BURN_POOL_LABEL: { FR: "Burn", EN: "Burn", ZH: "销毁" },
     BURN_ROW:   { FR: "%s FA brûlés à jamais", EN: "%s FA burned forever", ZH: "已永久销毁 %s FA" },
     BURN_PROOF: { FR: "preuve", EN: "proof", ZH: "证明" },
-    BURN_SUB:   { FR: "1 dépensé en jeu = %s brûlé · halving à %s brûlés", EN: "1 spent in game = %s burned · halving at %s burned", ZH: "游戏内每消耗 1 → 销毁 %s · 销毁达 %s 时减半" },
+    BURN_SUB:   { FR: "chaque FA dépensé en jeu → 1/3 brûlé (taux ×%s) · halving à %s brûlés", EN: "each FA spent in game → 1/3 burned (rate ×%s) · halving at %s burned", ZH: "游戏内每消耗 1 FA → 销毁 1/3（倍率 ×%s）· 销毁达 %s 时减半" },
     BURN_MODAL_TITLE: { FR: "Burns vérifiés on-chain", EN: "On-chain verified burns", ZH: "链上已验证销毁" },
     BURN_MODAL_SUB:   { FR: "Chaque cérémonie envoie les FA à l'adresse de burn — détruits à jamais, vérifiables par n'importe qui sur la chaîne.",
                         EN: "Each ceremony sends the FA to the burn address — destroyed forever, verifiable by anyone on-chain.",
