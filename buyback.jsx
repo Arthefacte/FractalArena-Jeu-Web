@@ -1,5 +1,5 @@
 // buyback.jsx
-// Ticker économie — 4 jauges de rachat (pools 5k/10k/25k/50k) sous le header ← /buyback/status.
+// Ticker économie — 3 poches (rachat 50k / brûlage 100k / cagnotte 200k, 33/33/33) sous le header ← /buyback/status.
 // Preuve = le pool du DEX (InSwap) où le rachat est exécuté puis la liquidité verrouillée à vie.
 // Auto-suffisant : fait ses propres fetch + polling. Aucune prop. Exposé sur window.
 

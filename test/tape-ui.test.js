@@ -114,7 +114,7 @@ test("montant du rachat absent -> repli sur le tier", () => {
 test("pools par kind (chaînes) : les items portent le kind tel quel", () => {
   const pools = [
     pool("buyback", { total: 25000, threshold: 50000 }),
-    pool("burn", { total: 10000, threshold: 50000 }),
+    pool("burn", { total: 10000, threshold: 100000 }),
     pool("pot", { total: 0, threshold: 200000 }),
   ];
   const items = T.composerTape(pools, { buyback: 300 }, MAINTENANT);
