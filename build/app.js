@@ -1967,7 +1967,7 @@ function App() {
         } else {
           session.losses += 1;
           if (!free) {
-            // Mise perdue : 100 % → rachat (réparti côté serveur dans les 4 pools).
+            // Mise perdue : 100 % → trois poches (rachat / brûlage / cagnotte), réparti côté serveur.
             session.net -= betAmount;
           }
         }
