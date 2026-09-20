@@ -2781,16 +2781,20 @@ function fbFmt(sats) {
   return v >= 0.01 ? v.toFixed(4) : v.toFixed(6);
 }
 
-// Médaillon 3D (assets/jeton.glb, le même que la cinématique) — rotation lente
-// dans les chips FA/FB. THREE chargé en dynamique (comme la cinématique), repli
-// silencieux sur `fallback` si WebGL/GLB indisponible (jamais un chip vide).
-function Jeton3D({ px = 16, fallback = null }) {
+// Médaillon 3D (assets/jeton.glb, le même que la cinématique) — statique en
+// position de base, il tourne seulement quand le curseur passe dessus puis
+// revient en douceur à sa position de base. La caméra est calée sur la boîte
+// englobante du modèle : la pièce remplit le canvas, quelle que soit son échelle
+// interne. Repli silencieux sur `fallback` si WebGL/GLB indisponible.
+function Jeton3D({ px = 56, fallback = null }) {
   const ref = React.useRef(null);
   const [ko, setKo] = React.useState(false);
   React.useEffect(() => {
     const mount = ref.current;
     if (!mount) { setKo(true); return; }
     let alive = true, raf = 0, renderer = null, scene = null, obj = null;
+    let spinning = false, leaving = false, targetY = 0.6;
+    const BASE_Y = 0.6, TWO_PI = Math.PI * 2;
     (async () => {
       try {
         const THREE = window.__FA_THREE || await import("three");
@@ -2804,19 +2808,40 @@ function Jeton3D({ px = 16, fallback = null }) {
         mount.appendChild(renderer.domElement);
         renderer.domElement.style.display = "block";
         scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
-        camera.position.set(0, 0, 4.2);
+        // Caméra calée sur la boîte englobante : la pièce remplit le cadre.
+        const box = new THREE.Box3().setFromObject(gltf.scene);
+        const center = box.getCenter(new THREE.Vector3());
+        const size = box.getSize(new THREE.Vector3());
+        const radius = Math.max(size.x, size.y, size.z) / 2;
+        const dist = (radius / Math.tan(19 * Math.PI / 180)) * 1.12 + radius;
+        const camera = new THREE.PerspectiveCamera(38, 1, Math.max(0.01, radius / 50), radius * 20);
+        camera.position.set(0, 0, dist);
+        camera.lookAt(center);
         const key = new THREE.DirectionalLight(0xffffff, 1.4); key.position.set(2, 3, 4); scene.add(key);
         scene.add(new THREE.AmbientLight(0xffffff, 0.55));
         obj = gltf.scene;
-        obj.rotation.set(0.3, 0.6, 0);
+        obj.position.sub(center);
+        obj.rotation.set(0.3, BASE_Y, 0);
         scene.add(obj);
+        const onEnter = () => { spinning = true; leaving = false; };
+        const onLeave = () => {
+          spinning = false; leaving = true;
+          targetY = BASE_Y + Math.round((obj.rotation.y - BASE_Y) / TWO_PI) * TWO_PI;
+        };
+        mount.addEventListener("mouseenter", onEnter);
+        mount.addEventListener("mouseleave", onLeave);
         const tick = () => {
           if (!alive) return;
-          obj.rotation.y += 0.012;
-          renderer.render(scene, camera);
+          if (spinning) {
+            obj.rotation.y += 0.06;
+          } else if (leaving) {
+            obj.rotation.y += (targetY - obj.rotation.y) * 0.09;
+            if (Math.abs(targetY - obj.rotation.y) < 0.004) { obj.rotation.y = targetY; leaving = false; }
+          }
+          if (spinning || leaving) renderer.render(scene, camera);
           raf = requestAnimationFrame(tick);
         };
+        renderer.render(scene, camera);
         tick();
       } catch (e) {
         if (alive) setKo(true);
@@ -2833,7 +2858,7 @@ function Jeton3D({ px = 16, fallback = null }) {
     };
   }, [px]);
   if (ko) return fallback;
-  return <span ref={ref} aria-hidden="true" style={{ width: px, height: px, display: "inline-flex", flex: "0 0 auto" }} />;
+  return <span ref={ref} aria-hidden="true" style={{ width: px, height: px, display: "inline-flex", flex: "0 0 auto", cursor: "pointer" }} />;
 }
 
 function Header({ liquidPop, lockedPop }) {
@@ -2897,14 +2922,14 @@ function Header({ liquidPop, lockedPop }) {
       <div className="hdr-spacer" />
       <div className="flex gap8 center wrap" style={{ justifyContent: "flex-end" }}>
         <span key={"lq" + liquidPop.n} className={cx("chip", "liquid", liquidPop.n > 0 && "pop")}>
-          <Jeton3D px={40} fallback={<img src="assets/TOKEN.png" alt="" width="40" height="40" style={{ display: "block" }} />} />
+          <Jeton3D px={56} fallback={<img src="assets/TOKEN.png" alt="" width="56" height="56" style={{ display: "block" }} />} />
           {fmt(g.liquid)}
           <ChipDelta delta={liquidPop.delta} />
         </span>
         {fbBal && fbBal.status === "ok" && (
           <span className="chip fb" title={I18N.t("FB_CHIP_TITLE")}>
             <b className="chip-amount">{fbFmt(fbBal.fb_earned_sats)}</b>
-            <Jeton3D px={40} fallback={<span className="chip-lbl">FB</span>} />
+            <Jeton3D px={56} fallback={<span className="chip-lbl">FB</span>} />
             {Number(fbBal.fb_pending_sats) > 0 && (
               <span className="chip-lbl" style={{ color: "var(--text-dim)" }}>(+{fbFmt(fbBal.fb_pending_sats)})</span>
             )}
@@ -2912,7 +2937,7 @@ function Header({ liquidPop, lockedPop }) {
         )}
         {g.locked > 0 && (
           <span key={"lk" + lockedPop.n} className={cx("chip", "locked", lockedPop.n > 0 && "pop")}>
-            <Jeton3D px={40} fallback={<img src="assets/TOKEN.png" alt="" width="40" height="40" style={{ display: "block" }} />} />
+            <Jeton3D px={56} fallback={<img src="assets/TOKEN.png" alt="" width="56" height="56" style={{ display: "block" }} />} />
             <b className="chip-amount">{fmt(g.locked)}</b><span className="chip-lbl"> {I18N.t("LOCKED_CHIP")}</span>
             <ChipDelta delta={lockedPop.delta} />
           </span>
