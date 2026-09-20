@@ -26,7 +26,7 @@ test("la tape et la detection de rachat se replient si FA_TAPE est absent", () =
 
 test("la detection compare l'ANCIEN releve, avant l'ecrasement de prevPools", () => {
   const iDetect = BUYBACK.indexOf("rachatsDetectes(prevPools.current");
-  const iEcrase = BUYBACK.indexOf("prevPools.current = rb.buyback.pools");
+  const iEcrase = BUYBACK.indexOf("prevPools.current = flat");
   assert.ok(iDetect > 0 && iDetect < iEcrase,
     "rachatsDetectes doit lire prevPools AVANT sa mise a jour, sinon aucun rachat n'est jamais detecte");
 });
@@ -45,7 +45,8 @@ test("tape-ui.js est charge avant build/buyback.js", () => {
 });
 
 test("les cles i18n de la tape existent dans les trois langues", () => {
-  for (const cle of ["TAPE_RACHAT", "TAPE_ENTREE", "TAPE_POOL", "TAPE_CUMUL",
+  for (const cle of ["TAPE_RACHAT", "TAPE_RACHAT_K", "TAPE_BURN_K", "TAPE_POT_K", "TAPE_ENTREE", "TAPE_ENTREE_K",
+    "TAPE_POOL", "TAPE_POOL_K", "TAPE_CUMUL", "BB_POOL_KIND_BUYBACK", "BB_POOL_KIND_BURN", "BB_POOL_KIND_POT",
     "TAPE_AGE_NOW", "TAPE_AGE_MIN", "TAPE_AGE_H", "TAPE_AGE_J"]) {
     const i = I18N.indexOf(cle + ":");
     assert.ok(i > 0, "cle absente : " + cle);
@@ -86,5 +87,5 @@ test("reduced-motion : pas de defilement, pas de pluie", () => {
 test("la pluie d'or ne rejoue pas les rachats passes a la connexion", () => {
   // La garde est dans tape-ui (initialise=false au premier releve) ; ici on
   // verrouille que le composant passe bien poolsPret et non `true`.
-  assert.match(BUYBACK, /rachatsDetectes\(prevPools\.current, rb\.buyback\.pools, poolsPret\.current\)/);
+  assert.match(BUYBACK, /rachatsDetectes\(prevPools\.current, flat, poolsPret\.current\)/);
 });

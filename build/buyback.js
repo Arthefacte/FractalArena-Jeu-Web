@@ -167,6 +167,28 @@ function TickerRow({
   })));
 }
 
+// ——— Modèle 3 pools × 2 instances (halving du buyback, 20/09/2026) ———
+// /buyback/status renvoie {human: {buyback, burn, pot}, agent: {…}}. Le bandeau
+// montre l'instance HUMAINE sous la forme tabulaire historique que juice-ui et
+// tape-ui savent lire : tier = kind, last_buyback = last_confirm, buyback_count
+// = confirm_count. Pur, exposé sur window pour les tests.
+function aplatirPoolsHumain(poolsByInstance) {
+  const hum = poolsByInstance && poolsByInstance.human || {};
+  return ["buyback", "burn", "pot"].filter(k => hum[k]).map(k => Object.assign({}, hum[k], {
+    tier: k,
+    last_buyback: hum[k].last_confirm || null,
+    buyback_count: hum[k].confirm_count || 0
+  }));
+}
+
+// Libellé court d'un kind de pool (rachat / brûlage / cagnotte), i18n 3 langues.
+function labelPool(I, kind) {
+  if (kind === "buyback") return I.t("BB_POOL_KIND_BUYBACK");
+  if (kind === "burn") return I.t("BB_POOL_KIND_BURN");
+  if (kind === "pot") return I.t("BB_POOL_KIND_POT");
+  return String(kind);
+}
+
 // ——— Tape boursière (#7 header vivant) : les items structurés de FA_TAPE,
 // formatés via I18N puis FaText (convention : jamais « FA » écrit à côté d'un
 // montant). Piste dupliquée pour un défilement sans couture (translateX -50 %).
@@ -177,9 +199,12 @@ function ageTexte(I, age) {
   return I.t("TAPE_AGE_NOW");
 }
 function texteTape(I, it) {
-  if (it.type === "rachat") return I.t("TAPE_RACHAT", bbFmt(it.tier), bbFmt(it.montant)) + " · " + ageTexte(I, it.age);
-  if (it.type === "entree") return I.t("TAPE_ENTREE", bbFmt(it.montant), bbFmt(it.tier));
-  if (it.type === "pool") return I.t("TAPE_POOL", bbFmt(it.tier), it.pct);
+  if (it.type === "rachat") {
+    const base = it.tier === "burn" ? I.t("TAPE_BURN_K", bbFmt(it.montant)) : it.tier === "pot" ? I.t("TAPE_POT_K") : typeof it.tier === "string" ? I.t("TAPE_RACHAT_K", bbFmt(it.montant)) : I.t("TAPE_RACHAT", bbFmt(it.tier), bbFmt(it.montant));
+    return base + " · " + ageTexte(I, it.age);
+  }
+  if (it.type === "entree") return typeof it.tier === "string" ? I.t("TAPE_ENTREE_K", bbFmt(it.montant), labelPool(I, it.tier)) : I.t("TAPE_ENTREE", bbFmt(it.montant), bbFmt(it.tier));
+  if (it.type === "pool") return typeof it.tier === "string" ? I.t("TAPE_POOL_K", labelPool(I, it.tier), it.pct) : I.t("TAPE_POOL", bbFmt(it.tier), it.pct);
   if (it.type === "cumul") return I.t("TAPE_CUMUL", bbFmt(it.montant));
   return "";
 }
@@ -533,15 +558,21 @@ function BuybackTicker() {
       if (seq !== loadSeq.current) return; // réponse périmée : une plus récente est arrivée
       if (dx && dx.dex) setDex(dx.dex);
       if (br && br.burn) setBurn(br.burn);
-      if (rb && rb.buyback && Array.isArray(rb.buyback.pools)) {
-        const par = window.FA_JUICE_UI.gainsPools(prevPools.current, rb.buyback.pools, poolsPret.current);
+      if (rb && rb.buyback && rb.buyback.pools && !Array.isArray(rb.buyback.pools)) {
+        // Modèle 3 pools × 2 instances : aplati sur l'instance HUMAINE (le bandeau
+        // est celui du jeu des humains) sous la forme tabulaire historique.
+        const flat = aplatirPoolsHumain(rb.buyback.pools);
+        if (!flat.length) return;
+        const par = window.FA_JUICE_UI.gainsPools(prevPools.current, flat, poolsPret.current);
         // AVANT d'écraser prevPools : la détection compare l'ancien relevé au
         // nouveau. Même garde d'initialisation que gainsPools — pas de pluie
         // d'or à la connexion pour des rachats passés.
-        const rachats = window.FA_TAPE ? window.FA_TAPE.rachatsDetectes(prevPools.current, rb.buyback.pools, poolsPret.current) : {};
-        prevPools.current = rb.buyback.pools;
+        const rachats = window.FA_TAPE ? window.FA_TAPE.rachatsDetectes(prevPools.current, flat, poolsPret.current) : {};
+        prevPools.current = flat;
         poolsPret.current = true;
-        setBb(rb.buyback);
+        setBb(Object.assign({}, rb.buyback, {
+          pools: flat
+        }));
         // La tape se nourrit du neuf : on déplie (mobile) sur entrée OU rachat.
         function reveille() {
           setFraiche(true);
@@ -621,7 +652,7 @@ function BuybackTicker() {
     rachat: rachat.tiers[p.tier] || 0,
     kind: "buy",
     icon: "",
-    label: I.t("BB_POOL_LABEL", bbFmt(p.tier)),
+    label: labelPool(I, p.tier),
     total: p.total,
     threshold: p.threshold,
     sub: i === last ? I.t(cleLibelleCumul(cumul.source), bbFmt(cumul.value)) : null
@@ -645,6 +676,8 @@ function BuybackTicker() {
 Object.assign(window, {
   BuybackTicker,
   buybackFraction,
+  aplatirPoolsHumain,
+  labelPool,
   resolveBoughtTotal,
   plancherCumul,
   cleLibelleCumul,

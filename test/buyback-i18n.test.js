@@ -51,19 +51,30 @@ test("BB_BOUGHT_SUB dit la nature (cumul) et la source (on-chain), BB_BOUGHT_SUB
   }
 });
 
-test("BB_TICK_TITLE distingue proportion instantanée et cumul dans les 3 langues", () => {
-  assert.match(T.BB_TICK_TITLE.FR, /^100% de chaque mise et de chaque forge rachète FRACTALARENA sur le marché, puis le verrouille à vie\./);
-  assert.match(T.BB_TICK_TITLE.FR, /LP/);
+test("BB_TICK_TITLE dit les 3 poches et distingue proportion instantanée / cumul (3 langues)", () => {
+  assert.match(T.BB_TICK_TITLE.FR, /trois poches/);
+  assert.match(T.BB_TICK_TITLE.FR, /un tiers/);
+  assert.match(T.BB_TICK_TITLE.FR, /cagnotte/);
   assert.match(T.BB_TICK_TITLE.FR, /proportion instantanée/);
   assert.match(T.BB_TICK_TITLE.FR, /jamais un cumul/);
-  assert.match(T.BB_TICK_TITLE.EN, /^100% of every bet and forge buys FRACTALARENA on the market, then locks it for life\./);
-  assert.match(T.BB_TICK_TITLE.EN, /LP/);
+  assert.match(T.BB_TICK_TITLE.EN, /three pockets/);
+  assert.match(T.BB_TICK_TITLE.EN, /one third is burned/);
+  assert.match(T.BB_TICK_TITLE.EN, /jackpot/);
   assert.match(T.BB_TICK_TITLE.EN, /instantaneous proportion/);
   assert.match(T.BB_TICK_TITLE.EN, /never a cumulative/);
-  assert.match(T.BB_TICK_TITLE.ZH, /^每次下注和锻造的 100% 都会在市场上回购 FRACTALARENA，然后永久锁定。/);
-  assert.match(T.BB_TICK_TITLE.ZH, /LP/);
+  assert.match(T.BB_TICK_TITLE.ZH, /三个资金池/);
+  assert.match(T.BB_TICK_TITLE.ZH, /三分之一销毁/);
+  assert.match(T.BB_TICK_TITLE.ZH, /彩池/);
   assert.match(T.BB_TICK_TITLE.ZH, /即时比例/);
   assert.match(T.BB_TICK_TITLE.ZH, /并非累计/);
+});
+
+test("clés du modèle 3 pools présentes en FR/EN/ZH", () => {
+  for (const k of ["BB_POOL_KIND_BUYBACK", "BB_POOL_KIND_BURN", "BB_POOL_KIND_POT",
+    "TAPE_RACHAT_K", "TAPE_BURN_K", "TAPE_POT_K", "TAPE_ENTREE_K", "TAPE_POOL_K"]) {
+    assert.ok(T[k], `${k} manquante`);
+    for (const lang of ["FR", "EN", "ZH"]) assert.ok(T[k][lang], `${k}.${lang} manquante`);
+  }
 });
 
 test("FG_SUB ne mentionne plus l'ancien split 70/30 dans les 3 langues", () => {

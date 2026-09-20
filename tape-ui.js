@@ -50,7 +50,7 @@
     const gains = gainsSession || {};
     for (const tier of Object.keys(gains)) {
       const montant = gains[tier];
-      if (montant > 0) items.push({ type: "entree", tier: Number(tier), montant });
+      if (montant > 0) items.push({ type: "entree", tier: /^\d+$/.test(tier) ? Number(tier) : tier, montant });
     }
 
     for (const p of pools) {

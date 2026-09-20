@@ -109,6 +109,28 @@ test("montant du rachat absent -> repli sur le tier", () => {
   assert.deepStrictEqual(T.rachatsDetectes(prev, suivants, true), { 25000: 25000 });
 });
 
+// ——— kinds (modèle 3 pools × 2 instances : tier est un kind en chaîne) ———
+
+test("pools par kind (chaînes) : les items portent le kind tel quel", () => {
+  const pools = [
+    pool("buyback", { total: 25000, threshold: 50000 }),
+    pool("burn", { total: 10000, threshold: 50000 }),
+    pool("pot", { total: 0, threshold: 200000 }),
+  ];
+  const items = T.composerTape(pools, { buyback: 300 }, MAINTENANT);
+  const pcts = items.filter((i) => i.type === "pool").map((i) => i.tier);
+  assert.deepStrictEqual(pcts, ["buyback", "burn", "pot"]);
+  const entree = items.find((i) => i.type === "entree");
+  assert.strictEqual(entree.tier, "buyback", "un kind chaîne ne devient pas NaN");
+  assert.strictEqual(entree.montant, 300);
+});
+
+test("rachatsDetectes avec kinds : détection par kind, montant du dernier rachat", () => {
+  const prev = [pool("buyback", { buyback_count: 1 })];
+  const suivants = [pool("buyback", { buyback_count: 2, last_buyback: { at: new Date(MAINTENANT).toISOString(), amount: 52000, txid: null } })];
+  assert.deepStrictEqual(T.rachatsDetectes(prev, suivants, true), { buyback: 52000 });
+});
+
 // ——— tempsRelatif ———
 
 test("temps relatif : paliers minute / heure / jour", () => {

@@ -435,21 +435,30 @@
     RES_BUYBACK:   { FR: "Rachat", EN: "Buyback", ZH: "回购" },
     BB_RESERVE:    { FR: "Buyback", EN: "Buyback", ZH: "回购" },
     BB_POOL_LABEL: { FR: "Rachat · %s", EN: "Buyback · %s", ZH: "回购 · %s" },
+    // Modèle 3 pools × 2 instances (halving du buyback) : un libellé court par poche.
+    BB_POOL_KIND_BUYBACK: { FR: "Rachat", EN: "Buyback", ZH: "回购" },
+    BB_POOL_KIND_BURN:    { FR: "Brûlage", EN: "Burn", ZH: "销毁" },
+    BB_POOL_KIND_POT:     { FR: "Cagnotte", EN: "Jackpot", ZH: "彩池" },
     // Cumul vérifié on-chain (/dex/status, ou sa dernière valeur connue) : nomme
     // l'unité, la source et la nature — ne peut pas être confondu avec une part
     // de pool instantanée (la position LP d'InSwap est un stock proportionnel).
     BB_BOUGHT_SUB: { FR: "· %s FA rachetés sur le marché — cumul vérifié on-chain", EN: "· %s FA bought back on the market — verified on-chain, cumulative", ZH: "· 累计市场回购 %s FA（链上可验证）" },
     // Repli base (somme des tranches) : nature différente, libellé différent —
     // il ne se réclame pas de l'on-chain.
-    BB_BOUGHT_SUB_DB: { FR: "· %s FA déduits des pools de rachat", EN: "· %s FA debited from the buyback pools", ZH: "· 回购池已扣减 %s FA" },
-    BB_TICK_TITLE: { FR: "100% de chaque mise et de chaque forge rachète FRACTALARENA sur le marché, puis le verrouille à vie. Les FA rachetés sont soit brûlés en direct, soit remis en pool avec leurs tokens LP brûlés : la part de pool affichée est une proportion instantanée, jamais un cumul.",
-                     EN: "100% of every bet and forge buys FRACTALARENA on the market, then locks it for life. Bought-back FA is either burned outright or paired back into the pool with its LP tokens burned: the displayed pool share is an instantaneous proportion, never a cumulative total.",
-                     ZH: "每次下注和锻造的 100% 都会在市场上回购 FRACTALARENA，然后永久锁定。回购的 FA 要么直接销毁，要么与 LP 代币一并销毁后重新注入池中：显示的池份额为即时比例，并非累计值。" },
+    BB_BOUGHT_SUB_DB: { FR: "· %s FA déduits du pool de rachat", EN: "· %s FA debited from the buyback pool", ZH: "· 回购池已扣减 %s FA" },
+    BB_TICK_TITLE: { FR: "Chaque FA dépensé ou perdu alimente trois poches à parts égales : un tiers rachète FRACTALARENA sur le marché puis le verrouille à vie, un tiers est brûlé, un tiers remplit la cagnotte des joueurs actifs. La jauge affichée est une proportion instantanée, jamais un cumul.",
+                     EN: "Every FA spent or lost feeds three pockets in equal shares: one third buys FRACTALARENA on the market then locks it for life, one third is burned, one third fills the jackpot for active players. The displayed gauge is an instantaneous proportion, never a cumulative total.",
+                     ZH: "每一枚被花费或损失的 FA 均分进入三个资金池：三分之一在市场上回购 FRACTALARENA 并永久锁定，三分之一销毁，三分之一进入活跃玩家彩池。显示的进度条为即时比例，并非累计值。" },
     // Tape boursière (#7 header vivant) — les montants suivent la convention
     // FaText « %s FA » (logo + nombre à l'écran, jamais l'écriture FA).
     TAPE_RACHAT:   { FR: "RACHAT %s · %s FA", EN: "BUYBACK %s · %s FA", ZH: "回购 %s · %s FA" },
+    TAPE_RACHAT_K: { FR: "RACHAT · %s FA", EN: "BUYBACK · %s FA", ZH: "回购 · %s FA" },
+    TAPE_BURN_K:   { FR: "BRÛLAGE · %s FA", EN: "BURN · %s FA", ZH: "销毁 · %s FA" },
+    TAPE_POT_K:    { FR: "CAGNOTTE TIRÉE · 1 FB divisé", EN: "JACKPOT DRAWN · 1 FB split", ZH: "彩池开奖 · 1 FB 均分" },
     TAPE_ENTREE:   { FR: "+%s FA → POOL %s", EN: "+%s FA → POOL %s", ZH: "+%s FA → 池 %s" },
+    TAPE_ENTREE_K: { FR: "+%s FA → %s", EN: "+%s FA → %s", ZH: "+%s FA → %s" },
     TAPE_POOL:     { FR: "POOL %s · %s %", EN: "POOL %s · %s %", ZH: "池 %s · %s %" },
+    TAPE_POOL_K:   { FR: "%s · %s %", EN: "%s · %s %", ZH: "%s · %s %" },
     TAPE_CUMUL:    { FR: "CUMUL RACHETÉ · %s FA", EN: "TOTAL BOUGHT BACK · %s FA", ZH: "累计回购 · %s FA" },
     TAPE_AGE_NOW:  { FR: "à l'instant", EN: "just now", ZH: "刚刚" },
     TAPE_AGE_MIN:  { FR: "il y a %s min", EN: "%s min ago", ZH: "%s 分钟前" },
