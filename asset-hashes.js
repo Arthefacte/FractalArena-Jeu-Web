@@ -5,6 +5,8 @@
 window.FA_ASSET_HASHES = {
   "assets/emblem-spin.webp": "10b029b6e0",
   "assets/emblem.glb": "41eb14a950",
+  "assets/fa-badge.glb": "689b449936",
+  "assets/fb-badge.glb": "577c10e913",
   "assets/jeton.glb": "0dba0aa8c4",
   "assets/logo3d.glb": "939a8ea4ef",
   "assets/relics/amber_cell.glb": "6874aaf3a8",

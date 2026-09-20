@@ -52,6 +52,27 @@ const CIBLES = [
     meshopt: false, // idem pour totem-cine.js
     note: "cinématique du totem",
   },
+  {
+    // Badge FA des chips du header (56 px) : le monogramme doit se lire d'un
+    // coup d'œil, ce que le jeton-cristal ne faisait pas à cette taille.
+    src: "assets/logo3d.glb",
+    out: "assets/fa-badge.glb",
+    triangles: 6000,
+    textures: { baseColor: 256, normal: 256, emissive: 128, metallicRoughness: 128 },
+    meshopt: false, // Badge3D (app.jsx) n'installe pas le décodeur
+    note: "badge FA des chips du header, 56 px",
+  },
+  {
+    // Source HORS dépôt (37,9 Mo, 345 426 triangles, textures 4096²) : le badge
+    // FB hexagonal sorti de Meshy. Le fichier reste chez son auteur ; seul le
+    // résultat allégé entre dans le jeu.
+    src: "../../../../Downloads/Meshy_AI_FB_Hexagon_Badge_3D_0827180407_image-to-3d-texture.glb",
+    out: "assets/fb-badge.glb",
+    triangles: 6000,
+    textures: { baseColor: 256, normal: 256, emissive: 128, metallicRoughness: 128 },
+    meshopt: false,
+    note: "badge FB des chips du header, 56 px",
+  },
   ...fs
     .readdirSync(path.join(ROOT, "assets/relics"))
     .filter((f) => f.endsWith(".glb"))

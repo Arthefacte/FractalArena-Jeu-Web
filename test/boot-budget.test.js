@@ -45,19 +45,22 @@ test("les ecrans qui montrent des reliques declenchent le prechargement", () => 
 
 // Garde-fou chiffré : ce qui part au boot doit rester borné. Sans seuil, la dette
 // revient sans qu'on la voie — c'est exactement ce qui s'était produit.
-test("le budget du premier ecran reste sous 3 Mo", () => {
+test("le budget du premier ecran reste sous 3,5 Mo", () => {
   const html = lire("index.html");
-  // Les .glb chargés inconditionnellement au boot : uniquement le jeton à deux
-  // faces (v217 — cinématique, header et connexion partagent EMBLEM_GLB).
+  // Les .glb chargés inconditionnellement au boot : le jeton à deux faces
+  // (v217 — cinématique, header et connexion partagent EMBLEM_GLB) et les DEUX
+  // badges 3D des chips du header (fa-badge + fb-badge : 56 px, 6 000 triangles,
+  // 0,29 + 0,22 Mo — sortis de logo3d.glb et du badge FB de Meshy par
+  // tools/optimize-assets.mjs, contre 1,4 Mo pour le jeton qu'ils remplacent).
   // Les reliques et le logo3d du Totem sont chargés à la demande.
-  const boot = ["assets/jeton.glb"];
+  const boot = ["assets/jeton.glb", "assets/fa-badge.glb", "assets/fb-badge.glb"];
   let total = 0;
   for (const f of boot) {
     total += fs.statSync(path.join(__dirname, "..", f)).size;
   }
   const three = path.join(__dirname, "..", "vendor", "three-0.160.0", "three.module.js");
   if (fs.existsSync(three)) total += fs.statSync(three).size;
-  assert.ok(total < 3 * 1024 * 1024,
-    `premier ecran : ${(total / 1048576).toFixed(1)} Mo — au-dela de 3 Mo la cinematique rame sur mobile`);
+  assert.ok(total < 3.5 * 1024 * 1024,
+    `premier écran : ${(total / 1048576).toFixed(1)} Mo — au-delà de 3,5 Mo la cinématique rame sur mobile`);
   assert.match(html, /cinematique/, "index.html doit toujours charger la cinematique");
 });

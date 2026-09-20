@@ -2781,49 +2781,50 @@ function fbFmt(sats) {
   return v >= 0.01 ? v.toFixed(4) : v.toFixed(6);
 }
 
-// Médaillon 3D (assets/jeton.glb, le même que la cinématique) — statique en
-// position de base, il tourne seulement quand le curseur passe dessus puis
-// revient en douceur à sa position de base. La caméra est calée sur la boîte
-// englobante du modèle : la pièce remplit le canvas, quelle que soit son échelle
-// interne. Repli silencieux sur `fallback` si WebGL/GLB indisponible.
-function Jeton3D({ px = 56, fallback = null, face = "fa" }) {
+// Badge 3D d'un chip : badge hexagonal FA (assets/fa-badge.glb) ou FB
+// (assets/fb-badge.glb), allégé à 6 000 triangles pour un affichage de 56 px
+// (tools/optimize-assets.mjs). Le monogramme doit se lire au premier regard :
+// le jeton-cristal précédent (assets/jeton.glb) ne montrait, à cette taille,
+// qu'un bloc sombre où ni « FA » ni « FB » n'étaient identifiables.
+// Un seul téléchargement par URL pour tout l'écran — les deux chips FA
+// partagent le même GLB, chaque instance ne clone que le graphe. Le badge reste
+// de face (le logo se lit), tourne tant que le curseur le survole, puis revient
+// en douceur à sa pose de repos.
+const _badgeGlb = new Map();   // url -> Promise<THREE.Group>, chargé une fois
+function chargerBadge(url) {
+  if (!_badgeGlb.has(url)) {
+    const p = (async () => {
+      const { GLTFLoader } = await import("three/addons/loaders/GLTFLoader.js");
+      const src = window.FA_ASSET_URL ? window.FA_ASSET_URL(url) : url;
+      return await new Promise((res, rej) => new GLTFLoader().load(src, (g) => res(g.scene), undefined, rej));
+    })();
+    p.catch(() => _badgeGlb.delete(url));   // un échec n'est pas mémorisé : on retente
+    _badgeGlb.set(url, p);
+  }
+  return _badgeGlb.get(url);
+}
+
+// Pose de repos : de face, à peine inclinée sur X — le relief se voit, le
+// monogramme reste lisible (vérifié par rendu réel à 56 px).
+const BADGE_TILT_X = 0.1, BADGE_Y = -0.25;
+
+function Badge3D({ src, px = 56, fallback = null }) {
   const ref = React.useRef(null);
   const [ko, setKo] = React.useState(false);
   React.useEffect(() => {
     const mount = ref.current;
     if (!mount) { setKo(true); return; }
     let alive = true, raf = 0, renderer = null, scene = null, obj = null;
-    let spinning = false, leaving = false, targetY = 0.6;
-    const BASE_Y = 0.6, TWO_PI = Math.PI * 2;
+    let spinning = false, leaving = false, targetY = BADGE_Y;
+    const TWO_PI = Math.PI * 2;
     (async () => {
       try {
         const THREE = window.__FA_THREE || await import("three");
-        const { GLTFLoader } = await import("three/addons/loaders/GLTFLoader.js");
-        const url = window.FA_ASSET_URL ? window.FA_ASSET_URL("assets/jeton.glb") : "assets/jeton.glb";
-        const gltf = await new Promise((res, rej) => new GLTFLoader().load(url, res, undefined, rej));
+        const modele = await chargerBadge(src);
         if (!alive) return;
-        // Pièce mono-face : le médaillon jeton.glb porte FA d'un côté et FB de
-        // l'autre. On garde la face demandée, on retire l'autre et on la remplace
-        // par un miroir (scale.z = -1) de la bonne face → FA/FA ou FB/FB. Les
-        // matériaux passent en DoubleSide pour que le relief miroir s'éclaire.
-        const faceNodes = [], otherNodes = [];
-        gltf.scene.traverse((o) => {
-          if (/^(FA|FB)/.test(o.name)) {
-            ((face === "fa" ? /^FA/ : /^FB/).test(o.name) ? faceNodes : otherNodes).push(o);
-          }
-        });
-        otherNodes.forEach((o) => o.parent && o.parent.remove(o));
-        faceNodes.forEach((o) => {
-          const m = o.clone();
-          m.scale.z *= -1;
-          m.traverse((c) => {
-            if (c.isMesh && c.material) {
-              const mats = Array.isArray(c.material) ? c.material : [c.material];
-              mats.forEach((mm) => { mm.side = THREE.DoubleSide; mm.needsUpdate = true; });
-            }
-          });
-          o.parent && o.parent.add(m);
-        });
+        // clone(true) partage géométries ET matériaux : rien à libérer ici, et
+        // les deux chips FA ne consomment qu'un seul jeu de textures en VRAM.
+        obj = modele.clone(true);
         renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(px, px);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
@@ -2832,8 +2833,9 @@ function Jeton3D({ px = 56, fallback = null, face = "fa" }) {
         mount.appendChild(renderer.domElement);
         renderer.domElement.style.display = "block";
         scene = new THREE.Scene();
-        // Caméra calée sur la boîte englobante : la pièce remplit le cadre.
-        const box = new THREE.Box3().setFromObject(gltf.scene);
+        // Caméra calée sur la boîte englobante : le badge remplit le canvas,
+        // quelle que soit l'échelle interne du modèle.
+        const box = new THREE.Box3().setFromObject(obj);
         const center = box.getCenter(new THREE.Vector3());
         const size = box.getSize(new THREE.Vector3());
         const radius = Math.max(size.x, size.y, size.z) / 2;
@@ -2841,19 +2843,18 @@ function Jeton3D({ px = 56, fallback = null, face = "fa" }) {
         const camera = new THREE.PerspectiveCamera(38, 1, Math.max(0.01, radius / 50), radius * 20);
         camera.position.set(0, 0, dist);
         camera.lookAt(center);
-        // Éclairage généreux : la pièce doit rester lisible, pas sombre.
+        // Éclairage généreux : le badge doit rester lisible, pas sombre.
         const key = new THREE.DirectionalLight(0xffffff, 2.2); key.position.set(2, 3, 4); scene.add(key);
-        scene.add(new THREE.DirectionalLight(0xfff2dd, 1.0)); scene.children[scene.children.length - 1].position.set(-3, -1, 2);
+        const back = new THREE.DirectionalLight(0xfff2dd, 1.0); back.position.set(-3, -1, 2); scene.add(back);
         scene.add(new THREE.HemisphereLight(0xfff2dd, 0x2a2a35, 0.7));
         scene.add(new THREE.AmbientLight(0xffffff, 1.05));
-        obj = gltf.scene;
         obj.position.sub(center);
-        obj.rotation.set(0.3, BASE_Y, 0);
+        obj.rotation.set(BADGE_TILT_X, BADGE_Y, 0);
         scene.add(obj);
         const onEnter = () => { spinning = true; leaving = false; };
         const onLeave = () => {
           spinning = false; leaving = true;
-          targetY = BASE_Y + Math.round((obj.rotation.y - BASE_Y) / TWO_PI) * TWO_PI;
+          targetY = BADGE_Y + Math.round((obj.rotation.y - BADGE_Y) / TWO_PI) * TWO_PI;
         };
         mount.addEventListener("mouseenter", onEnter);
         mount.addEventListener("mouseleave", onLeave);
@@ -2883,7 +2884,7 @@ function Jeton3D({ px = 56, fallback = null, face = "fa" }) {
         if (renderer.domElement.parentNode) renderer.domElement.parentNode.removeChild(renderer.domElement);
       }
     };
-  }, [px]);
+  }, [px, src]);
   if (ko) return fallback;
   return <span ref={ref} aria-hidden="true" style={{ width: px, height: px, display: "inline-flex", flex: "0 0 auto", cursor: "pointer" }} />;
 }
@@ -2949,14 +2950,14 @@ function Header({ liquidPop, lockedPop }) {
       <div className="hdr-spacer" />
       <div className="flex gap8 center wrap" style={{ justifyContent: "flex-end" }}>
         <span key={"lq" + liquidPop.n} className={cx("chip", "liquid", liquidPop.n > 0 && "pop")}>
-          <Jeton3D px={56} fallback={<img src="assets/TOKEN.png" alt="" width="56" height="56" style={{ display: "block" }} />} />
+          <Badge3D src="assets/fa-badge.glb" px={56} fallback={<img src="assets/TOKEN.png" alt="" width="56" height="56" style={{ display: "block" }} />} />
           {fmt(g.liquid)}
           <ChipDelta delta={liquidPop.delta} />
         </span>
         {fbBal && fbBal.status === "ok" && (
           <span className="chip fb" title={I18N.t("FB_CHIP_TITLE")}>
             <b className="chip-amount">{fbFmt(fbBal.fb_earned_sats)}</b>
-            <Jeton3D px={56} fallback={<span className="chip-lbl">FB</span>} face="fb" />
+            <Badge3D src="assets/fb-badge.glb" px={56} fallback={<span className="chip-lbl">FB</span>} />
             {Number(fbBal.fb_pending_sats) > 0 && (
               <span className="chip-lbl" style={{ color: "var(--text-dim)" }}>(+{fbFmt(fbBal.fb_pending_sats)})</span>
             )}
@@ -2964,7 +2965,7 @@ function Header({ liquidPop, lockedPop }) {
         )}
         {g.locked > 0 && (
           <span key={"lk" + lockedPop.n} className={cx("chip", "locked", lockedPop.n > 0 && "pop")}>
-            <Jeton3D px={56} fallback={<img src="assets/TOKEN.png" alt="" width="56" height="56" style={{ display: "block" }} />} />
+            <Badge3D src="assets/fa-badge.glb" px={56} fallback={<img src="assets/TOKEN.png" alt="" width="56" height="56" style={{ display: "block" }} />} />
             <b className="chip-amount">{fmt(g.locked)}</b><span className="chip-lbl"> {I18N.t("LOCKED_CHIP")}</span>
             <ChipDelta delta={lockedPop.delta} />
           </span>
