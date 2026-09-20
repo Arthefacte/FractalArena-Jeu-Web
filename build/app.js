@@ -4941,17 +4941,18 @@ function fbFmt(sats) {
   return v >= 0.01 ? v.toFixed(4) : v.toFixed(6);
 }
 
-// Médaillon FB 3D (assets/jeton.glb, le même que la cinématique) — rotation
-// lente dans le chip, repli « FB » texte si WebGL/GLB indisponible (jamais vide).
-function JetonFB3D({
-  px = 18
+// Médaillon 3D (assets/jeton.glb, le même que la cinématique) — rotation lente
+// dans les chips FA/FB. THREE chargé en dynamique (comme la cinématique), repli
+// silencieux sur `fallback` si WebGL/GLB indisponible (jamais un chip vide).
+function Jeton3D({
+  px = 16,
+  fallback = null
 }) {
   const ref = React.useRef(null);
   const [ko, setKo] = React.useState(false);
   React.useEffect(() => {
-    const THREE = window.__FA_THREE;
     const mount = ref.current;
-    if (!THREE || !mount) {
+    if (!mount) {
       setKo(true);
       return;
     }
@@ -4962,6 +4963,7 @@ function JetonFB3D({
       obj = null;
     (async () => {
       try {
+        const THREE = window.__FA_THREE || (await import("three"));
         const {
           GLTFLoader
         } = await import("three/addons/loaders/GLTFLoader.js");
@@ -5007,9 +5009,7 @@ function JetonFB3D({
       }
     };
   }, [px]);
-  if (ko) return /*#__PURE__*/React.createElement("span", {
-    className: "chip-lbl"
-  }, "FB");
+  if (ko) return fallback;
   return /*#__PURE__*/React.createElement("span", {
     ref: ref,
     "aria-hidden": "true",
@@ -5120,14 +5120,17 @@ function Header({
   }, /*#__PURE__*/React.createElement("span", {
     key: "lq" + liquidPop.n,
     className: cx("chip", "liquid", liquidPop.n > 0 && "pop")
-  }, /*#__PURE__*/React.createElement("img", {
-    src: "assets/TOKEN.png",
-    alt: "",
-    width: "16",
-    height: "16",
-    style: {
-      display: "block"
-    }
+  }, /*#__PURE__*/React.createElement(Jeton3D, {
+    px: 16,
+    fallback: /*#__PURE__*/React.createElement("img", {
+      src: "assets/TOKEN.png",
+      alt: "",
+      width: "16",
+      height: "16",
+      style: {
+        display: "block"
+      }
+    })
   }), fmt(g.liquid), /*#__PURE__*/React.createElement(ChipDelta, {
     delta: liquidPop.delta
   })), fbBal && fbBal.status === "ok" && /*#__PURE__*/React.createElement("span", {
@@ -5135,8 +5138,11 @@ function Header({
     title: I18N.t("FB_CHIP_TITLE")
   }, /*#__PURE__*/React.createElement("b", {
     className: "chip-amount"
-  }, fbFmt(fbBal.fb_earned_sats)), /*#__PURE__*/React.createElement(JetonFB3D, {
-    px: 18
+  }, fbFmt(fbBal.fb_earned_sats)), /*#__PURE__*/React.createElement(Jeton3D, {
+    px: 16,
+    fallback: /*#__PURE__*/React.createElement("span", {
+      className: "chip-lbl"
+    }, "FB")
   }), Number(fbBal.fb_pending_sats) > 0 && /*#__PURE__*/React.createElement("span", {
     className: "chip-lbl",
     style: {
@@ -5145,14 +5151,17 @@ function Header({
   }, "(+", fbFmt(fbBal.fb_pending_sats), ")")), g.locked > 0 && /*#__PURE__*/React.createElement("span", {
     key: "lk" + lockedPop.n,
     className: cx("chip", "locked", lockedPop.n > 0 && "pop")
-  }, /*#__PURE__*/React.createElement("img", {
-    src: "assets/TOKEN.png",
-    alt: "",
-    width: "16",
-    height: "16",
-    style: {
-      display: "block"
-    }
+  }, /*#__PURE__*/React.createElement(Jeton3D, {
+    px: 16,
+    fallback: /*#__PURE__*/React.createElement("img", {
+      src: "assets/TOKEN.png",
+      alt: "",
+      width: "16",
+      height: "16",
+      style: {
+        display: "block"
+      }
+    })
   }), /*#__PURE__*/React.createElement("b", {
     className: "chip-amount"
   }, fmt(g.locked)), /*#__PURE__*/React.createElement("span", {

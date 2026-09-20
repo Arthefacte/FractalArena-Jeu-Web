@@ -2781,18 +2781,19 @@ function fbFmt(sats) {
   return v >= 0.01 ? v.toFixed(4) : v.toFixed(6);
 }
 
-// Médaillon FB 3D (assets/jeton.glb, le même que la cinématique) — rotation
-// lente dans le chip, repli « FB » texte si WebGL/GLB indisponible (jamais vide).
-function JetonFB3D({ px = 18 }) {
+// Médaillon 3D (assets/jeton.glb, le même que la cinématique) — rotation lente
+// dans les chips FA/FB. THREE chargé en dynamique (comme la cinématique), repli
+// silencieux sur `fallback` si WebGL/GLB indisponible (jamais un chip vide).
+function Jeton3D({ px = 16, fallback = null }) {
   const ref = React.useRef(null);
   const [ko, setKo] = React.useState(false);
   React.useEffect(() => {
-    const THREE = window.__FA_THREE;
     const mount = ref.current;
-    if (!THREE || !mount) { setKo(true); return; }
+    if (!mount) { setKo(true); return; }
     let alive = true, raf = 0, renderer = null, scene = null, obj = null;
     (async () => {
       try {
+        const THREE = window.__FA_THREE || await import("three");
         const { GLTFLoader } = await import("three/addons/loaders/GLTFLoader.js");
         const url = window.FA_ASSET_URL ? window.FA_ASSET_URL("assets/jeton.glb") : "assets/jeton.glb";
         const gltf = await new Promise((res, rej) => new GLTFLoader().load(url, res, undefined, rej));
@@ -2831,7 +2832,7 @@ function JetonFB3D({ px = 18 }) {
       }
     };
   }, [px]);
-  if (ko) return <span className="chip-lbl">FB</span>;
+  if (ko) return fallback;
   return <span ref={ref} aria-hidden="true" style={{ width: px, height: px, display: "inline-flex", flex: "0 0 auto" }} />;
 }
 
@@ -2896,14 +2897,14 @@ function Header({ liquidPop, lockedPop }) {
       <div className="hdr-spacer" />
       <div className="flex gap8 center wrap" style={{ justifyContent: "flex-end" }}>
         <span key={"lq" + liquidPop.n} className={cx("chip", "liquid", liquidPop.n > 0 && "pop")}>
-          <img src="assets/TOKEN.png" alt="" width="16" height="16" style={{ display: "block" }} />
+          <Jeton3D px={16} fallback={<img src="assets/TOKEN.png" alt="" width="16" height="16" style={{ display: "block" }} />} />
           {fmt(g.liquid)}
           <ChipDelta delta={liquidPop.delta} />
         </span>
         {fbBal && fbBal.status === "ok" && (
           <span className="chip fb" title={I18N.t("FB_CHIP_TITLE")}>
             <b className="chip-amount">{fbFmt(fbBal.fb_earned_sats)}</b>
-            <JetonFB3D px={18} />
+            <Jeton3D px={16} fallback={<span className="chip-lbl">FB</span>} />
             {Number(fbBal.fb_pending_sats) > 0 && (
               <span className="chip-lbl" style={{ color: "var(--text-dim)" }}>(+{fbFmt(fbBal.fb_pending_sats)})</span>
             )}
@@ -2911,7 +2912,7 @@ function Header({ liquidPop, lockedPop }) {
         )}
         {g.locked > 0 && (
           <span key={"lk" + lockedPop.n} className={cx("chip", "locked", lockedPop.n > 0 && "pop")}>
-            <img src="assets/TOKEN.png" alt="" width="16" height="16" style={{ display: "block" }} />
+            <Jeton3D px={16} fallback={<img src="assets/TOKEN.png" alt="" width="16" height="16" style={{ display: "block" }} />} />
             <b className="chip-amount">{fmt(g.locked)}</b><span className="chip-lbl"> {I18N.t("LOCKED_CHIP")}</span>
             <ChipDelta delta={lockedPop.delta} />
           </span>
