@@ -31,7 +31,11 @@
   .hdr-logo { width: clamp(26px, 7.4vw, 32px); height: clamp(26px, 7.4vw, 32px); }
   .hdr-word { display: none; }
   .chip { font-size: clamp(10px, 2.9vw, 12px); padding: 3px clamp(5px, 1.8vw, 8px); gap: 4px; white-space: nowrap; }
-  .chip img { width: 13px; height: 13px; }
+  /* Badge 2D du chip : 13 px (l'ancienne taille, pensée pour un jeton plein) ne
+     laissait rien lire du monogramme. 16 px est la plus grande taille qui tienne
+     la rangée du bandeau sur une seule ligne — le bandeau est en flex-wrap:
+     nowrap en ≤640 px, donc ce qui dépasse sort du cadre. */
+  .chip img { width: clamp(14px, 4vw, 18px); height: clamp(14px, 4vw, 18px); }
   /* Une ligne de header : les chips se réduisent à icône + montant */
   .chip .chip-lbl { display: none; }
   /* Le badge LOCAL (dev) a un style inline : display gagne quand même */

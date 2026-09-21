@@ -34,7 +34,10 @@ const EXTENSIONS = [".glb", ".webp"];
 const AVEC_EMPREINTE = (f) => EXTENSIONS.some((e) => f.endsWith(e))
   // Les autres .webp sont posés par le balisage et le CSS, déjà porteurs de `?v=` : les hacher
   // ne servirait à rien et grossirait le manifeste chargé à chaque démarrage.
-  && (f.endsWith(".glb") || f === "emblem-spin.webp");
+  // Les sprites des chips du header (fa-badge.webp / fb-badge.webp) sont, eux, chargés par du
+  // code (app.jsx, via FA_ASSET_URL) : une empreinte de contenu évite de les retélécharger à
+  // chaque livraison — même raison qu'emblem-spin.webp.
+  && (f.endsWith(".glb") || f === "emblem-spin.webp" || /-badge\.webp$/.test(f));
 
 function empreinte(fichier) {
   return crypto.createHash("sha256").update(fs.readFileSync(fichier)).digest("hex").slice(0, 10);

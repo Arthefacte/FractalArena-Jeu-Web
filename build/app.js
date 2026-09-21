@@ -4941,150 +4941,24 @@ function fbFmt(sats) {
   return v >= 0.01 ? v.toFixed(4) : v.toFixed(6);
 }
 
-// Badge 3D d'un chip : badge hexagonal FA (assets/fa-badge.glb) ou FB
-// (assets/fb-badge.glb), allégé à 6 000 triangles pour un affichage de 56 px
-// (tools/optimize-assets.mjs). Le monogramme doit se lire au premier regard :
-// le jeton-cristal précédent (assets/jeton.glb) ne montrait, à cette taille,
-// qu'un bloc sombre où ni « FA » ni « FB » n'étaient identifiables.
-// Un seul téléchargement par URL pour tout l'écran — les deux chips FA
-// partagent le même GLB, chaque instance ne clone que le graphe. Le badge reste
-// de face (le logo se lit), tourne tant que le curseur le survole, puis revient
-// en douceur à sa pose de repos.
-const _badgeGlb = new Map(); // url -> Promise<THREE.Group>, chargé une fois
-function chargerBadge(url) {
-  if (!_badgeGlb.has(url)) {
-    const p = (async () => {
-      const {
-        GLTFLoader
-      } = await import("three/addons/loaders/GLTFLoader.js");
-      const src = window.FA_ASSET_URL ? window.FA_ASSET_URL(url) : url;
-      return await new Promise((res, rej) => new GLTFLoader().load(src, g => res(g.scene), undefined, rej));
-    })();
-    p.catch(() => _badgeGlb.delete(url)); // un échec n'est pas mémorisé : on retente
-    _badgeGlb.set(url, p);
-  }
-  return _badgeGlb.get(url);
-}
-
-// Pose de repos : de face, à peine inclinée sur X — le relief se voit, le
-// monogramme reste lisible (vérifié par rendu réel à 56 px).
-const BADGE_TILT_X = 0.1,
-  BADGE_Y = -0.25;
-function Badge3D({
+// Badge 2D d'un chip : sprite figé des deux modèles 3D (mêmes caméra, lumières
+// et pose de repos que le rendu temps réel), baké le 21/09/2026 — source dans
+// l'historique de _bake-badges.html, fichiers assets/fa-badge.webp / fb-badge.webp.
+// Pourquoi un sprite et plus un canvas : dans le bandeau mobile (« une ligne »,
+// flex-wrap: nowrap), un canvas de 56 px débordait du chip et poussait la rangée
+// hors du cadre ; trois contextes WebGL dans le header coûtaient aussi cher au
+// premier écran. La taille redevient du CSS (56 px desktop, 16 px mobile via
+// mobile.css) — donc contrôlable par écran, ce que le canvas interdisait.
+function ChipBadge({
   src,
-  px = 56,
-  fallback = null
+  alt
 }) {
-  const ref = React.useRef(null);
-  const [ko, setKo] = React.useState(false);
-  React.useEffect(() => {
-    const mount = ref.current;
-    if (!mount) {
-      setKo(true);
-      return;
-    }
-    let alive = true,
-      raf = 0,
-      renderer = null,
-      scene = null,
-      obj = null;
-    let spinning = false,
-      leaving = false,
-      targetY = BADGE_Y;
-    const TWO_PI = Math.PI * 2;
-    (async () => {
-      try {
-        const THREE = window.__FA_THREE || (await import("three"));
-        const modele = await chargerBadge(src);
-        if (!alive) return;
-        // clone(true) partage géométries ET matériaux : rien à libérer ici, et
-        // les deux chips FA ne consomment qu'un seul jeu de textures en VRAM.
-        obj = modele.clone(true);
-        renderer = new THREE.WebGLRenderer({
-          antialias: true,
-          alpha: true
-        });
-        renderer.setSize(px, px);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-        renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.25;
-        mount.appendChild(renderer.domElement);
-        renderer.domElement.style.display = "block";
-        scene = new THREE.Scene();
-        // Caméra calée sur la boîte englobante : le badge remplit le canvas,
-        // quelle que soit l'échelle interne du modèle.
-        const box = new THREE.Box3().setFromObject(obj);
-        const center = box.getCenter(new THREE.Vector3());
-        const size = box.getSize(new THREE.Vector3());
-        const radius = Math.max(size.x, size.y, size.z) / 2;
-        const dist = radius / Math.tan(19 * Math.PI / 180) * 1.12 + radius;
-        const camera = new THREE.PerspectiveCamera(38, 1, Math.max(0.01, radius / 50), radius * 20);
-        camera.position.set(0, 0, dist);
-        camera.lookAt(center);
-        // Éclairage généreux : le badge doit rester lisible, pas sombre.
-        const key = new THREE.DirectionalLight(0xffffff, 2.2);
-        key.position.set(2, 3, 4);
-        scene.add(key);
-        const back = new THREE.DirectionalLight(0xfff2dd, 1.0);
-        back.position.set(-3, -1, 2);
-        scene.add(back);
-        scene.add(new THREE.HemisphereLight(0xfff2dd, 0x2a2a35, 0.7));
-        scene.add(new THREE.AmbientLight(0xffffff, 1.05));
-        obj.position.sub(center);
-        obj.rotation.set(BADGE_TILT_X, BADGE_Y, 0);
-        scene.add(obj);
-        const onEnter = () => {
-          spinning = true;
-          leaving = false;
-        };
-        const onLeave = () => {
-          spinning = false;
-          leaving = true;
-          targetY = BADGE_Y + Math.round((obj.rotation.y - BADGE_Y) / TWO_PI) * TWO_PI;
-        };
-        mount.addEventListener("mouseenter", onEnter);
-        mount.addEventListener("mouseleave", onLeave);
-        const tick = () => {
-          if (!alive) return;
-          if (spinning) {
-            obj.rotation.y += 0.06;
-          } else if (leaving) {
-            obj.rotation.y += (targetY - obj.rotation.y) * 0.09;
-            if (Math.abs(targetY - obj.rotation.y) < 0.004) {
-              obj.rotation.y = targetY;
-              leaving = false;
-            }
-          }
-          if (spinning || leaving) renderer.render(scene, camera);
-          raf = requestAnimationFrame(tick);
-        };
-        renderer.render(scene, camera);
-        tick();
-      } catch (e) {
-        if (alive) setKo(true);
-      }
-    })();
-    return () => {
-      alive = false;
-      cancelAnimationFrame(raf);
-      if (obj && scene) scene.remove(obj);
-      if (renderer) {
-        renderer.dispose();
-        if (renderer.domElement.parentNode) renderer.domElement.parentNode.removeChild(renderer.domElement);
-      }
-    };
-  }, [px, src]);
-  if (ko) return fallback;
-  return /*#__PURE__*/React.createElement("span", {
-    ref: ref,
-    "aria-hidden": "true",
-    style: {
-      width: px,
-      height: px,
-      display: "inline-flex",
-      flex: "0 0 auto",
-      cursor: "pointer"
-    }
+  return /*#__PURE__*/React.createElement("img", {
+    className: "chip-badge",
+    src: window.FA_ASSET_URL(src),
+    alt: alt || "",
+    width: 56,
+    height: 56
   });
 }
 function Header({
@@ -5186,18 +5060,8 @@ function Header({
   }, /*#__PURE__*/React.createElement("span", {
     key: "lq" + liquidPop.n,
     className: cx("chip", "liquid", liquidPop.n > 0 && "pop")
-  }, /*#__PURE__*/React.createElement(Badge3D, {
-    src: "assets/fa-badge.glb",
-    px: 56,
-    fallback: /*#__PURE__*/React.createElement("img", {
-      src: "assets/TOKEN.png",
-      alt: "",
-      width: "56",
-      height: "56",
-      style: {
-        display: "block"
-      }
-    })
+  }, /*#__PURE__*/React.createElement(ChipBadge, {
+    src: "assets/fa-badge.webp"
   }), fmt(g.liquid), /*#__PURE__*/React.createElement(ChipDelta, {
     delta: liquidPop.delta
   })), fbBal && fbBal.status === "ok" && /*#__PURE__*/React.createElement("span", {
@@ -5205,12 +5069,9 @@ function Header({
     title: I18N.t("FB_CHIP_TITLE")
   }, /*#__PURE__*/React.createElement("b", {
     className: "chip-amount"
-  }, fbFmt(fbBal.fb_earned_sats)), /*#__PURE__*/React.createElement(Badge3D, {
-    src: "assets/fb-badge.glb",
-    px: 56,
-    fallback: /*#__PURE__*/React.createElement("span", {
-      className: "chip-lbl"
-    }, "FB")
+  }, fbFmt(fbBal.fb_earned_sats)), /*#__PURE__*/React.createElement(ChipBadge, {
+    src: "assets/fb-badge.webp",
+    alt: "FB"
   }), Number(fbBal.fb_pending_sats) > 0 && /*#__PURE__*/React.createElement("span", {
     className: "chip-lbl",
     style: {
@@ -5219,18 +5080,8 @@ function Header({
   }, "(+", fbFmt(fbBal.fb_pending_sats), ")")), g.locked > 0 && /*#__PURE__*/React.createElement("span", {
     key: "lk" + lockedPop.n,
     className: cx("chip", "locked", lockedPop.n > 0 && "pop")
-  }, /*#__PURE__*/React.createElement(Badge3D, {
-    src: "assets/fa-badge.glb",
-    px: 56,
-    fallback: /*#__PURE__*/React.createElement("img", {
-      src: "assets/TOKEN.png",
-      alt: "",
-      width: "56",
-      height: "56",
-      style: {
-        display: "block"
-      }
-    })
+  }, /*#__PURE__*/React.createElement(ChipBadge, {
+    src: "assets/fa-badge.webp"
   }), /*#__PURE__*/React.createElement("b", {
     className: "chip-amount"
   }, fmt(g.locked)), /*#__PURE__*/React.createElement("span", {

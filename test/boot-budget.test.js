@@ -48,12 +48,14 @@ test("les ecrans qui montrent des reliques declenchent le prechargement", () => 
 test("le budget du premier ecran reste sous 3,5 Mo", () => {
   const html = lire("index.html");
   // Les .glb chargés inconditionnellement au boot : le jeton à deux faces
-  // (v217 — cinématique, header et connexion partagent EMBLEM_GLB) et les DEUX
-  // badges 3D des chips du header (fa-badge + fb-badge : 56 px, 6 000 triangles,
-  // 0,29 + 0,22 Mo — sortis de logo3d.glb et du badge FB de Meshy par
-  // tools/optimize-assets.mjs, contre 1,4 Mo pour le jeton qu'ils remplacent).
+  // (v217 — cinématique, header et connexion partagent EMBLEM_GLB).
+  // Les badges 3D des chips ne sont PLUS du boot (21/09/2026) : les chips
+  // affichent des sprites 2D de ~6 Ko (assets/fa-badge.webp / fb-badge.webp,
+  // rendus depuis ces mêmes .glb) au lieu de trois contextes WebGL dans le
+  // header — les .glb restent dans assets/ comme source des sprites, plus aucun
+  // code ne les charge.
   // Les reliques et le logo3d du Totem sont chargés à la demande.
-  const boot = ["assets/jeton.glb", "assets/fa-badge.glb", "assets/fb-badge.glb"];
+  const boot = ["assets/jeton.glb"];
   let total = 0;
   for (const f of boot) {
     total += fs.statSync(path.join(__dirname, "..", f)).size;
