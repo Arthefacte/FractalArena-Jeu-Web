@@ -13,3 +13,12 @@ ds-bundle/*
 
 # Plans internes Claude Code — retirés du dépôt public (conservés en local + _studio)
 docs/superpowers/
+
+# Rebuts de travail locaux (jamais versionnes : .glb de bake, prototypes, sessions)
+_bake/raw/
+_bake/*.glb
+_chips-proto.html
+_jeton-test.html
+_chips-check.html
+_pot-check.html
+_session_*.json

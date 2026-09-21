@@ -378,4 +378,10 @@ function MarqueeName({ children }) {
   );
 }
 
-Object.assign(window, { FA_Ctx, useFA, cx, fmt, presetLabel, rarityLabel, Coin, TokenIcon, FaText, Bar, StatGrid, CreatureCard, Modal, SectionHead, MiniStats, PostureSelect, RelicIcon, CoreIcon, LpBadge, MarqueeName });
+// PotLigne / usePotEligibility : utilisés HORS de ce fichier (fosse.jsx, buyback.jsx,
+// screens.jsx). Sans cette liste, ils ne sont pas atteignables là-bas : lire `PotLigne`
+// renvoie undefined, React lève « Element type is invalid » au PREMIER rendu du header,
+// #root reste vide et boot-splash.js n'enlève jamais l'écran de démarrage — le jeu
+// n'ouvre plus (incident du 21/09, v273). Tout composant appelé depuis un autre .jsx
+// DOIT figurer ici.
+Object.assign(window, { FA_Ctx, useFA, cx, fmt, presetLabel, rarityLabel, Coin, TokenIcon, FaText, Bar, StatGrid, CreatureCard, Modal, SectionHead, MiniStats, PostureSelect, RelicIcon, CoreIcon, LpBadge, MarqueeName, PotLigne, usePotEligibility });
