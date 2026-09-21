@@ -245,8 +245,15 @@ window.FA_ASSET_URL = function (chemin) {
   };
 
   // ---- helpers ----
-  function rand(a, b) { return a + Math.random() * (b - a); }
-  function pick(arr) { return arr[(Math.random() * arr.length) | 0]; }
+  // Aléa du jeu : source UNIQUE et INJECTABLE (miroir exact de data.node.js / server).
+  // Le combat se résout CÔTÉ SERVEUR : le navigateur ne pose jamais de graine (défaut
+  // Math.random) — la fonction existe pour que les deux jumeaux restent alignés.
+  let RNG = Math.random;
+  function setRng(fn) { RNG = typeof fn === "function" ? fn : Math.random; }
+  function rng() { return RNG(); }
+  function getRng() { return RNG; }
+  function rand(a, b) { return a + rng() * (b - a); }
+  function pick(arr) { return arr[(rng() * arr.length) | 0]; }
   function levelMult(level) { return 1 + 0.03 * (level - 1); }
 
   function rarityVariance(rarity) {
@@ -651,7 +658,7 @@ window.FA_ASSET_URL = function (chemin) {
     TYPE_ADVANTAGE, getTypeMultiplier,
     TEMPLATES, TEMPLATE_KEYS, TEMPLATES_BY_TYPE,
     ECON, FORGE, BOOSTS,
-    rand, pick, levelMult, rarityVariance, rollRarity, newId,
+    rand, pick, rng, setRng, getRng, levelMult, rarityVariance, rollRarity, newId,
     eff, maxHp, fmtStat, mintBeast, starterRoster, xpToNext, displayName,
     grantXp, upgradeRarity, avgRarity, avgLevel, generateEnemyTeam,
     walletNameInscriptions,
