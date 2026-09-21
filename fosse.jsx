@@ -427,10 +427,11 @@ function Fosse() {
 
   // Multiplicateur de gain tenant compte du tier LP (bonus liquidité) :
   // G1 → 1.9, G2 → 2.1, sinon base 1.7 — miroir du serveur (fight.js payoutMultForTier).
+  // Aperçu calculé avec la formule EXACTE du serveur (payout = round(mise × mult), net =
+  // payout − mise) pour TOUS les cas : l'ancienne table statique BET_GAIN était fausse
+  // dès la mise silver (17 annoncé contre 18 crédité, audit 21/09/2026).
   const payoutMult = g.lpTier ? (D.ECON.LP_PAYOUT_MULT[g.lpTier] || D.ECON.PAYOUT_MULT) : D.ECON.PAYOUT_MULT;
-  const netGain = g.lpTier
-    ? Math.round(D.ECON.BET[betTier] * payoutMult) - D.ECON.BET[betTier]
-    : D.ECON.BET_GAIN[betTier];
+  const netGain = Math.round(D.ECON.BET[betTier] * payoutMult) - D.ECON.BET[betTier];
 
   return (
     <div className="container wide">

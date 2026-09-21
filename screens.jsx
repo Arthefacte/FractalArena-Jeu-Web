@@ -1443,12 +1443,16 @@ function WithdrawModal({ onClose }) {
         // (401) et connectWallet déconnectait alors le compte (audit 2026-09-08, P2#6).
         try { await actions.resyncSave(); } catch (e) { /* best-effort */ }
         onClose();
-      } else if (data.status === "cooldown") {
+      } else if (data.status === "cooldown" || data.code === "cooldown") {
         actions.deposit(n);
         setCdMsg(I18N.t("WL_WD_COOLDOWN", data.hours_left));
       } else {
         actions.deposit(n);
-        toast(I18N.t("WL_WD_ERROR"), "bad");
+        // Message SPÉCIFIQUE selon le code renvoyé par le serveur (audit 21/09/2026) :
+        // tout tombait avant sur « Erreur retrait serveur », y compris solde insuffisant,
+        // compte non vérifié, retraits suspendus (sanction) et réseau Fractal momentanément
+        // indisponible. Un code inconnu garde le générique localisé.
+        toast(I18N.t(I18N.localizeServerError(data.code || data.status || data.error)), "bad");
       }
     } catch (e) {
       actions.deposit(n);

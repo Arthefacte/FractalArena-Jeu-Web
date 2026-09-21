@@ -1441,6 +1441,13 @@
     QUIZ_SHOWN:       { FR: "Titre affiché", EN: "Displayed title", ZH: "展示的称号" },
     QUIZ_NONE:        { FR: "Aucun", EN: "None", ZH: "不展示" },
     ERR_GENERIC:      { FR: "Une erreur est survenue", EN: "Something went wrong", ZH: "出错了" },
+    // Erreurs serveur TYPÉES (audit 21/09/2026) — le mapping code → clé est dans
+    // SERVER_ERROR_KEYS (localizeServerError). Erreur à 2 niveaux : le code neutre
+    // vient du serveur, la phrase localisée d'ici (jamais la chaîne FR brute).
+    ERR_RATE_LIMITED:   { FR: "Trop de requêtes d'un coup — réessaie dans quelques secondes.", EN: "Too many requests at once — try again in a few seconds.", ZH: "请求过于频繁——请稍后再试。" },
+    ERR_NOT_VERIFIED:   { FR: "Compte non vérifié : la vérification est requise avant de retirer.", EN: "Account not verified — verification is required before withdrawing.", ZH: "账户未验证——提现前需要完成验证。" },
+    ERR_WD_FROZEN:      { FR: "Retraits suspendus sur ce compte (sanction). Contacte le support.", EN: "Withdrawals are suspended on this account (sanction). Contact support.", ZH: "该账户的提现已被暂停（处罚）。请联系客服。" },
+    ERR_WD_NET_DOWN:    { FR: "Le réseau Fractal est momentanément indisponible — réessaie dans un instant. Ton solde n'a pas bougé.", EN: "The Fractal network is momentarily unavailable — try again shortly. Your balance is untouched.", ZH: "Fractal 网络暂时不可用——请稍后重试。你的余额没有变动。" },
   };
 
   let lang = "FR";
@@ -1473,9 +1480,49 @@
   // Localise une erreur serveur : code neutre connu → clé dédiée, sinon
   // fallback générique localisé. JAMAIS la chaîne brute (un joueur ZH/EN
   // verrait du français). Audit 2026-09-06 (P2.1).
+  //
+  // Audit 21/09/2026 (P4) : cette fonction ne connaissait QU'UN SEUL code et
+  // remplaçait tout le reste par « Une erreur est survenue », y compris des
+  // messages déjà traduits (solde insuffisant, retrait sous le minimum, réseau
+  // Fractal indisponible). Tous les codes que le serveur renvoie réellement sont
+  // désormais mappés ici ; un code inconnu garde le fallback générique.
+  const SERVER_ERROR_KEYS = {
+    // Expéditions
+    bete_en_expedition: "EXP_ERR_bete_en_expedition",
+    expedition_en_cours: "EXP_ERR_expedition_en_cours",
+    expedition_non_rappelable: "EXP_ERR_expedition_non_rappelable",
+    expedition_rappelee: "EXP_ERR_expedition_rappelee",
+    betes_invalides: "EXP_ERR_betes_invalides",
+    fragments_insuffisants: "EXP_ERR_fragments_insuffisants",
+    pas_de_ticket: "EXP_ERR_pas_de_ticket",
+    deja_reclame: "EXP_ERR_deja_reclame",
+    destination_a_reclamer: "EXP_ERR_destination_a_reclamer",
+    destination_occupee: "EXP_ERR_destination_occupee",
+    // Économie / arène / retraits
+    insufficient_balance: "AR_INSUFF",
+    insufficient_liquid: "WL_WD_INSUFF",
+    solde_insuffisant: "AR_INSUFF",
+    below_min: "WL_WD_MIN",
+    above_max: "WL_WD_MAX",
+    cooldown: "WL_WD_COOLDOWN",
+    portefeuille_non_lie: "WL_WD_NOT_LINKED",
+    not_verified: "ERR_NOT_VERIFIED",
+    compte_non_verifie: "ERR_NOT_VERIFIED",
+    withdraw_frozen: "ERR_WD_FROZEN",
+    network_unavailable: "ERR_WD_NET_DOWN",
+    fractal_network_unavailable: "ERR_WD_NET_DOWN",
+    rate_limited: "ERR_RATE_LIMITED",
+    // Dépôts / vérification d'un achat on-chain
+    already_used: "WL_DEP_ALREADY_USED",
+    wrong_recipient: "WL_DEP_WRONG_RECIPIENT",
+    sender_unverified: "WL_DEP_SENDER_UNVERIFIED",
+    invalid_tx: "WL_DEP_TXID_INVALID",
+    txid_not_found: "WL_DEP_NOT_FOUND",
+  };
   function localizeServerError(code) {
     if (!code) return t("ERR_GENERIC");
-    if (code === "bete_en_expedition") return t("EXP_ERR_bete_en_expedition");
+    const key = SERVER_ERROR_KEYS[typeof code === "string" ? code.trim() : code];
+    if (key && T[key]) return t(key);
     return t("ERR_GENERIC");
   }
 

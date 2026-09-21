@@ -1928,7 +1928,12 @@ function App() {
       if (srv && srv.milestone) summary.milestone = true;
       if (win) {
         const base = free ? D.ECON.BET.bronze : betAmount;
-        const payout = Math.floor(base * D.ECON.PAYOUT_MULT);
+        // Le payout vient du SERVEUR dès qu'il est là (arrondi round + palier LP) : le
+        // recalcul local (floor + multiplicateur fixe 1.7) annonçait « +17 » là où le
+        // serveur créditait +18, et 35 contre 55 pour un détenteur G2 (audit 21/09/2026).
+        // Repli = la formule EXACTE du serveur (fight.js payoutMultiplier).
+        const payoutMult = !free && gRef.current.lpTier ? D.ECON.LP_PAYOUT_MULT[gRef.current.lpTier] || D.ECON.PAYOUT_MULT : D.ECON.PAYOUT_MULT;
+        const payout = srv && Number.isFinite(srv.payout) && srv.payout > 0 ? srv.payout : Math.round(base * payoutMult);
         summary.payout = payout;
         summary.net = payout - betAmount;
         // lucky strike / momentum / catalyseur : appliqués et crédités CÔTÉ SERVEUR
