@@ -179,8 +179,11 @@ input { font-family: var(--font-mono); }
 .chip .coin { color: var(--gold); font-weight: 700; }
 /* Badge 2D du chip (sprite assets/*-badge.webp) : la taille se pilote ici, et en
    mobile dans mobile.css. C'est exactement ce qui manquait au canvas 3D qu'il
-   remplace — un canvas de 56 px, non stylable, débordait du chip en ≤640 px. */
-.chip-badge { display: block; width: 56px; height: 56px; flex: none; }
+   remplace — un canvas de 56 px, non stylable, débordait du chip en ≤640 px.
+   24 px : mesuré en rendu réel à 900 et 1440 px. Au-delà (32, 40, 56) le badge
+   domine le montant qu'il accompagne, et le bandeau monte à 97 px de haut ;
+   en dessous de ~20 px la silhouette tient mais le monogramme ne se lit plus. */
+.chip-badge { display: block; width: 24px; height: 24px; flex: none; }
 /* Les deux chips portent leur delta : il est en absolu, il leur faut le contexte. */
 .chip.liquid, .chip.locked { position: relative; }
 .chip.locked { color: var(--text-dim); border-color: var(--line-soft); }

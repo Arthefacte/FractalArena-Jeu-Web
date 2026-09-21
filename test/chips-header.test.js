@@ -35,8 +35,8 @@ test("le sprite passe par le cache-buster d'assets", () => {
 });
 
 test("la taille du badge est pilotée par le CSS des deux écrans", () => {
-  assert.match(lire("styles.css"), /\.chip-badge \{ display: block; width: 56px; height: 56px; flex: none; \}/,
-    "le badge desktop (56 px) doit rester une taille CSS");
+  assert.match(lire("styles.css"), /\.chip-badge \{[^}]*width: \d+px[^}]*height: \d+px/,
+    "le badge desktop doit rester une taille CSS pilotable (pas celle du canvas)");
   // Window: mobile.css réduit TOUT `.chip img` — c'est ce qui ramène le badge à la
   // taille du chip compact. Un clamp, pas une valeur figée : le bandeau tient sur
   // une ligne de 320 à 640 px.
