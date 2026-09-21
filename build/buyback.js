@@ -138,7 +138,8 @@ function TickerRow({
   threshold,
   sub,
   gain,
-  rachat
+  rachat,
+  potLigne
 }) {
   const frac = buybackFraction(total, threshold);
   return /*#__PURE__*/React.createElement("div", {
@@ -164,7 +165,9 @@ function TickerRow({
   }, /*#__PURE__*/React.createElement(FaText, {
     text: sub,
     s: 10
-  })));
+  })), potLigne && /*#__PURE__*/React.createElement("div", {
+    className: "bb-sub"
+  }, potLigne));
 }
 
 // ——— Modèle 3 pools × 2 instances (halving du buyback, 20/09/2026) ———
@@ -511,6 +514,13 @@ function PanneauRachats({
   }, I.t("DEX_OPEN_INSWAP"), " \u2197")));
 }
 function BuybackTicker() {
+  // Cagnotte : « où j'en suis » (150 combats payants le jour du tirage). Le bandeau est le
+  // seul endroit qui parle du pot en permanence : c'est donc aussi le bon endroit pour
+  // rappeler au joueur qu'il doit s'y mettre aujourd'hui.
+  const {
+    g
+  } = useFA();
+  const pot = usePotEligibility(g.wallet, g.authToken);
   const [bb, setBb] = React.useState(null);
   const [dex, setDex] = React.useState(null);
   const [burn, setBurn] = React.useState(null);
@@ -659,7 +669,11 @@ function BuybackTicker() {
     label: labelPool(I, p.tier),
     total: p.total,
     threshold: p.threshold,
-    sub: i === last ? I.t(cleLibelleCumul(cumul.source), bbFmt(cumul.value)) : null
+    sub: i === last ? I.t(cleLibelleCumul(cumul.source), bbFmt(cumul.value)) : null,
+    potLigne: p.tier === "pot" ? /*#__PURE__*/React.createElement(PotLigne, {
+      etat: pot,
+      s: 10
+    }) : null
   })), /*#__PURE__*/React.createElement(RangeeDex, {
     dex: dex,
     onVoirRachats: () => setVoirRachats(true)

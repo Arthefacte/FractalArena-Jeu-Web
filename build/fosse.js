@@ -302,6 +302,11 @@ function Fosse() {
   // au lancement du Loop et l'affichage "recule" après une montée de niveau.
   const gRef = useRef(g);
   gRef.current = g;
+  // Cagnotte : le compteur du jour (150 combats de Fosse payants, wallet vérifié on-chain).
+  // Affiché dans le panneau d'action parce que c'est le seul endroit où le joueur peut
+  // encore changer son sort le jour du tirage — une règle qu'on ne peut pas lire est une
+  // règle qui n'existe pas.
+  const pot = usePotEligibility(g.wallet, g.authToken);
   const selectedBeasts = g.selected.map(id => g.roster.find(b => b.id === id)).filter(Boolean);
   const ready = selectedBeasts.length === 3;
   const [betTier, setBetTier] = useState("");
@@ -961,7 +966,14 @@ function Fosse() {
     }
   }, "+", /*#__PURE__*/React.createElement(TokenIcon, {
     s: 11
-  }), " ", netGain, " ", I18N.t("RES_NET"), " \xB7 \xD7", payoutMult)), /*#__PURE__*/React.createElement("label", {
+  }), " ", netGain, " ", I18N.t("RES_NET"), " \xB7 \xD7", payoutMult)), pot && /*#__PURE__*/React.createElement("div", {
+    style: {
+      borderTop: "1px solid var(--line-soft)",
+      paddingTop: 10
+    }
+  }, /*#__PURE__*/React.createElement(PotLigne, {
+    etat: pot
+  })), /*#__PURE__*/React.createElement("label", {
     className: "flex between center",
     style: {
       cursor: "pointer",

@@ -116,6 +116,21 @@
     // header
     LOCKED_CHIP: { FR: "Verrouillé", EN: "Locked", ZH: "锁定" },
     FB_CHIP_TITLE: { FR: "FB gagné via le jeu (cagnotte) — envoyé à ton wallet lié", EN: "FB won through the game (jackpot) — sent to your linked wallet", ZH: "游戏内赢得的 FB（彩池）— 已发送至你关联的钱包" },
+    // ——— Cagnotte : ce que le joueur doit savoir pour y être éligible ———
+    // Le compteur du jour repart à zéro à minuit UTC, comme le tirage : la formulation dit
+    // « aujourd'hui », sinon le joueur croit à un cumul qui ne se perd jamais. Et la
+    // vérification on-chain est obligatoire MÊME avec un wallet lié (sinon 150 combats ne
+    // paient rien) — c'est la première chose qu'un joueur bloqué doit lire.
+    POT_RULE: { FR: "150 combats de Fosse payants le jour du tirage, wallet vérifié on-chain. Le compteur repart à zéro chaque minuit UTC : hier ne compte plus.", EN: "150 paid Pit fights on the draw day, wallet verified on-chain. The counter resets every UTC midnight: yesterday no longer counts.", ZH: "抽奖当天完成 150 场付费深坑战斗，且钱包已通过链上验证。计数每 UTC 午夜归零：昨天的不算。" },
+    POT_LINE_COMBATS: { FR: "%d/%d combats payants aujourd'hui", EN: "%d/%d paid fights today", ZH: "今日付费战斗 %d/%d" },
+    POT_LINE_WALLET: { FR: "wallet non vérifié", EN: "wallet not verified", ZH: "钱包未验证" },
+    POT_LINE_OK: { FR: "éligible aujourd'hui ✓", EN: "eligible today ✓", ZH: "今日已具备资格 ✓" },
+    POT_ARMED: { FR: "seuil atteint — tirage dans %s", EN: "threshold reached — draw in %s", ZH: "已达阈值 — %s 后抽奖" },
+    POT_ARMED_NOW: { FR: "seuil atteint — tirage dû maintenant", EN: "threshold reached — draw due now", ZH: "已达阈值 — 抽奖时间已到" },
+    POT_PROGRESS: { FR: "cagnotte : %d / %d FA — 1 FB par tirage", EN: "jackpot: %d / %d FA — 1 FB per draw", ZH: "彩池：%d / %d FA — 每次抽取 1 FB" },
+    POT_LAST_DRAW: { FR: "dernier tirage : %s FB pour %d gagnant(s), le %s", EN: "last draw: %s FB for %d winner(s), on %s", ZH: "上次抽奖：%s FB，%d 位获奖者，%s" },
+    POT_NONE_YET: { FR: "aucun tirage pour l'instant : la cagnotte attend ses %d FA", EN: "no draw yet: the jackpot is waiting for its %d FA", ZH: "尚无抽奖：彩池等待达到 %d FA" },
+    POT_WL_DEST: { FR: "éligibilité liée à", EN: "eligibility tied to", ZH: "资格关联至" },
 
     // onboarding
     OB_TAG: { FR: "AUTO-BATTLER ON-CHAIN", EN: "ON-CHAIN AUTO-BATTLER", ZH: "链上自动战斗" },

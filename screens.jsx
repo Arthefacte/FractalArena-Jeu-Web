@@ -1190,6 +1190,11 @@ function Wallet() {
   // confiance sans pouvoir vérifier.
   const dest = window.FA_ACCOUNT.withdrawDestination(g);
   const peutRetirer = !!window.FA_ACCOUNT.withdrawSigner(g);
+  // Cagnotte : éligibilité du joueur (150 combats de Fosse payants le jour du tirage,
+  // wallet vérifié on-chain). Même état que la Fosse et le bandeau — une seule requête.
+  const pot = usePotEligibility(g.wallet, g.authToken);
+  const potR = pot && window.FA_POT ? window.FA_POT.resume(pot) : null;
+  const potArme = potR && potR.pot ? window.FA_POT.dureeTexte(window.FA_POT.restantMs(potR.pot)) : null;
   return (
     <div className="container">
       <SectionHead eyebrow="FRACTALARENA" title={I18N.t("WL_TITLE")} />
@@ -1227,6 +1232,42 @@ function Wallet() {
             : <span className="mono" style={{ fontSize: 12, color: "var(--fire)" }}>{I18N.t("WL_WD_DEST_NONE")}</span>}
         </div>
       </div>
+
+      {/* Cagnotte : la règle exacte et où le joueur en est. Le compteur vient du serveur
+          (150 combats de Fosse payants le jour du tirage, wallet vérifié on-chain). Le
+          panneau disparaît s'il ne répond pas : jamais un compteur inventé, jamais une
+          promesse de gain que le jeu ne tiendra pas. */}
+      {potR && (
+        <div className="panel oct" style={{ border: "1px solid var(--line)", padding: "14px 16px", marginTop: 16 }}>
+          <div className="eyebrow" style={{ color: "var(--elec)" }}>{I18N.t("BB_POOL_KIND_POT")}</div>
+          <div style={{ marginTop: 6 }}><PotLigne etat={pot} s={14} /></div>
+          <div className="muted mono" style={{ fontSize: 11, marginTop: 8, lineHeight: 1.5 }}>{I18N.t("POT_RULE")}</div>
+          {potR.pot && (
+            <div className="mono" style={{ fontSize: 12, marginTop: 10, color: "var(--text-dim)" }}>
+              <FaText text={I18N.t("POT_PROGRESS", fmt(potR.pot.total), fmt(potR.pot.seuil))} s={12} />
+              {potR.pot.arme && (
+                <span style={{ color: potArme ? "var(--gold)" : "var(--success)" }}>
+                  {" · "}{potArme ? I18N.t("POT_ARMED", potArme) : I18N.t("POT_ARMED_NOW")}
+                </span>
+              )}
+            </div>
+          )}
+          {potR.pot && (potR.pot.dernier
+            ? <div className="mono" style={{ fontSize: 12, marginTop: 6, color: "var(--text-dim)" }}>
+                {I18N.t("POT_LAST_DRAW", window.FA_POT.fbTexte(potR.pot.dernier.share_sats),
+                  potR.pot.dernier.recipients, new Date(potR.pot.dernier.at).toLocaleDateString())}
+              </div>
+            : <div className="mono" style={{ fontSize: 12, marginTop: 6, color: "var(--text-dim)" }}>
+                {I18N.t("POT_NONE_YET", fmt(potR.pot.seuil))}
+              </div>)}
+          {potR.destination && (
+            <div className="flex center gap8" style={{ marginTop: 8 }}>
+              <span className="mono muted" style={{ fontSize: 11 }}>{I18N.t("POT_WL_DEST")}</span>
+              <CopyAddr addr={potR.destination} />
+            </div>
+          )}
+        </div>
+      )}
 
       {modal === "deposit" && <DepositModal onClose={() => setModal(null)} />}
       {modal === "withdraw" && <WithdrawModal onClose={() => setModal(null)} />}

@@ -168,6 +168,11 @@ function Fosse() {
   // réutilise sa closure de départ ; sans ce ref, le roster (niveau/stats) reste figé
   // au lancement du Loop et l'affichage "recule" après une montée de niveau.
   const gRef = useRef(g); gRef.current = g;
+  // Cagnotte : le compteur du jour (150 combats de Fosse payants, wallet vérifié on-chain).
+  // Affiché dans le panneau d'action parce que c'est le seul endroit où le joueur peut
+  // encore changer son sort le jour du tirage — une règle qu'on ne peut pas lire est une
+  // règle qui n'existe pas.
+  const pot = usePotEligibility(g.wallet, g.authToken);
   const selectedBeasts = g.selected.map((id) => g.roster.find((b) => b.id === id)).filter(Boolean);
   const ready = selectedBeasts.length === 3;
 
@@ -520,6 +525,9 @@ function Fosse() {
             </div>
             {betTier && <div className="mono" style={{ fontSize: 11, color: g.lpTier ? "var(--gold)" : "var(--text-dim)", marginTop: 6 }}>+<TokenIcon s={11} /> {netGain} {I18N.t("RES_NET")} · ×{payoutMult}</div>}
           </div>
+
+          {/* Où j'en suis de la cagnotte — masqué tant que le serveur n'a rien dit. */}
+          {pot && <div style={{ borderTop: "1px solid var(--line-soft)", paddingTop: 10 }}><PotLigne etat={pot} /></div>}
 
           <label className="flex between center" style={{ cursor: "pointer", padding: "8px 0", borderTop: "1px solid var(--line-soft)", borderBottom: "1px solid var(--line-soft)" }}>
             <span className="mono" style={{ fontSize: 12, color: "var(--text-dim)" }}>{I18N.t("AR_USE_LOCKED")}</span>

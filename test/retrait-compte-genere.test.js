@@ -24,6 +24,17 @@ const SCREENS = read("screens.jsx");
 const I18N = read("i18n.js");
 const INDEX = read("index.html");
 
+// Fenêtre d'une fonction : de son en-tête à sa fermeture (une accolade en colonne 0).
+// Surtout PAS une taille fixe : le 22/09, l'écran Portefeuille a gagné le panneau
+// Cagnotte et le libellé cherché est sorti d'une fenêtre de 3000 caractères — le test
+// tombait alors que le code était bon. On découpe sur la structure, jamais sur un nombre.
+function blocFonction(src, entete) {
+  const i = src.indexOf(entete);
+  if (i < 0) return "";
+  const fin = src.indexOf("\n}", i);
+  return src.slice(i, fin < 0 ? src.length : fin + 2);
+}
+
 // account-ui.js s'installe sur window : on le charge dans un window factice.
 function chargerACC() {
   global.window = { localStorage: null, sessionStorage: null };
@@ -110,9 +121,8 @@ test("un compte genere sans portefeuille lie ne declenche aucun appel reseau", (
 });
 
 test("la modale de retrait distingue « portefeuille non lie » de « signature refusee »", () => {
-  const i = SCREENS.indexOf("function WithdrawModal");
-  assert.ok(i > 0, "WithdrawModal introuvable");
-  const bloc = SCREENS.slice(i, i + 3000);
+  const bloc = blocFonction(SCREENS, "function WithdrawModal");
+  assert.ok(bloc.length > 0, "WithdrawModal introuvable");
   assert.match(bloc, /not-linked|notLinked/,
     "sans ce cas, un compte non lie lit « Signature requise » et ne sait pas qu'il doit lier son portefeuille");
   assert.match(bloc, /WL_WD_NOT_LINKED/, "libelle dedie attendu");
@@ -121,9 +131,8 @@ test("la modale de retrait distingue « portefeuille non lie » de « signature 
 test("l'ecran Portefeuille montre ou partiront les retraits", () => {
   // Le joueur n'avait nulle part ou verifier l'adresse de destination : le champ
   // existait en etat (linkedWallet) et n'etait lu par aucune vue.
-  const i = SCREENS.indexOf("function Wallet()");
-  assert.ok(i > 0, "ecran Wallet introuvable");
-  const bloc = SCREENS.slice(i, i + 3000);
+  const bloc = blocFonction(SCREENS, "function Wallet()");
+  assert.ok(bloc.length > 0, "ecran Wallet introuvable");
   assert.match(bloc, /withdrawDestination/, "la destination doit venir du helper, pas d'un calcul recopie");
   assert.match(bloc, /WL_WD_DEST/, "libelle dedie attendu");
 });

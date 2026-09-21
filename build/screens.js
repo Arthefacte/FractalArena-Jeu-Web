@@ -2416,6 +2416,11 @@ function Wallet() {
   // confiance sans pouvoir vérifier.
   const dest = window.FA_ACCOUNT.withdrawDestination(g);
   const peutRetirer = !!window.FA_ACCOUNT.withdrawSigner(g);
+  // Cagnotte : éligibilité du joueur (150 combats de Fosse payants le jour du tirage,
+  // wallet vérifié on-chain). Même état que la Fosse et le bandeau — une seule requête.
+  const pot = usePotEligibility(g.wallet, g.authToken);
+  const potR = pot && window.FA_POT ? window.FA_POT.resume(pot) : null;
+  const potArme = potR && potR.pot ? window.FA_POT.dureeTexte(window.FA_POT.restantMs(potR.pot)) : null;
   return /*#__PURE__*/React.createElement("div", {
     className: "container"
   }, /*#__PURE__*/React.createElement(SectionHead, {
@@ -2551,7 +2556,73 @@ function Wallet() {
       fontSize: 12,
       color: "var(--fire)"
     }
-  }, I18N.t("WL_WD_DEST_NONE")))), modal === "deposit" && /*#__PURE__*/React.createElement(DepositModal, {
+  }, I18N.t("WL_WD_DEST_NONE")))), potR && /*#__PURE__*/React.createElement("div", {
+    className: "panel oct",
+    style: {
+      border: "1px solid var(--line)",
+      padding: "14px 16px",
+      marginTop: 16
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "eyebrow",
+    style: {
+      color: "var(--elec)"
+    }
+  }, I18N.t("BB_POOL_KIND_POT")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 6
+    }
+  }, /*#__PURE__*/React.createElement(PotLigne, {
+    etat: pot,
+    s: 14
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "muted mono",
+    style: {
+      fontSize: 11,
+      marginTop: 8,
+      lineHeight: 1.5
+    }
+  }, I18N.t("POT_RULE")), potR.pot && /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      fontSize: 12,
+      marginTop: 10,
+      color: "var(--text-dim)"
+    }
+  }, /*#__PURE__*/React.createElement(FaText, {
+    text: I18N.t("POT_PROGRESS", fmt(potR.pot.total), fmt(potR.pot.seuil)),
+    s: 12
+  }), potR.pot.arme && /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: potArme ? "var(--gold)" : "var(--success)"
+    }
+  }, " · ", potArme ? I18N.t("POT_ARMED", potArme) : I18N.t("POT_ARMED_NOW"))), potR.pot && (potR.pot.dernier ? /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      fontSize: 12,
+      marginTop: 6,
+      color: "var(--text-dim)"
+    }
+  }, I18N.t("POT_LAST_DRAW", window.FA_POT.fbTexte(potR.pot.dernier.share_sats), potR.pot.dernier.recipients, new Date(potR.pot.dernier.at).toLocaleDateString())) : /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      fontSize: 12,
+      marginTop: 6,
+      color: "var(--text-dim)"
+    }
+  }, I18N.t("POT_NONE_YET", fmt(potR.pot.seuil)))), potR.destination && /*#__PURE__*/React.createElement("div", {
+    className: "flex center gap8",
+    style: {
+      marginTop: 8
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "mono muted",
+    style: {
+      fontSize: 11
+    }
+  }, I18N.t("POT_WL_DEST")), /*#__PURE__*/React.createElement(CopyAddr, {
+    addr: potR.destination
+  }))), modal === "deposit" && /*#__PURE__*/React.createElement(DepositModal, {
     onClose: () => setModal(null)
   }), modal === "withdraw" && /*#__PURE__*/React.createElement(WithdrawModal, {
     onClose: () => setModal(null)

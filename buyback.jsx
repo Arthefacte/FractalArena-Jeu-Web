@@ -93,7 +93,7 @@ function storageLocal() {
 // `gain` : ce qui vient d'entrer dans ce pool, à annoncer une fois. La rangée
 // s'allume et le montant s'affiche — sinon un don part sans que rien ne bouge à
 // l'écran, et « Offrir » redevient un bouton qui ne produit rien de visible.
-function TickerRow({ kind, icon, label, total, threshold, sub, gain, rachat }) {
+function TickerRow({ kind, icon, label, total, threshold, sub, gain, rachat, potLigne }) {
   const frac = buybackFraction(total, threshold);
   return (
     <div className={"bb-row " + kind + (gain ? " bb-gain" : "") + (rachat ? " bb-rachat" : "")}>
@@ -107,6 +107,9 @@ function TickerRow({ kind, icon, label, total, threshold, sub, gain, rachat }) {
         <span className="bb-nums">{bbFmt(total)} / {bbFmt(threshold)}</span>
       </div>
       {sub && <div className="bb-sub"><FaText text={sub} s={10} /></div>}
+      {/* Cagnotte : « où j'en suis » — la seule ligne du bandeau qui parle du joueur et
+          non du pot. Rien tant que le serveur n'a pas répondu. */}
+      {potLigne && <div className="bb-sub">{potLigne}</div>}
     </div>
   );
 }
@@ -353,6 +356,11 @@ function PanneauRachats({ dex, onClose }) {
 }
 
 function BuybackTicker() {
+  // Cagnotte : « où j'en suis » (150 combats payants le jour du tirage). Le bandeau est le
+  // seul endroit qui parle du pot en permanence : c'est donc aussi le bon endroit pour
+  // rappeler au joueur qu'il doit s'y mettre aujourd'hui.
+  const { g } = useFA();
+  const pot = usePotEligibility(g.wallet, g.authToken);
   const [bb, setBb] = React.useState(null);
   const [dex, setDex] = React.useState(null);
   const [burn, setBurn] = React.useState(null);
@@ -484,6 +492,7 @@ function BuybackTicker() {
           total={p.total}
           threshold={p.threshold}
           sub={i === last ? I.t(cleLibelleCumul(cumul.source), bbFmt(cumul.value)) : null}
+          potLigne={p.tier === "pot" ? <PotLigne etat={pot} s={10} /> : null}
         />
       ))}
       <RangeeDex dex={dex} onVoirRachats={() => setVoirRachats(true)} />

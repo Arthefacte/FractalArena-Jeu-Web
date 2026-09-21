@@ -76,6 +76,94 @@ function FaText({
     s: s
   }), " ", p.trim()) : p || null);
 }
+
+/* ——— Cagnotte : où en est le joueur ————————————————————————————————
+   La règle (150 combats de Fosse payants LE JOUR DU TIRAGE, wallet vérifié on-chain,
+   compteur remis à zéro à minuit UTC) est calculée par le serveur (buyback.js →
+   potEligibilityFor) et redescend par /wallet/fb-earned. Ces surfaces ne l'inventent
+   jamais : sans réponse de l'API, la ligne disparaît. Une seule requête alimente la
+   Fosse, le bandeau et le Wallet — les trois montrent donc le même chiffre au même
+   instant, et aucun n'appelle l'API pour son compte. */
+let _potEtat = null;
+let _potCle = null;
+let _potEnVol = false;
+let _potTimer = 0;
+const _potAbonnes = new Set();
+function _potDiffuser() {
+  _potAbonnes.forEach(f => f(_potEtat));
+}
+function _potCharger(wallet, token) {
+  if (!wallet || !token || _potEnVol) return;
+  const cle = wallet + "|" + token;
+  _potEnVol = true;
+  fetch(window.FA_API_URL + "/wallet/fb-earned", {
+    headers: {
+      Authorization: "Bearer " + token
+    }
+  }).then(r => r.ok ? r.json() : null).then(j => {
+    if (cle !== _potCle) return; // compte changé entre-temps : la réponse ne le concerne plus
+    _potEtat = j && j.status === "ok" ? j : null;
+    _potDiffuser();
+  }).catch(() => {/* réseau : on garde le dernier état connu, jamais un état fabriqué */}).then(() => {
+    _potEnVol = false;
+  });
+}
+function usePotEligibility(wallet, token) {
+  const [etat, setEtat] = useState(_potEtat);
+  useEffect(() => {
+    if (!wallet || !token) {
+      setEtat(null);
+      return undefined;
+    }
+    const cle = wallet + "|" + token;
+    if (cle !== _potCle) {
+      _potCle = cle;
+      _potEtat = null;
+    } // nouveau compte : cache vidé
+    _potAbonnes.add(setEtat);
+    setEtat(_potEtat);
+    _potCharger(wallet, token);
+    if (!_potTimer) _potTimer = setInterval(() => _potCharger(wallet, token), 60000);
+    return () => {
+      _potAbonnes.delete(setEtat);
+      if (_potAbonnes.size === 0 && _potTimer) {
+        clearInterval(_potTimer);
+        _potTimer = 0;
+      }
+    };
+  }, [wallet, token]);
+  return etat;
+}
+
+// La ligne « où j'en suis » : Fosse, bandeau, Wallet. Le libellé de la poche est celui
+// du bandeau (BB_POOL_KIND_POT) — un seul mot pour une seule chose.
+function PotLigne({
+  etat,
+  s = 12
+}) {
+  const r = etat && window.FA_POT ? window.FA_POT.resume(etat) : null;
+  if (!r) return null;
+  const l = window.FA_POT.ligne(r);
+  return /*#__PURE__*/React.createElement("div", {
+    className: "flex between center pot-ligne",
+    style: {
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "mono",
+    style: {
+      fontSize: s,
+      color: "var(--text-dim)"
+    }
+  }, I18N.t("BB_POOL_KIND_POT")), /*#__PURE__*/React.createElement("span", {
+    className: "mono",
+    style: {
+      fontSize: s,
+      color: l.couleur,
+      textAlign: "right"
+    }
+  }, I18N.t(l.cle, ...l.args)));
+}
 function Bar({
   frac,
   kind,
