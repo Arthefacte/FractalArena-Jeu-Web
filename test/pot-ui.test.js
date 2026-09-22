@@ -122,11 +122,13 @@ test("dureeTexte : compte à rebours court, ou rien s'il est écoulé", () => {
 });
 
 test("restantMs : seuil armé → temps restant, sinon rien", () => {
-  // Marge d'une minute VOLONTAIRE : sans elle, `dureeTexte` arrondit à la minute et le
-  // résultat dépendait du temps écoulé entre l'écriture de `dans` et la mesure — un
-  // runner assez rapide (moins de 0,5 ms) affichait « 6 h 00 » au lieu de « 5 h 59 »,
-  // ce qui a fait rougir la CI dès sa première exécution (22/09/2026).
-  const dans = new Date(Date.now() + 6 * 3600 * 1000 - 60000).toISOString();
+  // Marge de 30 s VOLONTAIRE : `dureeTexte` TRONQUE à la minute (Math.floor), et le
+  // test mesurait `restantMs` après avoir construit `tirage_prevu` à Date.now() + 6 h.
+  // Sur la machine de dev (quelques ms d'écart) on tombait sous 6 h → « 5 h 59 » ; sur
+  // un runner plus rapide l'écart était de 0 ms → exactement 6 h → « 6 h 00 » et la CI
+  // rougissait dès sa première exécution (22/09/2026). Se placer franchement SOUS la
+  // frontière (30 s) rend le résultat indépendant du temps de parcours.
+  const dans = new Date(Date.now() + 6 * 3600 * 1000 - 30000).toISOString();
   const arme = FA_POT.resume(payload());
   arme.pot.arme = true;
   arme.pot.tirage_prevu = dans;
