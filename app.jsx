@@ -16,6 +16,47 @@ const readToken = () => ACC.readToken();
 const writeToken = (t, kind) => ACC.writeToken(t, kind);
 const clearToken = () => ACC.clearToken();
 const API_URL = window.FA_API_URL;
+
+/* Instrumentation du compteur d'échecs API (audit 22/09/2026). Le chemin « serveur
+   injoignable » de l'écran réseau existait mais recevait 0 en dur ; le jeu n'ayant
+   aucun wrapper d'appel, on instrumente la porte d'entrée (fetch) UNE fois, en se
+   limitant à nos appels (API_URL). Ne comptent comme « injoignable » que ce qui prouve
+   que la requête n'est pas arrivée à notre serveur : le refus réseau de fetch, un 502
+   ou un 504 de proxy. Un 500 ou un 503 sont des RÉPONSES de notre serveur (le 503 est
+   même le cas « InSwap injoignable », déjà distingué ailleurs) : les compter ferait
+   clignoter l'écran hors-ligne pour une panne d'API tierce. */
+let etatEchecsApi = { n: 0, dernier: 0 };
+window.FA_ECHECS_API_N = () => etatEchecsApi.n;
+window.FA_ECHECS_API_RAZ = () => {
+  etatEchecsApi = { n: 0, dernier: 0 };
+  if (window.FA_ECHECS_API_ABONNE) window.FA_ECHECS_API_ABONNE(0);
+};
+(function instrumenteFetch() {
+  const natif = window.fetch && window.fetch.bind(window);
+  if (!natif) return;
+  const notreServeur = (entree) => {
+    const cible = String((entree && entree.url) || entree || "");
+    return !!API_URL && cible.indexOf(API_URL) === 0;
+  };
+  const injoignable = (rep) => rep.status === 502 || rep.status === 504;
+  const note = (evenement) => {
+    const maj = window.FA_PWA && window.FA_PWA.majCompteurEchecs;
+    const maintenant = Date.now();
+    etatEchecsApi = maj ? maj(etatEchecsApi, evenement, maintenant)
+                        : (evenement === "ok" ? { n: 0, dernier: maintenant }
+                                              : { n: etatEchecsApi.n + 1, dernier: maintenant });
+    if (window.FA_ECHECS_API_ABONNE) window.FA_ECHECS_API_ABONNE(etatEchecsApi.n);
+  };
+  window.fetch = function () {
+    const cible = arguments[0];
+    const p = natif.apply(this, arguments);
+    if (!notreServeur(cible)) return p;
+    return p.then(
+      (rep) => { note(injoignable(rep) ? "echec" : "ok"); return rep; },
+      (err) => { note("echec"); throw err; }
+    );
+  };
+})();
 // Lien de liaison d'appareil (#link=XXXX-…, QR affiché sur le PC) : lu UNE fois
 // au chargement, avant le premier rendu, puis purgé de la barre — il vaut un
 // accès au compte et ne doit survivre ni dans l'historique ni dans un partage
@@ -508,6 +549,16 @@ function App() {
      volontiers (wifi capté mais sans Internet) : les échecs consécutifs des
      appels au jeu comptent aussi. */
   const [enLigne, setEnLigne] = useState(() => navigator.onLine !== false);
+  // Compteur d'échecs API RÉEL (audit 22/09/2026). Le jeu n'a aucun wrapper d'appel : on
+  // instrumente la porte d'entrée — fetch — en se limitant à NOS appels (API_URL). Un 4xx
+  // prouve que le serveur répond (liaison OK) ; seuls un refus réseau, un 5xx ou un
+  // 502/503/504 de proxy comptent comme « injoignable ».
+  const [echecsApi, setEchecsApi] = useState(0);
+  useEffect(() => {
+    window.FA_ECHECS_API_ABONNE = (n) => setEchecsApi(n);
+    setEchecsApi(window.FA_ECHECS_API_N ? window.FA_ECHECS_API_N() : 0);
+    return () => { window.FA_ECHECS_API_ABONNE = null; };
+  }, []);
   useEffect(() => {
     const perdu = () => setEnLigne(false);
     const revenu = () => setEnLigne(true);
@@ -518,7 +569,7 @@ function App() {
       window.removeEventListener("online", revenu);
     };
   }, []);
-  const etatReseau = window.FA_PWA.etatReseau({ online: enLigne, echecsApi: 0 });
+  const etatReseau = window.FA_PWA.etatReseau({ online: enLigne, echecsApi: echecsApi });
 
   function toast(msg, kind) {
     const id = Math.random();
@@ -2630,7 +2681,7 @@ function App() {
         <Toasts toasts={toasts} />
         {/* Aussi avant connexion : sans réseau, on ne peut même pas créer de
             compte — le dire tout de suite vaut mieux qu'un bouton qui échoue. */}
-        <window.PwaOfflineGate etat={etatReseau} onReessayer={() => setEnLigne(navigator.onLine !== false)} />
+        <window.PwaOfflineGate etat={etatReseau} onReessayer={() => { window.FA_ECHECS_API_RAZ(); setEnLigne(navigator.onLine !== false); }} />
         {accSecrets && <window.SecretsGate secrets={accSecrets} onDone={() => setAccSecrets(null)} />}
         <DeviceLinkClaimGate />
       </FA_Ctx.Provider>
@@ -2667,7 +2718,7 @@ function App() {
       <ChatFab key={g.wallet} />
       <RoomFab />
       <Toasts toasts={toasts} />
-      <window.PwaOfflineGate etat={etatReseau} onReessayer={() => setEnLigne(navigator.onLine !== false)} />
+      <window.PwaOfflineGate etat={etatReseau} onReessayer={() => { window.FA_ECHECS_API_RAZ(); setEnLigne(navigator.onLine !== false); }} />
       {g.wallet && <TutorialGate />}
       {g.wallet && <LoginGate />}
       <DeviceLinkClaimGate />
