@@ -1,8 +1,13 @@
-// On ne peut RIEN coller dans la recherche de l'app UniSat, et le jeu n'étant
-// pas listé au DApp Center, elle ne le trouve pas non plus (constaté par le
-// user, 2026-08-20). Le pont proposait pourtant « le lien est copié : colle-le
-// dans le navigateur de l'app UniSat » — un conseil qui envoyait le joueur dans
-// une impasse, sur l'écran Wallet au moment de retirer.
+// On ne peut RIEN coller dans la recherche de l'app UniSat (constaté par le
+// user, 2026-08-20) : le champ ne prend pas d'URL. Le pont proposait pourtant
+// « le lien est copié : colle-le dans le navigateur de l'app UniSat » — un
+// conseil qui envoyait le joueur dans une impasse, sur l'écran Wallet au moment
+// de retirer.
+//
+// Nuance (22/09/2026) : le jeu EST désormais listé au DApp Center, donc l'app le
+// trouve par son nom quand le joueur cherche lui-même. Ça ne rend PAS le collage
+// utile pour autant (même impasse), et ça ne rend pas le lien universel inutile
+// non plus : il reste le seul chemin en un toucher depuis un navigateur externe.
 //
 // Le lien universel (la vraie ancre <a>) est le SEUL chemin vers l'app. Ce test
 // empêche le conseil de revenir, dans les trois langues.

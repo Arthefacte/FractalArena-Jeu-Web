@@ -95,8 +95,17 @@ const IS_MOBILE = () => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || 
 // Ouvre le jeu dans le navigateur intégré de l'app UniSat Mobile, où window.unisat
 // est injecté et la signature marche comme sur desktop. C'est le flux officiel
 // « openDapp » (réponse UniSat du 2026-08-16, unisat-wallet/dev-support#105) :
-// Universal Link iOS / App Link Android — la forme https://, PAS unisat://, et le
-// DApp Center n'est pas requis. Validé sur téléphone réel le 2026-08-18.
+// Universal Link iOS / App Link Android — la forme https://, PAS unisat://.
+// Le DApp Center n'est PAS requis pour que ce lien fonctionne (et c'est toujours
+// vrai maintenant que le jeu y est listé : le listing ajoute un chemin, il n'en
+// retire aucun). Les deux chemins coexistent, ils ne se remplacent pas :
+//   - lien universel = depuis un navigateur EXTERNE (Safari, Chrome, un lien
+//     partagé sur X ou Telegram) vers une session signable. Un seul toucher ;
+//   - DApp Center = depuis l'INTÉRIEUR de l'app, quand le joueur y pense seul.
+// Ne jamais retirer ce lien au motif que le jeu est listé : sur iPhone il n'existe
+// aucune extension, le navigateur de l'app est le seul contexte signable, et une
+// fenêtre PWA installée ne peut pas afficher l'approbation UniSat (incident v111).
+// Validé sur téléphone réel le 2026-08-18.
 // location.origin et non l'URL courante : le joueur doit retomber sur l'accueil,
 // pas sur un état de session qui n'existera pas dans le contexte vierge de l'app.
 const OPEN_IN_UNISAT = () => {

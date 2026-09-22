@@ -1,0 +1,14 @@
+import http from "node:http"; import fs from "node:fs"; import path from "node:path";
+import { fileURLToPath } from "node:url"; import { chromium } from "playwright";
+const __dirname=path.dirname(fileURLToPath(import.meta.url)); const ROOT=path.resolve(__dirname,"..");
+const MIME={".html":"text/html",".js":"text/javascript",".mjs":"text/javascript",".glb":"model/gltf-binary",".wasm":"application/wasm"};
+const server=http.createServer((rq,rs)=>{const p=decodeURIComponent(rq.url.split("?")[0]);const f=path.join(ROOT,p);fs.readFile(f,(e,d)=>{if(e){rs.writeHead(404);rs.end();return;}rs.writeHead(200,{"Content-Type":MIME[path.extname(f)]||"application/octet-stream"});rs.end(d);});});
+await new Promise(r=>server.listen(0,r)); const port=server.address().port;
+const browser=await chromium.launch(); const page=await (await browser.newContext({viewport:{width:300,height:300},deviceScaleFactor:2})).newPage();
+page.on("pageerror",e=>console.log("PAGEERR:",e.message)); page.on("console",m=>{if(m.type()==="error")console.log("CONSOLE-ERR:",m.text());});
+await page.goto(`http://localhost:${port}/_bake/bake-fragments.html`,{waitUntil:"load"});
+await page.waitForFunction(()=>window.__ready===true,null,{timeout:120000});
+console.log("err:",await page.evaluate(()=>window.__err),"parts:",await page.evaluate(()=>window.__parts));
+await page.evaluate(()=>window.__setT(1)); await page.$("#stage canvas").then(c=>c.screenshot({path:path.join(ROOT,"_bake","_proof-frag.png"),omitBackground:true}));
+console.log("dbg:",JSON.stringify(await page.evaluate(()=>window.__dbg())));
+await browser.close(); server.close();

@@ -287,7 +287,7 @@
     // Mobile : la signature marche dans le navigateur intégré de l'app UniSat
     // (flux openDapp officiel) — on y emmène le joueur au lieu de ne rien afficher.
     OB_OPEN_UNISAT_BTN: { FR: "Ouvrir dans l'app UniSat", EN: "Open in the UniSat app", ZH: "在 UniSat 应用中打开" },
-    OB_OPEN_UNISAT_SUB: { FR: "Tu as déjà un wallet ? Sur téléphone, le jeu se connecte depuis l'app UniSat.", EN: "Already have a wallet? On mobile, the game connects from inside the UniSat app.", ZH: "已有钱包？在手机上，游戏需从 UniSat 应用内连接。" },
+    OB_OPEN_UNISAT_SUB: { FR: "Tu as déjà un wallet ? Sur téléphone, le jeu se connecte depuis l'app UniSat : bouton ci-dessous, ou retrouve-nous dans son DApp Center.", EN: "Already have a wallet? On mobile, the game connects from inside the UniSat app: button below, or find us in its DApp Center.", ZH: "已有钱包？在手机上，游戏需从 UniSat 应用内连接：点击下方按钮，或在其 DApp Center 中找到我们。" },
 
     // team
     TEAM_TITLE: { FR: "Ma collection", EN: "My collection", ZH: "我的收藏" },

@@ -204,10 +204,14 @@ function UnisatAppBridge({
     });
     setRestant(r.expires_in);
     // PAS de copie du lien : on ne peut RIEN coller dans la recherche de l'app
-    // UniSat (constaté par le user, 2026-08-20) — et le jeu n'étant pas listé
-    // au DApp Center, elle ne le trouve pas non plus. Proposer un collage
-    // envoyait donc le joueur dans une impasse. Le lien universel ci-dessous
-    // est le SEUL chemin ; le code sert de repli une fois dans l'app.
+    // UniSat (constaté par le user, 2026-08-20) — le champ de recherche ne prend
+    // pas d'URL, ça n'a pas changé avec le listing. Ce qui a changé : le jeu EST
+    // maintenant listé au DApp Center, donc l'app le trouve par son nom si le
+    // joueur cherche lui-même. Proposer un collage reste inutile pour autant
+    // (même impasse qu'avant), mais l'argument « elle ne le trouve pas non plus »
+    // est périmé et ne doit pas servir à justifier une suppression.
+    // Le lien universel ci-dessous reste le SEUL chemin en un toucher depuis un
+    // navigateur externe ; le code sert de repli une fois dans l'app.
     // PAS de navigation par script ici : après l'await du fetch, le « geste
     // utilisateur » est consommé et Android/iOS refusent d'ouvrir une app sur
     // une navigation lancée hors toucher — constaté en prod le 2026-08-18
