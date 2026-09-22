@@ -211,7 +211,8 @@ function TourMutatorBand({
 
 /* Bandeau des paliers de la semaine (✓ = payé) — 13 depuis les jalons 75/100. */
 function TourTierBand({
-  score
+  score,
+  verified
 }) {
   const tiers = TU.tiersView(score.best_floor, score.claimed_tiers);
   return /*#__PURE__*/React.createElement("div", {
@@ -227,7 +228,14 @@ function TourTierBand({
       color: "var(--gold)",
       marginBottom: 8
     }
-  }, "\uD83C\uDFC6 ", I18N.t("TOUR_TIERS_TITLE")), /*#__PURE__*/React.createElement("div", {
+  }, "\uD83C\uDFC6 ", I18N.t("TOUR_TIERS_TITLE")), verified === false && /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      fontSize: 10,
+      color: "var(--text-dim)",
+      marginBottom: 6
+    }
+  }, I18N.t("TOUR_TIERS_LOCKED")), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 6,
@@ -490,7 +498,9 @@ function TourResultModal({
     s: 11
   }), " ", fmt((TU.TIERS.find(t => t.floor === f) || {
     fa: 0
-  }).fa)))), rewards.silver > 0 && /*#__PURE__*/React.createElement("div", {
+  }).fa), g.onchainVerified === false && /*#__PURE__*/React.createElement("span", {
+    className: "chip-lbl"
+  }, " ", I18N.t("LOCKED_CHIP"))))), rewards.silver > 0 && /*#__PURE__*/React.createElement("div", {
     className: "mono",
     style: {
       fontSize: 12,
@@ -886,7 +896,8 @@ function Tour() {
   }, /*#__PURE__*/React.createElement(TourMutatorBand, {
     mutators: st.mutators
   }), /*#__PURE__*/React.createElement(TourTierBand, {
-    score: st.score
+    score: st.score,
+    verified: g.onchainVerified
   })), !run ? /*#__PURE__*/React.createElement("div", {
     className: "panel oct",
     style: {

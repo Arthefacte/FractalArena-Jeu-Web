@@ -91,11 +91,14 @@ function TourMutatorBand({ mutators }) {
 }
 
 /* Bandeau des paliers de la semaine (✓ = payé) — 13 depuis les jalons 75/100. */
-function TourTierBand({ score }) {
+function TourTierBand({ score, verified }) {
   const tiers = TU.tiersView(score.best_floor, score.claimed_tiers);
   return (
     <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 12 }}>
       <div className="h2" style={{ fontSize: 13, color: "var(--gold)", marginBottom: 8 }}>🏆 {I18N.t("TOUR_TIERS_TITLE")}</div>
+      {verified === false && (
+        <div className="mono" style={{ fontSize: 10, color: "var(--text-dim)", marginBottom: 6 }}>{I18N.t("TOUR_TIERS_LOCKED")}</div>
+      )}
       <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4 }}>
         {tiers.map((t) => (
           <div key={t.floor} className="oct-sm" style={{
@@ -192,6 +195,7 @@ function TourResultModal({ result, onClose }) {
               <span className="mono" style={{ fontSize: 12, color: "var(--text-dim)" }}>{I18N.t("TOUR_TIER_REACHED", f)}</span>
               <span className="mono" style={{ fontSize: 14, fontWeight: 700, color: "var(--success)" }}>
                 +<TokenIcon s={11} /> {fmt((TU.TIERS.find((t) => t.floor === f) || { fa: 0 }).fa)}
+                {g.onchainVerified === false && <span className="chip-lbl"> {I18N.t("LOCKED_CHIP")}</span>}
               </span>
             </div>
           ))}
@@ -418,7 +422,7 @@ function Tour() {
           deux bandes hors de l'écran en mobile. */}
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 14, marginBottom: 14 }}>
         <TourMutatorBand mutators={st.mutators} />
-        <TourTierBand score={st.score} />
+        <TourTierBand score={st.score} verified={g.onchainVerified} />
       </div>
 
       {!run ? (

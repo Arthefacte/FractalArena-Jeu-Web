@@ -1165,6 +1165,7 @@
     TOUR_DEFEAT: { FR: "Défaite…", EN: "Defeat…", ZH: "战败……" },
     TOUR_TIER_REACHED: { FR: "Palier étage %d", EN: "Floor %d tier", ZH: "第%d层奖励" },
     TOUR_TIERS_TITLE: { FR: "Paliers de la semaine", EN: "Weekly tiers", ZH: "每周奖励" },
+    TOUR_TIERS_LOCKED: { FR: "Gains crédités en verrouillé tant qu'aucun wallet n'est vérifié", EN: "Rewards credited as locked until a wallet is verified", ZH: "验证钱包前，奖励一律锁定" },
     TOUR_REWARDS: { FR: "Récompenses", EN: "Rewards", ZH: "奖励" },
     TOUR_CONTINUE: { FR: "Continuer", EN: "Continue", ZH: "继续" },
     TOUR_LB_TITLE: { FR: "Top 50 de la semaine", EN: "This week's top 50", ZH: "本周前50名" },
