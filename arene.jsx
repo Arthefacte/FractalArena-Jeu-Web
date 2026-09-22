@@ -58,7 +58,7 @@ function Arene() {
     setBusy(true);
     const r = await actions.pvpSetDefense(defPosture);
     setBusy(false);
-    if (r && r.ok) toast(I18N.t("AR2_SET_DEFENSE"), "good"); else toast((r && r.error) || "error", "bad");
+    if (r && r.ok) toast(I18N.t("AR2_SET_DEFENSE"), "good"); else toast(I18N.localizeServerError(r && r.error), "bad");
   }
 
   async function onAttack(target, useRevanche, attackers, myPosture, enemyPosture) {
@@ -68,10 +68,10 @@ function Arene() {
     try {
       const prev = (g.pvp && typeof g.pvp.rating === "number") ? g.pvp.rating : null;
       const r = await actions.pvpAttack(target, useRevanche ? "revanche" : entry, attackers, myPosture);
-      if (!r || !r.ok) { toast((r && r.error) || "error", "bad"); return; }
+      if (!r || !r.ok) { toast(I18N.localizeServerError((r && (r.error || r.reason)) || null), "bad"); return; }
       const delta = (prev != null && typeof r.rating === "number") ? r.rating - prev : null;
       const myTeam = (attackers || g.selected).map((id) => g.roster.find((b) => b.id === id)).filter(Boolean);
-      setResult({ ...r, delta, p1Team: myTeam, p2Team: r.enemy || [], p1Posture: myPosture || "equilibre", p2Posture: enemyPosture || "equilibre" });
+      setResult({ ...r, delta, p1Team: myTeam, p2Team: r.enemy || [], p1Posture: myPosture || "equilibre", p2Posture: enemyPosture || null });
       // Pas de refresh PvP ici (différé au onClose du rejeu) : rafraîchir maintenant
       // mettrait à jour le pill ELO du header et le ladder pendant le combat → résultat spoilé.
     } finally {
@@ -192,8 +192,8 @@ function Arene() {
                     <div style={{ marginTop: 6 }}><TeamPreview team={o.team} /></div>
                   </div>
                   {canRevanche
-                    ? <button className="btn btn-success sm" disabled={busy} onClick={async () => { const r = await actions.pvpDefenseOf(o.wallet); setPick({ target: o.wallet, revanche: true, ids: [...g.selected], oppTeam: o.team, posture: "equilibre", oppPosture: (r && r.posture) || "equilibre" }); }}>{I18N.t("AR2_REVANCHE")}</button>
-                    : <button className="btn btn-elec sm" disabled={busy} onClick={async () => { const r = await actions.pvpDefenseOf(o.wallet); setPick({ target: o.wallet, revanche: false, ids: [...g.selected], oppTeam: o.team, posture: "equilibre", oppPosture: (r && r.posture) || "equilibre" }); }}>{I18N.t("AR2_ATTACK")}</button>}
+                    ? <button className="btn btn-success sm" disabled={busy} onClick={async () => { const r = await actions.pvpDefenseOf(o.wallet); setPick({ target: o.wallet, revanche: true, ids: [...g.selected], oppTeam: o.team, posture: "equilibre", oppPosture: (r && r.posture) || null }); }}>{I18N.t("AR2_REVANCHE")}</button>
+                    : <button className="btn btn-elec sm" disabled={busy} onClick={async () => { const r = await actions.pvpDefenseOf(o.wallet); setPick({ target: o.wallet, revanche: false, ids: [...g.selected], oppTeam: o.team, posture: "equilibre", oppPosture: (r && r.posture) || null }); }}>{I18N.t("AR2_ATTACK")}</button>}
                 </div>
               );
             })}
@@ -278,7 +278,7 @@ function Arene() {
                 ))}
               </div>
               <div className="mono" style={{ fontSize: 11, color: "var(--text-dim)", marginBottom: 8 }}>
-                {I18N.t("POSTURE_ENEMY")} : {I18N.t("POSTURE_" + (pick.oppPosture || "equilibre").toUpperCase())}
+                {I18N.t("POSTURE_ENEMY")} : {pick.oppPosture ? I18N.t("POSTURE_" + pick.oppPosture.toUpperCase()) : I18N.t("AR2_POS_UNKNOWN")}
               </div>
               <PostureSelect value={pick.posture || "equilibre"} onChange={(k) => setPick((p) => ({ ...p, posture: k }))} disabled={busy} />
               <div className="mono" style={{ fontSize: 11, color: "var(--text-dim)", margin: "8px 0 2px" }}>⚔️ {I18N.t("AR2_ATTACK")} — Avant / Milieu / Arrière</div>
@@ -309,7 +309,7 @@ function Arene() {
               </div>
               <div className="flex gap8" style={{ marginTop: 12, justifyContent: "flex-end" }}>
                 <button className="btn sm" onClick={() => setPick(null)}>{I18N.t("CANCEL")}</button>
-                <button className="btn btn-elec sm" disabled={!ready || busy} onClick={() => { const ids = [...pick.ids]; const t = pick.target, rv = pick.revanche, myPosture = pick.posture || "equilibre", oppPosture = pick.oppPosture || "equilibre"; setPick(null); onAttack(t, rv, ids, myPosture, oppPosture); }}>{I18N.t("AR2_ATTACK")}</button>
+                <button className="btn btn-elec sm" disabled={!ready || busy} onClick={() => { const ids = [...pick.ids]; const t = pick.target, rv = pick.revanche, myPosture = pick.posture || "equilibre", oppPosture = pick.oppPosture || null; setPick(null); onAttack(t, rv, ids, myPosture, oppPosture); }}>{I18N.t("AR2_ATTACK")}</button>
               </div>
             </div>
           </div>

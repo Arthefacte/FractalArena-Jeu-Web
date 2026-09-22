@@ -1448,6 +1448,21 @@
     ERR_NOT_VERIFIED:   { FR: "Compte non vérifié : la vérification est requise avant de retirer.", EN: "Account not verified — verification is required before withdrawing.", ZH: "账户未验证——提现前需要完成验证。" },
     ERR_WD_FROZEN:      { FR: "Retraits suspendus sur ce compte (sanction). Contacte le support.", EN: "Withdrawals are suspended on this account (sanction). Contact support.", ZH: "该账户的提现已被暂停（处罚）。请联系客服。" },
     ERR_WD_NET_DOWN:    { FR: "Le réseau Fractal est momentanément indisponible — réessaie dans un instant. Ton solde n'a pas bougé.", EN: "The Fractal network is momentarily unavailable — try again shortly. Your balance is untouched.", ZH: "Fractal 网络暂时不可用——请稍后重试。你的余额没有变动。" },
+    ERR_SESSION:        { FR: "Ta session a expiré — reconnecte ton wallet, puis réessaie.", EN: "Your session expired — reconnect your wallet and try again.", ZH: "会话已过期——请重新连接钱包后重试。" },
+    // Erreurs de l'Arène (PvP) — les codes serveur (snake_case) ne doivent JAMAIS
+    // s'afficher au joueur : chaque code passe par SERVER_ERROR_KEYS (audit 22/09/2026).
+    AR2_ERR_SELECTION:   { FR: "Sélection invalide : choisis 3 entités.", EN: "Invalid selection: pick 3 entities.", ZH: "选择无效：请选 3 个实体。" },
+    AR2_ERR_SELF:        { FR: "Tu ne peux pas t'attaquer toi-même.", EN: "You can't attack yourself.", ZH: "你不能攻击自己。" },
+    AR2_ERR_TARGET:      { FR: "Adversaire invalide.", EN: "Invalid opponent.", ZH: "对手无效。" },
+    AR2_ERR_NO_GHOST:    { FR: "Cet adversaire n'a pas de défense à affronter.", EN: "This opponent has no defense to fight.", ZH: "该对手没有可对战的防守。" },
+    AR2_ERR_GHOST_BROKEN:{ FR: "La défense adverse est illisible — réessaie dans un instant.", EN: "The opponent's defense can't be read — try again shortly.", ZH: "对手的防守数据异常——请稍后重试。" },
+    AR2_ERR_DEF_BROKEN:  { FR: "Ta défense est illisible — repose-la avant d'attaquer.", EN: "Your defense can't be read — set it again before attacking.", ZH: "你的防守数据异常——请重新设置后再进攻。" },
+    AR2_ERR_ENTRY:       { FR: "Mode d'entrée invalide.", EN: "Invalid entry mode.", ZH: "入场方式无效。" },
+    AR2_ERR_NOT_STARTED: { FR: "La saison n'a pas encore commencé.", EN: "The season hasn't started yet.", ZH: "赛季尚未开始。" },
+    AR2_ERR_NO_DEFENSE:  { FR: "Pose d'abord ta défense (3 entités).", EN: "Set your defense first (3 entities).", ZH: "请先设置防守（3 个实体）。" },
+    AR2_ERR_NO_REMATCH:  { FR: "Plus de revanche disponible contre cet adversaire.", EN: "No rematch left against this opponent.", ZH: "对该对手已无复仇机会。" },
+    AR2_ERR_QUOTA:       { FR: "Quota de combats atteint pour aujourd'hui.", EN: "Today's fight quota is used up.", ZH: "今日战斗次数已用完。" },
+    AR2_POS_UNKNOWN:     { FR: "Posture inconnue", EN: "Posture unknown", ZH: "姿态未知" },
   };
 
   let lang = "FR";
@@ -1504,6 +1519,26 @@
     solde_insuffisant: "AR_INSUFF",
     below_min: "WL_WD_MIN",
     above_max: "WL_WD_MAX",
+    // Les routes envoient ces deux codes-là (server.js /withdraw, agents.js) : sans eux,
+    // un montant hors bornes tombait sur le message générique (audit 22/09/2026).
+    below_minimum: "WL_WD_MIN",
+    above_maximum: "WL_WD_MAX",
+    // Arène (PvP) : sans ce mapping, les codes ci-dessous s'affichaient BRUTS en snake_case
+    // dans la figure du joueur (audit 22/09/2026).
+    wallet_invalide: "AR2_ERR_TARGET",
+    cible_invalide: "AR2_ERR_TARGET",
+    selection_invalide: "AR2_ERR_SELECTION",
+    auto_attaque_interdite: "AR2_ERR_SELF",
+    entry_invalide: "AR2_ERR_ENTRY",
+    saison_pas_demarree: "AR2_ERR_NOT_STARTED",
+    pas_de_defense: "AR2_ERR_NO_DEFENSE",
+    pas_de_fantome: "AR2_ERR_NO_GHOST",
+    cible_sans_fantome: "AR2_ERR_NO_GHOST",
+    fantome_corrompu: "AR2_ERR_GHOST_BROKEN",
+    defense_corrompue: "AR2_ERR_DEF_BROKEN",
+    pas_de_revanche: "AR2_ERR_NO_REMATCH",
+    quota_epuise: "AR2_ERR_QUOTA",
+    session_expiree: "ERR_SESSION",
     cooldown: "WL_WD_COOLDOWN",
     portefeuille_non_lie: "WL_WD_NOT_LINKED",
     not_verified: "ERR_NOT_VERIFIED",
@@ -1521,8 +1556,16 @@
   };
   function localizeServerError(code) {
     if (!code) return t("ERR_GENERIC");
-    const key = SERVER_ERROR_KEYS[typeof code === "string" ? code.trim() : code];
+    const raw = typeof code === "string" ? code.trim() : code;
+    const key = SERVER_ERROR_KEYS[raw];
     if (key && T[key]) return t(key);
+    // Valeur NON MAPPÉE — deux cas très différents (audit 22/09/2026) :
+    //  - une PHRASE : le serveur l'a déjà écrite en clair (« Pas de ticket Argent ni
+    //    d'entrée gratuite »). La remplacer par « Une erreur est survenue » effaçait
+    //    l'information du joueur alors qu'elle est exploitable → on la laisse passer.
+    //  - un CODE technique (snake_case, sans espace) : il ne doit JAMAIS s'afficher au
+    //    joueur. Message générique, et le code reste dans les logs/réseau.
+    if (typeof raw === "string" && /\s/.test(raw)) return raw;
     return t("ERR_GENERIC");
   }
 

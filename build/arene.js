@@ -104,7 +104,7 @@ function Arene() {
     setBusy(true);
     const r = await actions.pvpSetDefense(defPosture);
     setBusy(false);
-    if (r && r.ok) toast(I18N.t("AR2_SET_DEFENSE"), "good");else toast(r && r.error || "error", "bad");
+    if (r && r.ok) toast(I18N.t("AR2_SET_DEFENSE"), "good");else toast(I18N.localizeServerError(r && r.error), "bad");
   }
   async function onAttack(target, useRevanche, attackers, myPosture, enemyPosture) {
     if (attackLock.current || busy) return; // le ref bloque les clics de la même rafale avant que `busy` ne re-render
@@ -114,7 +114,7 @@ function Arene() {
       const prev = g.pvp && typeof g.pvp.rating === "number" ? g.pvp.rating : null;
       const r = await actions.pvpAttack(target, useRevanche ? "revanche" : entry, attackers, myPosture);
       if (!r || !r.ok) {
-        toast(r && r.error || "error", "bad");
+        toast(I18N.localizeServerError(r && (r.error || r.reason) || null), "bad");
         return;
       }
       const delta = prev != null && typeof r.rating === "number" ? r.rating - prev : null;
@@ -125,7 +125,7 @@ function Arene() {
         p1Team: myTeam,
         p2Team: r.enemy || [],
         p1Posture: myPosture || "equilibre",
-        p2Posture: enemyPosture || "equilibre"
+        p2Posture: enemyPosture || null
       });
       // Pas de refresh PvP ici (différé au onClose du rejeu) : rafraîchir maintenant
       // mettrait à jour le pill ELO du header et le ladder pendant le combat → résultat spoilé.
@@ -418,7 +418,7 @@ function Arene() {
           ids: [...g.selected],
           oppTeam: o.team,
           posture: "equilibre",
-          oppPosture: r && r.posture || "equilibre"
+          oppPosture: r && r.posture || null
         });
       }
     }, I18N.t("AR2_REVANCHE")) : /*#__PURE__*/React.createElement("button", {
@@ -432,7 +432,7 @@ function Arene() {
           ids: [...g.selected],
           oppTeam: o.team,
           posture: "equilibre",
-          oppPosture: r && r.posture || "equilibre"
+          oppPosture: r && r.posture || null
         });
       }
     }, I18N.t("AR2_ATTACK")));
@@ -661,7 +661,7 @@ function Arene() {
         color: "var(--text-dim)",
         marginBottom: 8
       }
-    }, I18N.t("POSTURE_ENEMY"), " : ", I18N.t("POSTURE_" + (pick.oppPosture || "equilibre").toUpperCase())), /*#__PURE__*/React.createElement(PostureSelect, {
+    }, I18N.t("POSTURE_ENEMY"), " : ", pick.oppPosture ? I18N.t("POSTURE_" + pick.oppPosture.toUpperCase()) : I18N.t("AR2_POS_UNKNOWN")), /*#__PURE__*/React.createElement(PostureSelect, {
       value: pick.posture || "equilibre",
       onChange: k => setPick(p => ({
         ...p,
@@ -741,7 +741,7 @@ function Arene() {
         const t = pick.target,
           rv = pick.revanche,
           myPosture = pick.posture || "equilibre",
-          oppPosture = pick.oppPosture || "equilibre";
+          oppPosture = pick.oppPosture || null;
         setPick(null);
         onAttack(t, rv, ids, myPosture, oppPosture);
       }

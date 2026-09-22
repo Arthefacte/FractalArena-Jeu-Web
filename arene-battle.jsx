@@ -36,7 +36,13 @@ function AB_Unit({ beast, live, side, pos, oppTypes }) {
 }
 
 function AB_PostureBadge({ posture }) {
-  const key = String(posture || "equilibre");
+  // Posture INCONNUE : le serveur ne l'expose jamais pour un adversaire (c'est son pari
+  // caché). Avant, l'absence de valeur retombait sur « Équilibre » — une posture que
+  // personne n'avait choisie, présentée comme un fait (audit 22/09/2026).
+  if (!posture) {
+    return <span className="pill mono" style={{ fontSize: 9, padding: "1px 6px", color: "var(--text-dim)" }}>{I18N.t("AR2_POS_UNKNOWN")}</span>;
+  }
+  const key = String(posture);
   return <span className="pill mono" style={{ fontSize: 9, padding: "1px 6px" }}>{I18N.t("POSTURE_" + key.toUpperCase())}</span>;
 }
 

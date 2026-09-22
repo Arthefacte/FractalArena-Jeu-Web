@@ -2493,22 +2493,36 @@ function App() {
       const authHeaders = () => ({ "Authorization": "Bearer " + gRef.current.authToken });
       const sel = gRef.current.selected; if (sel.length !== 3) return { ok: false, error: "3 entités requises" };
       const r = await fetch(`${API_URL}/pvp/defense`, { method: "POST", headers: { ...authHeaders(), "Content-Type": "application/json" }, body: JSON.stringify({ selected: sel, posture: posture || "equilibre" }) });
+      // 401/429 typés, jamais un échec muet (audit 22/09/2026).
+      if (r.status === 401) return { ok: false, error: "session_expiree" };
+      if (r.status === 429) return { ok: false, error: "rate_limited" };
       const j = await r.json().catch(() => ({})); return j;
     },
     async pvpDefenseOf(wallet) {
-      if (!wallet) return { posture: "equilibre" };
+      if (!wallet) return { posture: null };
       try {
-        const r = await fetch(`${API_URL}/pvp/defense/${encodeURIComponent(wallet)}`);
+        // Le jeton est OBLIGATOIRE sur cette route (requireWalletAuth → 401 sans Bearer) :
+        // l'appel partait sans en-tête, donc en 401 systématique — masqué parce que l'appelant
+        // retombait sur « equilibre », une posture que personne n'avait choisie (audit 22/09/2026).
+        const r = await fetch(`${API_URL}/pvp/defense/${encodeURIComponent(wallet)}`, { headers: authHeaders() });
+        if (r.status === 401) return { posture: null, error: "session_expiree" };
+        if (r.status === 429) return { posture: null, error: "rate_limited" };
         const j = await r.json().catch(() => ({}));
-        if (!r.ok || !j) return { posture: "equilibre" };
-        return { team: j.team || [], posture: j.posture || "equilibre" };
-      } catch (e) { return { posture: "equilibre" }; }
+        if (!r.ok || !j) return { posture: null };
+        // `posture` n'est renvoyée que pour MA défense : pour un adversaire le serveur répond
+        // posture_hidden, et on renvoie null — jamais une posture inventée.
+        return { team: j.team || [], posture: j.posture || null, hidden: !!j.posture_hidden, implicit: !!j.implicit };
+      } catch (e) { return { posture: null }; }
     },
     async pvpAttack(target, entry, attackers, posture) {
       const authHeaders = () => ({ "Authorization": "Bearer " + gRef.current.authToken });
       const body = { target, entry, posture: posture || "equilibre" };
       if (Array.isArray(attackers) && attackers.length === 3) body.attackers = attackers;
       const r = await fetch(`${API_URL}/pvp/attack`, { method: "POST", headers: { ...authHeaders(), "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      // 401 (jeton expiré) et 429 (trop de requêtes) remontent comme des erreurs typées :
+      // sans ça le joueur ne voyait rien du tout, ou un « error » nu (audit 22/09/2026).
+      if (r.status === 401) return { ok: false, error: "session_expiree" };
+      if (r.status === 429) return { ok: false, error: "rate_limited" };
       const j = await r.json().catch(() => ({}));
       // Déduction optimiste à l'écran : le serveur a déjà débité (FA → liquid, ou 1 ticket Argent).
       // pvpRefresh ne recharge pas le solde, donc pas de double-comptage.
