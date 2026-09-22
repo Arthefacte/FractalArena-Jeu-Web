@@ -915,6 +915,7 @@ function Tour() {
     }
   }, I18N.t("TOUR_NO_RUN")), /*#__PURE__*/React.createElement("button", {
     className: "btn btn-fire lg",
+    "data-guide": "tour-start",
     onClick: () => setShowStart(true),
     disabled: busy
   }, !st.score.free_run_used ? I18N.t("TOUR_START_FREE") : /*#__PURE__*/React.createElement(FaText, {
@@ -1042,6 +1043,7 @@ function Tour() {
     disabled: busy
   }, I18N.t("TOUR_AUTO")), engage.ok ? /*#__PURE__*/React.createElement("button", {
     className: "btn btn-fire lg",
+    "data-guide": "tour-start",
     onClick: onFight,
     disabled: busy
   }, I18N.t("TOUR_FIGHT", run.floor)) : /*#__PURE__*/React.createElement("span", {

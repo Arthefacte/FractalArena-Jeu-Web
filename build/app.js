@@ -85,6 +85,22 @@ window.FA_ECHECS_API_RAZ = () => {
     return !!API_URL && cible.indexOf(API_URL) === 0;
   };
   const injoignable = rep => rep.status === 502 || rep.status === 504;
+  /* Guide de la première session (guide.jsx) : après chaque action de jeu
+     réussie, il relit le parcours découverte. Un seul point d'émission — la
+     porte d'entrée réseau — plutôt qu'un appel dans chaque action. */
+  const ROUTES_GUIDE = /\/(fight|tower\/fight|tower\/start|pvp\/attack|campaign\/fight|discovery\/claim|quests\/claim)(\?|$)/;
+  const signaleProgres = (entree, init, rep) => {
+    const url = String(entree && entree.url || entree || "");
+    const methode = String(init && init.method || entree && entree.method || "GET").toUpperCase();
+    if (methode !== "POST" || !rep || !rep.ok || !ROUTES_GUIDE.test(url)) return;
+    try {
+      window.dispatchEvent(new CustomEvent("fa-guide-progress", {
+        detail: {
+          url
+        }
+      }));
+    } catch (e) {/* ancien navigateur */}
+  };
   const note = evenement => {
     const maj = window.FA_PWA && window.FA_PWA.majCompteurEchecs;
     const maintenant = Date.now();
@@ -103,6 +119,7 @@ window.FA_ECHECS_API_RAZ = () => {
     if (!notreServeur(cible)) return p;
     return p.then(rep => {
       note(injoignable(rep) ? "echec" : "ok");
+      signaleProgres(cible, arguments[1], rep);
       return rep;
     }, err => {
       note("echec");
@@ -779,6 +796,14 @@ function App() {
      volontiers (wifi capté mais sans Internet) : les échecs consécutifs des
      appels au jeu comptent aussi. */
   const [enLigne, setEnLigne] = useState(() => navigator.onLine !== false);
+  // Tutoriel vu ? (guide de la première session) — mis à jour à sa fermeture,
+  // pour que le bandeau « gains verrouillés » n'apparaisse qu'après lui.
+  const [tutVu, setTutVu] = useState(() => !window.FA_TUT_SEEN || window.FA_TUT_SEEN());
+  useEffect(() => {
+    const vu = () => setTutVu(true);
+    window.addEventListener("fa-tutorial-closed", vu);
+    return () => window.removeEventListener("fa-tutorial-closed", vu);
+  }, []);
   // Compteur d'échecs API RÉEL (audit 22/09/2026). Le jeu n'a aucun wrapper d'appel : on
   // instrumente la porte d'entrée — fetch — en se limitant à NOS appels (API_URL). Un 4xx
   // prouve que le serveur répond (liaison OK) ; seuls un refus réseau, un 5xx ou un
@@ -4886,10 +4911,10 @@ function App() {
   }, /*#__PURE__*/React.createElement(Header, {
     liquidPop: liquidPop,
     lockedPop: lockedPop
-  }), g.wallet && /*#__PURE__*/React.createElement(LockedBanner, null), g.wallet && /*#__PURE__*/React.createElement(window.PwaInstallBanner, {
+  }), g.wallet && !accSecrets && tutVu && /*#__PURE__*/React.createElement(LockedBanner, null), g.wallet && /*#__PURE__*/React.createElement(window.PwaInstallBanner, {
     prompt: pwaPrompt,
     onInstalled: () => setPwaPrompt(null)
-  }), /*#__PURE__*/React.createElement(PoolsFold, null, /*#__PURE__*/React.createElement(BuybackTicker, null), /*#__PURE__*/React.createElement(window.QuizTicker, null)), /*#__PURE__*/React.createElement(Nav, null), /*#__PURE__*/React.createElement("div", {
+  }), /*#__PURE__*/React.createElement(PoolsFold, null, /*#__PURE__*/React.createElement(BuybackTicker, null), /*#__PURE__*/React.createElement(window.QuizTicker, null)), /*#__PURE__*/React.createElement(Nav, null), g.wallet && tutVu && /*#__PURE__*/React.createElement(window.GuideBar, null), /*#__PURE__*/React.createElement("div", {
     className: "view-anim",
     key: g.view
   }, /*#__PURE__*/React.createElement(View, null))), /*#__PURE__*/React.createElement(ChatFab, {
@@ -4902,7 +4927,9 @@ function App() {
       window.FA_ECHECS_API_RAZ();
       setEnLigne(navigator.onLine !== false);
     }
-  }), g.wallet && /*#__PURE__*/React.createElement(TutorialGate, null), g.wallet && /*#__PURE__*/React.createElement(LoginGate, null), /*#__PURE__*/React.createElement(DeviceLinkClaimGate, null), g.wallet && /*#__PURE__*/React.createElement(window.QuizToast, null), accSecrets && /*#__PURE__*/React.createElement(window.SecretsGate, {
+  }), g.wallet && /*#__PURE__*/React.createElement(TutorialGate, {
+    blocked: !!accSecrets
+  }), g.wallet && /*#__PURE__*/React.createElement(LoginGate, null), /*#__PURE__*/React.createElement(DeviceLinkClaimGate, null), g.wallet && /*#__PURE__*/React.createElement(window.QuizToast, null), accSecrets && /*#__PURE__*/React.createElement(window.SecretsGate, {
     secrets: accSecrets,
     onDone: () => setAccSecrets(null)
   }), (() => {

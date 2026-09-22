@@ -490,7 +490,7 @@ function CampaignCombat({ worldIndex, floorIndex, onBack, onCleared }) {
                   : I18N.t("CAMP_FREE_NEXT", campFreeCompact((g.campaignFreeTs || 0) + 86400000 - Date.now()))}
               </div>
               <PostureSelect value={posture} onChange={setPosture} disabled={playing} />
-              <button className="btn btn-fire block lg" disabled={playing} onClick={startFight}>
+              <button className="btn btn-fire block lg" data-guide="camp-fight" disabled={playing} onClick={startFight}>
                 {isBoss ? "⚔️ " + bossName : I18N.t("CAMP_FIGHT")}
               </button>
             </>

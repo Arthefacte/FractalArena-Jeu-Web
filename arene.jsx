@@ -193,7 +193,7 @@ function Arene() {
                   </div>
                   {canRevanche
                     ? <button className="btn btn-success sm" disabled={busy} onClick={async () => { const r = await actions.pvpDefenseOf(o.wallet); setPick({ target: o.wallet, revanche: true, ids: [...g.selected], oppTeam: o.team, posture: "equilibre", oppPosture: (r && r.posture) || null }); }}>{I18N.t("AR2_REVANCHE")}</button>
-                    : <button className="btn btn-elec sm" disabled={busy} onClick={async () => { const r = await actions.pvpDefenseOf(o.wallet); setPick({ target: o.wallet, revanche: false, ids: [...g.selected], oppTeam: o.team, posture: "equilibre", oppPosture: (r && r.posture) || null }); }}>{I18N.t("AR2_ATTACK")}</button>}
+                    : <button className="btn btn-elec sm" data-guide="arene-attack" disabled={busy} onClick={async () => { const r = await actions.pvpDefenseOf(o.wallet); setPick({ target: o.wallet, revanche: false, ids: [...g.selected], oppTeam: o.team, posture: "equilibre", oppPosture: (r && r.posture) || null }); }}>{I18N.t("AR2_ATTACK")}</button>}
                 </div>
               );
             })}

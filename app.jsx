@@ -39,6 +39,16 @@ window.FA_ECHECS_API_RAZ = () => {
     return !!API_URL && cible.indexOf(API_URL) === 0;
   };
   const injoignable = (rep) => rep.status === 502 || rep.status === 504;
+  /* Guide de la première session (guide.jsx) : après chaque action de jeu
+     réussie, il relit le parcours découverte. Un seul point d'émission — la
+     porte d'entrée réseau — plutôt qu'un appel dans chaque action. */
+  const ROUTES_GUIDE = /\/(fight|tower\/fight|tower\/start|pvp\/attack|campaign\/fight|discovery\/claim|quests\/claim)(\?|$)/;
+  const signaleProgres = (entree, init, rep) => {
+    const url = String((entree && entree.url) || entree || "");
+    const methode = String((init && init.method) || (entree && entree.method) || "GET").toUpperCase();
+    if (methode !== "POST" || !rep || !rep.ok || !ROUTES_GUIDE.test(url)) return;
+    try { window.dispatchEvent(new CustomEvent("fa-guide-progress", { detail: { url } })); } catch (e) { /* ancien navigateur */ }
+  };
   const note = (evenement) => {
     const maj = window.FA_PWA && window.FA_PWA.majCompteurEchecs;
     const maintenant = Date.now();
@@ -52,7 +62,7 @@ window.FA_ECHECS_API_RAZ = () => {
     const p = natif.apply(this, arguments);
     if (!notreServeur(cible)) return p;
     return p.then(
-      (rep) => { note(injoignable(rep) ? "echec" : "ok"); return rep; },
+      (rep) => { note(injoignable(rep) ? "echec" : "ok"); signaleProgres(cible, arguments[1], rep); return rep; },
       (err) => { note("echec"); throw err; }
     );
   };
@@ -565,6 +575,14 @@ function App() {
      volontiers (wifi capté mais sans Internet) : les échecs consécutifs des
      appels au jeu comptent aussi. */
   const [enLigne, setEnLigne] = useState(() => navigator.onLine !== false);
+  // Tutoriel vu ? (guide de la première session) — mis à jour à sa fermeture,
+  // pour que le bandeau « gains verrouillés » n'apparaisse qu'après lui.
+  const [tutVu, setTutVu] = useState(() => !window.FA_TUT_SEEN || window.FA_TUT_SEEN());
+  useEffect(() => {
+    const vu = () => setTutVu(true);
+    window.addEventListener("fa-tutorial-closed", vu);
+    return () => window.removeEventListener("fa-tutorial-closed", vu);
+  }, []);
   // Compteur d'échecs API RÉEL (audit 22/09/2026). Le jeu n'a aucun wrapper d'appel : on
   // instrumente la porte d'entrée — fetch — en se limitant à NOS appels (API_URL). Un 4xx
   // prouve que le serveur répond (liaison OK) ; seuls un refus réseau, un 5xx ou un
@@ -2717,7 +2735,9 @@ function App() {
             Rendu ICI (dans .app-shell, sous le Header) plutôt qu'en frère du shell — sinon
             elle atterrit tout en bas du document (.app-shell fait min-height: 100vh) et,
             sur mobile, sous la barre de nav fixe (audit IMPORTANT 5, 2026-07-27). */}
-        {g.wallet && <LockedBanner />}
+        {/* Une seule fenêtre à la fois au premier lancement : le bandeau attend
+            que le code de récupération soit noté et le tutoriel vu. */}
+        {g.wallet && !accSecrets && tutVu && <LockedBanner />}
         {g.wallet && <window.PwaInstallBanner prompt={pwaPrompt} onInstalled={() => setPwaPrompt(null)} />}
         <PoolsFold>
           <BuybackTicker />
@@ -2726,6 +2746,8 @@ function App() {
           <window.QuizTicker />
         </PoolsFold>
         <Nav />
+        {/* Guide de la première session : prochaine étape + élément surligné. */}
+        {g.wallet && tutVu && <window.GuideBar />}
         <div className="view-anim" key={g.view}><View /></div>
       </div>
       {/* key={g.wallet} : un changement de compte (claim de liaison quand on est
@@ -2735,7 +2757,7 @@ function App() {
       <RoomFab />
       <Toasts toasts={toasts} />
       <window.PwaOfflineGate etat={etatReseau} onReessayer={() => { window.FA_ECHECS_API_RAZ(); setEnLigne(navigator.onLine !== false); }} />
-      {g.wallet && <TutorialGate />}
+      {g.wallet && <TutorialGate blocked={!!accSecrets} />}
       {g.wallet && <LoginGate />}
       <DeviceLinkClaimGate />
       {g.wallet && <window.QuizToast />}

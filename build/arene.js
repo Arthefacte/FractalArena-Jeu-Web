@@ -423,6 +423,7 @@ function Arene() {
       }
     }, I18N.t("AR2_REVANCHE")) : /*#__PURE__*/React.createElement("button", {
       className: "btn btn-elec sm",
+      "data-guide": "arene-attack",
       disabled: busy,
       onClick: async () => {
         const r = await actions.pvpDefenseOf(o.wallet);

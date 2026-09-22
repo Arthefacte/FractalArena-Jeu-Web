@@ -11,12 +11,14 @@ const TUT_KEY = "fractal_arena_tutorial_v1";
 // Chaque icône doit illustrer le PROPOS du slide, pas un détail (retour user
 // 2026-08-22 : le homard d'« équipe » et la cible de « combats » perdaient tout
 // le monde). « 🔒◎ » montre les deux notions que le slide 4 oppose.
+// Trois diapositives, pas cinq (22/09/2026) : l'équipe, les mises et « va plus
+// loin » sont désormais montrés SUR l'écran par la barre de guidage (guide.jsx),
+// au moment où le joueur en a besoin. Ici ne reste que ce qu'il faut savoir
+// avant le premier clic : le cadeau, verrouillé contre disponible, et le guide.
 const SLIDES = [
   { icon: "⚔️", t: "TUT_S1_T", b: "TUT_S1_B" },
-  { icon: "👥", t: "TUT_S2_T", b: "TUT_S2_B" },
-  { icon: "🎲", t: "TUT_S3_T", b: "TUT_S3_B" },
   { icon: "🔒◎", t: "TUT_S4_T", b: "TUT_S4_B" },
-  { icon: "🧭", t: "TUT_S5_T", b: "TUT_S5_B" },
+  { icon: "🧭", t: "TUT_SG_T", b: "TUT_SG_B" },
 ];
 
 function tutSeen() {
@@ -25,16 +27,21 @@ function tutSeen() {
 function markTutSeen() {
   try { localStorage.setItem(TUT_KEY, "1"); } catch (e) {}
 }
+// Exposé pour app.jsx : le bandeau « gains verrouillés » attend que le tutoriel
+// ait été vu (une seule fenêtre à la fois au premier lancement).
+window.FA_TUT_SEEN = tutSeen;
 
-function TutorialGate() {
+// `blocked` : une autre fenêtre a la priorité (le code de récupération d'un
+// compte tout juste créé) — le tutoriel s'ouvre quand elle se ferme.
+function TutorialGate({ blocked }) {
   const { g } = useFA();
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
 
   // Auto-ouverture unique après la 1ère connexion (flag absent).
   useEffect(() => {
-    if (g.wallet && !tutSeen()) { setStep(0); setOpen(true); }
-  }, [g.wallet]);
+    if (g.wallet && !blocked && !tutSeen()) { setStep(0); setOpen(true); }
+  }, [g.wallet, blocked]);
 
   // Ouverture forcée via le bouton « ? » du header (ne touche pas au flag).
   useEffect(() => {
@@ -50,6 +57,8 @@ function TutorialGate() {
     setOpen(false);
     // Signale au cadeau de connexion qu'il peut s'ouvrir (cohabitation 1er login).
     window.dispatchEvent(new Event("fa-tutorial-closed"));
+    // Revoir le tutoriel = vouloir de l'aide : le guide masqué revient.
+    if (window.FA_GUIDE_SHOW) window.FA_GUIDE_SHOW();
   }
   function next() {
     if (step >= SLIDES.length - 1) close();

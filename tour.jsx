@@ -428,7 +428,7 @@ function Tour() {
       {!run ? (
         <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 24, textAlign: "center", marginBottom: 14 }}>
           <div className="mono" style={{ fontSize: 13, color: "var(--text-dim)", marginBottom: 14 }}>{I18N.t("TOUR_NO_RUN")}</div>
-          <button className="btn btn-fire lg" onClick={() => setShowStart(true)} disabled={busy}>
+          <button className="btn btn-fire lg" data-guide="tour-start" onClick={() => setShowStart(true)} disabled={busy}>
             {!st.score.free_run_used ? I18N.t("TOUR_START_FREE") : <FaText text={I18N.t("TOUR_START_PAID", fmt(TU.nextCost(st, st.score)))} />}
           </button>
         </div>
@@ -485,7 +485,7 @@ function Tour() {
                   <button className="btn btn-elec lg" onClick={onAuto} disabled={busy}>{I18N.t("TOUR_AUTO")}</button>
                 )}
                 {engage.ok
-                  ? <button className="btn btn-fire lg" onClick={onFight} disabled={busy}>{I18N.t("TOUR_FIGHT", run.floor)}</button>
+                  ? <button className="btn btn-fire lg" data-guide="tour-start" onClick={onFight} disabled={busy}>{I18N.t("TOUR_FIGHT", run.floor)}</button>
                   : <span className="mono" style={{ fontSize: 12, color: "var(--alert)" }}>{I18N.t(champ ? "CHAMP_NEED2" : "TOUR_NEED3")}</span>}
               </div>
             </div>

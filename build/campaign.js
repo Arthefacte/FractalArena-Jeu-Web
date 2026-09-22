@@ -911,6 +911,7 @@ function CampaignCombat({
     disabled: playing
   }), /*#__PURE__*/React.createElement("button", {
     className: "btn btn-fire block lg",
+    "data-guide": "camp-fight",
     disabled: playing,
     onClick: startFight
   }, isBoss ? "⚔️ " + bossName : I18N.t("CAMP_FIGHT"))), !playing && /*#__PURE__*/React.createElement(window.ChampionRow, {
