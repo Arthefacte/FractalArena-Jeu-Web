@@ -122,7 +122,11 @@ test("dureeTexte : compte à rebours court, ou rien s'il est écoulé", () => {
 });
 
 test("restantMs : seuil armé → temps restant, sinon rien", () => {
-  const dans = new Date(Date.now() + 6 * 3600 * 1000).toISOString();
+  // Marge d'une minute VOLONTAIRE : sans elle, `dureeTexte` arrondit à la minute et le
+  // résultat dépendait du temps écoulé entre l'écriture de `dans` et la mesure — un
+  // runner assez rapide (moins de 0,5 ms) affichait « 6 h 00 » au lieu de « 5 h 59 »,
+  // ce qui a fait rougir la CI dès sa première exécution (22/09/2026).
+  const dans = new Date(Date.now() + 6 * 3600 * 1000 - 60000).toISOString();
   const arme = FA_POT.resume(payload());
   arme.pot.arme = true;
   arme.pot.tirage_prevu = dans;
