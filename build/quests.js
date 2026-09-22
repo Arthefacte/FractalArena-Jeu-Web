@@ -198,6 +198,7 @@ function Quests() {
       className: "q-claimed"
     }, I18N.t("DISC_CLAIMED")) : /*#__PURE__*/React.createElement("button", {
       className: "q-claim",
+      "data-guide": "quest-claim-" + s.id,
       disabled: !s.done || claimingDisc === s.id,
       onClick: () => onClaimDisc(s.id)
     }, I18N.t("DISC_CLAIM"))));

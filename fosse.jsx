@@ -519,7 +519,7 @@ function Fosse() {
             <div className="flex gap8 arena-bet-row">
               <button className={cx("btn sm", betTier === "" && "on")} style={{ flex: 1, "--c": "var(--success)" }} disabled={playing} onClick={() => setBetTier("")}>{I18N.t("AR_FREE")}</button>
               {betTiers.map((t) => (
-                <button key={t.k} className={cx("btn sm", betTier === t.k && "on")} style={{ flex: 1.3, "--c": t.c }} disabled={playing} onClick={() => setBetTier(t.k)}>
+                <button key={t.k} className={cx("btn sm", betTier === t.k && "on")} data-guide={t.k === "bronze" ? "fosse-bet-bronze" : undefined} style={{ flex: 1.3, "--c": t.c }} disabled={playing} onClick={() => setBetTier(t.k)}>
                   {I18N.t("AR_" + t.k.toUpperCase())}<span className="mono" style={{ fontSize: 10, opacity: 0.8, marginLeft: 4, display: "inline-flex", alignItems: "center", gap: 3 }}><TokenIcon s={11} /> {D.ECON.BET[t.k]}</span>
                 </button>
               ))}
@@ -538,7 +538,7 @@ function Fosse() {
           </label>
 
           <div className="flex gap8" style={{ marginTop: "auto" }}>
-            <button className="btn btn-success block lg" style={{ flex: 1.4 }} disabled={playing || !ready} onClick={onFight}>{I18N.t("AR_FIGHT")}</button>
+            <button className="btn btn-success block lg" data-guide="fosse-fight" style={{ flex: 1.4 }} disabled={playing || !ready} onClick={onFight}>{I18N.t("AR_FIGHT")}</button>
             <button className={cx("btn block lg", loop ? "btn-forge on" : "btn-forge")} style={{ flex: 1 }} disabled={!ready} onClick={onLoop}>{loop ? I18N.t("AR_LOOP_ON") : I18N.t("AR_LOOP_OFF")}</button>
           </div>
           {!ready && <div className="mono" style={{ fontSize: 11, color: "var(--alert)", textAlign: "center" }}>{I18N.t("AR_NEED3")}</div>}

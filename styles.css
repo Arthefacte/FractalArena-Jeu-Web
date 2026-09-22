@@ -1567,3 +1567,61 @@ input { font-family: var(--font-mono); }
   .exq-col { animation: none; }
   .exq-dot { animation: none; }
 }
+
+/* ============================================================
+   Guide de la première session (guide.jsx) — barre sous la nav,
+   phrase de contexte à la première ouverture d'un onglet, et mise en
+   avant de l'élément à cliquer ([data-guide].guide-hl).
+   ============================================================ */
+.guide-wrap { max-width: 1100px; margin: 10px auto 0; padding: 0 16px; }
+.guide-bar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 9px 12px; border-radius: 10px;
+  background: linear-gradient(90deg, rgba(247,147,26,0.16), rgba(0,240,255,0.08));
+  border: 1px solid rgba(247,147,26,0.45);
+  box-shadow: 0 0 18px rgba(247,147,26,0.12);
+  font-size: 13px; line-height: 1.35;
+}
+.guide-bar.claim { border-color: rgba(0,240,255,0.55); background: linear-gradient(90deg, rgba(0,240,255,0.14), rgba(247,147,26,0.06)); }
+.guide-bar.done { border-color: rgba(84,255,160,0.5); }
+.guide-step {
+  font-family: var(--mono, monospace); font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--fire); white-space: nowrap;
+}
+.guide-bar.claim .guide-step { color: var(--elec); }
+.guide-text { flex: 1 1 320px; color: var(--text); }
+.guide-go { white-space: nowrap; }
+.guide-close {
+  background: transparent; border: 1px solid var(--line); color: var(--text-dim);
+  border-radius: 6px; width: 26px; height: 26px; cursor: pointer; font-size: 12px; line-height: 1;
+}
+.guide-close:hover { color: var(--text); border-color: var(--text-dim); }
+.guide-hint {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin-top: 6px; padding: 7px 12px; border-radius: 8px;
+  background: rgba(0,240,255,0.06); border: 1px dashed rgba(0,240,255,0.35);
+  font-size: 12.5px; color: var(--text-dim); line-height: 1.35;
+}
+.guide-hint > span { flex: 1 1 300px; }
+.guide-hint-ok {
+  background: transparent; border: 1px solid rgba(0,240,255,0.45); color: var(--elec);
+  border-radius: 6px; padding: 3px 10px; cursor: pointer; font-size: 11px; letter-spacing: .08em; text-transform: uppercase;
+}
+@keyframes guidePulse {
+  0%   { box-shadow: 0 0 0 0 rgba(247,147,26,0.75), 0 0 14px rgba(247,147,26,0.35); }
+  70%  { box-shadow: 0 0 0 12px rgba(247,147,26,0), 0 0 22px rgba(247,147,26,0.45); }
+  100% { box-shadow: 0 0 0 0 rgba(247,147,26,0), 0 0 14px rgba(247,147,26,0.35); }
+}
+[data-guide].guide-hl {
+  animation: guidePulse 1.6s ease-out infinite;
+  outline: 2px solid rgba(247,147,26,0.85); outline-offset: 2px; border-radius: 10px;
+  position: relative; z-index: 1;
+}
+/* La grille de cartes : un liseré discret, pas un halo sur chaque carte. */
+.grid-cards[data-guide].guide-hl { animation: none; outline: 1px dashed rgba(247,147,26,0.6); outline-offset: 8px; }
+@media (prefers-reduced-motion: reduce) { [data-guide].guide-hl { animation: none; } }
+@media (max-width: 640px) {
+  .guide-wrap { padding: 0 10px; }
+  .guide-bar { font-size: 12.5px; padding: 8px 10px; }
+  .guide-text { flex-basis: 100%; }
+}

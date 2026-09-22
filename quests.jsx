@@ -128,7 +128,7 @@ function Quests() {
                     <span className="q-prog">{s.progress}/{s.target}</span>
                     {s.claimed
                       ? <span className="q-claimed">{I18N.t("DISC_CLAIMED")}</span>
-                      : <button className="q-claim" disabled={!s.done || claimingDisc === s.id} onClick={() => onClaimDisc(s.id)}>{I18N.t("DISC_CLAIM")}</button>}
+                      : <button className="q-claim" data-guide={"quest-claim-" + s.id} disabled={!s.done || claimingDisc === s.id} onClick={() => onClaimDisc(s.id)}>{I18N.t("DISC_CLAIM")}</button>}
                   </div>
                 </div>
               );

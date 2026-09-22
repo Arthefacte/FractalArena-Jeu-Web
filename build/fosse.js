@@ -942,6 +942,7 @@ function Fosse() {
   }, I18N.t("AR_FREE")), betTiers.map(t => /*#__PURE__*/React.createElement("button", {
     key: t.k,
     className: cx("btn sm", betTier === t.k && "on"),
+    "data-guide": t.k === "bronze" ? "fosse-bet-bronze" : undefined,
     style: {
       flex: 1.3,
       "--c": t.c
@@ -1019,6 +1020,7 @@ function Fosse() {
     }
   }, /*#__PURE__*/React.createElement("button", {
     className: "btn btn-success block lg",
+    "data-guide": "fosse-fight",
     style: {
       flex: 1.4
     },

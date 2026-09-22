@@ -242,6 +242,7 @@ function Team() {
     }
   }, I18N.t("TEAM_SELECTED", selCount)), /*#__PURE__*/React.createElement("button", {
     className: "btn btn-elec lg",
+    "data-guide": "team-enter",
     disabled: selCount !== 3,
     onClick: () => actions.setView("fosse")
   }, I18N.t("TEAM_ENTER"), " \u2192"))), (() => {
@@ -289,7 +290,8 @@ function Team() {
       }
     }, "\u203A"));
   })(), /*#__PURE__*/React.createElement("div", {
-    className: "grid-cards"
+    className: "grid-cards",
+    "data-guide": "team-grid"
   }, sorted.map(b => {
     const busy = busyIds.has(b.id);
     const isChamp = g.championBeastId === b.id;
