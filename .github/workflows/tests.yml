@@ -1,0 +1,23 @@
+name: tests
+
+# CI ajoutée le 22/09/2026 (audit 3e passe) : les ~940 tests ne tournaient qu'en local.
+# On NE lance PAS `npm run build` ici, exprès : plusieurs tests comparent les fichiers
+# build/*.js et asset-hashes.js aux sources. Un .jsx modifié sans rebuild committé doit
+# faire rougir la CI — c'est le garde-fou qui manquait.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm test
