@@ -440,8 +440,13 @@ function loadState() {
       // JAMAIS dans le blob localStorage (ce blob-ci).
       authToken: readToken(),
       accountKind: ACC.readKind(),
-      selected: [],
-      // ids orphelins d'une session précédente → vidés, réconciliés à la connexion
+      // La sélection d'équipe survit au rechargement. Elle était remise à zéro ici :
+      // choisir ses 3 entités était donc à refaire à chaque F5, alors que le blob local
+      // les contient déjà (l. 418 sérialise tout `g`). On les relit et on écarte tout de
+      // suite les ids absents du roster restauré — un id orphelin ne doit pas passer pour
+      // une équipe complète. C'est le même filtre qu'à la synchro (l. 187), où le roster
+      // du SERVEUR fait foi : un blob d'un autre compte est donc nettoyé à la connexion.
+      selected: (Array.isArray(s.selected) ? s.selected : []).filter(id => (Array.isArray(s.roster) ? s.roster : []).some(b => b && b.id === id)),
       ordinalName: "",
       // sera écrasé par le nom serveur à la connexion (branche 200)
       serverFight: null,
