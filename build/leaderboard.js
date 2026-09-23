@@ -325,11 +325,18 @@ function Leaderboard() {
     style: {
       color: "var(--elec)"
     }
-  }, I18N.t("LB_ELO_LINK"), " \u2197"), /*#__PURE__*/React.createElement("div", {
+  }, I18N.t("LB_ELO_LINK"), " \u2197"), /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("a", {
+    href: String(window.FA_API_URL || "") + "/live",
+    target: "_blank",
+    rel: "noreferrer",
+    style: {
+      color: "var(--elec)"
+    }
+  }, I18N.t("LB_LIVE_LINK"), " \u2197"), /*#__PURE__*/React.createElement("div", {
     style: {
       color: "var(--text-faint)"
     }
-  }, I18N.t("LB_ELO_HINT"))));
+  }, I18N.t("LB_LIVE_HINT"))));
 }
 Object.assign(window, {
   Leaderboard

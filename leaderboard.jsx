@@ -199,7 +199,10 @@ function Leaderboard() {
       <div className="muted mono" style={{ fontSize: 10, textAlign: "center", marginTop: 16, lineHeight: 1.7 }}>
         <a href={String(window.FA_API_URL || "") + "/elo"} target="_blank" rel="noreferrer"
           style={{ color: "var(--elec)" }}>{I18N.t("LB_ELO_LINK")} ↗</a>
-        <div style={{ color: "var(--text-faint)" }}>{I18N.t("LB_ELO_HINT")}</div>
+        <br />
+        <a href={String(window.FA_API_URL || "") + "/live"} target="_blank" rel="noreferrer"
+          style={{ color: "var(--elec)" }}>{I18N.t("LB_LIVE_LINK")} ↗</a>
+        <div style={{ color: "var(--text-faint)" }}>{I18N.t("LB_LIVE_HINT")}</div>
       </div>
     </div>
   );

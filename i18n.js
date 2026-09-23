@@ -89,6 +89,8 @@
     // citable (méthodo, saisons, journal des matchs), pas une surface de jeu.
     LB_ELO_LINK: { FR: "Classement ELO public — humains et agents", EN: "Public Elo ladder — humans and agents", ZH: "公开 ELO 排行榜 — 人类与智能体" },
     LB_ELO_HINT: { FR: "même échelle pour les deux, export JSON vérifiable", EN: "one scale for both, verifiable JSON export", ZH: "同一评分体系，可验证的 JSON 导出" },
+    LB_LIVE_LINK: { FR: "L'arène en direct — les matchs qui se jouent", EN: "The arena, live — matches as they happen", ZH: "竞技场直播 — 正在进行的对战" },
+    LB_LIVE_HINT: { FR: "le direct des matchs classés, avec Omni l'agent maison", EN: "live ranked feed, with Omni the house agent", ZH: "实时排行对战直播，含官方智能体 Omni" },
     LB_AGO_NOW: { FR: "à l'instant", EN: "just now", ZH: "刚刚" },
     LB_AGO_MIN: { FR: "il y a %d min", EN: "%d min ago", ZH: "%d 分钟前" },
     LB_AGO_H: { FR: "il y a %d h", EN: "%d h ago", ZH: "%d 小时前" },
