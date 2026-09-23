@@ -101,3 +101,43 @@ test("le cache-bust suit la version", () => {
   const m = IDX.match(/build\/account\.js\?v=(\d+)/);
   assert.ok(m && Number(m[1]) >= 100, "version bumpee pour cette livraison");
 });
+
+test("sans extension sur ordinateur, la fenetre de liaison porte le lien de telechargement UniSat", () => {
+  // Le parcours se termine sur cette fenetre pour un compte cree SANS wallet —
+  // donc pour un joueur qui n'a rien installe. Le texte lui disait seulement que
+  // la signature « viendra d'ailleurs », sans lui donner ou la prendre : il
+  // fallait sortir du jeu et chercher (constate le 2026-09-23).
+  const i = A.indexOf("function LinkWalletButton");
+  const b = A.slice(i, A.indexOf("\nfunction ", i + 10));
+  assert.ok(b.length > 0, "LinkWalletButton introuvable");
+  assert.match(b, /chemin === "desktop"/,
+    "le lien de telechargement doit viser le cas SANS extension sur ordinateur");
+  assert.match(b, /https:\/\/unisat\.io\/download/,
+    "le lien de telechargement doit etre dans la fenetre, pas seulement decrit en texte");
+  assert.match(b, /target="_blank"/,
+    "sans _blank, partir installer remplace le jeu et fait perdre la session en cours");
+  assert.match(b, /ACC_LINK_INSTALL_HINT/,
+    "l'extension ne s'injecte qu'au chargement : le rechargement doit etre dit");
+  assert.match(b, /OB_INSTALL_EXT_BTN/,
+    "le libelle du bouton vient du meme lexique que l'accueil (« Telecharger UniSat »)");
+});
+
+test("le pont mobile ne laisse pas « ouvrir dans l'app » sans l'app", () => {
+  // App absente = rien ne s'ouvre, et les etapes parlent d'une installation que
+  // le joueur n'avait aucun moyen de faire depuis cet ecran.
+  const i = A.indexOf("function UnisatAppBridge");
+  const b = A.slice(i, A.indexOf("\nfunction ", i + 10));
+  assert.match(b, /https:\/\/unisat\.io\/download/, "le lien de telechargement de l'app manque");
+  assert.match(b, /UAPP_INSTALL/, "le libelle doit exister dans les trois langues");
+});
+
+test("les textes neufs existent en FR/EN/ZH", () => {
+  for (const k of ["ACC_LINK_INSTALL_HINT", "ACC_LINK_RELOAD", "UAPP_INSTALL"]) {
+    const m = I.match(new RegExp("\\b" + k + ":\\s*\\{[^}]*\\}"));
+    assert.ok(m, k + " absente de i18n.js");
+    for (const lang of ["FR", "EN", "ZH"]) {
+      const v = m[0].match(new RegExp(lang + ':\\s*"([^"]*)"'));
+      assert.ok(v && v[1].trim(), `${k} → ${lang} vide`);
+    }
+  }
+});

@@ -167,6 +167,14 @@ function UnisatAppBridge({ mode }) {
          target="_blank" rel="noopener">
         ↗ {I18N.t("UAPP_OPEN_BTN")}
       </a>
+      {/* L'app n'est pas forcément installée : sans ce lien, le bouton du dessus
+          est un cul-de-sac (app absente = rien ne s'ouvre) et les marches à
+          suivre parlent d'une installation que le joueur n'a aucun moyen de
+          faire depuis ici. */}
+      <a className="btn-link" style={{ display: "inline-block", marginTop: 8, color: "var(--text-dim)", fontSize: 11, textDecoration: "underline" }}
+         href="https://unisat.io/download" target="_blank" rel="noopener noreferrer">
+        {I18N.t("UAPP_INSTALL")}
+      </a>
       {!secours ? (
         /* Le pont à code n'est PAS le chemin courant : il ne sert qu'au premier
            passage, ou si la session de l'app a été perdue. Au premier plan, il
@@ -275,8 +283,30 @@ function LinkWalletButton({ onLinked, disabled }) {
           </button>
         )}
         {chemin === "desktop" && (
-          <div className="acc-warn" style={{ marginTop: 8, fontSize: 12 }}>{I18N.t("ACC_LINK_DESKTOP_ONLY")}</div>
+          <div className="acc-warn" style={{ marginTop: 8, fontSize: 12 }}>
+            <div>{I18N.t("ACC_LINK_DESKTOP_ONLY")}</div>
+            {/* Le joueur arrivé ici en jouant SANS wallet n'a rien installé, et
+                cet écran ne lui disait QUE que la signature viendra d'ailleurs,
+                sans lui donner où la prendre (constaté le 2026-09-23) : le lien
+                de téléchargement est donc DANS la fenêtre de liaison — c'est le
+                seul geste qui manque pour que le bouton du dessus aboutisse.
+                Le rappel du rechargement n'est pas décoratif : l'extension
+                n'injecte le provider qu'au CHARGEMENT du document, donc une page
+                ouverte pendant l'installation ne verra jamais le portefeuille. */}
+            <a className="btn btn-elec block" style={{ marginTop: 10, textAlign: "center" }}
+               href="https://unisat.io/download" target="_blank" rel="noopener noreferrer">
+              ⤓ {I18N.t("OB_INSTALL_EXT_BTN")}
+            </a>
+            <div className="muted" style={{ fontSize: 11, marginTop: 8, lineHeight: 1.6 }}>
+              {I18N.t("ACC_LINK_INSTALL_HINT")}
+            </div>
+            <button className="btn-link" style={{ marginTop: 6, background: "none", border: "none", color: "var(--text-dim)", fontSize: 11, cursor: "pointer", textDecoration: "underline" }}
+                    onClick={() => window.location.reload()}>
+              {I18N.t("ACC_LINK_RELOAD")}
+            </button>
+          </div>
         )}
+
         {chemin === "unisat-app" && <UnisatAppBridge mode="link" />}
       </>
     );

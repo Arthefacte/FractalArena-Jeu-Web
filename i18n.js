@@ -196,6 +196,12 @@
     // de redirect qui le larguerait déconnecté devant l'écran d'accueil.
     ACC_LINK_DESKTOP_ONLY: { FR: "Lier demande une signature UniSat, que ce navigateur ne fournit pas. Deux chemins : un ordinateur avec l'extension UniSat, ou l'app UniSat Mobile — ouvre le jeu dans son navigateur intégré, reconnecte-toi à ton compte, puis lie. Ton compte et tes gains t'attendent.", EN: "Linking needs a UniSat signature, which this browser can't provide. Two ways: a computer with the UniSat extension, or the UniSat Mobile app — open the game in its built-in browser, sign back into your account, then link. Your account and earnings will keep.", ZH: "绑定需要 UniSat 签名，当前浏览器无法完成。两种方式：在装有 UniSat 扩展的电脑上操作，或使用 UniSat 移动端应用——在其内置浏览器中打开游戏，重新登录你的账号后再绑定。你的账号和收益不会丢失。" },
     ACC_LINK_TAKEN: { FR: "Ce portefeuille est déjà lié à un autre compte. Utilises-en un autre.", EN: "That wallet is already linked to another account. Use a different one.", ZH: "该钱包已绑定至其他账号，请更换一个。" },
+    // Le joueur venu jouer SANS wallet (compte généré) arrive à cet écran sans
+    // rien avoir installé : l'avertissement ci-dessus lui disait où la signature
+    // peut venir, jamais comment s'y prendre depuis là. Le lien de
+    // téléchargement vit donc dans la fenêtre de liaison (2026-09-23).
+    ACC_LINK_INSTALL_HINT: { FR: "Aucune extension détectée dans ce navigateur. Installe-la, puis recharge la page — c'est seulement à ce moment qu'elle se branche au jeu. Le bouton ci-dessus liera alors ton portefeuille en une signature.", EN: "No extension detected in this browser. Install it, then reload the page — that's the only moment it hooks into the game. The button above will then link your wallet with a single signature.", ZH: "当前浏览器未检测到扩展。安装后请重新加载页面——只有那时它才会接入游戏。之后点击上方按钮，签名一次即可绑定钱包。" },
+    ACC_LINK_RELOAD: { FR: "J'ai installé UniSat — recharger la page", EN: "I've installed UniSat — reload the page", ZH: "我已安装 UniSat——重新加载页面" },
     // Pont vers l'app UniSat (mobile sans extension) : un code de liaison
     // d'appareil transporte la session dans le navigateur intégré de l'app, où
     // le provider est injecté et où tout se signe. Vérifié en réel 2026-08-18.
@@ -207,6 +213,10 @@
     UAPP_STEP3_WD: { FR: "3. Là-bas, le retrait se signe normalement.", EN: "3. There, the withdrawal is signed as usual.", ZH: "3. 在那里正常签名完成提现。" },
     UAPP_PREP_BTN: { FR: "Continuer dans l'app UniSat", EN: "Continue in the UniSat app", ZH: "在 UniSat 应用中继续" },
     UAPP_OPEN_BTN: { FR: "Ouvrir dans l'app UniSat", EN: "Open in the UniSat app", ZH: "在 UniSat 应用中打开" },
+    // Sans ce lien, « Ouvrir dans l'app » est un cul-de-sac pour qui n'a pas
+    // encore l'app : rien ne s'ouvre, et les étapes parlent d'une installation
+    // qu'il n'a aucun moyen de faire depuis l'écran (2026-09-23).
+    UAPP_INSTALL: { FR: "Pas encore l'app UniSat ? Télécharge-la", EN: "Don't have the UniSat app yet? Download it", ZH: "还没有 UniSat 应用？下载安装" },
     // La liaison prend le compte ACTIF d'UniSat : pour lier un autre wallet, il
     // se change dans l'app, pas chez nous — dit au moment où l'adresse se lit.
     ACC_LINK_OTHER_ADDR: { FR: "Pas la bonne adresse ? Annule, change de portefeuille actif dans UniSat, et redemande : le jeu lie le compte actif au moment du clic.", EN: "Not the right address? Cancel, switch the active wallet in UniSat, then ask again: the game links whichever account is active when you click.", ZH: "地址不对？请取消，在 UniSat 中切换当前钱包后重试：游戏绑定的是点击时的当前账户。" },

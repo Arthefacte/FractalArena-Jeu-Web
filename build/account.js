@@ -241,7 +241,19 @@ function UnisatAppBridge({
     href: direct,
     target: "_blank",
     rel: "noopener"
-  }, "\u2197 ", I18N.t("UAPP_OPEN_BTN")), !secours ?
+  }, "\u2197 ", I18N.t("UAPP_OPEN_BTN")), /*#__PURE__*/React.createElement("a", {
+    className: "btn-link",
+    style: {
+      display: "inline-block",
+      marginTop: 8,
+      color: "var(--text-dim)",
+      fontSize: 11,
+      textDecoration: "underline"
+    },
+    href: "https://unisat.io/download",
+    target: "_blank",
+    rel: "noopener noreferrer"
+  }, I18N.t("UAPP_INSTALL")), !secours ?
   /*#__PURE__*/
   /* Le pont à code n'est PAS le chemin courant : il ne sert qu'au premier
      passage, ou si la session de l'app a été perdue. Au premier plan, il
@@ -383,7 +395,35 @@ function LinkWalletButton({
         marginTop: 8,
         fontSize: 12
       }
-    }, I18N.t("ACC_LINK_DESKTOP_ONLY")), chemin === "unisat-app" && /*#__PURE__*/React.createElement(UnisatAppBridge, {
+    }, /*#__PURE__*/React.createElement("div", null, I18N.t("ACC_LINK_DESKTOP_ONLY")), /*#__PURE__*/React.createElement("a", {
+      className: "btn btn-elec block",
+      style: {
+        marginTop: 10,
+        textAlign: "center"
+      },
+      href: "https://unisat.io/download",
+      target: "_blank",
+      rel: "noopener noreferrer"
+    }, "\u2913 ", I18N.t("OB_INSTALL_EXT_BTN")), /*#__PURE__*/React.createElement("div", {
+      className: "muted",
+      style: {
+        fontSize: 11,
+        marginTop: 8,
+        lineHeight: 1.6
+      }
+    }, I18N.t("ACC_LINK_INSTALL_HINT")), /*#__PURE__*/React.createElement("button", {
+      className: "btn-link",
+      style: {
+        marginTop: 6,
+        background: "none",
+        border: "none",
+        color: "var(--text-dim)",
+        fontSize: 11,
+        cursor: "pointer",
+        textDecoration: "underline"
+      },
+      onClick: () => window.location.reload()
+    }, I18N.t("ACC_LINK_RELOAD"))), chemin === "unisat-app" && /*#__PURE__*/React.createElement(UnisatAppBridge, {
       mode: "link"
     }));
   }
