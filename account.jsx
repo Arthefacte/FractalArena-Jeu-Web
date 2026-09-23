@@ -3,7 +3,7 @@
    SecretsGate (unique affichage des secrets), RecoverScreen, LockedBanner.
    Les secrets ne sont JAMAIS persistes : ils vivent ici, puis disparaissent.
    ============================================================ */
-const { useState, useEffect } = React;
+const { useState, useEffect, useRef } = React;
 const { useFA, cx, Modal, SectionHead } = window;
 const I18N = window.FA_I18N;
 const ACC = window.FA_ACCOUNT;
@@ -345,6 +345,32 @@ function CryptoVolet({ disc, reload, onLinked }) {
   const [sending, setSending] = useState(false);
   // Un natif est « deja lie » par nature : son wallet EST son compte.
   const lie = !!g.linkedWallet || g.accountKind === ACC.KIND_UNISAT;
+  // Ce qu'il reste a faire, relu ici aussi : c'est cette valeur qui dit s'il faut
+  // ATTENDRE (et donc se relire). La fenetre de fin s'en sert pour son sous-titre.
+  // Une seule regle, deux lectures — jamais deux regles.
+  const etape = ACC.discoveryNextAction(disc, g.linkedWallet, g.accountKind === ACC.KIND_UNISAT);
+
+  // La poussiere part APRES la liaison (envoi asynchrone cote serveur) : a
+  // l'instant ou le joueur lie, l'etat relu dit encore « pas envoyee ». Cet ecran
+  // ne se relisait qu'une fois — devant « Compte quelques minutes », plus rien ne
+  // bougeait, et l'epreuve du txid n'apparaissait qu'en quittant l'ecran pour y
+  // revenir (signale par le fondateur le 2026-09-23). On se relit donc pendant
+  // l'attente. Effet de bord utile : GET /discovery/state est justement le
+  // troisieme declencheur de l'envoi cote serveur (reprise apres un plafond
+  // quotidien ou une panne UniSat) — un client qui attend redonne sa chance a un
+  // envoi qui n'a jamais eu lieu, au lieu de laisser le joueur sur un silence.
+  // `reload` est recree a chaque rendu du parent : le garder dans une ref evite de
+  // relancer le minuteur a chaque rendu — sinon il ne se declencherait jamais.
+  const reloadRef = useRef(reload);
+  reloadRef.current = reload;
+  useEffect(() => {
+    if (etape !== "dust") return undefined;
+    const id = setInterval(() => {
+      const relire = reloadRef.current;
+      if (relire) relire();
+    }, 15000);
+    return () => clearInterval(id);
+  }, [etape]);
 
   const submitTxid = async () => {
     setSending(true);
@@ -373,7 +399,10 @@ function CryptoVolet({ disc, reload, onLinked }) {
       )}
 
       {disc.game_done && lie && !disc.dust_sent && (
-        <div className="muted" style={{ fontSize: 12, lineHeight: 1.6 }}>{I18N.t("DISC_DUST_WAIT")}</div>
+        <>
+          <div className="muted" style={{ fontSize: 12, lineHeight: 1.6 }}>{I18N.t("DISC_DUST_WAIT")}</div>
+          <div className="muted mono" style={{ fontSize: 11, marginTop: 6, opacity: 0.75 }}>{I18N.t("DISC_DUST_AUTO")}</div>
+        </>
       )}
 
       {disc.game_done && lie && disc.dust_sent && !disc.txid_verified && (

@@ -85,11 +85,28 @@ test("un compte natif est tenu pour deja lie par le volet crypto", () => {
 test("les appelants de discoveryNextAction passent le drapeau natif", () => {
   // Sans lui, la fenetre « Bien joue » et le panneau du parcours proposeraient
   // encore « link » a un natif — l'etape que le volet, lui, ne montre plus.
+  // 2 dans account.jsx depuis le 2026-09-23 : CryptoVolet relit l'etape pour
+  // savoir s'il doit ATTENDRE la poussiere (et donc se relire) ; DiscoveryFinish
+  // la relit pour son sous-titre. La regle reste une seule fonction pure.
   const natif = /discoveryNextAction\([a-z]+, g\.linkedWallet, g\.accountKind === ACC\.KIND_UNISAT\)/g;
-  assert.strictEqual((A.match(natif) || []).length, 1,
-    "DiscoveryFinish (account.jsx) doit passer le drapeau natif");
+  assert.strictEqual((A.match(natif) || []).length, 2,
+    "CryptoVolet et DiscoveryFinish (account.jsx) doivent passer le drapeau natif");
   assert.strictEqual((Q.match(natif) || []).length, 2,
     "les deux appels du panneau du parcours (quests.jsx) doivent passer le drapeau natif");
+});
+
+test("l'attente de la poussiere se relit toute seule, sans sortir de l'ecran", () => {
+  // Constat prod du 2026-09-23 : apres la liaison, la fenetre annoncait « on
+  // t'envoie un peu de FB, compte quelques minutes » et n'en bougeait plus —
+  // l'epreuve du txid n'apparaissait qu'en quittant l'onglet pour y revenir.
+  const i = A.indexOf("function CryptoVolet");
+  const b = A.slice(i, A.indexOf("\nfunction ", i + 10));
+  assert.ok(b.length > 0, "CryptoVolet introuvable");
+  assert.match(b, /etape !== "dust"/, "la relecture doit viser l'ATTENTE de la poussiere, pas tourner a vide");
+  assert.match(b, /setInterval/, "la relecture doit etre periodique : la poussiere part apres la liaison");
+  assert.match(b, /clearInterval/, "le minuteur doit etre demonte (fermeture de la fenetre, changement d'etape)");
+  assert.match(b, /useRef/, "reload est recree a chaque rendu du parent : sans ref, le minuteur ne se declencherait jamais");
+  assert.match(b, /DISC_DUST_AUTO/, "l'attente doit dire au joueur qu'elle se met a jour d'elle-meme");
 });
 
 // --- i18n ---
@@ -101,7 +118,7 @@ const bloc = (cle) => {
 
 test("les nouvelles cles existent en FR/EN/ZH", () => {
   const manquantes = [];
-  for (const k of ["DISC_FINISH_TITLE", "DISC_FINISH_SUB", "DISC_FINISH_OPEN", "DISC_TXID_REWARD"]) {
+  for (const k of ["DISC_FINISH_TITLE", "DISC_FINISH_SUB", "DISC_FINISH_OPEN", "DISC_TXID_REWARD", "DISC_DUST_AUTO"]) {
     const b = bloc(k);
     if (!b) { manquantes.push(k + " (absente)"); continue; }
     for (const lang of ["FR", "EN", "ZH"]) {

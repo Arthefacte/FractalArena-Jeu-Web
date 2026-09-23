@@ -277,6 +277,10 @@
     // bandeau est global et la fenêtre s'ouvre depuis n'importe quel écran.
     DISC_CRYPTO_LOCKED: { FR: "Termine les six étapes de « Tes premiers pas », dans l'onglet Quêtes, pour ouvrir cette partie.", EN: "Complete the six steps of “Your first steps”, in the Quests tab, to open this part.", ZH: "在「任务」标签中完成「你的第一步」的六个步骤，即可开启此部分。" },
     DISC_DUST_WAIT: { FR: "Portefeuille lié ✓ On t'envoie un peu de Fractal Bitcoin. Compte quelques minutes.", EN: "Wallet linked ✓ We're sending you a little Fractal Bitcoin. Give it a few minutes.", ZH: "钱包已绑定 ✓ 我们正在向你发送少量 Fractal Bitcoin，请稍候几分钟。" },
+    // La poussiere part en asynchrone : cet ecran se relit tout seul pendant
+    // l'attente (account.jsx). Le dire evite que le joueur quitte l'ecran pour
+    // aller « voir » ailleurs — ce qui etait le seul moyen de le rafraichir.
+    DISC_DUST_AUTO: { FR: "Laisse cette fenêtre ouverte : elle se met à jour d'elle-même dès que la transaction part.", EN: "Leave this window open: it updates by itself as soon as the transaction is sent.", ZH: "保持此窗口打开：交易一发出，它会自动更新。" },
     DISC_DUST_ARRIVED: { FR: "Ouvre UniSat, retrouve la transaction reçue, et colle son identifiant ci-dessous.", EN: "Open UniSat, find the transaction you received, and paste its ID below.", ZH: "打开 UniSat，找到收到的交易，并在下方粘贴其 ID。" },
     DISC_TXID_LABEL: { FR: "Identifiant de transaction (txid)", EN: "Transaction ID (txid)", ZH: "交易 ID（txid）" },
     DISC_TXID_HINT: { FR: "C'est le même geste que pour un dépôt : tu sauras le refaire.", EN: "It's the same move as for a deposit: you'll know how to do it again.", ZH: "这与充值的操作相同：以后你就会了。" },
