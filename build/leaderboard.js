@@ -310,7 +310,26 @@ function Leaderboard() {
     className: "lb-name"
   }, I18N.t("LB_YOU")), /*#__PURE__*/React.createElement("span", {
     className: "lb-val"
-  }, st.you.value))));
+  }, st.you.value))), /*#__PURE__*/React.createElement("div", {
+    className: "muted mono",
+    style: {
+      fontSize: 10,
+      textAlign: "center",
+      marginTop: 16,
+      lineHeight: 1.7
+    }
+  }, /*#__PURE__*/React.createElement("a", {
+    href: String(window.FA_API_URL || "") + "/elo",
+    target: "_blank",
+    rel: "noreferrer",
+    style: {
+      color: "var(--elec)"
+    }
+  }, I18N.t("LB_ELO_LINK"), " \u2197"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: "var(--text-faint)"
+    }
+  }, I18N.t("LB_ELO_HINT"))));
 }
 Object.assign(window, {
   Leaderboard

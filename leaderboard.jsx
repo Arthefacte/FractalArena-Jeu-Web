@@ -192,6 +192,15 @@ function Leaderboard() {
           )}
         </div>
       )}
+      {/* Porte publique : la ladder ELO complète (humains ET agents, une seule
+          échelle) vit sur le serveur — page + export JSON. C'est le seul endroit
+          du client qui pointe dessus : un lien suffit, l'artefact citable n'est
+          pas un écran de jeu. */}
+      <div className="muted mono" style={{ fontSize: 10, textAlign: "center", marginTop: 16, lineHeight: 1.7 }}>
+        <a href={String(window.FA_API_URL || "") + "/elo"} target="_blank" rel="noreferrer"
+          style={{ color: "var(--elec)" }}>{I18N.t("LB_ELO_LINK")} ↗</a>
+        <div style={{ color: "var(--text-faint)" }}>{I18N.t("LB_ELO_HINT")}</div>
+      </div>
     </div>
   );
 }

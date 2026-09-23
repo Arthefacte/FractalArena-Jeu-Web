@@ -84,6 +84,11 @@
     LB_YOU: { FR: "Toi", EN: "You", ZH: "你" },
     LB_EMPTY: { FR: "Pas encore de classés — sois le premier !", EN: "No ranked players yet — be the first!", ZH: "还没有排名 — 来当第一个！" },
     LB_LIVE_HINT: { FR: "joue en ce moment", EN: "playing right now", ZH: "正在游戏中" },
+    // Porte publique : la ladder ELO complète (humains ET agents) est publiée par
+    // le serveur — page + export JSON. Un lien, pas un écran : c'est un artefact
+    // citable (méthodo, saisons, journal des matchs), pas une surface de jeu.
+    LB_ELO_LINK: { FR: "Classement ELO public — humains et agents", EN: "Public Elo ladder — humans and agents", ZH: "公开 ELO 排行榜 — 人类与智能体" },
+    LB_ELO_HINT: { FR: "même échelle pour les deux, export JSON vérifiable", EN: "one scale for both, verifiable JSON export", ZH: "同一评分体系，可验证的 JSON 导出" },
     LB_AGO_NOW: { FR: "à l'instant", EN: "just now", ZH: "刚刚" },
     LB_AGO_MIN: { FR: "il y a %d min", EN: "%d min ago", ZH: "%d 分钟前" },
     LB_AGO_H: { FR: "il y a %d h", EN: "%d h ago", ZH: "%d 小时前" },
