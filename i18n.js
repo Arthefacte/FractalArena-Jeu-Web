@@ -52,9 +52,9 @@
     },
     TUT_S2_T: { FR: "Compose ton équipe", EN: "Build your team", ZH: "组建队伍" },
     TUT_S2_B: {
-      FR: "Dans l'onglet Équipe, choisis 3 entités avant chaque combat. Elles gagnent de l'XP et montent en niveau au fil des victoires.",
-      EN: "In the Team tab, pick 3 entities before each fight. They earn XP and level up as you win.",
-      ZH: "在「队伍」标签中，每场战斗前选择 3 个实体。它们会随着胜利获得经验并升级。",
+      FR: "Dans l'onglet Équipe, choisis 3 entités avant chaque combat. Chaque combat de Fosse leur donne de l'XP : 50 pour une victoire, 10 pour une défaite.",
+      EN: "In the Team tab, pick 3 entities before each fight. Every Fosse fight earns them XP: 50 for a win, 10 for a loss.",
+      ZH: "在「队伍」标签中，每场战斗前选择 3 个实体。每场深坑战斗都给它们经验：胜利 50，失败 10。",
     },
     TUT_S3_T: { FR: "Combats & mises", EN: "Fights & bets", ZH: "战斗与下注" },
     TUT_S3_B: {
@@ -1481,7 +1481,7 @@
     GUIDE_ENTER_FOSSE: { FR: "Ton équipe est prête. Entre dans La Fosse pour ton premier combat.", EN: "Your team is set. Enter The Pit for your first fight.", ZH: "队伍已就绪。进入深坑开始第一场战斗。" },
     GUIDE_D_WIN:       { FR: "Lance un combat GRATUIT (5 par jour) et gagne-le. Les gains gratuits vont dans ton solde verrouillé 🔒.", EN: "Start a FREE fight (5 a day) and win it. Free-fight winnings go to your locked balance 🔒.", ZH: "发起一场免费战斗（每天 5 场）并获胜。免费战斗的收益进入锁定余额 🔒。" },
     GUIDE_D_PAID:      { FR: "Mise 10 FA en Bronze avec ton solde verrouillé : une victoire rapporte ×1,7, une défaite coûte la mise.", EN: "Bet 10 FA on Bronze with your locked balance: a win pays ×1.7, a loss costs the stake.", ZH: "用锁定余额下注 10 FA 青铜档：胜利获得 ×1.7，失败则损失赌注。" },
-    GUIDE_D_LEVEL:     { FR: "Chaque victoire donne 50 XP à tes 3 entités. Enchaîne les combats jusqu'au niveau 5 : leurs stats montent de 3 % par niveau.", EN: "Every win gives your 3 entities 50 XP. Keep fighting until level 5: stats grow 3% per level.", ZH: "每次胜利给 3 个实体各 50 XP。连续战斗直到 5 级：每级属性提升 3%。" },
+    GUIDE_D_LEVEL:     { FR: "Chaque victoire donne 50 XP à tes 3 entités, et chaque défaite 10 XP. Enchaîne les combats jusqu'au niveau 5 : leurs stats montent de 3 % par niveau.", EN: "Every win gives your 3 entities 50 XP, and every loss 10 XP. Keep fighting until level 5: stats grow 3% per level.", ZH: "每次胜利给 3 个实体各 50 XP，失败也有 10 XP。连续战斗直到 5 级：每级属性提升 3%。" },
     GUIDE_D_CAMP:      { FR: "Termine 3 étages de la Campagne. L'entrée est gratuite une fois par jour, puis coûte 1 ticket Argent (gagné en Fosse tous les 50 combats).", EN: "Clear 3 Campaign floors. Entry is free once a day, then costs 1 Silver ticket (earned in The Pit every 50 fights).", ZH: "通关 3 层战役。每天首次免费，之后需 1 张白银票（深坑每 50 场战斗获得）。" },
     GUIDE_D_TOWER:     { FR: "Gagne un combat dans la Tour avec ton run gratuit de la semaine. Les PV ne se régénèrent pas entre les étages : chaque étage franchi paie un palier.", EN: "Win a fight in the Tower with your free weekly run. HP doesn't regenerate between floors: every floor cleared pays a tier.", ZH: "用本周的免费挑战在塔中赢一场。层与层之间不回血：每通过一层都有奖励。" },
     GUIDE_D_PVP:       { FR: "Attaque un joueur en Arène (5 attaques gratuites par jour). Tu affrontes sa défense enregistrée, sans risque pour tes entités.", EN: "Attack a player in the Arena (5 free attacks a day). You face their saved defense, with no risk to your entities.", ZH: "在竞技场攻击一名玩家（每天 5 次免费）。你对战的是对方保存的防守阵容，你的实体不会有损失。" },
