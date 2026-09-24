@@ -466,7 +466,7 @@ function Arene() {
     }
   }, /*#__PURE__*/React.createElement("span", {
     className: "mono"
-  }, row.rank, ". ", row.wallet === g.wallet ? "➤ " : "", (row.name || "").slice(0, 14)), /*#__PURE__*/React.createElement("span", {
+  }, row.rank, ". ", row.wallet === g.wallet ? "➔ " : "", (row.name || "").slice(0, 24), (row.name || "").length > 24 ? "…" : ""), /*#__PURE__*/React.createElement("span", {
     className: "mono",
     style: {
       color: "var(--elec)"

@@ -206,8 +206,10 @@ function Arene() {
           <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 4 }}>
             {(pvp.ladder || []).map((row) => (
               <div key={row.wallet} className="flex between" style={{ padding: "5px 8px", background: row.wallet === g.wallet ? "rgba(0,240,255,0.08)" : "transparent", fontSize: 12 }}>
-                {/* 14 : « Joueur 48213 » fait 12 caractères — à 10 le numéro était coupé. */}
-                <span className="mono">{row.rank}. {row.wallet === g.wallet ? "➤ " : ""}{(row.name || "").slice(0, 14)}</span>
+                {/* 24 : les noms composés du serveur dépassent les 14 caractères de l'ancienne
+                    coupe (« Le Grand Arthefacte.fb » = 22) — à 14, un joueur ne se
+                    reconnaissait plus dans sa propre ligne. Ellipse si ça dépasse. */}
+                <span className="mono">{row.rank}. {row.wallet === g.wallet ? "➔ " : ""}{(row.name || "").slice(0, 24)}{(row.name || "").length > 24 ? "…" : ""}</span>
                 <span className="mono" style={{ color: "var(--elec)" }}>{row.rating} · {row.wins || 0}-{row.losses || 0}</span>
               </div>
             ))}

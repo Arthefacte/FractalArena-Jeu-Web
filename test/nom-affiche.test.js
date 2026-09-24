@@ -81,14 +81,17 @@ test("le chat ne retombe pas sur l'adresse d'un message sans nom", () => {
   assert.ok(!/shortWallet\(/.test(bloc), "safeName ne doit pas replier sur l'adresse");
 });
 
-test("le classement d'Arène ne tronque pas « Joueur 48213 »", () => {
+test("le classement d'Arène ne tronque pas « Joueur 48213 » ni les noms .fb", () => {
   // `.slice(0, 10)` coupait le numéro en plein milieu : « Joueur 482 ».
+  // `.slice(0, 14)` coupait les noms composés du serveur : « Le Grand Arthefacte.fb »
+  // (22 caractères) s'affichait « Le Grand Arthe » — le joueur ne se reconnaissait plus
+  // dans sa propre ligne de classement.
   const i = ARENE.indexOf("row.name");
   assert.ok(i > 0, "ligne de classement introuvable dans arene.jsx");
   const bloc = ARENE.slice(i, i + 200);
   const m = bloc.match(/\.slice\(\s*0\s*,\s*(\d+)\s*\)/);
   assert.ok(m, "troncature du nom introuvable");
-  assert.ok(Number(m[1]) >= 13, `« Joueur NNNNN » fait 12 caractères, troncature à ${m[1]}`);
+  assert.ok(Number(m[1]) >= 22, `« Le Grand Arthefacte.fb » fait 22 caractères, troncature à ${m[1]}`);
 });
 
 // Décision user 2026-08-22 : l'écran Arène ne montrait que la puissance des
