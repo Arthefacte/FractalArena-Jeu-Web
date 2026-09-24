@@ -22,3 +22,9 @@ _jeton-test.html
 _chips-check.html
 _pot-check.html
 _session_*.json
+
+# Sorties de verification du bake (jetables, regenerables)
+_bake/*.png
+_bake/*.gif
+_bake/*.webp
+_bake/frames/
