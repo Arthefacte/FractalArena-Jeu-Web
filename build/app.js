@@ -1205,9 +1205,13 @@ function App() {
           headers: {
             "Content-Type": "application/json"
           },
+          // `nonce` : désigne le challenge signé (audit serveur 2026-09, D6/F2). Sans lui, le
+          // serveur prend le DERNIER challenge du wallet — qu'un tiers peut remplacer en
+          // redemandant /auth/challenge pendant que le joueur signe.
           body: JSON.stringify({
             wallet: addr,
-            signature
+            signature,
+            nonce: ch.nonce
           })
         });
         if (!vr.ok) return echec("verify", null, vr.status);
@@ -1628,7 +1632,10 @@ function App() {
         reason: "same"
       };
       try {
-        const cr = await fetch(`${API_URL}/auth/challenge?wallet=${encodeURIComponent(addr)}&scope=withdraw`);
+        // `account` : le texte signé nomme le compte qui reçoit la liaison (audit serveur
+        // 2026-09, D6/F3). Sans lui, une signature « withdraw » ordinaire pouvait lier ce
+        // portefeuille au compte de quelqu'un d'autre. Exige le serveur de la PR #136.
+        const cr = await fetch(`${API_URL}/auth/challenge?wallet=${encodeURIComponent(addr)}&scope=withdraw` + `&account=${encodeURIComponent(s.wallet)}`);
         if (!cr.ok) return {
           ok: false,
           reason: "server"
@@ -1643,7 +1650,8 @@ function App() {
           },
           body: JSON.stringify({
             wallet: addr,
-            signature
+            signature,
+            nonce: ch.nonce
           })
         });
         if (r.status === 409) return {
@@ -1729,6 +1737,7 @@ function App() {
             wallet: qui.signer,
             signature,
             scope: "withdraw",
+            nonce: ch.nonce,
             ...(qui.account ? {
               account: qui.account
             } : {})
