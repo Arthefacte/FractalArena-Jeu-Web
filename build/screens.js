@@ -1699,7 +1699,7 @@ function ForgeEquipement() {
       return;
     }
     setSel([]);
-    toast(I18N.t("FG_EQ_DIS_OK", r.value != null ? r.value - fee : net), "good");
+    toast(I18N.t("FG_EQ_DIS_OK", fmt(r.value != null ? r.value - fee : net)), "good");
   }
   return /*#__PURE__*/React.createElement("div", {
     className: "panel oct",
@@ -1788,14 +1788,14 @@ function ForgeEquipement() {
       fontSize: 12,
       marginBottom: 8
     }
-  }, I18N.t("FG_EQ_DIS_BREAKDOWN", dis.value, dis.fee, dis.net)), (fuse.showInsufficient || dis.showInsufficient) && /*#__PURE__*/React.createElement("div", {
+  }, I18N.t("FG_EQ_DIS_BREAKDOWN", fmt(dis.value), fmt(dis.fee), fmt(dis.net))), (fuse.showInsufficient || dis.showInsufficient) && /*#__PURE__*/React.createElement("div", {
     className: "mono",
     style: {
       fontSize: 12,
       color: "var(--alert)",
       marginBottom: 8
     }
-  }, I18N.t("INSUFFICIENT", balance, fuse.showInsufficient ? fuse.cost : dis.fee)), /*#__PURE__*/React.createElement("div", {
+  }, I18N.t("INSUFFICIENT", fmt(balance), fmt(fuse.showInsufficient ? fuse.cost : dis.fee))), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "grid",
       gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)",
@@ -1807,13 +1807,13 @@ function ForgeEquipement() {
     disabled: fuse.disabled,
     onClick: doFuse
   }, busy ? "…" : /*#__PURE__*/React.createElement(FaText, {
-    text: I18N.t("FG_EQ_FUSE_BTN", fuse.cost || 0)
+    text: I18N.t("FG_EQ_FUSE_BTN", fmt(fuse.cost || 0))
   })), !confirmDis ? /*#__PURE__*/React.createElement("button", {
     className: "btn",
     disabled: dis.disabled,
     onClick: () => setConfirmDis(true)
   }, busy ? "…" : /*#__PURE__*/React.createElement(FaText, {
-    text: I18N.t("FG_EQ_DIS_BTN", dis.net || 0)
+    text: I18N.t("FG_EQ_DIS_BTN", fmt(dis.net || 0))
   })) :
   /*#__PURE__*/
   // Le désenchantement DÉTRUIT la relique : confirmation obligatoire.
@@ -1849,7 +1849,7 @@ function ForgeEquipement() {
     },
     onClick: doDisenchant
   }, busy ? "…" : /*#__PURE__*/React.createElement(FaText, {
-    text: I18N.t("FG_EQ_DIS_BTN", dis.net || 0)
+    text: I18N.t("FG_EQ_DIS_BTN", fmt(dis.net || 0))
   }))))));
 }
 
@@ -2120,7 +2120,7 @@ function ForgeCoreEquipement({
       return;
     }
     setSel([]);
-    toast(I18N.t("FG_CORE_EQ_DIS_OK", r.value != null ? r.value - fee : net), "good");
+    toast(I18N.t("FG_CORE_EQ_DIS_OK", fmt(r.value != null ? r.value - fee : net)), "good");
   }
   return /*#__PURE__*/React.createElement("div", {
     className: "panel oct",
@@ -2219,14 +2219,14 @@ function ForgeCoreEquipement({
       fontSize: 12,
       marginBottom: 8
     }
-  }, I18N.t("FG_EQ_DIS_BREAKDOWN", dis.value, dis.fee, dis.net)), (fuse.showInsufficient || dis.showInsufficient) && /*#__PURE__*/React.createElement("div", {
+  }, I18N.t("FG_EQ_DIS_BREAKDOWN", fmt(dis.value), fmt(dis.fee), fmt(dis.net))), (fuse.showInsufficient || dis.showInsufficient) && /*#__PURE__*/React.createElement("div", {
     className: "mono",
     style: {
       fontSize: 12,
       color: "var(--alert)",
       marginBottom: 8
     }
-  }, I18N.t("INSUFFICIENT", balance, fuse.showInsufficient ? fuse.cost : dis.fee)), /*#__PURE__*/React.createElement("div", {
+  }, I18N.t("INSUFFICIENT", fmt(balance), fmt(fuse.showInsufficient ? fuse.cost : dis.fee))), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "grid",
       gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)",
@@ -2238,13 +2238,13 @@ function ForgeCoreEquipement({
     disabled: fuse.disabled,
     onClick: doFuse
   }, busy ? "…" : /*#__PURE__*/React.createElement(FaText, {
-    text: I18N.t("FG_CORE_EQ_FUSE_BTN", fuse.cost || 0)
+    text: I18N.t("FG_CORE_EQ_FUSE_BTN", fmt(fuse.cost || 0))
   })), !confirmDis ? /*#__PURE__*/React.createElement("button", {
     className: "btn",
     disabled: dis.disabled,
     onClick: () => setConfirmDis(true)
   }, busy ? "…" : /*#__PURE__*/React.createElement(FaText, {
-    text: I18N.t("FG_CORE_EQ_DIS_BTN", dis.net || 0)
+    text: I18N.t("FG_CORE_EQ_DIS_BTN", fmt(dis.net || 0))
   })) :
   /*#__PURE__*/
   // Le désenchantement DÉTRUIT le core : confirmation obligatoire.
@@ -2280,7 +2280,7 @@ function ForgeCoreEquipement({
     },
     onClick: doDisenchant
   }, busy ? "…" : /*#__PURE__*/React.createElement(FaText, {
-    text: I18N.t("FG_CORE_EQ_DIS_BTN", dis.net || 0)
+    text: I18N.t("FG_CORE_EQ_DIS_BTN", fmt(dis.net || 0))
   }))))));
 }
 

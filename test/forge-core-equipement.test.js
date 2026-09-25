@@ -149,7 +149,12 @@ test("les frais de désenchantement sont AFFICHÉS (le joueur ne voyait que le n
   // valeur − frais = net doit être lisible AVANT de confirmer la destruction.
   assert.match(blocFn("ForgeEquipement"), /FG_EQ_DIS_BREAKDOWN/, "ventilation absente de la forge des reliques");
   assert.match(EQ, /FG_EQ_DIS_BREAKDOWN/, "ventilation absente de la forge des cores");
-  assert.match(EQ, /I18N\.t\("FG_EQ_DIS_BREAKDOWN", dis\.value, dis\.fee, dis\.net\)/, "ventilation incomplète (valeur, frais, net)");
+  assert.match(EQ, /I18N\.t\("FG_EQ_DIS_BREAKDOWN", fmt\(dis\.value\), fmt\(dis\.fee\), fmt\(dis\.net\)\)/, "ventilation incomplète (valeur, frais, net)");
+  // Meme formatage que la bourse ("1 000 FA") : sans fmt(), la ligne affichait "1600".
+  // Les deux familles ont chacune leur cle de bouton : on verifie la bonne dans le bon bloc.
+  assert.match(blocFn("ForgeEquipement"), /I18N\.t\("FG_EQ_DIS_BTN", fmt\(dis\.net \|\| 0\)\)/, "net non formate dans le bouton reliques");
+  assert.match(EQ, /I18N\.t\("FG_CORE_EQ_DIS_BTN", fmt\(dis\.net \|\| 0\)\)/, "net non formate dans le bouton cores");
+  assert.match(blocFn("ForgeEquipement"), /I18N\.t\("FG_EQ_FUSE_BTN", fmt\(fuse\.cost \|\| 0\)\)/, "cout de fusion non formate");
   assert.match(EQ, /!dis\.showInsufficient/, "la ventilation ne doit pas s'afficher quand le solde ne couvre pas les frais");
 });
 

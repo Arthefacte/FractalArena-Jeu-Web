@@ -887,7 +887,7 @@ function ForgeEquipement() {
     setConfirmDis(false);
     if (!r.ok) { toast(I18N.localizeServerError(r.reason), "bad"); return; }
     setSel([]);
-    toast(I18N.t("FG_EQ_DIS_OK", r.value != null ? r.value - fee : net), "good");
+    toast(I18N.t("FG_EQ_DIS_OK", fmt(r.value != null ? r.value - fee : net)), "good");
   }
 
   return (
@@ -922,18 +922,18 @@ function ForgeEquipement() {
       )}
       {/* Le joueur ne voyait que le net : ce qui part au buyback doit être lisible. */}
       {dis.value != null && !dis.showInsufficient && (
-        <div className="mono muted" style={{ fontSize: 12, marginBottom: 8 }}>{I18N.t("FG_EQ_DIS_BREAKDOWN", dis.value, dis.fee, dis.net)}</div>
+        <div className="mono muted" style={{ fontSize: 12, marginBottom: 8 }}>{I18N.t("FG_EQ_DIS_BREAKDOWN", fmt(dis.value), fmt(dis.fee), fmt(dis.net))}</div>
       )}
       {(fuse.showInsufficient || dis.showInsufficient) && (
-        <div className="mono" style={{ fontSize: 12, color: "var(--alert)", marginBottom: 8 }}>{I18N.t("INSUFFICIENT", balance, fuse.showInsufficient ? fuse.cost : dis.fee)}</div>
+        <div className="mono" style={{ fontSize: 12, color: "var(--alert)", marginBottom: 8 }}>{I18N.t("INSUFFICIENT", fmt(balance), fmt(fuse.showInsufficient ? fuse.cost : dis.fee))}</div>
       )}
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 10 }} className="summon-grid">
         <button className="btn btn-gold" disabled={fuse.disabled} onClick={doFuse}>
-          {busy ? "…" : <FaText text={I18N.t("FG_EQ_FUSE_BTN", fuse.cost || 0)} />}
+          {busy ? "…" : <FaText text={I18N.t("FG_EQ_FUSE_BTN", fmt(fuse.cost || 0))} />}
         </button>
         {!confirmDis ? (
           <button className="btn" disabled={dis.disabled} onClick={() => setConfirmDis(true)}>
-            {busy ? "…" : <FaText text={I18N.t("FG_EQ_DIS_BTN", dis.net || 0)} />}
+            {busy ? "…" : <FaText text={I18N.t("FG_EQ_DIS_BTN", fmt(dis.net || 0))} />}
           </button>
         ) : (
           // Le désenchantement DÉTRUIT la relique : confirmation obligatoire.
@@ -942,7 +942,7 @@ function ForgeEquipement() {
             <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 8 }}>
               <button className="btn" onClick={() => setConfirmDis(false)}>{I18N.t("CANCEL")}</button>
               <button className="btn" disabled={dis.disabled} style={{ background: "var(--alert)", borderColor: "#ff8ba4", color: "#14030a", fontWeight: 700 }} onClick={doDisenchant}>
-                {busy ? "…" : <FaText text={I18N.t("FG_EQ_DIS_BTN", dis.net || 0)} />}
+                {busy ? "…" : <FaText text={I18N.t("FG_EQ_DIS_BTN", fmt(dis.net || 0))} />}
               </button>
             </div>
           </div>
@@ -1091,7 +1091,7 @@ function ForgeCoreEquipement({ onForged }) {
     setConfirmDis(false);
     if (!r.ok) { toast(I18N.localizeServerError(r.reason), "bad"); return; }
     setSel([]);
-    toast(I18N.t("FG_CORE_EQ_DIS_OK", r.value != null ? r.value - fee : net), "good");
+    toast(I18N.t("FG_CORE_EQ_DIS_OK", fmt(r.value != null ? r.value - fee : net)), "good");
   }
 
   return (
@@ -1130,18 +1130,18 @@ function ForgeCoreEquipement({ onForged }) {
       )}
       {/* Le joueur ne voyait que le net : ce qui part au buyback doit être lisible. */}
       {dis.value != null && !dis.showInsufficient && (
-        <div className="mono muted" style={{ fontSize: 12, marginBottom: 8 }}>{I18N.t("FG_EQ_DIS_BREAKDOWN", dis.value, dis.fee, dis.net)}</div>
+        <div className="mono muted" style={{ fontSize: 12, marginBottom: 8 }}>{I18N.t("FG_EQ_DIS_BREAKDOWN", fmt(dis.value), fmt(dis.fee), fmt(dis.net))}</div>
       )}
       {(fuse.showInsufficient || dis.showInsufficient) && (
-        <div className="mono" style={{ fontSize: 12, color: "var(--alert)", marginBottom: 8 }}>{I18N.t("INSUFFICIENT", balance, fuse.showInsufficient ? fuse.cost : dis.fee)}</div>
+        <div className="mono" style={{ fontSize: 12, color: "var(--alert)", marginBottom: 8 }}>{I18N.t("INSUFFICIENT", fmt(balance), fmt(fuse.showInsufficient ? fuse.cost : dis.fee))}</div>
       )}
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 10 }} className="summon-grid">
         <button className="btn btn-gold" disabled={fuse.disabled} onClick={doFuse}>
-          {busy ? "…" : <FaText text={I18N.t("FG_CORE_EQ_FUSE_BTN", fuse.cost || 0)} />}
+          {busy ? "…" : <FaText text={I18N.t("FG_CORE_EQ_FUSE_BTN", fmt(fuse.cost || 0))} />}
         </button>
         {!confirmDis ? (
           <button className="btn" disabled={dis.disabled} onClick={() => setConfirmDis(true)}>
-            {busy ? "…" : <FaText text={I18N.t("FG_CORE_EQ_DIS_BTN", dis.net || 0)} />}
+            {busy ? "…" : <FaText text={I18N.t("FG_CORE_EQ_DIS_BTN", fmt(dis.net || 0))} />}
           </button>
         ) : (
           // Le désenchantement DÉTRUIT le core : confirmation obligatoire.
@@ -1150,7 +1150,7 @@ function ForgeCoreEquipement({ onForged }) {
             <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 8 }}>
               <button className="btn" onClick={() => setConfirmDis(false)}>{I18N.t("CANCEL")}</button>
               <button className="btn" disabled={dis.disabled} style={{ background: "var(--alert)", borderColor: "#ff8ba4", color: "#14030a", fontWeight: 700 }} onClick={doDisenchant}>
-                {busy ? "…" : <FaText text={I18N.t("FG_CORE_EQ_DIS_BTN", dis.net || 0)} />}
+                {busy ? "…" : <FaText text={I18N.t("FG_CORE_EQ_DIS_BTN", fmt(dis.net || 0))} />}
               </button>
             </div>
           </div>
