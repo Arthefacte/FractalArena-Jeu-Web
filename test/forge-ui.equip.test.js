@@ -74,12 +74,12 @@ test("relicFuseState : solde insuffisant bloque et se signale ; busy bloque", ()
   assert.strictEqual(F.relicFuseState({ sel, balance: 99999, busy: true }).disabled, true);
 });
 
-test("disenchantState : exactement 1 relique → valeur, frais 200, net", () => {
+test("disenchantState : exactement 1 relique → valeur, frais 600, net 1000", () => {
   const s = F.disenchantState({ sel: [relic("a", "Common")], balance: 1000, busy: false });
   assert.strictEqual(s.disabled, false);
   assert.strictEqual(s.value, 1600);
-  assert.strictEqual(s.fee, 200);
-  assert.strictEqual(s.net, 1400);
+  assert.strictEqual(s.fee, 600);
+  assert.strictEqual(s.net, 1000);
   const leg = F.disenchantState({ sel: [relic("a", "Legendary")], balance: 1000, busy: false });
   assert.strictEqual(leg.disabled, false, "une Legendary SE désenchante (mais ne fusionne pas)");
   assert.strictEqual(leg.value, 25000);
@@ -90,8 +90,8 @@ test("disenchantState : 0 ou 2+ sélections → désactivé", () => {
   assert.strictEqual(F.disenchantState({ sel: [relic("a", "Common"), relic("b", "Common")], balance: 9999, busy: false }).disabled, true);
 });
 
-test("disenchantState : les 200 de frais exigent le solde ; busy bloque", () => {
-  const ko = F.disenchantState({ sel: [relic("a", "Common")], balance: 199, busy: false });
+test("disenchantState : les 600 de frais exigent le solde ; busy bloque", () => {
+  const ko = F.disenchantState({ sel: [relic("a", "Common")], balance: 599, busy: false });
   assert.strictEqual(ko.disabled, true);
   assert.strictEqual(ko.showInsufficient, true);
   assert.strictEqual(F.disenchantState({ sel: [relic("a", "Common")], balance: 9999, busy: true }).disabled, true);
@@ -124,11 +124,11 @@ test("coreFuseState : mêmes barèmes que les reliques, famille séparée", () =
   assert.strictEqual(F.coreFuseState({ sel, balance: 1999, busy: false }).showInsufficient, true);
 });
 
-test("disenchantState : un core a SA table de valeur (net +1400 sur une Commune)", () => {
+test("disenchantState : un core a SA table de valeur (net +1000 sur une Commune)", () => {
   const s = F.disenchantState({ sel: [core("c1")], balance: 1000, busy: false });
   assert.strictEqual(s.value, 1600);
-  assert.strictEqual(s.fee, 200);
-  assert.strictEqual(s.net, 1400);
+  assert.strictEqual(s.fee, 600);
+  assert.strictEqual(s.net, 1000);
 });
 
 test("equipForgeErrText : codes serveur → clés FG_EQ_ERR_<code>, repli générique", () => {

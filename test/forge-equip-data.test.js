@@ -16,9 +16,9 @@ test("RELIC_BUYBACK : valeurs rendues (20 %) pour les 4 raretés", () => {
   assert.deepStrictEqual(D.RELIC_BUYBACK, { Common: 1600, Rare: 4000, Epic: 10000, Legendary: 25000 });
 });
 
-test("DISENCHANT_FEE : 200 FA fixes (baissé de 500 le 25/09), net Common +1400", () => {
-  assert.strictEqual(D.DISENCHANT_FEE, 200);
-  assert.strictEqual(D.RELIC_BUYBACK.Common - D.DISENCHANT_FEE, 1400);
+test("DISENCHANT_FEE : 600 FA fixes, net Commune +1000 (fondateur 25/09)", () => {
+  assert.strictEqual(D.DISENCHANT_FEE, 600);
+  assert.strictEqual(D.RELIC_BUYBACK.Common - D.DISENCHANT_FEE, 1000);
 });
 
 test("cores : mêmes barèmes que les reliques (CORE_FUSE_COSTS / CORE_BUYBACK)", () => {

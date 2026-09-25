@@ -6,7 +6,7 @@
 //   - 3 cores de même rareté → 1 core de la rareté supérieure (100 %), core aléatoire
 //   - barèmes IDENTIQUES aux reliques (fusion 2 000/5 000/15 000,
 //     désenchantement 1 600/4 000/10 000/25 000)
-//   - frais de désenchantement 500 → 200 FA pour les DEUX familles
+//   - frais de désenchantement 500 → 600 FA pour les DEUX familles (net Commune 1000)
 // Vérification au niveau SOURCE pour le JSX (non exécutable en node) et par
 // exécution pour les helpers purs de forge-ui.js.
 const test = require("node:test");
@@ -50,12 +50,12 @@ test("barèmes des cores : identiques aux reliques, Legendary non fusable", () =
   assert.ok(!Object.hasOwn(D.CORE_FUSE_COSTS, "Legendary"), "un core Legendary ne fusionne pas");
 });
 
-test("frais de désenchantement baissés à 200 FA (net Commune +1400, miroir web)", () => {
-  assert.strictEqual(D.DISENCHANT_FEE, 200);
+test("frais de désenchantement 600 FA (net Commune +1000, miroir web)", () => {
+  assert.strictEqual(D.DISENCHANT_FEE, 600);
 });
 
 testServeur("frais et barèmes alignés sur le serveur (source de vérité)", () => {
-  assert.match(SRV, /const DISENCHANT_COST = 200;/, "le serveur (source de vérité) doit être aligné");
+  assert.match(SRV, /const DISENCHANT_COST = 600;/, "le serveur (source de vérité) doit être aligné");
   assert.match(SRV, /const CORE_FUSE_COSTS = \{ Common: 2000, Rare: 5000, Epic: 15000 \};/);
   assert.match(SRV, /const CORE_BUYBACK = \{ Common: 1600, Rare: 4000, Epic: 10000, Legendary: 25000 \};/);
   assert.match(SRV, /même coût d'obtention|Mêmes barèmes que les reliques|mêmes barèmes que les reliques/i,
@@ -94,11 +94,11 @@ test("coreFuseState : prêt à 3 cores, coût par rareté, solde exigé, Legenda
   assert.strictEqual(max.cost, null);
 });
 
-test("disenchantState : un core se désenchante avec SA table et les frais de 200", () => {
+test("disenchantState : un core se désenchante avec SA table et les frais de 600", () => {
   const s = F.disenchantState({ sel: [core("c1")], balance: 1000, busy: false });
   assert.strictEqual(s.value, 1600);
-  assert.strictEqual(s.fee, 200);
-  assert.strictEqual(s.net, 1400, "net Common : +1400 (était +1100 avec les frais de 500)");
+  assert.strictEqual(s.fee, 600);
+  assert.strictEqual(s.net, 1000, "net Common : +1000 (1600 − 600)");
   assert.strictEqual(s.disabled, false);
   const pauvre = F.disenchantState({ sel: [core("c1")], balance: 100, busy: false });
   assert.strictEqual(pauvre.disabled, true, "le serveur débite les frais AVANT de créditer");

@@ -26,7 +26,7 @@ window.FA_API_URL = (typeof location !== "undefined" &&
 // l'installation alors que la prod servait le nouveau depuis une heure.
 // Ne sert plus que de REPLI : un asset absent du manifeste doit rester cache-busté
 // plutôt que servi indéfiniment par le CDN.
-window.FA_ASSET_V = "290";
+window.FA_ASSET_V = "291";
 
 // L'URL porte l'empreinte du CONTENU du fichier (asset-hashes.js, généré au build),
 // et non la version du jeu. Versionner par la version du jeu — ce que faisait la
@@ -92,8 +92,9 @@ window.FA_ASSET_URL = function (chemin) {
   // Désenchantement : détruit l'objet, crédite 20 % de sa valeur en FA liquid,
   // moins des frais fixes (→ buyback). Reliques ET cores (cores depuis le 25/09).
   const RELIC_BUYBACK = { Common: 1600, Rare: 4000, Epic: 10000, Legendary: 25000 };
-  // Frais : 500 → 200 (décision fondateur 25/09). Miroir serveur : DISENCHANT_COST.
-  const DISENCHANT_FEE = 200;
+  // Frais : 500 → 600 (fondateur 25/09 : « 1400 net de gain c'est trop, 1000 »).
+  // Commune 1600 − 600 = 1 000 nets. Miroir serveur : DISENCHANT_COST.
+  const DISENCHANT_FEE = 600;
   // Cores : mêmes barèmes que les reliques (miroir serveur CORE_FUSE_COSTS / CORE_BUYBACK).
   const CORE_FUSE_COSTS = { Common: 2000, Rare: 5000, Epic: 15000 };
   const CORE_BUYBACK = { Common: 1600, Rare: 4000, Epic: 10000, Legendary: 25000 };
