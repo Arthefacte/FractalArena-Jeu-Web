@@ -846,6 +846,10 @@ function Forge() {
     toast
   } = useFA();
   const [tab, setTab] = useState("fusion");
+  // Reliques (✦) et Cores (⬡) sont DEUX onglets : empilées dans le même, les deux
+  // forges de fragments (rangs C/B/A/S, coûts 100/250/600/1000, barres cyan, même
+  // bouton « Forger ») étaient indiscernables — un clic sur la mauvaise ligne
+  // forgeait un core au lieu d'une relique (vécu 20/09 puis 25/09).
   const tabs = [{
     k: "fusion",
     c: "var(--forge)"
@@ -858,6 +862,9 @@ function Forge() {
   }, {
     k: "reliques",
     c: "var(--gold)"
+  }, {
+    k: "cores",
+    c: "var(--elec)"
   }];
   return /*#__PURE__*/React.createElement("div", {
     className: "container"
@@ -873,7 +880,7 @@ function Forge() {
       "--c": t.c
     },
     onClick: () => setTab(t.k)
-  }, I18N.t("FG_" + t.k.toUpperCase())))), tab === "fusion" && /*#__PURE__*/React.createElement(ForgeFusion, null), tab === "reroll" && /*#__PURE__*/React.createElement(ForgeReroll, null), tab === "summon" && /*#__PURE__*/React.createElement(ForgeSummon, null), tab === "reliques" && /*#__PURE__*/React.createElement(ForgeReliques, null));
+  }, I18N.t("FG_" + t.k.toUpperCase())))), tab === "fusion" && /*#__PURE__*/React.createElement(ForgeFusion, null), tab === "reroll" && /*#__PURE__*/React.createElement(ForgeReroll, null), tab === "summon" && /*#__PURE__*/React.createElement(ForgeSummon, null), tab === "reliques" && /*#__PURE__*/React.createElement(ForgeReliques, null), tab === "cores" && /*#__PURE__*/React.createElement(ForgeCores, null));
 }
 function ForgeFusion() {
   const {
@@ -1427,7 +1434,7 @@ function ForgeFragments({
     style: {
       marginBottom: 4
     }
-  }, I18N.t("EXP_FORGE_TITLE")), /*#__PURE__*/React.createElement("div", {
+  }, "\u2726 ", I18N.t("EXP_FORGE_TITLE")), /*#__PURE__*/React.createElement("div", {
     className: "mono muted",
     style: {
       fontSize: 12,
@@ -1437,45 +1444,68 @@ function ForgeFragments({
     style: {
       display: "flex",
       flexDirection: "column",
-      gap: 10
+      gap: 12
     }
   }, ["C", "B", "A", "S"].map(rk => {
     const have = frags[rk] || 0;
     const need = XU.FRAGMENT_COSTS[rk];
     const col = D.RANK_COLORS[rk];
+    const ready = have >= need;
     return /*#__PURE__*/React.createElement("div", {
       key: rk,
       style: {
-        display: "grid",
-        gridTemplateColumns: "28px minmax(0,1fr) auto",
-        gap: 12,
-        alignItems: "center"
+        display: "flex",
+        flexDirection: "column",
+        gap: 6
       }
-    }, /*#__PURE__*/React.createElement("b", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 10
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "exq-hex",
+      style: {
+        width: 26,
+        height: 26,
+        fontSize: 13,
         color: col,
-        fontSize: 16,
-        textAlign: "center"
+        borderColor: col,
+        background: "rgba(255,255,255,.04)"
       }
-    }, rk), /*#__PURE__*/React.createElement("div", {
+    }, "\u2726"), /*#__PURE__*/React.createElement("b", {
       style: {
-        minWidth: 0
+        flex: 1,
+        minWidth: 0,
+        fontSize: 13
+      }
+    }, I18N.t("EXP_FRAG_LINE", rk, have)), /*#__PURE__*/React.createElement("b", {
+      className: "mono",
+      style: {
+        flex: "none",
+        color: ready ? col : "var(--text-dim)"
+      }
+    }, have, " / ", need)), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "grid",
+        gridTemplateColumns: "minmax(0,1fr) auto",
+        gap: 10,
+        alignItems: "center"
       }
     }, /*#__PURE__*/React.createElement(Bar, {
       frac: Math.min(1, have / need),
       kind: "xp"
-    })), /*#__PURE__*/React.createElement("button", {
+    }), /*#__PURE__*/React.createElement("button", {
       className: "btn sm",
-      disabled: have < need || crafting,
+      disabled: !ready || crafting,
       onClick: () => doCraft(rk),
-      style: have >= need ? {
+      style: ready ? {
         borderColor: col,
         color: col,
         fontWeight: 700
       } : {}
-    }, I18N.t("EXP_FORGE_BTN"), " ", /*#__PURE__*/React.createElement("span", {
-      className: "mono"
-    }, have, "/", need)));
+    }, I18N.t("FG_FRAG_BTN_RELIC"))));
   })));
 }
 
@@ -1527,7 +1557,7 @@ function ForgeCoreFragments() {
     style: {
       marginBottom: 4
     }
-  }, I18N.t("EXP_FORGE_CORE_TITLE")), /*#__PURE__*/React.createElement("div", {
+  }, "\u2B21 ", I18N.t("EXP_FORGE_CORE_TITLE")), /*#__PURE__*/React.createElement("div", {
     className: "mono muted",
     style: {
       fontSize: 12,
@@ -1537,45 +1567,68 @@ function ForgeCoreFragments() {
     style: {
       display: "flex",
       flexDirection: "column",
-      gap: 10
+      gap: 12
     }
   }, ["C", "B", "A", "S"].map(rk => {
     const have = frags[rk] || 0;
     const need = XU.CORE_FRAGMENT_COSTS[rk];
     const col = D.RANK_COLORS[rk];
+    const ready = have >= need;
     return /*#__PURE__*/React.createElement("div", {
       key: rk,
       style: {
-        display: "grid",
-        gridTemplateColumns: "28px minmax(0,1fr) auto",
-        gap: 12,
-        alignItems: "center"
+        display: "flex",
+        flexDirection: "column",
+        gap: 6
       }
-    }, /*#__PURE__*/React.createElement("b", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 10
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "exq-hex",
+      style: {
+        width: 26,
+        height: 26,
+        fontSize: 13,
         color: col,
-        fontSize: 16,
-        textAlign: "center"
+        borderColor: col,
+        background: "rgba(255,255,255,.04)"
       }
-    }, rk), /*#__PURE__*/React.createElement("div", {
+    }, "\u2B21"), /*#__PURE__*/React.createElement("b", {
       style: {
-        minWidth: 0
+        flex: 1,
+        minWidth: 0,
+        fontSize: 13
+      }
+    }, I18N.t("EXP_FRAG_CORE_LINE", rk, have)), /*#__PURE__*/React.createElement("b", {
+      className: "mono",
+      style: {
+        flex: "none",
+        color: ready ? col : "var(--text-dim)"
+      }
+    }, have, " / ", need)), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "grid",
+        gridTemplateColumns: "minmax(0,1fr) auto",
+        gap: 10,
+        alignItems: "center"
       }
     }, /*#__PURE__*/React.createElement(Bar, {
       frac: Math.min(1, have / need),
       kind: "xp"
-    })), /*#__PURE__*/React.createElement("button", {
+    }), /*#__PURE__*/React.createElement("button", {
       className: "btn sm",
-      disabled: have < need || crafting,
+      disabled: !ready || crafting,
       onClick: () => doCraft(rk),
-      style: have >= need ? {
+      style: ready ? {
         borderColor: col,
         color: col,
         fontWeight: 700
       } : {}
-    }, I18N.t("EXP_FORGE_BTN"), " ", /*#__PURE__*/React.createElement("span", {
-      className: "mono"
-    }, have, "/", need)));
+    }, I18N.t("FG_FRAG_BTN_CORE"))));
   })), coreLast && /*#__PURE__*/React.createElement(Modal, {
     onClose: () => setCoreLast(null),
     accent: D.RARITY_COLORS[coreLast.rarity]
@@ -1590,7 +1643,7 @@ function ForgeCoreFragments() {
       marginBottom: 10,
       color: D.RARITY_COLORS[coreLast.rarity] || "var(--text)"
     }
-  }, I18N.t("EXP_FORGE_CORE_TITLE")), CV ? /*#__PURE__*/React.createElement(CV, {
+  }, "\u2B21 ", I18N.t("FG_CORE_DONE")), CV ? /*#__PURE__*/React.createElement(CV, {
     type: coreLast.core_id,
     rarity: coreLast.rarity || "Common",
     size: 220
@@ -1633,14 +1686,10 @@ function ForgeEquipement() {
   const [sel, setSel] = useState([]);
   const [busy, setBusy] = useState(false);
   const [confirmDis, setConfirmDis] = useState(false);
-  const [coreBusy, setCoreBusy] = useState(false);
-  const [coreLast, setCoreLast] = useState(null);
-  const CV = window.CoreViewer;
   const balance = g.liquid + g.locked;
-  const coreCost = 8000; // CORE_SUMMON_COST serveur
-  const coreBalOk = balance >= coreCost;
-  const coreOdds = [["Common", 70], ["Rare", 20], ["Epic", 8], ["Legendary", 2]];
   // `equipment` mêle reliques et cores : la forge d'équipement ne montre QUE les reliques.
+  // L'invocation d'un core a migré dans l'onglet Forge → Cores (ForgeCoreSummon) :
+  // elle n'avait rien à faire au bas de la fusion de reliques.
   const relics = (g.equipment || []).filter(D.isRelicItem);
   const fuse = FUI.relicFuseState({
     sel,
@@ -1691,19 +1740,6 @@ function ForgeEquipement() {
     }
     setSel([]);
     toast(I18N.t("FG_EQ_DIS_OK", r.value != null ? r.value - fee : net), "good");
-  }
-  async function doCoreSummon() {
-    if (!coreBalOk || coreBusy) return;
-    setCoreBusy(true);
-    const r = await actions.coreSummon();
-    setCoreBusy(false);
-    if (!r.ok) {
-      toast(I18N.localizeServerError(r.reason), "bad");
-      return;
-    }
-    const name = r.core && r.core.core_id ? I18N.t("CORE_" + r.core.core_id.toUpperCase()) : I18N.t("CORE_SUMMON_TITLE");
-    toast(I18N.t("CORE_SUMMON_OK", name), "good");
-    if (r.core && r.core.core_id) setCoreLast(r.core); // modale résultat : viewer + rareté
   }
   return /*#__PURE__*/React.createElement("div", {
     className: "panel oct",
@@ -1848,18 +1884,61 @@ function ForgeEquipement() {
     onClick: doDisenchant
   }, busy ? "…" : /*#__PURE__*/React.createElement(FaText, {
     text: I18N.t("FG_EQ_DIS_BTN", dis.net || 0)
-  }))))), /*#__PURE__*/React.createElement("div", {
-    className: "divider"
-  }), /*#__PURE__*/React.createElement("div", {
+  }))))));
+}
+
+/* ---------------- ONGLET CORES ----------------
+   Les cores ont leur PROPRE onglet (invocation, forge par fragments ⬡, inventaire).
+   Avant, la forge de fragments de core était collée sous celle des reliques : mêmes
+   rangs C/B/A/S, mêmes coûts, mêmes barres, même bouton « Forger » — et le core
+   forgé n'apparaissait nulle part (l'inventaire sous la modale ne listait que les
+   reliques). Un clic sur la mauvaise ligne forgeait un core au lieu d'une relique
+   (vécu les 20/09 et 25/09). */
+
+// Invocation d'un core (8000 FA), extraite de la Forge d'équipement où elle était
+// enterrée sous la fusion de reliques. Miroir de CORE_SUMMON_ODDS côté serveur.
+function ForgeCoreSummon() {
+  const {
+    g,
+    actions,
+    toast
+  } = useFA();
+  const [coreBusy, setCoreBusy] = useState(false);
+  const [coreLast, setCoreLast] = useState(null);
+  const CV = window.CoreViewer;
+  const balance = g.liquid + g.locked;
+  const coreCost = 8000; // CORE_SUMMON_COST serveur
+  const coreBalOk = balance >= coreCost;
+  const coreOdds = [["Common", 70], ["Rare", 20], ["Epic", 8], ["Legendary", 2]];
+  async function doCoreSummon() {
+    if (!coreBalOk || coreBusy) return;
+    setCoreBusy(true);
+    const r = await actions.coreSummon();
+    setCoreBusy(false);
+    if (!r.ok) {
+      toast(I18N.localizeServerError(r.reason), "bad");
+      return;
+    }
+    const name = r.core && r.core.core_id ? I18N.t("CORE_" + r.core.core_id.toUpperCase()) : I18N.t("CORE_SUMMON_TITLE");
+    toast(I18N.t("CORE_SUMMON_OK", name), "good");
+    if (r.core && r.core.core_id) setCoreLast(r.core); // modale résultat : viewer + rareté
+  }
+  return /*#__PURE__*/React.createElement("div", {
+    className: "panel oct",
+    style: {
+      border: "1px solid var(--line)",
+      padding: 22
+    }
+  }, /*#__PURE__*/React.createElement("div", {
     className: "eyebrow",
     style: {
       marginBottom: 4
     }
-  }, I18N.t("CORE_SUMMON_TITLE")), /*#__PURE__*/React.createElement("div", {
+  }, "\u2B21 ", I18N.t("CORE_SUMMON_TITLE")), /*#__PURE__*/React.createElement("div", {
     className: "mono muted",
     style: {
       fontSize: 12,
-      marginBottom: 10
+      marginBottom: 14
     }
   }, I18N.t("CORE_SUMMON_HINT")), /*#__PURE__*/React.createElement("div", {
     className: "panel oct",
@@ -1926,7 +2005,7 @@ function ForgeEquipement() {
       marginBottom: 10,
       color: D.RARITY_COLORS[coreLast.rarity] || "var(--text)"
     }
-  }, I18N.t("CORE_SUMMON_TITLE")), CV ? /*#__PURE__*/React.createElement(CV, {
+  }, "\u2B21 ", I18N.t("CORE_SUMMON_TITLE")), CV ? /*#__PURE__*/React.createElement(CV, {
     type: coreLast.core_id,
     rarity: coreLast.rarity || "Common",
     size: 220
@@ -1953,6 +2032,124 @@ function ForgeEquipement() {
       marginTop: 8
     }
   }, I18N.t("CORE_" + coreLast.core_id.toUpperCase() + "_D")))));
+}
+
+// Inventaire des cores — `equipment` mêle reliques et cores : cette grille ne montre
+// que les ⬡, sinon le core qu'on vient de forger reste invisible (le joueur ne voit
+// l'objet que sur l'entité qui le porte). Miroir de l'inventaire de reliques.
+function CoreInventory() {
+  const {
+    g
+  } = useFA();
+  const [detail, setDetail] = useState(null);
+  const CV = window.CoreViewer;
+  const cores = (g.equipment || []).filter(D.isCoreItem);
+  const coreName = c => I18N.t("CORE_" + String(c.core_id || "").toUpperCase());
+  const coreDesc = c => I18N.t("CORE_" + String(c.core_id || "").toUpperCase() + "_D");
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 26
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "eyebrow",
+    style: {
+      marginBottom: 10
+    }
+  }, "\u2B21 ", I18N.t("FG_CORE_INVENTORY")), cores.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    className: "mono muted",
+    style: {
+      fontSize: 13
+    }
+  }, I18N.t("FG_CORE_NONE")) : /*#__PURE__*/React.createElement("div", {
+    className: "grid-cards"
+  }, cores.map(inst => {
+    const holder = g.roster.find(b => b.core_id === inst.id);
+    return /*#__PURE__*/React.createElement("div", {
+      key: inst.id,
+      className: "panel oct",
+      onClick: () => setDetail(inst),
+      style: {
+        border: `1px solid ${D.RARITY_COLORS[inst.rarity]}`,
+        padding: 16,
+        display: "flex",
+        flexDirection: "column",
+        gap: 8,
+        cursor: "pointer"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex center gap8"
+    }, /*#__PURE__*/React.createElement(CoreIcon, {
+      type: inst.core_id,
+      rarity: inst.rarity,
+      size: 28
+    }), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontWeight: 700
+      }
+    }, coreName(inst))), /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: D.RARITY_COLORS[inst.rarity],
+        fontWeight: 600,
+        fontSize: 12
+      }
+    }, rarityLabel(inst.rarity)), /*#__PURE__*/React.createElement("span", {
+      className: "mono muted",
+      style: {
+        fontSize: 12
+      }
+    }, coreDesc(inst)), holder && /*#__PURE__*/React.createElement("span", {
+      className: "pill",
+      style: {
+        color: "var(--gold)",
+        fontSize: 11
+      }
+    }, "\u2694 ", D.displayName(holder)));
+  })), detail && /*#__PURE__*/React.createElement(Modal, {
+    onClose: () => setDetail(null),
+    accent: D.RARITY_COLORS[detail.rarity]
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "center",
+      padding: 8
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "eyebrow",
+    style: {
+      marginBottom: 10,
+      color: D.RARITY_COLORS[detail.rarity] || "var(--text)"
+    }
+  }, "\u2B21 ", I18N.t("FG_CORE_DONE")), CV ? /*#__PURE__*/React.createElement(CV, {
+    type: detail.core_id,
+    rarity: detail.rarity || "Common",
+    size: 240
+  }) : /*#__PURE__*/React.createElement(CoreIcon, {
+    type: detail.core_id,
+    rarity: detail.rarity || "Common",
+    size: 48
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontWeight: 700,
+      fontSize: 16,
+      marginTop: 10
+    }
+  }, coreName(detail)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: D.RARITY_COLORS[detail.rarity] || "var(--text)",
+      fontWeight: 600,
+      marginTop: 4
+    }
+  }, rarityLabel(detail.rarity)), /*#__PURE__*/React.createElement("div", {
+    className: "mono muted",
+    style: {
+      fontSize: 13,
+      marginTop: 8
+    }
+  }, coreDesc(detail)))));
+}
+
+// Écran de l'onglet Cores : invocation, forge par fragments (⬡), inventaire.
+function ForgeCores() {
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(ForgeCoreSummon, null), /*#__PURE__*/React.createElement(ForgeCoreFragments, null), /*#__PURE__*/React.createElement(CoreInventory, null));
 }
 function ForgeReliques() {
   const {
@@ -2125,7 +2322,7 @@ function ForgeReliques() {
         });
       } else reveal();
     }
-  }), /*#__PURE__*/React.createElement(ForgeCoreFragments, null), /*#__PURE__*/React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 26
     }
@@ -2134,7 +2331,7 @@ function ForgeReliques() {
     style: {
       marginBottom: 10
     }
-  }, I18N.t("RELIC_INVENTORY")), (g.equipment || []).filter(D.isRelicItem).length === 0 ? /*#__PURE__*/React.createElement("div", {
+  }, "\u2726 ", I18N.t("RELIC_INVENTORY")), (g.equipment || []).filter(D.isRelicItem).length === 0 ? /*#__PURE__*/React.createElement("div", {
     className: "mono muted",
     style: {
       fontSize: 13

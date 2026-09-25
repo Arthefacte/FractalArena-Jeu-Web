@@ -806,6 +806,16 @@
     CORE_SUMMON_HINT: { FR: "Effet déclenché en combat — 1 slot par entité", EN: "Combat-triggered effect — 1 slot per creature", ZH: "战斗触发效果 — 每个生物 1 个槽位" },
     CORE_SUMMON_BTN: { FR: "Invoquer un core −%d FA", EN: "Summon a Core −%d FA", ZH: "召唤核心 −%d FA" },
     CORE_SUMMON_OK: { FR: "Core forgé : %s", EN: "Core forged: %s", ZH: "核心锻造完成：%s" },
+    // Onglet Cores de la Forge (séparé de Reliques) : reliques = ✦, cores = ⬡.
+    // Sans cette séparation, les deux forges de fragments (mêmes rangs C/B/A/S,
+    // mêmes coûts, mêmes barres) étaient indiscernables — un clic sur la mauvaise
+    // ligne forgeait un core au lieu d'une relique (vécu 20/09 et 25/09).
+    FG_CORES: { FR: "Cores", EN: "Cores", ZH: "核心" },
+    FG_FRAG_BTN_RELIC: { FR: "Forger une relique", EN: "Forge a relic", ZH: "锻造圣物" },
+    FG_FRAG_BTN_CORE: { FR: "Forger un core", EN: "Forge a core", ZH: "锻造核心" },
+    FG_CORE_DONE: { FR: "Core forgé", EN: "Core forged", ZH: "核心锻造完成" },
+    FG_CORE_INVENTORY: { FR: "Inventaire des cores", EN: "Core inventory", ZH: "核心库存" },
+    FG_CORE_NONE: { FR: "Aucun core", EN: "No core", ZH: "无核心" },
     // Forge d'équipement : fusion 3 reliques → rareté supérieure, désenchantement
     FG_EQ_TITLE: { FR: "Forge d'équipement", EN: "Equipment forge", ZH: "装备熔炉" },
     FG_EQ_SUB: {
@@ -1085,14 +1095,13 @@
       EN: "Log in to send your entities on expeditions.",
       ZH: "登录后即可派遣实体远征。",
     },
-    EXP_FORGE_TITLE: { FR: "Forger avec des fragments", EN: "Forge with fragments", ZH: "用碎片锻造" },
+    EXP_FORGE_TITLE: { FR: "Fragments de relique", EN: "Relic fragments", ZH: "圣物碎片" },
     EXP_FORGE_SUB: {
       FR: "Les fragments rapportés d'expédition se forgent en relique — le rang du fragment fait la rareté.",
       EN: "Fragments brought back from expeditions forge into a relic — fragment rank sets the rarity.",
       ZH: "远征带回的碎片可锻造成圣物——碎片等级决定稀有度。",
     },
-    EXP_FORGE_BTN: { FR: "Forger", EN: "Forge", ZH: "锻造" },
-    EXP_FORGE_CORE_TITLE: { FR: "Forger un core avec des fragments", EN: "Forge a core with fragments", ZH: "用碎片锻造核心" },
+    EXP_FORGE_CORE_TITLE: { FR: "Fragments de core", EN: "Core fragments", ZH: "核心碎片" },
     EXP_FORGE_CORE_SUB: {
       FR: "Les fragments de core rapportés d'expédition se forgent en core — le rang du fragment fait la rareté.",
       EN: "Core fragments brought back from expeditions forge into a core — fragment rank sets the rarity.",

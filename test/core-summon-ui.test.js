@@ -1,7 +1,9 @@
-// Câblage UI de l'invocation des cores : ForgeEquipement (screens.jsx) doit
-// offrir un bouton « Invoquer un core » branché sur actions.coreSummon
-// (app.jsx), avec coût 8000 et garde de solde. Vérification au niveau SOURCE
-// (pattern forge-equip-wiring) : le JSX n'est pas exécutable en node.
+// Câblage UI de l'invocation des cores : ForgeCoreSummon (screens.jsx, onglet
+// Forge → Cores) doit offrir un bouton « Invoquer un core » branché sur
+// actions.coreSummon (app.jsx), avec coût 8000 et garde de solde. Le bloc vivait
+// avant au bas de ForgeEquipement, où il était noyé sous la fusion de reliques.
+// Vérification au niveau SOURCE (pattern forge-equip-wiring) : le JSX n'est pas
+// exécutable en node.
 "use strict";
 const test = require("node:test");
 const assert = require("node:assert");
@@ -18,14 +20,20 @@ function bloc(src, marker, len) {
   return src.slice(i, i + (len || 1600));
 }
 
-test("ForgeEquipement : un bouton Invoquer un core branché sur actions.coreSummon", () => {
-  const b = bloc(SCREENS, "function ForgeEquipement", 9000);
+test("ForgeCoreSummon : un bouton Invoquer un core branché sur actions.coreSummon", () => {
+  const b = bloc(SCREENS, "function ForgeCoreSummon", 4000);
   assert.match(b, /doCoreSummon/, "handler doCoreSummon manquant");
   assert.match(b, /actions\.coreSummon\(\)/, "actions.coreSummon non appelée");
   assert.match(b, /CORE_SUMMON_BTN/, "bouton CORE_SUMMON_BTN manquant");
   assert.match(b, /coreCost/, "coût de summon absent");
   assert.match(b, /coreBalOk/, "garde de solde absente");
   assert.match(b, /INSUFFICIENT/, "message solde insuffisant absent");
+});
+
+test("ForgeEquipement ne porte plus l'invocation d'un core (elle a son onglet)", () => {
+  const b = bloc(SCREENS, "function ForgeEquipement", 6000);
+  assert.ok(!/CORE_SUMMON_BTN/.test(b), "l'invocation de core doit vivre dans ForgeCoreSummon");
+  assert.ok(!/coreSummon/.test(b), "ForgeEquipement ne doit plus appeler coreSummon");
 });
 
 test("coreSummon (app.jsx) : route, Bearer, coût 8000, resync /save", () => {

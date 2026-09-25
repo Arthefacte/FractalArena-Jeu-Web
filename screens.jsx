@@ -457,7 +457,11 @@ function TalentSlot({ beast }) {
 function Forge() {
   const { g, actions, toast } = useFA();
   const [tab, setTab] = useState("fusion");
-  const tabs = [{ k: "fusion", c: "var(--forge)" }, { k: "reroll", c: "var(--elec)" }, { k: "summon", c: "var(--fire)" }, { k: "reliques", c: "var(--gold)" }];
+  // Reliques (✦) et Cores (⬡) sont DEUX onglets : empilées dans le même, les deux
+  // forges de fragments (rangs C/B/A/S, coûts 100/250/600/1000, barres cyan, même
+  // bouton « Forger ») étaient indiscernables — un clic sur la mauvaise ligne
+  // forgeait un core au lieu d'une relique (vécu 20/09 puis 25/09).
+  const tabs = [{ k: "fusion", c: "var(--forge)" }, { k: "reroll", c: "var(--elec)" }, { k: "summon", c: "var(--fire)" }, { k: "reliques", c: "var(--gold)" }, { k: "cores", c: "var(--elec)" }];
   return (
     <div className="container">
       <SectionHead eyebrow={I18N.t("FG_SUB")} title={I18N.t("FG_TITLE")} />
@@ -472,6 +476,7 @@ function Forge() {
       {tab === "reroll" && <ForgeReroll />}
       {tab === "summon" && <ForgeSummon />}
       {tab === "reliques" && <ForgeReliques />}
+      {tab === "cores" && <ForgeCores />}
     </div>
   );
 }
@@ -749,23 +754,29 @@ function ForgeFragments({ onForged }) {
   }
   return (
     <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 22, marginTop: 26 }}>
-      <div className="eyebrow" style={{ marginBottom: 4 }}>{I18N.t("EXP_FORGE_TITLE")}</div>
+      <div className="eyebrow" style={{ marginBottom: 4 }}>✦ {I18N.t("EXP_FORGE_TITLE")}</div>
       <div className="mono muted" style={{ fontSize: 12, marginBottom: 14 }}>{I18N.t("EXP_FORGE_SUB")}</div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         {["C", "B", "A", "S"].map((rk) => {
           const have = frags[rk] || 0;
           const need = XU.FRAGMENT_COSTS[rk];
           const col = D.RANK_COLORS[rk];
+          const ready = have >= need;
           return (
-            <div key={rk} style={{ display: "grid", gridTemplateColumns: "28px minmax(0,1fr) auto", gap: 12, alignItems: "center" }}>
-              <b style={{ color: col, fontSize: 16, textAlign: "center" }}>{rk}</b>
-              <div style={{ minWidth: 0 }}>
-                <Bar frac={Math.min(1, have / need)} kind="xp" />
+            <div key={rk} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                {/* ✦ = relique : le core a son propre onglet (Forge → Cores). Même marqueur qu'au claim d'expédition. */}
+                <span className="exq-hex" style={{ width: 26, height: 26, fontSize: 13, color: col, borderColor: col, background: "rgba(255,255,255,.04)" }}>✦</span>
+                <b style={{ flex: 1, minWidth: 0, fontSize: 13 }}>{I18N.t("EXP_FRAG_LINE", rk, have)}</b>
+                <b className="mono" style={{ flex: "none", color: ready ? col : "var(--text-dim)" }}>{have} / {need}</b>
               </div>
-              <button className="btn sm" disabled={have < need || crafting} onClick={() => doCraft(rk)}
-                style={have >= need ? { borderColor: col, color: col, fontWeight: 700 } : {}}>
-                {I18N.t("EXP_FORGE_BTN")} <span className="mono">{have}/{need}</span>
-              </button>
+              <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) auto", gap: 10, alignItems: "center" }}>
+                <Bar frac={Math.min(1, have / need)} kind="xp" />
+                <button className="btn sm" disabled={!ready || crafting} onClick={() => doCraft(rk)}
+                  style={ready ? { borderColor: col, color: col, fontWeight: 700 } : {}}>
+                  {I18N.t("FG_FRAG_BTN_RELIC")}
+                </button>
+              </div>
             </div>
           );
         })}
@@ -800,23 +811,29 @@ function ForgeCoreFragments() {
   }
   return (
     <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 22, marginTop: 26 }}>
-      <div className="eyebrow" style={{ marginBottom: 4 }}>{I18N.t("EXP_FORGE_CORE_TITLE")}</div>
+      <div className="eyebrow" style={{ marginBottom: 4 }}>⬡ {I18N.t("EXP_FORGE_CORE_TITLE")}</div>
       <div className="mono muted" style={{ fontSize: 12, marginBottom: 14 }}>{I18N.t("EXP_FORGE_CORE_SUB")}</div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         {["C", "B", "A", "S"].map((rk) => {
           const have = frags[rk] || 0;
           const need = XU.CORE_FRAGMENT_COSTS[rk];
           const col = D.RANK_COLORS[rk];
+          const ready = have >= need;
           return (
-            <div key={rk} style={{ display: "grid", gridTemplateColumns: "28px minmax(0,1fr) auto", gap: 12, alignItems: "center" }}>
-              <b style={{ color: col, fontSize: 16, textAlign: "center" }}>{rk}</b>
-              <div style={{ minWidth: 0 }}>
-                <Bar frac={Math.min(1, have / need)} kind="xp" />
+            <div key={rk} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                {/* ⬡ = core : la relique a son propre onglet (Forge → Reliques). Même marqueur qu'au claim d'expédition. */}
+                <span className="exq-hex" style={{ width: 26, height: 26, fontSize: 13, color: col, borderColor: col, background: "rgba(255,255,255,.04)" }}>⬡</span>
+                <b style={{ flex: 1, minWidth: 0, fontSize: 13 }}>{I18N.t("EXP_FRAG_CORE_LINE", rk, have)}</b>
+                <b className="mono" style={{ flex: "none", color: ready ? col : "var(--text-dim)" }}>{have} / {need}</b>
               </div>
-              <button className="btn sm" disabled={have < need || crafting} onClick={() => doCraft(rk)}
-                style={have >= need ? { borderColor: col, color: col, fontWeight: 700 } : {}}>
-                {I18N.t("EXP_FORGE_BTN")} <span className="mono">{have}/{need}</span>
-              </button>
+              <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) auto", gap: 10, alignItems: "center" }}>
+                <Bar frac={Math.min(1, have / need)} kind="xp" />
+                <button className="btn sm" disabled={!ready || crafting} onClick={() => doCraft(rk)}
+                  style={ready ? { borderColor: col, color: col, fontWeight: 700 } : {}}>
+                  {I18N.t("FG_FRAG_BTN_CORE")}
+                </button>
+              </div>
             </div>
           );
         })}
@@ -824,7 +841,9 @@ function ForgeCoreFragments() {
       {coreLast && (
         <Modal onClose={() => setCoreLast(null)} accent={D.RARITY_COLORS[coreLast.rarity]}>
           <div style={{ textAlign: "center", padding: 8 }}>
-            <div className="eyebrow" style={{ marginBottom: 10, color: D.RARITY_COLORS[coreLast.rarity] || "var(--text)" }}>{I18N.t("EXP_FORGE_CORE_TITLE")}</div>
+            {/* Titre de RÉSULTAT : le titre de l'action (« Fragments de core ») était
+                repris ici et passait pour une consigne (« forge encore »). */}
+            <div className="eyebrow" style={{ marginBottom: 10, color: D.RARITY_COLORS[coreLast.rarity] || "var(--text)" }}>⬡ {I18N.t("FG_CORE_DONE")}</div>
             {CV ? <CV type={coreLast.core_id} rarity={coreLast.rarity || "Common"} size={220} />
                 : <CoreIcon type={coreLast.core_id} rarity={coreLast.rarity || "Common"} size={48} />}
             <div style={{ fontWeight: 700, fontSize: 16, marginTop: 10 }}>{I18N.t("CORE_" + coreLast.core_id.toUpperCase())}</div>
@@ -847,14 +866,10 @@ function ForgeEquipement() {
   const [sel, setSel] = useState([]);
   const [busy, setBusy] = useState(false);
   const [confirmDis, setConfirmDis] = useState(false);
-  const [coreBusy, setCoreBusy] = useState(false);
-  const [coreLast, setCoreLast] = useState(null);
-  const CV = window.CoreViewer;
   const balance = g.liquid + g.locked;
-  const coreCost = 8000; // CORE_SUMMON_COST serveur
-  const coreBalOk = balance >= coreCost;
-  const coreOdds = [["Common", 70], ["Rare", 20], ["Epic", 8], ["Legendary", 2]];
   // `equipment` mêle reliques et cores : la forge d'équipement ne montre QUE les reliques.
+  // L'invocation d'un core a migré dans l'onglet Forge → Cores (ForgeCoreSummon) :
+  // elle n'avait rien à faire au bas de la fusion de reliques.
   const relics = (g.equipment || []).filter(D.isRelicItem);
   const fuse = FUI.relicFuseState({ sel, balance, busy });
   const dis = FUI.disenchantState({ sel, balance, busy });
@@ -889,17 +904,6 @@ function ForgeEquipement() {
     if (!r.ok) { toast(I18N.localizeServerError(r.reason), "bad"); return; }
     setSel([]);
     toast(I18N.t("FG_EQ_DIS_OK", r.value != null ? r.value - fee : net), "good");
-  }
-
-  async function doCoreSummon() {
-    if (!coreBalOk || coreBusy) return;
-    setCoreBusy(true);
-    const r = await actions.coreSummon();
-    setCoreBusy(false);
-    if (!r.ok) { toast(I18N.localizeServerError(r.reason), "bad"); return; }
-    const name = r.core && r.core.core_id ? I18N.t("CORE_" + r.core.core_id.toUpperCase()) : I18N.t("CORE_SUMMON_TITLE");
-    toast(I18N.t("CORE_SUMMON_OK", name), "good");
-    if (r.core && r.core.core_id) setCoreLast(r.core); // modale résultat : viewer + rareté
   }
 
   return (
@@ -956,10 +960,45 @@ function ForgeEquipement() {
           </div>
         )}
       </div>
-      <div className="divider" />
-      <div className="eyebrow" style={{ marginBottom: 4 }}>{I18N.t("CORE_SUMMON_TITLE")}</div>
-      <div className="mono muted" style={{ fontSize: 12, marginBottom: 10 }}>{I18N.t("CORE_SUMMON_HINT")}</div>
-      {/* Panneau d'odds identique à la Forge de reliques (miroir de CORE_SUMMON_ODDS serveur). */}
+    </div>
+  );
+}
+
+/* ---------------- ONGLET CORES ----------------
+   Les cores ont leur PROPRE onglet (invocation, forge par fragments ⬡, inventaire).
+   Avant, la forge de fragments de core était collée sous celle des reliques : mêmes
+   rangs C/B/A/S, mêmes coûts, mêmes barres, même bouton « Forger » — et le core
+   forgé n'apparaissait nulle part (l'inventaire sous la modale ne listait que les
+   reliques). Un clic sur la mauvaise ligne forgeait un core au lieu d'une relique
+   (vécu les 20/09 et 25/09). */
+
+// Invocation d'un core (8000 FA), extraite de la Forge d'équipement où elle était
+// enterrée sous la fusion de reliques. Miroir de CORE_SUMMON_ODDS côté serveur.
+function ForgeCoreSummon() {
+  const { g, actions, toast } = useFA();
+  const [coreBusy, setCoreBusy] = useState(false);
+  const [coreLast, setCoreLast] = useState(null);
+  const CV = window.CoreViewer;
+  const balance = g.liquid + g.locked;
+  const coreCost = 8000; // CORE_SUMMON_COST serveur
+  const coreBalOk = balance >= coreCost;
+  const coreOdds = [["Common", 70], ["Rare", 20], ["Epic", 8], ["Legendary", 2]];
+
+  async function doCoreSummon() {
+    if (!coreBalOk || coreBusy) return;
+    setCoreBusy(true);
+    const r = await actions.coreSummon();
+    setCoreBusy(false);
+    if (!r.ok) { toast(I18N.localizeServerError(r.reason), "bad"); return; }
+    const name = r.core && r.core.core_id ? I18N.t("CORE_" + r.core.core_id.toUpperCase()) : I18N.t("CORE_SUMMON_TITLE");
+    toast(I18N.t("CORE_SUMMON_OK", name), "good");
+    if (r.core && r.core.core_id) setCoreLast(r.core); // modale résultat : viewer + rareté
+  }
+
+  return (
+    <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 22 }}>
+      <div className="eyebrow" style={{ marginBottom: 4 }}>⬡ {I18N.t("CORE_SUMMON_TITLE")}</div>
+      <div className="mono muted" style={{ fontSize: 12, marginBottom: 14 }}>{I18N.t("CORE_SUMMON_HINT")}</div>
       <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 18, maxWidth: 420 }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {coreOdds.map(([r, p]) => (
@@ -978,7 +1017,7 @@ function ForgeEquipement() {
       {coreLast && (
         <Modal onClose={() => setCoreLast(null)} accent={D.RARITY_COLORS[coreLast.rarity]}>
           <div style={{ textAlign: "center", padding: 8 }}>
-            <div className="eyebrow" style={{ marginBottom: 10, color: D.RARITY_COLORS[coreLast.rarity] || "var(--text)" }}>{I18N.t("CORE_SUMMON_TITLE")}</div>
+            <div className="eyebrow" style={{ marginBottom: 10, color: D.RARITY_COLORS[coreLast.rarity] || "var(--text)" }}>⬡ {I18N.t("CORE_SUMMON_TITLE")}</div>
             {CV ? <CV type={coreLast.core_id} rarity={coreLast.rarity || "Common"} size={220} />
                 : <CoreIcon type={coreLast.core_id} rarity={coreLast.rarity || "Common"} size={48} />}
             <div style={{ fontWeight: 700, fontSize: 16, marginTop: 10 }}>{I18N.t("CORE_" + coreLast.core_id.toUpperCase())}</div>
@@ -987,6 +1026,66 @@ function ForgeEquipement() {
           </div>
         </Modal>
       )}
+    </div>
+  );
+}
+
+// Inventaire des cores — `equipment` mêle reliques et cores : cette grille ne montre
+// que les ⬡, sinon le core qu'on vient de forger reste invisible (le joueur ne voit
+// l'objet que sur l'entité qui le porte). Miroir de l'inventaire de reliques.
+function CoreInventory() {
+  const { g } = useFA();
+  const [detail, setDetail] = useState(null);
+  const CV = window.CoreViewer;
+  const cores = (g.equipment || []).filter(D.isCoreItem);
+  const coreName = (c) => I18N.t("CORE_" + String(c.core_id || "").toUpperCase());
+  const coreDesc = (c) => I18N.t("CORE_" + String(c.core_id || "").toUpperCase() + "_D");
+  return (
+    <div style={{ marginTop: 26 }}>
+      <div className="eyebrow" style={{ marginBottom: 10 }}>⬡ {I18N.t("FG_CORE_INVENTORY")}</div>
+      {cores.length === 0 ? (
+        <div className="mono muted" style={{ fontSize: 13 }}>{I18N.t("FG_CORE_NONE")}</div>
+      ) : (
+        <div className="grid-cards">
+          {cores.map((inst) => {
+            const holder = g.roster.find((b) => b.core_id === inst.id);
+            return (
+              <div key={inst.id} className="panel oct" onClick={() => setDetail(inst)} style={{ border: `1px solid ${D.RARITY_COLORS[inst.rarity]}`, padding: 16, display: "flex", flexDirection: "column", gap: 8, cursor: "pointer" }}>
+                <div className="flex center gap8">
+                  <CoreIcon type={inst.core_id} rarity={inst.rarity} size={28} />
+                  <span style={{ fontWeight: 700 }}>{coreName(inst)}</span>
+                </div>
+                <span style={{ color: D.RARITY_COLORS[inst.rarity], fontWeight: 600, fontSize: 12 }}>{rarityLabel(inst.rarity)}</span>
+                <span className="mono muted" style={{ fontSize: 12 }}>{coreDesc(inst)}</span>
+                {holder && <span className="pill" style={{ color: "var(--gold)", fontSize: 11 }}>⚔ {D.displayName(holder)}</span>}
+              </div>
+            );
+          })}
+        </div>
+      )}
+      {detail && (
+        <Modal onClose={() => setDetail(null)} accent={D.RARITY_COLORS[detail.rarity]}>
+          <div style={{ textAlign: "center", padding: 8 }}>
+            <div className="eyebrow" style={{ marginBottom: 10, color: D.RARITY_COLORS[detail.rarity] || "var(--text)" }}>⬡ {I18N.t("FG_CORE_DONE")}</div>
+            {CV ? <CV type={detail.core_id} rarity={detail.rarity || "Common"} size={240} />
+                : <CoreIcon type={detail.core_id} rarity={detail.rarity || "Common"} size={48} />}
+            <div style={{ fontWeight: 700, fontSize: 16, marginTop: 10 }}>{coreName(detail)}</div>
+            <div style={{ color: D.RARITY_COLORS[detail.rarity] || "var(--text)", fontWeight: 600, marginTop: 4 }}>{rarityLabel(detail.rarity)}</div>
+            <div className="mono muted" style={{ fontSize: 13, marginTop: 8 }}>{coreDesc(detail)}</div>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+// Écran de l'onglet Cores : invocation, forge par fragments (⬡), inventaire.
+function ForgeCores() {
+  return (
+    <div>
+      <ForgeCoreSummon />
+      <ForgeCoreFragments />
+      <CoreInventory />
     </div>
   );
 }
@@ -1068,9 +1167,8 @@ function ForgeReliques() {
           });
         } else reveal();
       }} />
-      <ForgeCoreFragments />
       <div style={{ marginTop: 26 }}>
-        <div className="eyebrow" style={{ marginBottom: 10 }}>{I18N.t("RELIC_INVENTORY")}</div>
+        <div className="eyebrow" style={{ marginBottom: 10 }}>✦ {I18N.t("RELIC_INVENTORY")}</div>
         {/* `equipment` mêle reliques et cores : cette grille ne montre que les reliques. */}
         {(g.equipment || []).filter(D.isRelicItem).length === 0 ? (
           <div className="mono muted" style={{ fontSize: 13 }}>{I18N.t("RELIC_NONE")}</div>
