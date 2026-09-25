@@ -920,6 +920,10 @@ function ForgeEquipement() {
       {fuse.cost != null && !fuse.maxRarity && (
         <div className="mono muted" style={{ fontSize: 12, marginBottom: 8 }}>{I18N.t("FG_EQ_FUSE_HINT", rarityLabel(selRarity), rarityLabel(fuse.nextRarity))}</div>
       )}
+      {/* Le joueur ne voyait que le net : ce qui part au buyback doit être lisible. */}
+      {dis.value != null && !dis.showInsufficient && (
+        <div className="mono muted" style={{ fontSize: 12, marginBottom: 8 }}>{I18N.t("FG_EQ_DIS_BREAKDOWN", dis.value, dis.fee, dis.net)}</div>
+      )}
       {(fuse.showInsufficient || dis.showInsufficient) && (
         <div className="mono" style={{ fontSize: 12, color: "var(--alert)", marginBottom: 8 }}>{I18N.t("INSUFFICIENT", balance, fuse.showInsufficient ? fuse.cost : dis.fee)}</div>
       )}
@@ -1123,6 +1127,10 @@ function ForgeCoreEquipement({ onForged }) {
       {fuse.maxRarity && <div className="mono" style={{ fontSize: 12, color: "var(--alert)", marginBottom: 8 }}>{I18N.t("FG_CORE_EQ_MAX_RARITY")}</div>}
       {fuse.cost != null && !fuse.maxRarity && (
         <div className="mono muted" style={{ fontSize: 12, marginBottom: 8 }}>{I18N.t("FG_CORE_EQ_FUSE_HINT", rarityLabel(selRarity), rarityLabel(fuse.nextRarity))}</div>
+      )}
+      {/* Le joueur ne voyait que le net : ce qui part au buyback doit être lisible. */}
+      {dis.value != null && !dis.showInsufficient && (
+        <div className="mono muted" style={{ fontSize: 12, marginBottom: 8 }}>{I18N.t("FG_EQ_DIS_BREAKDOWN", dis.value, dis.fee, dis.net)}</div>
       )}
       {(fuse.showInsufficient || dis.showInsufficient) && (
         <div className="mono" style={{ fontSize: 12, color: "var(--alert)", marginBottom: 8 }}>{I18N.t("INSUFFICIENT", balance, fuse.showInsufficient ? fuse.cost : dis.fee)}</div>

@@ -829,6 +829,9 @@
     FG_EQ_SEL_MAX: { FR: "3 reliques maximum", EN: "3 relics max", ZH: "最多选择 3 件圣物" },
     FG_EQ_DIS_BTN: { FR: "Désenchanter  +%d FA net", EN: "Disenchant  +%d FA net", ZH: "分解  净得 +%d FA" },
     FG_EQ_DIS_CONFIRM: { FR: "Sûr ? La relique sera détruite", EN: "Sure? The relic will be destroyed", ZH: "确定？圣物将被销毁" },
+    // Clé COMMUNE aux deux familles : le joueur ne voyait que le net, les frais
+    // (qui partent au rachat) doivent être lisibles avant de confirmer.
+    FG_EQ_DIS_BREAKDOWN: { FR: "Valeur %d FA − frais %d FA = +%d FA net", EN: "Value %d FA − fee %d FA = +%d FA net", ZH: "价值 %d FA − 手续费 %d FA = 净得 +%d FA" },
     FG_EQ_DIS_OK: { FR: "+%d FA — relique désenchantée", EN: "+%d FA — relic disenchanted", ZH: "+%d FA——圣物已分解" },
     // Codes d'erreur serveur relic-fuse / equip-disenchant (1:1 avec forge.js)
     FG_EQ_ERR_relic_ids_invalide: { FR: "Sélection invalide : 3 reliques requises.", EN: "Invalid selection: 3 relics required.", ZH: "选择无效：需要 3 件圣物。" },

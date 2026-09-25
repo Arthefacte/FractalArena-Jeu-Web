@@ -144,10 +144,20 @@ test("libellés dédiés : aucun texte de relique dans la forge de cores", () =>
   assert.ok(!/FG_EQ_FUSE_BTN|FG_EQ_DIS_BTN|FG_EQ_SEL_MAX|FG_EQ_MAX_RARITY/.test(EQ), "libellé de relique dans la forge de cores");
 });
 
+test("les frais de désenchantement sont AFFICHÉS (le joueur ne voyait que le net)", () => {
+  // Retour fondateur : « le -600, c'est affiché nulle part ». La ventilation
+  // valeur − frais = net doit être lisible AVANT de confirmer la destruction.
+  assert.match(blocFn("ForgeEquipement"), /FG_EQ_DIS_BREAKDOWN/, "ventilation absente de la forge des reliques");
+  assert.match(EQ, /FG_EQ_DIS_BREAKDOWN/, "ventilation absente de la forge des cores");
+  assert.match(EQ, /I18N\.t\("FG_EQ_DIS_BREAKDOWN", dis\.value, dis\.fee, dis\.net\)/, "ventilation incomplète (valeur, frais, net)");
+  assert.match(EQ, /!dis\.showInsufficient/, "la ventilation ne doit pas s'afficher quand le solde ne couvre pas les frais");
+});
+
 test("i18n : clés de la forge de cores et codes serveur, FR/EN/ZH complets", () => {
   for (const k of ["FG_CORE_EQ_TITLE", "FG_CORE_EQ_SUB", "FG_CORE_EQ_FUSE_BTN", "FG_CORE_EQ_FUSE_HINT", "FG_CORE_EQ_FUSE_OK",
                    "FG_CORE_EQ_MAX_RARITY", "FG_CORE_EQ_SEL_MAX", "FG_CORE_EQ_DIS_BTN", "FG_CORE_EQ_DIS_CONFIRM", "FG_CORE_EQ_DIS_OK",
                    "FG_EQ_ERR_core_ids_invalide", "FG_EQ_ERR_core_introuvable", "FG_EQ_ERR_pas_un_core",
+                   "FG_EQ_DIS_BREAKDOWN",
                    "FG_EQ_ERR_core_rarity_mismatch", "FG_EQ_ERR_core_max_rarity", "FG_EQ_ERR_objet_invalide"]) {
     assert.match(I18N_SRC, new RegExp(k + ': \\{ FR: "[^"]+", EN: "[^"]+", ZH: "[^"]+" \\}'), k + " : FR/EN/ZH incomplets");
   }

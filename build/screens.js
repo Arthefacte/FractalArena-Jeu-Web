@@ -1782,7 +1782,13 @@ function ForgeEquipement() {
       fontSize: 12,
       marginBottom: 8
     }
-  }, I18N.t("FG_EQ_FUSE_HINT", rarityLabel(selRarity), rarityLabel(fuse.nextRarity))), (fuse.showInsufficient || dis.showInsufficient) && /*#__PURE__*/React.createElement("div", {
+  }, I18N.t("FG_EQ_FUSE_HINT", rarityLabel(selRarity), rarityLabel(fuse.nextRarity))), dis.value != null && !dis.showInsufficient && /*#__PURE__*/React.createElement("div", {
+    className: "mono muted",
+    style: {
+      fontSize: 12,
+      marginBottom: 8
+    }
+  }, I18N.t("FG_EQ_DIS_BREAKDOWN", dis.value, dis.fee, dis.net)), (fuse.showInsufficient || dis.showInsufficient) && /*#__PURE__*/React.createElement("div", {
     className: "mono",
     style: {
       fontSize: 12,
@@ -2207,7 +2213,13 @@ function ForgeCoreEquipement({
       fontSize: 12,
       marginBottom: 8
     }
-  }, I18N.t("FG_CORE_EQ_FUSE_HINT", rarityLabel(selRarity), rarityLabel(fuse.nextRarity))), (fuse.showInsufficient || dis.showInsufficient) && /*#__PURE__*/React.createElement("div", {
+  }, I18N.t("FG_CORE_EQ_FUSE_HINT", rarityLabel(selRarity), rarityLabel(fuse.nextRarity))), dis.value != null && !dis.showInsufficient && /*#__PURE__*/React.createElement("div", {
+    className: "mono muted",
+    style: {
+      fontSize: 12,
+      marginBottom: 8
+    }
+  }, I18N.t("FG_EQ_DIS_BREAKDOWN", dis.value, dis.fee, dis.net)), (fuse.showInsufficient || dis.showInsufficient) && /*#__PURE__*/React.createElement("div", {
     className: "mono",
     style: {
       fontSize: 12,
