@@ -44,14 +44,26 @@ test("screens.jsx : ForgeCoreFragments rend les 4 rangs et appelle expeditionsCr
   assert.match(b, /expeditionsCraftCore\(rk\)/, "le bouton doit appeler craft-core");
   assert.match(b, /g\.expCoreFragments/, "compteurs g.expCoreFragments manquants");
   assert.match(b, /CORE_FRAGMENT_COSTS/, "jauges sur les coûts de core manquantes");
-  // Reveal : CoreViewer 220 avec repli CoreIcon 48 (pattern coreLast de ForgeEquipement).
-  assert.match(b, /size=\{220\}/, "CoreViewer size 220 manquant");
-  assert.match(b, /CoreIcon[^\n]*size=\{48\}/, "repli CoreIcon 48 manquant");
-  assert.match(b, /rarityLabel\(coreLast\.rarity/, "rareté du core absente de la modale");
+  // Reveal : remonté au PARENT (ForgeCores → CoreResultBox), exactement comme la forge
+  // de fragments de relique remonte à ForgeReliques. Le bloc ne porte plus de modale
+  // (exigence user : un core s'affiche dans la MÊME petite case qu'une relique).
+  assert.match(b, /onForged\(r\.core\)/, "le core forgé doit remonter au parent (case de résultat)");
+  const iFin = screens.indexOf("\nfunction ", screens.indexOf("function ForgeCoreFragments"));
+  const blocForge = screens.slice(screens.indexOf("function ForgeCoreFragments"), iFin);
+  assert.ok(!/<Modal/.test(blocForge), "plus aucune modale dans la forge de fragments de core");
+  const box = bloc(screens, "function CoreResultBox", 1800);
+  assert.match(screens, /onForged=\{setLast\}|onForged\(setLast\)/, "forged non branché sur la case de résultat");
+  assert.match(box, /size=\{200\}/, "CoreViewer size 200 manquant dans la case de résultat");
+  assert.match(box, /CoreIcon[^\n]*size=\{48\}/, "repli CoreIcon 48 manquant");
+  assert.match(box, /rarityLabel\(core\.rarity/, "rareté du core absente de la case de résultat");
+  assert.match(box, /FG_CORE_DONE/, "titre de résultat manquant dans la case");
 });
 
-test("screens.jsx : le bloc cores est rendu dans la Forge, à côté de ForgeFragments", () => {
-  assert.match(screens, /<ForgeCoreFragments \/>/);
+test("screens.jsx : le bloc cores est rendu dans la Forge, branché sur la case de résultat", () => {
+  // Les deux chemins d'obtention alimentent le même état `last` de ForgeCores.
+  assert.match(screens, /<ForgeCoreSummon last=\{last\} onSummoned=\{setLast\} \/>/);
+  assert.match(screens, /<ForgeCoreFragments onForged=\{setLast\} \/>/);
+  assert.match(screens, /<CoreResultBox core=\{last\} \/>/);
 });
 
 test("expeditions.jsx : le claim affiche rewards.core_frags quand ils existent, rien sinon", () => {

@@ -787,14 +787,12 @@ function ForgeFragments({ onForged }) {
 
 // Fragments de core d'expédition → core (rang du fragment = rareté du core).
 // Compteurs dans g.expCoreFragments (GET /expeditions/state), coût 0 FA.
-// Miroir de ForgeFragments, mais reveal LOCAL sans cinématique : le pattern
-// core est celui du summon de ForgeEquipement (modale coreLast, pas FA_FORGE_CINE).
-function ForgeCoreFragments() {
+// Miroir de ForgeFragments : le reveal appartient au parent (case de résultat),
+// aucune modale — l'invocation de relique et celle de core se ressemblent.
+function ForgeCoreFragments({ onForged }) {
   const { g, actions, toast } = useFA();
   const XU = window.FA_EXPEDITIONS_UI;
-  const CV = window.CoreViewer;
   const [crafting, setCrafting] = useState(false);
-  const [coreLast, setCoreLast] = useState(null);
   const frags = g.expCoreFragments || { C: 0, B: 0, A: 0, S: 0 };
   async function doCraft(rk) {
     if (crafting) return;
@@ -806,7 +804,7 @@ function ForgeCoreFragments() {
     if (!r.ok) { if (r.reason !== "auth") toast(XU.errText(r.reason), "bad"); return; }
     if (r.core && r.core.core_id) {
       toast(I18N.t("EXP_FORGE_CORE_OK", I18N.t("CORE_" + r.core.core_id.toUpperCase()), rarityLabel(r.core.rarity || "Common")), "good");
-      setCoreLast(r.core);
+      if (onForged) onForged(r.core);
     }
   }
   return (
@@ -838,20 +836,6 @@ function ForgeCoreFragments() {
           );
         })}
       </div>
-      {coreLast && (
-        <Modal onClose={() => setCoreLast(null)} accent={D.RARITY_COLORS[coreLast.rarity]}>
-          <div style={{ textAlign: "center", padding: 8 }}>
-            {/* Titre de RÉSULTAT : le titre de l'action (« Fragments de core ») était
-                repris ici et passait pour une consigne (« forge encore »). */}
-            <div className="eyebrow" style={{ marginBottom: 10, color: D.RARITY_COLORS[coreLast.rarity] || "var(--text)" }}>⬡ {I18N.t("FG_CORE_DONE")}</div>
-            {CV ? <CV type={coreLast.core_id} rarity={coreLast.rarity || "Common"} size={220} />
-                : <CoreIcon type={coreLast.core_id} rarity={coreLast.rarity || "Common"} size={48} />}
-            <div style={{ fontWeight: 700, fontSize: 16, marginTop: 10 }}>{I18N.t("CORE_" + coreLast.core_id.toUpperCase())}</div>
-            <div style={{ color: D.RARITY_COLORS[coreLast.rarity] || "var(--text)", fontWeight: 600, marginTop: 4 }}>{rarityLabel(coreLast.rarity || "Common")}</div>
-            <div className="mono muted" style={{ fontSize: 13, marginTop: 8 }}>{I18N.t("CORE_" + coreLast.core_id.toUpperCase() + "_D")}</div>
-          </div>
-        </Modal>
-      )}
     </div>
   );
 }
@@ -972,13 +956,39 @@ function ForgeEquipement() {
    reliques). Un clic sur la mauvaise ligne forgeait un core au lieu d'une relique
    (vécu les 20/09 et 25/09). */
 
+// Case de RÉSULTAT d'un core — miroir EXACT de la case de résultat des reliques
+// (même panneau, même 320 px, même placeItems center). Une invocation de core
+// s'affichait dans une modale plein écran alors qu'une invocation de relique
+// s'affiche dans cette petite case : les deux chemins se ressemblent maintenant.
+function CoreResultBox({ core }) {
+  const CV = window.CoreViewer;
+  return (
+    <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 18, minHeight: 300, display: "grid", placeItems: "center" }}>
+      {core ? (
+        <div style={{ width: "100%", textAlign: "center" }}>
+          <div className="eyebrow" style={{ marginBottom: 10, color: D.RARITY_COLORS[core.rarity] || "var(--text)" }}>⬡ {I18N.t("FG_CORE_DONE")}</div>
+          <div style={{ margin: "0 auto 12px", display: "flex", justifyContent: "center" }}>
+            {CV ? <CV type={core.core_id} rarity={core.rarity || "Common"} size={200} />
+                : <CoreIcon type={core.core_id} rarity={core.rarity || "Common"} size={48} />}
+          </div>
+          <div style={{ fontWeight: 700, fontSize: 16 }}>{I18N.t("CORE_" + String(core.core_id || "").toUpperCase())}</div>
+          <div style={{ color: D.RARITY_COLORS[core.rarity] || "var(--text)", fontWeight: 600, marginTop: 4 }}>{rarityLabel(core.rarity || "Common")}</div>
+          <div className="mono muted" style={{ fontSize: 13, marginTop: 8 }}>{I18N.t("CORE_" + String(core.core_id || "").toUpperCase() + "_D")}</div>
+        </div>
+      ) : (
+        <div className="mono" style={{ color: "var(--text-faint)", fontSize: 12, textAlign: "center" }}>⬡<br />{I18N.t("CORE_SUMMON_TITLE")}</div>
+      )}
+    </div>
+  );
+}
+
 // Invocation d'un core (8000 FA), extraite de la Forge d'équipement où elle était
 // enterrée sous la fusion de reliques. Miroir de CORE_SUMMON_ODDS côté serveur.
-function ForgeCoreSummon() {
+// Même disposition que l'invocation de relique : odds à gauche, résultat dans la
+// petite case de droite — jamais de modale plein écran.
+function ForgeCoreSummon({ last, onSummoned }) {
   const { g, actions, toast } = useFA();
   const [coreBusy, setCoreBusy] = useState(false);
-  const [coreLast, setCoreLast] = useState(null);
-  const CV = window.CoreViewer;
   const balance = g.liquid + g.locked;
   const coreCost = 8000; // CORE_SUMMON_COST serveur
   const coreBalOk = balance >= coreCost;
@@ -992,40 +1002,32 @@ function ForgeCoreSummon() {
     if (!r.ok) { toast(I18N.localizeServerError(r.reason), "bad"); return; }
     const name = r.core && r.core.core_id ? I18N.t("CORE_" + r.core.core_id.toUpperCase()) : I18N.t("CORE_SUMMON_TITLE");
     toast(I18N.t("CORE_SUMMON_OK", name), "good");
-    if (r.core && r.core.core_id) setCoreLast(r.core); // modale résultat : viewer + rareté
+    // Reveal dans la case de résultat du parent (même séquencement que la relique).
+    if (r.core && r.core.core_id && onSummoned) onSummoned(r.core);
   }
 
   return (
-    <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 22 }}>
-      <div className="eyebrow" style={{ marginBottom: 4 }}>⬡ {I18N.t("CORE_SUMMON_TITLE")}</div>
-      <div className="mono muted" style={{ fontSize: 12, marginBottom: 14 }}>{I18N.t("CORE_SUMMON_HINT")}</div>
-      <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 18, maxWidth: 420 }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {coreOdds.map(([r, p]) => (
-            <div key={r} className="flex between center">
-              <span className="flex center gap8"><span style={{ width: 10, height: 10, background: D.RARITY_COLORS[r], display: "inline-block", clipPath: "polygon(50% 0,100% 50%,50% 100%,0 50%)" }} /><span style={{ color: D.RARITY_COLORS[r], fontWeight: 600 }}>{rarityLabel(r)}</span></span>
-              <span className="mono" style={{ color: "var(--text-dim)" }}>{p}%</span>
-            </div>
-          ))}
-        </div>
-        <div className="divider" />
-        <button className="btn btn-gold block lg" disabled={!coreBalOk || coreBusy} onClick={doCoreSummon}>
-          {coreBusy ? "…" : <FaText text={I18N.t("CORE_SUMMON_BTN", coreCost)} />}
-        </button>
-        {!coreBalOk && <div className="mono" style={{ fontSize: 12, color: "var(--alert)", marginTop: 8 }}>{I18N.t("INSUFFICIENT", balance, coreCost)}</div>}
-      </div>
-      {coreLast && (
-        <Modal onClose={() => setCoreLast(null)} accent={D.RARITY_COLORS[coreLast.rarity]}>
-          <div style={{ textAlign: "center", padding: 8 }}>
-            <div className="eyebrow" style={{ marginBottom: 10, color: D.RARITY_COLORS[coreLast.rarity] || "var(--text)" }}>⬡ {I18N.t("CORE_SUMMON_TITLE")}</div>
-            {CV ? <CV type={coreLast.core_id} rarity={coreLast.rarity || "Common"} size={220} />
-                : <CoreIcon type={coreLast.core_id} rarity={coreLast.rarity || "Common"} size={48} />}
-            <div style={{ fontWeight: 700, fontSize: 16, marginTop: 10 }}>{I18N.t("CORE_" + coreLast.core_id.toUpperCase())}</div>
-            <div style={{ color: D.RARITY_COLORS[coreLast.rarity] || "var(--text)", fontWeight: 600, marginTop: 4 }}>{rarityLabel(coreLast.rarity || "Common")}</div>
-            <div className="mono muted" style={{ fontSize: 13, marginTop: 8 }}>{I18N.t("CORE_" + coreLast.core_id.toUpperCase() + "_D")}</div>
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 26, alignItems: "start" }} className="summon-grid">
+      <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 22 }}>
+        <div className="eyebrow" style={{ marginBottom: 4 }}>⬡ {I18N.t("CORE_SUMMON_TITLE")}</div>
+        <div className="mono muted" style={{ fontSize: 12, marginBottom: 14 }}>{I18N.t("CORE_SUMMON_HINT")}</div>
+        <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 18, maxWidth: 420 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {coreOdds.map(([r, p]) => (
+              <div key={r} className="flex between center">
+                <span className="flex center gap8"><span style={{ width: 10, height: 10, background: D.RARITY_COLORS[r], display: "inline-block", clipPath: "polygon(50% 0,100% 50%,50% 100%,0 50%)" }} /><span style={{ color: D.RARITY_COLORS[r], fontWeight: 600 }}>{rarityLabel(r)}</span></span>
+                <span className="mono" style={{ color: "var(--text-dim)" }}>{p}%</span>
+              </div>
+            ))}
           </div>
-        </Modal>
-      )}
+          <div className="divider" />
+          <button className="btn btn-gold block lg" disabled={!coreBalOk || coreBusy} onClick={doCoreSummon}>
+            {coreBusy ? "…" : <FaText text={I18N.t("CORE_SUMMON_BTN", coreCost)} />}
+          </button>
+          {!coreBalOk && <div className="mono" style={{ fontSize: 12, color: "var(--alert)", marginTop: 8 }}>{I18N.t("INSUFFICIENT", balance, coreCost)}</div>}
+        </div>
+      </div>
+      <CoreResultBox core={last} />
     </div>
   );
 }
@@ -1080,11 +1082,15 @@ function CoreInventory() {
 }
 
 // Écran de l'onglet Cores : invocation, forge par fragments (⬡), inventaire.
+// Les DEUX chemins d'obtention (invocation 8000 FA et forge par fragments, gratuite)
+// écrivent dans la MÊME case de résultat — exactement comme l'onglet Reliques, où
+// l'invocation et la forge de fragments partagent le panneau de droite.
 function ForgeCores() {
+  const [last, setLast] = useState(null);
   return (
     <div>
-      <ForgeCoreSummon />
-      <ForgeCoreFragments />
+      <ForgeCoreSummon last={last} onSummoned={setLast} />
+      <ForgeCoreFragments onForged={setLast} />
       <CoreInventory />
     </div>
   );

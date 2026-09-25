@@ -1511,18 +1511,18 @@ function ForgeFragments({
 
 // Fragments de core d'expédition → core (rang du fragment = rareté du core).
 // Compteurs dans g.expCoreFragments (GET /expeditions/state), coût 0 FA.
-// Miroir de ForgeFragments, mais reveal LOCAL sans cinématique : le pattern
-// core est celui du summon de ForgeEquipement (modale coreLast, pas FA_FORGE_CINE).
-function ForgeCoreFragments() {
+// Miroir de ForgeFragments : le reveal appartient au parent (case de résultat),
+// aucune modale — l'invocation de relique et celle de core se ressemblent.
+function ForgeCoreFragments({
+  onForged
+}) {
   const {
     g,
     actions,
     toast
   } = useFA();
   const XU = window.FA_EXPEDITIONS_UI;
-  const CV = window.CoreViewer;
   const [crafting, setCrafting] = useState(false);
-  const [coreLast, setCoreLast] = useState(null);
   const frags = g.expCoreFragments || {
     C: 0,
     B: 0,
@@ -1542,7 +1542,7 @@ function ForgeCoreFragments() {
     }
     if (r.core && r.core.core_id) {
       toast(I18N.t("EXP_FORGE_CORE_OK", I18N.t("CORE_" + r.core.core_id.toUpperCase()), rarityLabel(r.core.rarity || "Common")), "good");
-      setCoreLast(r.core);
+      if (onForged) onForged(r.core);
     }
   }
   return /*#__PURE__*/React.createElement("div", {
@@ -1629,47 +1629,7 @@ function ForgeCoreFragments() {
         fontWeight: 700
       } : {}
     }, I18N.t("FG_FRAG_BTN_CORE"))));
-  })), coreLast && /*#__PURE__*/React.createElement(Modal, {
-    onClose: () => setCoreLast(null),
-    accent: D.RARITY_COLORS[coreLast.rarity]
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      textAlign: "center",
-      padding: 8
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "eyebrow",
-    style: {
-      marginBottom: 10,
-      color: D.RARITY_COLORS[coreLast.rarity] || "var(--text)"
-    }
-  }, "\u2B21 ", I18N.t("FG_CORE_DONE")), CV ? /*#__PURE__*/React.createElement(CV, {
-    type: coreLast.core_id,
-    rarity: coreLast.rarity || "Common",
-    size: 220
-  }) : /*#__PURE__*/React.createElement(CoreIcon, {
-    type: coreLast.core_id,
-    rarity: coreLast.rarity || "Common",
-    size: 48
-  }), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontWeight: 700,
-      fontSize: 16,
-      marginTop: 10
-    }
-  }, I18N.t("CORE_" + coreLast.core_id.toUpperCase())), /*#__PURE__*/React.createElement("div", {
-    style: {
-      color: D.RARITY_COLORS[coreLast.rarity] || "var(--text)",
-      fontWeight: 600,
-      marginTop: 4
-    }
-  }, rarityLabel(coreLast.rarity || "Common")), /*#__PURE__*/React.createElement("div", {
-    className: "mono muted",
-    style: {
-      fontSize: 13,
-      marginTop: 8
-    }
-  }, I18N.t("CORE_" + coreLast.core_id.toUpperCase() + "_D")))));
+  })));
 }
 
 /* ---------------- FORGE D'ÉQUIPEMENT ----------------
@@ -1895,17 +1855,89 @@ function ForgeEquipement() {
    reliques). Un clic sur la mauvaise ligne forgeait un core au lieu d'une relique
    (vécu les 20/09 et 25/09). */
 
+// Case de RÉSULTAT d'un core — miroir EXACT de la case de résultat des reliques
+// (même panneau, même 320 px, même placeItems center). Une invocation de core
+// s'affichait dans une modale plein écran alors qu'une invocation de relique
+// s'affiche dans cette petite case : les deux chemins se ressemblent maintenant.
+function CoreResultBox({
+  core
+}) {
+  const CV = window.CoreViewer;
+  return /*#__PURE__*/React.createElement("div", {
+    className: "panel oct",
+    style: {
+      border: "1px solid var(--line)",
+      padding: 18,
+      minHeight: 300,
+      display: "grid",
+      placeItems: "center"
+    }
+  }, core ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: "100%",
+      textAlign: "center"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "eyebrow",
+    style: {
+      marginBottom: 10,
+      color: D.RARITY_COLORS[core.rarity] || "var(--text)"
+    }
+  }, "\u2B21 ", I18N.t("FG_CORE_DONE")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      margin: "0 auto 12px",
+      display: "flex",
+      justifyContent: "center"
+    }
+  }, CV ? /*#__PURE__*/React.createElement(CV, {
+    type: core.core_id,
+    rarity: core.rarity || "Common",
+    size: 200
+  }) : /*#__PURE__*/React.createElement(CoreIcon, {
+    type: core.core_id,
+    rarity: core.rarity || "Common",
+    size: 48
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontWeight: 700,
+      fontSize: 16
+    }
+  }, I18N.t("CORE_" + String(core.core_id || "").toUpperCase())), /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: D.RARITY_COLORS[core.rarity] || "var(--text)",
+      fontWeight: 600,
+      marginTop: 4
+    }
+  }, rarityLabel(core.rarity || "Common")), /*#__PURE__*/React.createElement("div", {
+    className: "mono muted",
+    style: {
+      fontSize: 13,
+      marginTop: 8
+    }
+  }, I18N.t("CORE_" + String(core.core_id || "").toUpperCase() + "_D"))) : /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      color: "var(--text-faint)",
+      fontSize: 12,
+      textAlign: "center"
+    }
+  }, "\u2B21", /*#__PURE__*/React.createElement("br", null), I18N.t("CORE_SUMMON_TITLE")));
+}
+
 // Invocation d'un core (8000 FA), extraite de la Forge d'équipement où elle était
 // enterrée sous la fusion de reliques. Miroir de CORE_SUMMON_ODDS côté serveur.
-function ForgeCoreSummon() {
+// Même disposition que l'invocation de relique : odds à gauche, résultat dans la
+// petite case de droite — jamais de modale plein écran.
+function ForgeCoreSummon({
+  last,
+  onSummoned
+}) {
   const {
     g,
     actions,
     toast
   } = useFA();
   const [coreBusy, setCoreBusy] = useState(false);
-  const [coreLast, setCoreLast] = useState(null);
-  const CV = window.CoreViewer;
   const balance = g.liquid + g.locked;
   const coreCost = 8000; // CORE_SUMMON_COST serveur
   const coreBalOk = balance >= coreCost;
@@ -1921,9 +1953,18 @@ function ForgeCoreSummon() {
     }
     const name = r.core && r.core.core_id ? I18N.t("CORE_" + r.core.core_id.toUpperCase()) : I18N.t("CORE_SUMMON_TITLE");
     toast(I18N.t("CORE_SUMMON_OK", name), "good");
-    if (r.core && r.core.core_id) setCoreLast(r.core); // modale résultat : viewer + rareté
+    // Reveal dans la case de résultat du parent (même séquencement que la relique).
+    if (r.core && r.core.core_id && onSummoned) onSummoned(r.core);
   }
   return /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "1fr 320px",
+      gap: 26,
+      alignItems: "start"
+    },
+    className: "summon-grid"
+  }, /*#__PURE__*/React.createElement("div", {
     className: "panel oct",
     style: {
       border: "1px solid var(--line)",
@@ -1991,47 +2032,9 @@ function ForgeCoreSummon() {
       color: "var(--alert)",
       marginTop: 8
     }
-  }, I18N.t("INSUFFICIENT", balance, coreCost))), coreLast && /*#__PURE__*/React.createElement(Modal, {
-    onClose: () => setCoreLast(null),
-    accent: D.RARITY_COLORS[coreLast.rarity]
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      textAlign: "center",
-      padding: 8
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "eyebrow",
-    style: {
-      marginBottom: 10,
-      color: D.RARITY_COLORS[coreLast.rarity] || "var(--text)"
-    }
-  }, "\u2B21 ", I18N.t("CORE_SUMMON_TITLE")), CV ? /*#__PURE__*/React.createElement(CV, {
-    type: coreLast.core_id,
-    rarity: coreLast.rarity || "Common",
-    size: 220
-  }) : /*#__PURE__*/React.createElement(CoreIcon, {
-    type: coreLast.core_id,
-    rarity: coreLast.rarity || "Common",
-    size: 48
-  }), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontWeight: 700,
-      fontSize: 16,
-      marginTop: 10
-    }
-  }, I18N.t("CORE_" + coreLast.core_id.toUpperCase())), /*#__PURE__*/React.createElement("div", {
-    style: {
-      color: D.RARITY_COLORS[coreLast.rarity] || "var(--text)",
-      fontWeight: 600,
-      marginTop: 4
-    }
-  }, rarityLabel(coreLast.rarity || "Common")), /*#__PURE__*/React.createElement("div", {
-    className: "mono muted",
-    style: {
-      fontSize: 13,
-      marginTop: 8
-    }
-  }, I18N.t("CORE_" + coreLast.core_id.toUpperCase() + "_D")))));
+  }, I18N.t("INSUFFICIENT", balance, coreCost)))), /*#__PURE__*/React.createElement(CoreResultBox, {
+    core: last
+  }));
 }
 
 // Inventaire des cores — `equipment` mêle reliques et cores : cette grille ne montre
@@ -2148,8 +2151,17 @@ function CoreInventory() {
 }
 
 // Écran de l'onglet Cores : invocation, forge par fragments (⬡), inventaire.
+// Les DEUX chemins d'obtention (invocation 8000 FA et forge par fragments, gratuite)
+// écrivent dans la MÊME case de résultat — exactement comme l'onglet Reliques, où
+// l'invocation et la forge de fragments partagent le panneau de droite.
 function ForgeCores() {
-  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(ForgeCoreSummon, null), /*#__PURE__*/React.createElement(ForgeCoreFragments, null), /*#__PURE__*/React.createElement(CoreInventory, null));
+  const [last, setLast] = useState(null);
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(ForgeCoreSummon, {
+    last: last,
+    onSummoned: setLast
+  }), /*#__PURE__*/React.createElement(ForgeCoreFragments, {
+    onForged: setLast
+  }), /*#__PURE__*/React.createElement(CoreInventory, null));
 }
 function ForgeReliques() {
   const {

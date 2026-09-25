@@ -24,10 +24,15 @@ function bloc(src, marker, len) {
   return src.slice(i, i + (len || 1600));
 }
 
-// Bornes mesurées dans screens.jsx : ForgeFragments 3004 car., ForgeCoreFragments 4295
-// avant ForgeEquipement. On reste SOUS ces bornes pour ne pas lire le bloc d'à côté.
-const F_RELIC = bloc(SCREENS, "function ForgeFragments", 3000);
-const F_CORE = bloc(SCREENS, "function ForgeCoreFragments", 4200);
+// Fenêtre d'un composant : de « function X » à la déclaration suivante. Les bornes
+// mesurées en dur débordaient sur le bloc voisin dès qu'un composant changeait de taille.
+const fnBloc = (m) => {
+  const i = SCREENS.indexOf("function " + m);
+  assert.ok(i >= 0, m + " absent");
+  return SCREENS.slice(i, SCREENS.indexOf("\nfunction ", i));
+};
+const F_RELIC = fnBloc("ForgeFragments");
+const F_CORE = fnBloc("ForgeCoreFragments");
 
 test("la Forge a un onglet Cores distinct de l'onglet Reliques", () => {
   assert.match(bloc(SCREENS, "function Forge()", 2000), /\{ k: "cores"/, "onglet cores absent de la barre de la Forge");
@@ -36,9 +41,9 @@ test("la Forge a un onglet Cores distinct de l'onglet Reliques", () => {
 });
 
 test("l'onglet Cores regroupe invocation, forge de fragments et inventaire", () => {
-  const b = bloc(SCREENS, "function ForgeCores", 300);
+  const b = fnBloc("ForgeCores");
   for (const c of ["ForgeCoreSummon", "ForgeCoreFragments", "CoreInventory"]) {
-    assert.match(b, new RegExp("<" + c + " />"), c + " absent de ForgeCores");
+    assert.match(b, new RegExp("<" + c + "[ /]"), c + " absent de ForgeCores");
   }
 });
 
@@ -63,11 +68,18 @@ test("les boutons de forge nomment l'objet forgé (fini le « Forger » ambigu)"
   }
 });
 
-test("la modale de forge d'un core annonce un RÉSULTAT, pas l'action", () => {
-  const modal = F_CORE.split("coreLast &&")[1] || "";
-  assert.ok(modal.length > 0, "modale de résultat absente de ForgeCoreFragments");
-  assert.match(modal, /FG_CORE_DONE/, "titre de résultat manquant");
-  assert.ok(!/EXP_FORGE_CORE_TITLE/.test(modal), "la modale reprend le titre de l'action");
+test("un core s'affiche dans la MÊME petite case qu'une relique (aucune modale de résultat)", () => {
+  // Exigence user 25/09 : « quand j'invoque un core ça apparaît comme ça [en grand],
+  // alors que si j'invoque une relique ça apparaît dans une petite case ».
+  const blocFn = (m) => { const i = SCREENS.indexOf("function " + m); assert.ok(i >= 0, m + " absent"); return SCREENS.slice(i, SCREENS.indexOf("\nfunction ", i)); };
+  const summon = blocFn("ForgeCoreSummon");
+  assert.ok(!/<Modal/.test(summon), "l'invocation d'un core ne doit plus ouvrir de modale");
+  assert.ok(!/<Modal/.test(blocFn("ForgeCoreFragments")), "la forge de fragments de core ne doit plus ouvrir de modale");
+  assert.match(summon, /gridTemplateColumns: "1fr 320px"/, "l'invocation de core doit reprendre la grille de la relique (odds | petite case)");
+  assert.match(summon, /<CoreResultBox core=\{last\} \/>/, "la petite case de résultat doit être branchée");
+  assert.match(blocFn("CoreResultBox"), /FG_CORE_DONE/, "titre de RÉSULTAT manquant dans la case");
+  // Référence : l'invocation de relique reste la grille 2 colonnes qu'on imite.
+  assert.match(blocFn("ForgeReliques"), /gridTemplateColumns: "1fr 320px"/, "la référence relique doit rester en 2 colonnes");
 });
 
 test("l'inventaire des cores ne montre que des cores (le core forgé devient visible)", () => {
