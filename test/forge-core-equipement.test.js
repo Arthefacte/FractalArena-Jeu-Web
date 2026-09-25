@@ -23,7 +23,13 @@ const F = window.FA_FORGE_UI;
 const SCREENS = fs.readFileSync(path.join(__dirname, "..", "screens.jsx"), "utf8");
 const I18N_SRC = fs.readFileSync(path.join(__dirname, "..", "i18n.js"), "utf8");
 const APP = fs.readFileSync(path.join(__dirname, "..", "app.jsx"), "utf8");
-const SRV = fs.readFileSync(path.join(__dirname, "..", "..", "fractal-arena-server", "forge.js"), "utf8");
+// Garde croisée web ↔ serveur : le dépôt serveur est SÉPARÉ (et privé), donc la CI du
+// dépôt web ne le clone pas — un readFileSync inconditionnel fait échouer le run avec
+// ENOENT. Les vérifications serveur ne tournent que là où le voisin est présent
+// (poste du dev) ; les valeurs attendues sont de toute façon figées ci-dessus côté web.
+const SRV_PATH = path.join(__dirname, "..", "..", "fractal-arena-server", "forge.js");
+const SRV = fs.existsSync(SRV_PATH) ? fs.readFileSync(SRV_PATH, "utf8") : null;
+const testServeur = SRV ? test : test.skip;
 
 const blocFn = (m) => {
   const i = SCREENS.indexOf("function " + m);
@@ -44,8 +50,11 @@ test("barèmes des cores : identiques aux reliques, Legendary non fusable", () =
   assert.ok(!Object.hasOwn(D.CORE_FUSE_COSTS, "Legendary"), "un core Legendary ne fusionne pas");
 });
 
-test("frais de désenchantement baissés à 200 FA, des deux côtés (web + serveur)", () => {
+test("frais de désenchantement baissés à 200 FA (net Commune +1400, miroir web)", () => {
   assert.strictEqual(D.DISENCHANT_FEE, 200);
+});
+
+testServeur("frais et barèmes alignés sur le serveur (source de vérité)", () => {
   assert.match(SRV, /const DISENCHANT_COST = 200;/, "le serveur (source de vérité) doit être aligné");
   assert.match(SRV, /const CORE_FUSE_COSTS = \{ Common: 2000, Rare: 5000, Epic: 15000 \};/);
   assert.match(SRV, /const CORE_BUYBACK = \{ Common: 1600, Rare: 4000, Epic: 10000, Legendary: 25000 \};/);
@@ -146,7 +155,7 @@ test("i18n : clés de la forge de cores et codes serveur, FR/EN/ZH complets", ()
 
 // ---- Serveur : le chemin d'argent ----
 
-test("serveur : /forge/core-fuse montée, authentifiée, débitée dans la transaction", () => {
+testServeur("serveur : /forge/core-fuse montée, authentifiée, débitée dans la transaction", () => {
   assert.match(SRV, /app\.post\("\/forge\/core-fuse"/, "route non montée");
   const i = SRV.indexOf("async function handleCoreFuse");
   assert.ok(i > 0, "handler absent");
@@ -162,7 +171,7 @@ test("serveur : /forge/core-fuse montée, authentifiée, débitée dans la trans
   assert.match(bloc, /core_max_rarity/, "garde de rareté max manquante");
 });
 
-test("serveur : le désenchantement garde ses gardes d'argent (split du remboursement)", () => {
+testServeur("serveur : le désenchantement garde ses gardes d'argent (split du remboursement)", () => {
   const i = SRV.indexOf("async function handleEquipDisenchant");
   const bloc = SRV.slice(i, SRV.indexOf("\nasync function ", i));
   assert.match(bloc, /isCoreInstance\(item\)/, "branche core absente");
