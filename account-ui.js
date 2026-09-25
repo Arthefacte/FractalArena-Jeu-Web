@@ -37,9 +37,13 @@
   // Ce que ca coute, dit franchement : un jeton qui survit a la fermeture est un
   // jeton qu'une XSS pourrait voler. Ce qui le borne : la CSP est stricte depuis
   // le 2026-08-01 (ni script en ligne, ni eval), et ce jeton est de portee
-  // `session` — IL NE PERMET PAS DE RETIRER DES FONDS, un retrait exige une
-  // signature separee en portee `withdraw`. C'est deja le traitement des
-  // comptes generes. En onglet, ou la popup fonctionne, rien ne change.
+  // `session` — un retrait exige une signature separee en portee `withdraw`.
+  // ATTENTION (audit D10, 2026-09) : cette borne ne vaut PAS pour un compte
+  // genere dont aucun portefeuille n'est encore lie. Le jeton de session y
+  // suffit a lier le portefeuille de l'attaquant (/account/link-wallet), qui
+  // signe ensuite lui-meme les retraits. Un jeton de session vole peut aussi
+  // vider un compte vers le vendeur d'une annonce du marche. En onglet, ou la
+  // popup fonctionne, rien ne change.
   // Appareil rejoint par liaison (QR depuis le PC) : il n'a PAS d'extension
   // UniSat, donc « peut re-signer a tout moment » y est faux au meme titre
   // qu'en fenetre installee — sessionStorage y condamnerait le joueur a
@@ -260,6 +264,23 @@
   // (même stockage que la connexion) et fa:token-refresh prévient app.jsx pour
   // que l'état React suive. Sans ça, un joueur actif était déconnecté tous les
   // 30 jours et repassait par le parcours de signature UniSat (vécu 27-08).
+  // Jeton Bearer d'un appel fetch, quelle que soit la forme des en-têtes (objet
+  // littéral, Headers, ou Request passé en premier argument). "" si absent.
+  // Sert à l'intercepteur ci-dessous : la réponse arrive après coup, et entre-temps
+  // le joueur a pu se déconnecter ou changer de compte. Ranger alors le jeton frais
+  // de l'ancienne session l'aurait ressuscitée (audit D10, 2026-09) : on ne remplace
+  // que si le jeton stocké est encore celui qui a porté la requête.
+  function bearerDe(input, init) {
+    const lire = (h) => {
+      if (!h) return "";
+      if (typeof h.get === "function") return h.get("authorization") || "";
+      for (const k of Object.keys(h)) if (k.toLowerCase() === "authorization") return String(h[k] || "");
+      return "";
+    };
+    const brut = lire(init && init.headers) || lire(input && typeof input === "object" ? input.headers : null);
+    return brut.indexOf("Bearer ") === 0 ? brut.slice(7) : "";
+  }
+
   (function installTokenRefresh() {
     if (typeof window.fetch !== "function") return;
     const fetchOrigine = window.fetch.bind(window);
@@ -269,10 +290,11 @@
       try {
         const url = typeof input === "string" ? input : (input && input.url) || "";
         if (window.FA_API_URL && url.indexOf(window.FA_API_URL) === 0) {
+          const porte = bearerDe(input, init); // cf. bearerDe : seul le jeton encore en place est remplacé
           p.then((resp) => {
             try {
               const neuf = resp.headers && resp.headers.get && resp.headers.get("x-fa-token-refresh");
-              if (neuf) {
+              if (neuf && porte && readToken() === porte) {
                 const now = Date.now();
                 if (now - lastRefreshTs < 1000) return; // un refresh vient déjà d'être appliqué
                 lastRefreshTs = now;
