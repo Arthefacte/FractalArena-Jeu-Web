@@ -864,7 +864,10 @@ function App() {
         const vr = await fetch(`${API_URL}/auth/verify`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ wallet: addr, signature }),
+          // `nonce` : désigne le challenge signé (audit serveur 2026-09, D6/F2). Sans lui, le
+          // serveur prend le DERNIER challenge du wallet — qu'un tiers peut remplacer en
+          // redemandant /auth/challenge pendant que le joueur signe.
+          body: JSON.stringify({ wallet: addr, signature, nonce: ch.nonce }),
         });
         if (!vr.ok) return echec("verify", null, vr.status);
         const { token } = await vr.json();
@@ -1101,14 +1104,18 @@ function App() {
       if (!/^bc1/i.test(addr || "")) return { ok: false, reason: "bad-address" };
       if (addr === s.wallet) return { ok: false, reason: "same" };
       try {
-        const cr = await fetch(`${API_URL}/auth/challenge?wallet=${encodeURIComponent(addr)}&scope=withdraw`);
+        // `account` : le texte signé nomme le compte qui reçoit la liaison (audit serveur
+        // 2026-09, D6/F3). Sans lui, une signature « withdraw » ordinaire pouvait lier ce
+        // portefeuille au compte de quelqu'un d'autre. Exige le serveur de la PR #136.
+        const cr = await fetch(`${API_URL}/auth/challenge?wallet=${encodeURIComponent(addr)}&scope=withdraw`
+          + `&account=${encodeURIComponent(s.wallet)}`);
         if (!cr.ok) return { ok: false, reason: "server" };
         const ch = await cr.json();
         const signature = await pendantSignature(uni.signMessage(ch.message || ch.nonce));
         const r = await fetch(`${API_URL}/account/link-wallet`, {
           method: "POST",
           headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
-          body: JSON.stringify({ wallet: addr, signature }),
+          body: JSON.stringify({ wallet: addr, signature, nonce: ch.nonce }),
         });
         if (r.status === 409) return { ok: false, reason: "taken" };
         if (!r.ok) {
@@ -1155,7 +1162,7 @@ function App() {
         // différent de celui que le joueur a signé.
         const vr = await fetch(`${API_URL}/auth/verify`, {
           method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ wallet: qui.signer, signature, scope: "withdraw",
+          body: JSON.stringify({ wallet: qui.signer, signature, scope: "withdraw", nonce: ch.nonce,
                                  ...(qui.account ? { account: qui.account } : {}) }),
         });
         if (!vr.ok) return { ok: false, reason: "verify" };
