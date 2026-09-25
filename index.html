@@ -13,16 +13,19 @@
        nécessaire : le décodeur meshopt des .glb de reliques (relic-models.js) instancie un
        module WebAssembly, que la CSP bloquait silencieusement — les reliques retombaient sur
        leur rendu primitif. Cette directive-là n'autorise QUE WebAssembly, pas eval() ni
-       new Function. Reste 'unsafe-inline' pour les
-       scripts inline de boot ; React/ReactDOM via unpkg (protégés par SRI, cf. scripts en
-       bas) ; Three.js AUTO-HÉBERGÉ (vendor/, plus d'unpkg pour lui).
+       new Function. Plus de 'unsafe-inline' (seul l'importmap, sous empreinte) ;
+       React/ReactDOM via unpkg (protégés par SRI, cf. scripts en bas), autorisés par leur
+       CHEMIN EXACT et non plus par le domaine entier : unpkg sert n'importe quel paquet npm,
+       et `https://unpkg.com` seul laissait une injection HTML charger le script de son choix
+       (le SRI ne protège que les balises déjà présentes — audit D10, 2026-09) ; Three.js
+       AUTO-HÉBERGÉ (vendor/, plus d'unpkg pour lui).
        connect-src verrouillé sur l'API Railway (seul hôte appelé) : même une lib CDN compromise
        ne pourrait pas exfiltrer le token sessionStorage vers un tiers. blob:/data: pour les
        textures GLB et les vignettes canvas des reliques. Google Fonts (@import styles.css) exige
        fonts.googleapis.com en style-src + fonts.gstatic.com en font-src ; l'art des totems
        upgradés est servi depuis le bucket R2 (img-src) : domaine managé pub-*.r2.dev
        + l'ancien domaine perso totems.fractalarena.com conservé si un jour rebranché. -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval' 'sha256-nP7Lf5D3tIw8pykmO5oG0PnwhHWbac+axwKm7G4pR1g=' https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https://totems.fractalarena.com https://pub-0b140013c6564ee080397bcdb722b776.r2.dev; font-src 'self' data: https://fonts.gstatic.com; media-src 'self'; connect-src 'self' https://fractal-arena-server-production.up.railway.app blob: data:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval' 'sha256-nP7Lf5D3tIw8pykmO5oG0PnwhHWbac+axwKm7G4pR1g=' https://unpkg.com/react@18.3.1/umd/react.production.min.js https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https://totems.fractalarena.com https://pub-0b140013c6564ee080397bcdb722b776.r2.dev; font-src 'self' data: https://fonts.gstatic.com; media-src 'self'; connect-src 'self' https://fractal-arena-server-production.up.railway.app blob: data:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'" />
   <!-- Anti-clickjacking. `frame-ancestors` est declare plus haut mais les navigateurs
        IGNORENT cette directive quand elle vient d'un <meta>, et GitHub Pages ne permet pas
        d'ajouter un en-tete HTTP : la protection est donc ce script, charge avant tout
