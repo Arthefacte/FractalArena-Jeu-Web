@@ -26,7 +26,7 @@ window.FA_API_URL = (typeof location !== "undefined" &&
 // l'installation alors que la prod servait le nouveau depuis une heure.
 // Ne sert plus que de REPLI : un asset absent du manifeste doit rester cache-busté
 // plutôt que servi indéfiniment par le CDN.
-window.FA_ASSET_V = "289";
+window.FA_ASSET_V = "290";
 
 // L'URL porte l'empreinte du CONTENU du fichier (asset-hashes.js, généré au build),
 // et non la version du jeu. Versionner par la version du jeu — ce que faisait la
@@ -89,10 +89,14 @@ window.FA_ASSET_URL = function (chemin) {
   // Fusion : 3 reliques de même rareté → 1 relique de la rareté supérieure
   // (RARITY_UPGRADE), succès 100 %. Legendary = rareté max, absente de la table.
   const RELIC_FUSE_COSTS = { Common: 2000, Rare: 5000, Epic: 15000 };
-  // Désenchantement : détruit la relique, crédite 20 % de sa valeur en FA liquid,
-  // moins des frais fixes (→ buyback). Les cores ne se désenchantent pas en v1.
+  // Désenchantement : détruit l'objet, crédite 20 % de sa valeur en FA liquid,
+  // moins des frais fixes (→ buyback). Reliques ET cores (cores depuis le 25/09).
   const RELIC_BUYBACK = { Common: 1600, Rare: 4000, Epic: 10000, Legendary: 25000 };
-  const DISENCHANT_FEE = 500;
+  // Frais : 500 → 200 (décision fondateur 25/09). Miroir serveur : DISENCHANT_COST.
+  const DISENCHANT_FEE = 200;
+  // Cores : mêmes barèmes que les reliques (miroir serveur CORE_FUSE_COSTS / CORE_BUYBACK).
+  const CORE_FUSE_COSTS = { Common: 2000, Rare: 5000, Epic: 15000 };
+  const CORE_BUYBACK = { Common: 1600, Rare: 4000, Epic: 10000, Legendary: 25000 };
 
   // ---- Cores (miroir serveur — data.node.js, fait foi) ----
   // Slot « effet déclenché en combat » : un seul par bête. La rareté scale
@@ -652,7 +656,7 @@ window.FA_ASSET_URL = function (chemin) {
     RARITY_ORDER, RARITY_LIST, RARITY_COLORS, RARITY_UPGRADE, MINT_ODDS,
     RANK_LIST, RANK_FACTOR, RANK_ODDS, RANK_COLORS, rollRank, artFor,
     RELICS, RELIC_KEYS, RELIC_RARITY_MULT, relicEffect, relicStatDelta,
-    RELIC_FUSE_COSTS, RELIC_BUYBACK, DISENCHANT_FEE,
+    RELIC_FUSE_COSTS, RELIC_BUYBACK, DISENCHANT_FEE, CORE_FUSE_COSTS, CORE_BUYBACK,
     CORES, CORE_KEYS, CORE_RARITY_MULT, isRelicItem, isCoreItem,
     PRESET_COLORS, TYPE_TO_PRESET, TYPE_LABEL, ART,
     TYPE_ADVANTAGE, getTypeMultiplier,

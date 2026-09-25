@@ -1,7 +1,8 @@
 "use strict";
 // Forge d'équipement : helpers purs de sélection/état (miroir des règles serveur
-// relic-fuse / equip-disenchant). Reliques SEULEMENT — un core n'est ni
-// fusionnable ni désenchantable en v1.
+// relic-fuse / core-fuse / equip-disenchant). Une famille par flux : "relic"
+// (défaut) ou "core" — les deux vivent dans le même tableau `equipment`,
+// donc le filtre est explicite.
 const test = require("node:test");
 const assert = require("node:assert");
 globalThis.window = {};
@@ -73,13 +74,13 @@ test("relicFuseState : solde insuffisant bloque et se signale ; busy bloque", ()
   assert.strictEqual(F.relicFuseState({ sel, balance: 99999, busy: true }).disabled, true);
 });
 
-test("disenchantState : exactement 1 relique → valeur, frais 500, net", () => {
-  const s = F.disenchantState({ sel: [relic("a", "Common")], balance: 500, busy: false });
+test("disenchantState : exactement 1 relique → valeur, frais 200, net", () => {
+  const s = F.disenchantState({ sel: [relic("a", "Common")], balance: 1000, busy: false });
   assert.strictEqual(s.disabled, false);
   assert.strictEqual(s.value, 1600);
-  assert.strictEqual(s.fee, 500);
-  assert.strictEqual(s.net, 1100);
-  const leg = F.disenchantState({ sel: [relic("a", "Legendary")], balance: 500, busy: false });
+  assert.strictEqual(s.fee, 200);
+  assert.strictEqual(s.net, 1400);
+  const leg = F.disenchantState({ sel: [relic("a", "Legendary")], balance: 1000, busy: false });
   assert.strictEqual(leg.disabled, false, "une Legendary SE désenchante (mais ne fusionne pas)");
   assert.strictEqual(leg.value, 25000);
 });
@@ -89,11 +90,45 @@ test("disenchantState : 0 ou 2+ sélections → désactivé", () => {
   assert.strictEqual(F.disenchantState({ sel: [relic("a", "Common"), relic("b", "Common")], balance: 9999, busy: false }).disabled, true);
 });
 
-test("disenchantState : les 500 de frais exigent le solde ; busy bloque", () => {
-  const ko = F.disenchantState({ sel: [relic("a", "Common")], balance: 499, busy: false });
+test("disenchantState : les 200 de frais exigent le solde ; busy bloque", () => {
+  const ko = F.disenchantState({ sel: [relic("a", "Common")], balance: 199, busy: false });
   assert.strictEqual(ko.disabled, true);
   assert.strictEqual(ko.showInsufficient, true);
   assert.strictEqual(F.disenchantState({ sel: [relic("a", "Common")], balance: 9999, busy: true }).disabled, true);
+});
+
+// ---- Famille "core" (forge d'équipement des cores, 25/09) ----
+
+test("equipSelToggle(family core) : que des cores — une relique est refusée", () => {
+  assert.strictEqual(F.equipSelToggle([], relic("r1", "Common"), "core"), null);
+  assert.deepStrictEqual(F.equipSelToggle([relic("r1", "Common")], relic("r2", "Common"), "relic").map((x) => x.id), ["r1", "r2"], "la famille relique est intacte");
+  const s = F.equipSelToggle([], core("c1"), "core");
+  assert.deepStrictEqual(s.map((x) => x.id), ["c1"]);
+  assert.deepStrictEqual(F.equipSelToggle(s, core("c1"), "core"), [], "re-clic = désélection");
+});
+
+test("familyMatch/buybackFor/fuseCostFor : la famille choisit la table, jamais la rareté seule", () => {
+  assert.strictEqual(F.familyMatch(core("c1"), "core"), true);
+  assert.strictEqual(F.familyMatch(core("c1"), "relic"), false);
+  assert.strictEqual(F.buybackFor(core("c1")), 1600);
+  assert.strictEqual(F.buybackFor(relic("r1", "Common")), 1600);
+  assert.strictEqual(F.fuseCostFor(core("c1")), 2000);
+});
+
+test("coreFuseState : mêmes barèmes que les reliques, famille séparée", () => {
+  const sel = [core("a"), core("b"), core("c")];
+  const s = F.coreFuseState({ sel, balance: 2000, busy: false });
+  assert.strictEqual(s.disabled, false);
+  assert.strictEqual(s.cost, 2000);
+  assert.strictEqual(s.nextRarity, "Rare");
+  assert.strictEqual(F.coreFuseState({ sel, balance: 1999, busy: false }).showInsufficient, true);
+});
+
+test("disenchantState : un core a SA table de valeur (net +1400 sur une Commune)", () => {
+  const s = F.disenchantState({ sel: [core("c1")], balance: 1000, busy: false });
+  assert.strictEqual(s.value, 1600);
+  assert.strictEqual(s.fee, 200);
+  assert.strictEqual(s.net, 1400);
 });
 
 test("equipForgeErrText : codes serveur → clés FG_EQ_ERR_<code>, repli générique", () => {

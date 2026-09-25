@@ -42,7 +42,7 @@ test("la Forge a un onglet Cores distinct de l'onglet Reliques", () => {
 
 test("l'onglet Cores regroupe invocation, forge de fragments et inventaire", () => {
   const b = fnBloc("ForgeCores");
-  for (const c of ["ForgeCoreSummon", "ForgeCoreFragments", "CoreInventory"]) {
+  for (const c of ["ForgeCoreSummon", "ForgeCoreFragments", "ForgeCoreEquipement"]) {
     assert.match(b, new RegExp("<" + c + "[ /]"), c + " absent de ForgeCores");
   }
 });
@@ -82,9 +82,10 @@ test("un core s'affiche dans la MÊME petite case qu'une relique (aucune modale 
   assert.match(blocFn("ForgeReliques"), /gridTemplateColumns: "1fr 320px"/, "la référence relique doit rester en 2 colonnes");
 });
 
-test("l'inventaire des cores ne montre que des cores (le core forgé devient visible)", () => {
-  const b = bloc(SCREENS, "function CoreInventory", 3000);
+test("la forge d'équipement des cores liste les cores (le core forgé devient visible)", () => {
+  const b = fnBloc("ForgeCoreEquipement");
   assert.match(b, /isCoreItem/, "filtre isCoreItem manquant");
   assert.match(b, /CoreIcon/, "icône de core manquante");
   assert.match(b, /core_id/, "nom/description à construire sur core_id");
+  assert.ok(!/<Modal/.test(b), "grille + boutons, jamais une modale (miroir des reliques)");
 });

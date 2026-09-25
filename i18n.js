@@ -838,6 +838,27 @@
     FG_EQ_ERR_max_rarity: { FR: "Rareté maximale : une Légendaire ne fusionne pas.", EN: "Max rarity: a Legendary cannot be fused.", ZH: "已是最高稀有度：传说圣物无法融合。" },
     FG_EQ_ERR_objet_introuvable: { FR: "Objet introuvable dans ton inventaire.", EN: "Item not found in your inventory.", ZH: "库存中找不到该物品。" },
     FG_EQ_ERR_generic: { FR: "Erreur serveur, réessaie.", EN: "Server error, try again.", ZH: "服务器错误，请重试。" },
+    // ---- Forge d'équipement des cores (fusion + désenchantement, 25/09) ----
+    // Mêmes barèmes que les reliques (décision fondateur) : la famille change le
+    // libellé, pas l'économie.
+    FG_CORE_EQ_TITLE: { FR: "Forge d'équipement (cores)", EN: "Core equipment forge", ZH: "核心装备熔炉" },
+    FG_CORE_EQ_SUB: { FR: "Fusionne 3 cores de même rareté en un core de la rareté supérieure, ou désenchante un core contre des FA.", EN: "Fuse 3 cores of the same rarity into a higher one, or disenchant one for FA.", ZH: "将同稀有度的 3 个核心融合为更高稀有度的核心，或分解换取 FA。" },
+    FG_CORE_EQ_FUSE_BTN: { FR: "Fusionner  −%d FA", EN: "Fuse  −%d FA", ZH: "融合  −%d FA" },
+    FG_CORE_EQ_FUSE_HINT: { FR: "3 × %s → 1 × %s (core aléatoire)", EN: "3 × %s → 1 × %s (random core)", ZH: "3 × %s → 1 × %s（核心随机）" },
+    FG_CORE_EQ_FUSE_OK: { FR: "Fusion réussie : %s (%s)", EN: "Fusion complete: %s (%s)", ZH: "融合成功：%s（%s）" },
+    FG_CORE_EQ_MAX_RARITY: { FR: "Légendaire : rareté maximale, non fusible", EN: "Legendary: max rarity, cannot be fused", ZH: "传说：已是最高稀有度，无法融合" },
+    FG_CORE_EQ_SEL_MAX: { FR: "3 cores maximum", EN: "3 cores max", ZH: "最多选择 3 个核心" },
+    FG_CORE_EQ_DIS_BTN: { FR: "Désenchanter  +%d FA net", EN: "Disenchant  +%d FA net", ZH: "分解  净得 +%d FA" },
+    FG_CORE_EQ_DIS_CONFIRM: { FR: "Sûr ? Le core sera détruit", EN: "Sure? The core will be destroyed", ZH: "确定？核心将被销毁" },
+    FG_CORE_EQ_DIS_OK: { FR: "+%d FA — core désenchanté", EN: "+%d FA — core disenchanted", ZH: "+%d FA——核心已分解" },
+    // Codes serveur core-fuse (1:1 avec forge.js handleCoreFuse) + objet_invalide,
+    // ajouté au désenchantement partagé quand l'objet n'est ni relique ni core.
+    FG_EQ_ERR_core_ids_invalide: { FR: "Sélection invalide : 3 cores requis.", EN: "Invalid selection: 3 cores required.", ZH: "选择无效：需要 3 个核心。" },
+    FG_EQ_ERR_core_introuvable: { FR: "Core introuvable dans ton inventaire.", EN: "Core not found in your inventory.", ZH: "库存中找不到该核心。" },
+    FG_EQ_ERR_pas_un_core: { FR: "Cet objet n'est pas un core.", EN: "This item is not a core.", ZH: "该物品不是核心。" },
+    FG_EQ_ERR_core_rarity_mismatch: { FR: "Les 3 cores doivent être de la même rareté.", EN: "All 3 cores must share the same rarity.", ZH: "3 个核心必须为同一稀有度。" },
+    FG_EQ_ERR_core_max_rarity: { FR: "Rareté maximale : un core Légendaire ne fusionne pas.", EN: "Max rarity: a Legendary core cannot be fused.", ZH: "已是最高稀有度：传说核心无法融合。" },
+    FG_EQ_ERR_objet_invalide: { FR: "Cet objet ne peut pas être désenchanté.", EN: "This item cannot be disenchanted.", ZH: "该物品无法分解。" },
 
     // ---- Marché (hôtel des ventes reliques) ----
     NAV_MARKET: { FR: "Marché", EN: "Market", ZH: "市场" },

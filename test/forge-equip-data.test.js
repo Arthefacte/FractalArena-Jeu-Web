@@ -16,9 +16,15 @@ test("RELIC_BUYBACK : valeurs rendues (20 %) pour les 4 raretés", () => {
   assert.deepStrictEqual(D.RELIC_BUYBACK, { Common: 1600, Rare: 4000, Epic: 10000, Legendary: 25000 });
 });
 
-test("DISENCHANT_FEE : 500 FA fixes, net Common positif (+1100)", () => {
-  assert.strictEqual(D.DISENCHANT_FEE, 500);
-  assert.strictEqual(D.RELIC_BUYBACK.Common - D.DISENCHANT_FEE, 1100);
+test("DISENCHANT_FEE : 200 FA fixes (baissé de 500 le 25/09), net Common +1400", () => {
+  assert.strictEqual(D.DISENCHANT_FEE, 200);
+  assert.strictEqual(D.RELIC_BUYBACK.Common - D.DISENCHANT_FEE, 1400);
+});
+
+test("cores : mêmes barèmes que les reliques (CORE_FUSE_COSTS / CORE_BUYBACK)", () => {
+  assert.deepStrictEqual(D.CORE_FUSE_COSTS, D.RELIC_FUSE_COSTS);
+  assert.deepStrictEqual(D.CORE_BUYBACK, D.RELIC_BUYBACK);
+  assert.ok(!Object.hasOwn(D.CORE_FUSE_COSTS, "Legendary"), "un core Legendary ne fusionne pas");
 });
 
 test("rétro-compat : RARITY_UPGRADE inchangé (sert de next_rarity à la fusion)", () => {

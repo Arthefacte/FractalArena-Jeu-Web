@@ -2037,47 +2037,132 @@ function ForgeCoreSummon({
   }));
 }
 
-// Inventaire des cores — `equipment` mêle reliques et cores : cette grille ne montre
-// que les ⬡, sinon le core qu'on vient de forger reste invisible (le joueur ne voit
-// l'objet que sur l'entité qui le porte). Miroir de l'inventaire de reliques.
-function CoreInventory() {
+/* Forge d'équipement des CORES — miroir de ForgeEquipement (reliques) : fusion de
+   3 cores de même rareté → 1 core de la rareté supérieure, ou désenchantement
+   (détruit le core, crédite sa valeur moins les frais). Mêmes barèmes que les
+   reliques (décision fondateur 25/09), tables distinctes : CORE_FUSE_COSTS /
+   CORE_BUYBACK, choisies par la famille dans forge-ui.js (famille "core").
+
+   La grille sert À LA FOIS d'inventaire et de sélection — comme celle des reliques.
+   C'est indispensable : `equipment` mêle reliques et cores, donc sans cette grille
+   le core forgé reste invisible (il ne s'affiche que sur l'entité qui le porte).
+   Sélection/états des boutons délégués aux helpers purs (testables Node). */
+function ForgeCoreEquipement({
+  onForged
+}) {
   const {
-    g
+    g,
+    actions,
+    toast
   } = useFA();
-  const [detail, setDetail] = useState(null);
-  const CV = window.CoreViewer;
+  const FUI = window.FA_FORGE_UI;
+  const [sel, setSel] = useState([]);
+  const [busy, setBusy] = useState(false);
+  const [confirmDis, setConfirmDis] = useState(false);
+  const balance = g.liquid + g.locked;
+  // `equipment` mêle reliques et cores : cette forge ne montre QUE les cores.
   const cores = (g.equipment || []).filter(D.isCoreItem);
+  const fuse = FUI.coreFuseState({
+    sel,
+    balance,
+    busy
+  });
+  const dis = FUI.disenchantState({
+    sel,
+    balance,
+    busy
+  });
+  const selRarity = sel.length ? sel[0].rarity : null;
   const coreName = c => I18N.t("CORE_" + String(c.core_id || "").toUpperCase());
   const coreDesc = c => I18N.t("CORE_" + String(c.core_id || "").toUpperCase() + "_D");
+  function clic(inst) {
+    if (busy) return;
+    // null = refusé : une relique (autre famille) ou 3 cores déjà sélectionnés.
+    const next = FUI.equipSelToggle(sel, inst, "core");
+    if (next === null) {
+      toast(I18N.t("FG_CORE_EQ_SEL_MAX"), "bad");
+      return;
+    }
+    setSel(next);
+    setConfirmDis(false);
+  }
+  async function doFuse() {
+    if (fuse.disabled) return;
+    setBusy(true);
+    const r = await actions.coreFuse(sel.map(x => x.id));
+    setBusy(false);
+    if (!r.ok) {
+      toast(I18N.localizeServerError(r.reason), "bad");
+      return;
+    }
+    setSel([]);
+    setConfirmDis(false);
+    toast(I18N.t("FG_CORE_EQ_FUSE_OK", coreName(r.core), rarityLabel(r.core.rarity)), "good");
+    // Le core fusionné remplace le précédent dans la petite case de résultat.
+    if (onForged) onForged(r.core);
+  }
+  async function doDisenchant() {
+    if (dis.disabled) return;
+    const fee = dis.fee,
+      net = dis.net;
+    setBusy(true);
+    const r = await actions.equipDisenchant(sel[0].id);
+    setBusy(false);
+    setConfirmDis(false);
+    if (!r.ok) {
+      toast(I18N.localizeServerError(r.reason), "bad");
+      return;
+    }
+    setSel([]);
+    toast(I18N.t("FG_CORE_EQ_DIS_OK", r.value != null ? r.value - fee : net), "good");
+  }
   return /*#__PURE__*/React.createElement("div", {
+    className: "panel oct",
     style: {
+      border: "1px solid var(--line)",
+      padding: 22,
       marginTop: 26
     }
   }, /*#__PURE__*/React.createElement("div", {
     className: "eyebrow",
     style: {
-      marginBottom: 10
+      marginBottom: 4
     }
-  }, "\u2B21 ", I18N.t("FG_CORE_INVENTORY")), cores.length === 0 ? /*#__PURE__*/React.createElement("div", {
+  }, "\u2B21 ", I18N.t("FG_CORE_EQ_TITLE")), /*#__PURE__*/React.createElement("div", {
+    className: "mono muted",
+    style: {
+      fontSize: 12,
+      marginBottom: 14
+    }
+  }, I18N.t("FG_CORE_EQ_SUB")), cores.length === 0 ? /*#__PURE__*/React.createElement("div", {
     className: "mono muted",
     style: {
       fontSize: 13
     }
-  }, I18N.t("FG_CORE_NONE")) : /*#__PURE__*/React.createElement("div", {
+  }, I18N.t("FG_CORE_NONE")) : /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "mono muted",
+    style: {
+      fontSize: 12,
+      marginBottom: 8
+    }
+  }, I18N.t("FG_CORE_INVENTORY")), /*#__PURE__*/React.createElement("div", {
     className: "grid-cards"
   }, cores.map(inst => {
+    const selected = sel.some(x => x.id === inst.id);
     const holder = g.roster.find(b => b.core_id === inst.id);
     return /*#__PURE__*/React.createElement("div", {
       key: inst.id,
       className: "panel oct",
-      onClick: () => setDetail(inst),
+      onClick: () => clic(inst),
       style: {
-        border: `1px solid ${D.RARITY_COLORS[inst.rarity]}`,
-        padding: 16,
+        border: `1px solid ${selected ? "var(--gold)" : D.RARITY_COLORS[inst.rarity]}`,
+        padding: 14,
         display: "flex",
         flexDirection: "column",
-        gap: 8,
-        cursor: "pointer"
+        gap: 6,
+        cursor: "pointer",
+        boxShadow: selected ? "0 0 14px rgba(247,147,26,.35)" : "none",
+        opacity: selRarity && inst.rarity !== selRarity ? 0.55 : 1
       }
     }, /*#__PURE__*/React.createElement("div", {
       className: "flex center gap8"
@@ -2107,53 +2192,89 @@ function CoreInventory() {
         fontSize: 11
       }
     }, "\u2694 ", D.displayName(holder)));
-  })), detail && /*#__PURE__*/React.createElement(Modal, {
-    onClose: () => setDetail(null),
-    accent: D.RARITY_COLORS[detail.rarity]
-  }, /*#__PURE__*/React.createElement("div", {
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "divider"
+  }), fuse.maxRarity && /*#__PURE__*/React.createElement("div", {
+    className: "mono",
     style: {
-      textAlign: "center",
-      padding: 8
+      fontSize: 12,
+      color: "var(--alert)",
+      marginBottom: 8
     }
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "eyebrow",
-    style: {
-      marginBottom: 10,
-      color: D.RARITY_COLORS[detail.rarity] || "var(--text)"
-    }
-  }, "\u2B21 ", I18N.t("FG_CORE_DONE")), CV ? /*#__PURE__*/React.createElement(CV, {
-    type: detail.core_id,
-    rarity: detail.rarity || "Common",
-    size: 240
-  }) : /*#__PURE__*/React.createElement(CoreIcon, {
-    type: detail.core_id,
-    rarity: detail.rarity || "Common",
-    size: 48
-  }), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontWeight: 700,
-      fontSize: 16,
-      marginTop: 10
-    }
-  }, coreName(detail)), /*#__PURE__*/React.createElement("div", {
-    style: {
-      color: D.RARITY_COLORS[detail.rarity] || "var(--text)",
-      fontWeight: 600,
-      marginTop: 4
-    }
-  }, rarityLabel(detail.rarity)), /*#__PURE__*/React.createElement("div", {
+  }, I18N.t("FG_CORE_EQ_MAX_RARITY")), fuse.cost != null && !fuse.maxRarity && /*#__PURE__*/React.createElement("div", {
     className: "mono muted",
     style: {
-      fontSize: 13,
-      marginTop: 8
+      fontSize: 12,
+      marginBottom: 8
     }
-  }, coreDesc(detail)))));
+  }, I18N.t("FG_CORE_EQ_FUSE_HINT", rarityLabel(selRarity), rarityLabel(fuse.nextRarity))), (fuse.showInsufficient || dis.showInsufficient) && /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      fontSize: 12,
+      color: "var(--alert)",
+      marginBottom: 8
+    }
+  }, I18N.t("INSUFFICIENT", balance, fuse.showInsufficient ? fuse.cost : dis.fee)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)",
+      gap: 10
+    },
+    className: "summon-grid"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "btn btn-gold",
+    disabled: fuse.disabled,
+    onClick: doFuse
+  }, busy ? "…" : /*#__PURE__*/React.createElement(FaText, {
+    text: I18N.t("FG_CORE_EQ_FUSE_BTN", fuse.cost || 0)
+  })), !confirmDis ? /*#__PURE__*/React.createElement("button", {
+    className: "btn",
+    disabled: dis.disabled,
+    onClick: () => setConfirmDis(true)
+  }, busy ? "…" : /*#__PURE__*/React.createElement(FaText, {
+    text: I18N.t("FG_CORE_EQ_DIS_BTN", dis.net || 0)
+  })) :
+  /*#__PURE__*/
+  // Le désenchantement DÉTRUIT le core : confirmation obligatoire.
+  React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 6
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "mono",
+    style: {
+      fontSize: 12,
+      color: "var(--alert)"
+    }
+  }, I18N.t("FG_CORE_EQ_DIS_CONFIRM")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)",
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "btn",
+    onClick: () => setConfirmDis(false)
+  }, I18N.t("CANCEL")), /*#__PURE__*/React.createElement("button", {
+    className: "btn",
+    disabled: dis.disabled,
+    style: {
+      background: "var(--alert)",
+      borderColor: "#ff8ba4",
+      color: "#14030a",
+      fontWeight: 700
+    },
+    onClick: doDisenchant
+  }, busy ? "…" : /*#__PURE__*/React.createElement(FaText, {
+    text: I18N.t("FG_CORE_EQ_DIS_BTN", dis.net || 0)
+  }))))));
 }
 
-// Écran de l'onglet Cores : invocation, forge par fragments (⬡), inventaire.
-// Les DEUX chemins d'obtention (invocation 8000 FA et forge par fragments, gratuite)
-// écrivent dans la MÊME case de résultat — exactement comme l'onglet Reliques, où
-// l'invocation et la forge de fragments partagent le panneau de droite.
+// Écran de l'onglet Cores, calqué sur l'onglet Reliques : invocation, forge par
+// fragments (⬡), puis forge d'équipement (fusion/désenchantement + inventaire).
+// Les TROIS chemins qui produisent un core écrivent dans la MÊME case de résultat.
 function ForgeCores() {
   const [last, setLast] = useState(null);
   return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(ForgeCoreSummon, {
@@ -2161,7 +2282,9 @@ function ForgeCores() {
     onSummoned: setLast
   }), /*#__PURE__*/React.createElement(ForgeCoreFragments, {
     onForged: setLast
-  }), /*#__PURE__*/React.createElement(CoreInventory, null));
+  }), /*#__PURE__*/React.createElement(ForgeCoreEquipement, {
+    onForged: setLast
+  }));
 }
 function ForgeReliques() {
   const {

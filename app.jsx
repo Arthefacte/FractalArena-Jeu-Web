@@ -1636,8 +1636,32 @@ function App() {
       } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
     },
 
-    // Désenchantement : détruit une relique, crédite 20 % de sa valeur en liquid,
-    // débite les frais fixes (→ buyback). Jamais de core (le serveur refuse aussi).
+    // Fusion d'équipement des CORES : 3 cores de même rareté → 1 core de rareté
+    // supérieure (succès 100 %, core aléatoire). Mêmes barèmes que les reliques.
+    // Le serveur valide tout ; ici on traduit ses codes d'erreur et on resync la save.
+    async coreFuse(coreIds) {
+      const s = gRef.current;
+      if (!s.wallet || !s.authToken) return { ok: false, reason: "Wallet requis" };
+      const first = (s.equipment || []).find((e) => e.id === (coreIds || [])[0]);
+      const cost = first ? D.CORE_FUSE_COSTS[first.rarity] || 0 : 0;
+      if (s.liquid + s.locked < cost) return { ok: false, reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, cost) };
+      try {
+        const resp = await fetch(`${API_URL}/forge/core-fuse`, {
+          method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
+          body: JSON.stringify({ wallet: s.wallet, core_ids: coreIds }),
+        });
+        const data = await resp.json();
+        if (data.status === "insufficient_balance") return { ok: false, reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, data.cost || cost) };
+        if (data.status !== "ok") return { ok: false, reason: window.FA_FORGE_UI.equipForgeErrText(data.error) };
+        const sv = await fetch(`${API_URL}/save/${s.wallet}`, svOpts());
+        if (sv.ok) { const { save } = await sv.json(); applySave(save, s.wallet, s.authToken); }
+        return { ok: true, core: data.core };
+      } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
+    },
+
+    // Désenchantement : détruit une relique OU un core, crédite 20 % de sa valeur en
+    // liquid, débite les frais fixes (→ buyback). La FAMILLE de l'objet choisit la
+    // table de valeur côté serveur ; ici on n'en garde que le miroir local du montant.
     async equipDisenchant(itemId) {
       const s = gRef.current;
       if (!s.wallet || !s.authToken) return { ok: false, reason: "Wallet requis" };
@@ -1654,7 +1678,8 @@ function App() {
         const sv = await fetch(`${API_URL}/save/${s.wallet}`, svOpts());
         if (sv.ok) { const { save } = await sv.json(); applySave(save, s.wallet, s.authToken); }
         // Valeur créditée : celle du serveur si présente, sinon le miroir local.
-        const value = data.value != null ? data.value : (item ? D.RELIC_BUYBACK[item.rarity] || 0 : 0);
+        const table = item && D.isCoreItem(item) ? D.CORE_BUYBACK : D.RELIC_BUYBACK;
+        const value = data.value != null ? data.value : (item ? table[item.rarity] || 0 : 0);
         return { ok: true, value };
       } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
     },
