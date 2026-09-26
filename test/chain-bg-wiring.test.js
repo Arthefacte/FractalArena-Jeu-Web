@@ -24,7 +24,10 @@ test("cache-busting >= v89, plus aucun v87/v88", () => {
 });
 
 test("Ambient monte le fond avec repli silencieux", () => {
-  const m = app.match(/function Ambient\(\)[\s\S]{0,600}FA_CHAIN_BG\?\.mount\(\)/);
+  // L'aiguille suit la signature RÉELLE (Ambient reçoit la vue depuis le 26/09 pour
+  // choisir la peinture du monde) et la fenêtre couvre le corps de la fonction —
+  // l'allonger ne doit pas faire échouer ce test pour une raison de distance.
+  const m = app.match(/function Ambient\(\{[^}]*\}\)[\s\S]{0,900}FA_CHAIN_BG\?\.mount\(\)/);
   assert.ok(m, "FA_CHAIN_BG?.mount() dans Ambient");
 });
 

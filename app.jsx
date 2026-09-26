@@ -2735,7 +2735,7 @@ function App() {
     }
     return (
       <FA_Ctx.Provider value={ctx}>
-        <Ambient />
+        <Ambient view={g.wallet ? g.view : "compte"} />
         <Onboarding onAccountCreated={(s) => setAccSecrets(s)} />
         <Toasts toasts={toasts} />
         {/* Aussi avant connexion : sans réseau, on ne peut même pas créer de
@@ -2753,7 +2753,7 @@ function App() {
 
   return (
     <FA_Ctx.Provider value={ctx}>
-      <Ambient />
+      <Ambient view={g.wallet ? g.view : "compte"} />
       <div className="app-shell">
         <Header liquidPop={liquidPop} lockedPop={lockedPop} />
         {/* Contrepartie économique du compte sans wallet : doit être vue, pas juste exister.
@@ -2804,9 +2804,61 @@ function App() {
   );
 }
 
-function Ambient() {
+// ---- Fond peint par écran — direction « Data Citadel » (livraison Astra, 26/09/2026)
+// Un seul point de vérité : le MÊME identifiant de vue que body[data-view] (accent
+// contextuel, plus haut). Les peintures ne portent aucun libellé ni chiffre de jeu :
+// tout ce qui se lit reste dans le DOM. Sans drapeau, rien ne change pour le joueur.
+const WORLD_BG = {
+  team: "team", fosse: "fosse", arene: "arene", campaign: "campaign", tour: "tour",
+  expeditions: "expeditions", quests: "quests", forge: "forge", market: "market",
+  wallet: "wallet", boosts: "boosts", leaderboard: "leaderboard", options: "options",
+  // Sans compte : le sas d'entrée de la cité remplace l'écran Équipe (voir les deux
+  // appels à <Ambient> : la vue passée est `compte` tant qu'il n'y a pas de joueur).
+  compte: "compte",
+};
+// Écran sans peinture dédiée : il hérite de celle de son écran parent plutôt que de
+// tomber sur un fond vide. Le profil et le parrainage vivent dans l'écran Équipe.
+// (`quiz` n'est pas listé : le quiz du jeu n'est pas un écran, c'est une modale — sa
+// peinture est livrée et gardée en réserve, à brancher le jour où il aura une surface.)
+const WORLD_BG_PARENT = {
+  perso: "team", lien: "team", parrainage: "team",
+};
+function worldBackdrop(view) {
+  return WORLD_BG[view] || WORLD_BG_PARENT[view] || "team";
+}
+// Le drapeau voyage dans l'URL (?cite=1 / ?cite=0) et se mémorise : on peut comparer
+// les deux fonds en direct sur le site, sans redéployer.
+function worldBackdropActif() {
+  try {
+    const q = new URLSearchParams(location.search).get("cite");
+    if (q === "1") { localStorage.setItem("fa_fond", "cite"); return true; }
+    if (q === "0") { localStorage.removeItem("fa_fond"); return false; }
+    return localStorage.getItem("fa_fond") === "cite";
+  } catch (e) { return false; }
+}
+// Les peintures passent par FA_ASSET_URL comme les autres images du balisage : elles ne
+// sont PAS dans le manifeste d'empreintes (tools/asset-hashes.mjs ne hache que les .glb et
+// les badges du header), donc c'est la version du jeu qui les cache-buste. Repli sur le
+// chemin nu si le module est absent — même défense que le reste du fichier.
+function assetDeFond(chemin) {
+  try { return window.FA_ASSET_URL(chemin); } catch (e) { return chemin; }
+}
+
+function Ambient({ view }) {
   // Fond blockchain vivante (esthétique #5 volet 2) — repli silencieux si module absent
   useEffect(() => { window.FA_CHAIN_BG?.mount(); }, []);
+  // L'attribut vit sur <body> : c'est la cascade CSS qui porte le voile de lisibilité
+  // au-dessus de la peinture, pas le JS (une règle à changer, pas un composant).
+  const [cite] = useState(worldBackdropActif);
+  useEffect(() => {
+    if (cite) document.body.dataset.fond = "cite";
+    else delete document.body.dataset.fond;
+    return () => { delete document.body.dataset.fond; };
+  }, [cite]);
+  const bg = worldBackdrop(view);
+  const bgDesktop = assetDeFond(`assets/backgrounds/${bg}-desktop.webp`);
+  const bgMobile = assetDeFond(`assets/backgrounds/${bg}-mobile.webp`);
+  const bgMobile2x = assetDeFond(`assets/backgrounds/${bg}-mobile@2x.webp`);
   const embers = useMemo(() => {
     const arr = [];
     for (let i = 0; i < 26; i++) {
@@ -2823,6 +2875,15 @@ function Ambient() {
   }, []);
   return (
     <>
+      {/* Peinture plein cadre sous le contenu : la balise <picture> choisit la
+          composition portrait sous 700 px (les fonds mobile sont des cadrages
+          distincts, pas des recadrages automatiques). Décoratif : aria-hidden. */}
+      {cite && (
+        <picture className="world-backdrop" aria-hidden="true">
+          <source media="(max-width: 700px)" srcSet={`${bgMobile} 1x, ${bgMobile2x} 2x`} />
+          <img src={bgDesktop} alt="" draggable={false} />
+        </picture>
+      )}
       <div className="app-bg" />
       <div className="embers">
         {embers.map((e, i) => (
