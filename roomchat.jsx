@@ -9,6 +9,16 @@ const ROOM_MAXLEN = 280;
 const ROOM_POLL_MS = 4000;
 const ROOM_BG_POLL_MS = 30000;
 
+/* ---- Ce qui est LU et MUTÉ vit sur le COMPTE, plus dans le navigateur ----
+   Le dernier message vu et la liste des wallets mutés partaient dans le
+   localStorage : le badge de non-lus ne s'éteignait donc que dans le navigateur
+   où le joueur lisait le chat. Résultat constaté (26/09/2026) : dans le
+   navigateur intégré de l'app UniSat — celui qu'il ouvre pour retirer ses gains —
+   les messages déjà lus sur son ordinateur rallumaient la pastille « nouveaux
+   messages », et le jeu paraissait « pas à jour ». Ces deux valeurs vivent
+   maintenant sur le compte (ui_state, player-ui.js, fusion côté serveur).
+   Le localStorage reste un CACHE : il tient la valeur pendant la seconde qui
+   précède l'arrivée de la sauvegarde, et sert de repli hors ligne. */
 function seenKey(wallet) { return "fa_room_seen:" + (wallet || "anon"); }
 function loadSeenId(wallet) {
   try { return parseInt(localStorage.getItem(seenKey(wallet)), 10) || 0; }
@@ -17,14 +27,32 @@ function loadSeenId(wallet) {
 function saveSeenId(wallet, id) {
   try { localStorage.setItem(seenKey(wallet), String(id)); } catch (e) {}
 }
+// Maximum des deux sources : le compte fait autorité (il a vu ce que les autres
+// appareils ont lu), le local couvre la lecture faite ici juste avant.
+function seenIdDepuis(g) {
+  const ui = (g && g.uiState) || {};
+  const serveur = parseInt(ui.room_seen_id, 10) || 0;
+  return Math.max(loadSeenId(g && g.wallet), serveur);
+}
 
 function mutedKey(wallet) { return "fa_muted:" + wallet; }
-function loadMuted(wallet) {
+function loadMutedLocal(wallet) {
   try { return JSON.parse(localStorage.getItem(mutedKey(wallet))) || []; }
   catch (e) { return []; }
 }
 function saveMuted(wallet, list) {
   try { localStorage.setItem(mutedKey(wallet), JSON.stringify(list)); } catch (e) {}
+}
+// Union des deux sources : muter est un geste qu'on ne défait pas dans l'UI, donc
+// rien ne doit se perdre entre l'appareil et le compte. Le serveur, lui, REMPLACE
+// la liste — on lui envoie toujours la liste complète.
+function mutedDepuis(g) {
+  const ui = (g && g.uiState) || {};
+  const out = [];
+  for (const w of loadMutedLocal(g && g.wallet).concat(Array.isArray(ui.room_muted) ? ui.room_muted : [])) {
+    if (typeof w === "string" && !out.includes(w)) out.push(w);
+  }
+  return out;
 }
 // Nom sûr : si le player_name ressemble à une arnaque, on retombe sur le wallet tronqué
 const NAME_BAD_RE = /(https?:\/\/|www\.|\b(bc1|[13])[a-z0-9]{20,}\b|t\.me|telegram|whatsapp)/i;
@@ -118,15 +146,20 @@ function RoomFab() {
   const { g, actions, toast } = useFA();
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([]);
-  const [muted, setMuted] = useState(() => loadMuted(g.wallet));
+  const [muted, setMuted] = useState(() => mutedDepuis(g));
   const [unread, setUnread] = useState(0);
   const lastIdRef = useRef(0);
   const timerRef = useRef(null);
-  const seenIdRef = useRef(loadSeenId(g.wallet));
+  const seenIdRef = useRef(seenIdDepuis(g));
 
-  // Recharge la liste des mutés quand le wallet change (les mutés sont par-wallet)
-  useEffect(() => { setMuted(loadMuted(g.wallet)); }, [g.wallet]);
-  useEffect(() => { seenIdRef.current = loadSeenId(g.wallet); }, [g.wallet]);
+  // Recharge quand le compte change — et quand sa sauvegarde arrive, puisqu'elle
+  // apporte ui_state (dernier id vu, mutés) : c'est elle qui porte l'état lu
+  // ailleurs, sans quoi le badge se rallumerait ici.
+  useEffect(() => { setMuted(mutedDepuis(g)); }, [g.wallet, g.uiState]);
+  useEffect(() => {
+    const serveur = seenIdDepuis(g);
+    if (serveur > seenIdRef.current) seenIdRef.current = serveur;
+  }, [g.wallet, g.uiState]);
 
   // Coquille mobile : la bulle flottante disparaît, un bouton du header ouvre
   // le panneau via cet événement ; le badge de non-lus lui est renvoyé.
@@ -171,7 +204,11 @@ function RoomFab() {
   useEffect(() => {
     const maxId = messages.reduce((mx, m) => Math.max(mx, m.id), 0);
     if (open) {
-      if (maxId > seenIdRef.current) { seenIdRef.current = maxId; saveSeenId(g.wallet, maxId); }
+      if (maxId > seenIdRef.current) {
+        seenIdRef.current = maxId;
+        saveSeenId(g.wallet, maxId);                    // cache de ce navigateur
+        actions.pushUiState({ room_seen_id: maxId });   // et le compte, pour les autres
+      }
       setUnread(0);
       return;
     }
@@ -197,12 +234,11 @@ function RoomFab() {
   }
 
   function mute(wallet) {
-    setMuted((prev) => {
-      if (prev.includes(wallet)) return prev;
-      const next = prev.concat(wallet);
-      saveMuted(g.wallet, next);
-      return next;
-    });
+    if (muted.includes(wallet)) return;
+    const next = muted.concat(wallet);
+    setMuted(next);
+    saveMuted(g.wallet, next);                 // cache de ce navigateur
+    actions.pushUiState({ room_muted: next }); // et le compte, pour les autres
     toast(I18N.t("ROOM_MUTED"), "info");
   }
 

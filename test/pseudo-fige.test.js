@@ -13,7 +13,11 @@ const APP = fs.readFileSync(path.join(__dirname, "..", "app.jsx"), "utf8");
 
 test("le nom affiché ne passe plus par player_name", () => {
   const i = APP.indexOf("function serverToState");
-  const bloc = APP.slice(i, i + 2600);
+  // Fonction entière, jamais une fenêtre de N caractères : `playerName` était à
+  // ~2536 caractères de l'en-tête, donc un seul champ ajouté à l'hydratation le
+  // faisait sortir du champ et le test tombait sur du code correct (26/09/2026).
+  const fin = APP.indexOf("\n}", i);
+  const bloc = APP.slice(i, fin > i ? fin : i + 2600);
   const m = bloc.match(/playerName:\s*([^,\n]+)/);
   assert.ok(m, "playerName introuvable dans serverToState");
   assert.ok(!/player_name/.test(m[1]),

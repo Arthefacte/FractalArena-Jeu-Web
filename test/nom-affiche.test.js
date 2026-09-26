@@ -42,10 +42,15 @@ test("hors-ligne : un compte UniSat affiche son portefeuille — c'est bien le s
 // « bc1q… » fabriqué à la main : slice(0, 6) + … + slice(-4) sur une adresse.
 const FABRIQUE = /\.slice\(\s*0\s*,\s*6\s*\)\s*\+\s*"…"\s*\+\s*\w+\.slice\(\s*-4\s*\)/g;
 
+// La fonction ENTIÈRE, de son en-tête à sa fermeture. Une fenêtre de N caractères
+// cassait à chaque champ ajouté à l'hydratation (26/09/2026 : `uiState` a poussé
+// `display_name` hors du champ, et le test est tombé sur du code correct). On ne
+// rapetisse jamais le code pour tenir dans une fenêtre de test.
 function blocServerToState() {
   const i = APP.indexOf("function serverToState");
   assert.ok(i > 0, "serverToState introuvable");
-  return APP.slice(i, i + 2600);
+  const fin = APP.indexOf("\n}", i);
+  return APP.slice(i, fin > i ? fin : i + 2600);
 }
 
 test("serverToState prend le nom du serveur, sans le fabriquer depuis l'adresse", () => {

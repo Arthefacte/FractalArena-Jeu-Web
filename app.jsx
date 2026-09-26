@@ -191,6 +191,7 @@ function serverToState(save, addr, s) {
     campaignTitles: D.deriveCampaignTitles(nestProgress(save.campaign_progress)),
     campaignFreeTs: Number(save.campaign_free_ts) || 0,
     campaignWeekly: save.campaign_weekly || {},
+    uiState: (save.ui_state && typeof save.ui_state === "object") ? save.ui_state : {},
     session: { wins: save.session_wins ?? 0, losses: save.session_losses ?? 0, net: save.session_arte_net ?? 0 },
     roster,
     equipment: Array.isArray(save.equipment) ? save.equipment : [],
@@ -281,6 +282,13 @@ function freshState() {
     ordinalName: "",
     holderDays: 0,
     options: { sound: true, speed: 1 },
+    // Etat d'interface du COMPTE (ui_state, player-ui.js) : tutoriel vu, onglets du
+    // guide deja decouverts, guide masque, dernier message de chat vu, wallets mutes.
+    // Il arrive du serveur avec la sauvegarde (GET /save) ; le blob localStorage n'en
+    // est qu'un cache hors-ligne. Sans lui, un navigateur neuf (le navigateur integre
+    // d'UniSat, ou le joueur va retirer ses gains) rouvrait le tutoriel et rallumait le
+    // badge de chat : le jeu paraissait « pas a jour ».
+    uiState: {},
     view: "team",
     authToken: "",
     accountKind: "",      // "generated" | "unisat" | "" — decide ou vit le jeton
@@ -401,6 +409,13 @@ function App() {
   // de parrain — c'est lui qui crée la ligne si /claim-airdrop a échoué.
   // Baissé dès que le serveur a accepté une création (ligne existante ensuite).
   const newPlayerRef = useRef(false);
+  // État d'interface du COMPTE, exposé aux modules qui n'ont pas les actions sous
+  // la main (tutorial.jsx et login.jsx lisent ce drapeau pour ne pas rouvrir un
+  // tutoriel déjà vu sur un autre appareil). Le serveur reste la référence :
+  // c'est GET /save qui l'apporte, et POST /ui-state qui le met à jour.
+  useEffect(() => {
+    window.FA_UI_STATE = (g.uiState && typeof g.uiState === "object") ? g.uiState : {};
+  }, [g.uiState]);
 
   // Reconnexion à l'ouverture : si un token est encore valide en sessionStorage (rechargement
   // de l'onglet), on l'utilise directement → pas de re-signature, et la save se recharge AVEC
@@ -2168,6 +2183,61 @@ function App() {
         });
         if (!r.ok) return { ok: false };
         return { ok: true, data: await r.json() };
+      } catch (e) {
+        return { ok: false };
+      }
+    },
+    // --- Guide de la première session ---
+    // Les six étapes de « Tes premiers pas », pour TOUT compte : le serveur les
+    // recompte depuis l'historique réel (combats, Tour, Arène, campagne, niveau).
+    // `rewarded` = le compte est éligible au parcours RÉCOMPENSÉ (claims).
+    // Avant, les comptes non éligibles étaient guidés par des drapeaux
+    // localStorage : dans un navigateur neuf (le navigateur intégré d'UniSat),
+    // la Tour et l'Arène y apparaissaient « à faire » alors qu'elles étaient
+    // faites — le jeu semblait « pas à jour ».
+    async guideState() {
+      const s = gRef.current;
+      if (!s.authToken) return { ok: false };
+      try {
+        const r = await fetch(`${API_URL}/guide/state`, {
+          headers: { "Authorization": `Bearer ${s.authToken}` },
+        });
+        if (!r.ok) return { ok: false };
+        return { ok: true, data: await r.json() };
+      } catch (e) {
+        return { ok: false };
+      }
+    },
+    // --- État d'interface du COMPTE (ui_state) ---
+    // Fusion côté serveur, jamais un remplacement : un appareil ne peut pas
+    // effacer ce qu'un autre a retenu (badge de chat lu sur le téléphone, guide
+    // masqué sur l'ordinateur). Optimiste : l'état local suit tout de suite, et
+    // un échec réseau n'empêche jamais de jouer — le repli localStorage garde le
+    // même effet sur cet appareil jusqu'à la prochaine ouverture.
+    async pushUiState(patch) {
+      const s = gRef.current;
+      if (!patch || typeof patch !== "object") return { ok: false };
+      setG((st) => {
+        const cur = (st.uiState && typeof st.uiState === "object") ? st.uiState : {};
+        const next = { ...cur };
+        if (typeof patch.tutorial_seen === "boolean") next.tutorial_seen = cur.tutorial_seen === true || patch.tutorial_seen;
+        if (typeof patch.guide_hidden === "boolean") next.guide_hidden = patch.guide_hidden;
+        if (patch.room_seen_id != null) next.room_seen_id = Math.max(Number(cur.room_seen_id) || 0, Number(patch.room_seen_id) || 0);
+        if (Array.isArray(patch.guide_tabs)) next.guide_tabs = Array.from(new Set([...(cur.guide_tabs || []), ...patch.guide_tabs]));
+        if (Array.isArray(patch.room_muted)) next.room_muted = patch.room_muted.slice();
+        return { ...st, uiState: next };
+      });
+      if (!s.authToken) return { ok: false };
+      try {
+        const r = await fetch(`${API_URL}/ui-state`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
+          body: JSON.stringify({ patch }),
+        });
+        if (!r.ok) return { ok: false };
+        const d = await r.json();
+        if (d && d.ui_state && typeof d.ui_state === "object") setG((st) => ({ ...st, uiState: d.ui_state }));
+        return { ok: true };
       } catch (e) {
         return { ok: false };
       }

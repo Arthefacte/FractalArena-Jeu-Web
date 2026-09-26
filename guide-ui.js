@@ -32,19 +32,32 @@
   // view : l'onglet où l'action se fait. target : l'élément [data-guide] à
   // mettre en avant sur cet onglet ; `targetAlt` sert quand la première
   // condition n'est pas remplie (ex. Fosse : d'abord choisir l'équipe).
+  //
+  // Aucune étape ne porte plus de prédicat « local » (26/09/2026). Elles en
+  // avaient un — victoires de session, niveau, étoiles, plus deux drapeaux
+  // « Tour jouée » / « Arène jouée » posés en localStorage — utilisé pour les
+  // comptes non éligibles au parcours découverte. C'est ce mode local qui
+  // faisait dire au guide, dans le navigateur intégré d'UniSat, que la Tour et
+  // l'Arène restaient à faire à un joueur qui les avait faites sur son
+  // ordinateur : ces deux drapeaux ne pouvaient venir que de CE navigateur.
+  // Les six étapes viennent maintenant du serveur pour tout le monde
+  // (GET /guide/state), qui les recompte depuis l'historique réel du joueur.
   const STEPS = [
-    { id: "d_win",   view: "fosse",    target: "fosse-fight",      reward: 50,  local: (s) => s.sessionWins > 0 },
-    { id: "d_paid",  view: "fosse",    target: "fosse-bet-bronze", reward: 75,  local: (s) => s.sessionNet !== 0 },
-    { id: "d_level", view: "fosse",    target: "fosse-fight",      reward: 100, local: (s) => s.maxLevel >= 5 },
-    { id: "d_camp",  view: "campaign", target: "camp-fight",       reward: 125, local: (s) => s.campaignFloors >= 3 },
-    { id: "d_tower", view: "tour",     target: "tour-start",       reward: 150, local: (s) => !!s.towerPlayed },
-    { id: "d_pvp",   view: "arene",    target: "arene-attack",     reward: 175, local: (s) => !!s.pvpPlayed },
+    { id: "d_win",   view: "fosse",    target: "fosse-fight",      reward: 50 },
+    { id: "d_paid",  view: "fosse",    target: "fosse-bet-bronze", reward: 75 },
+    { id: "d_level", view: "fosse",    target: "fosse-fight",      reward: 100 },
+    { id: "d_camp",  view: "campaign", target: "camp-fight",       reward: 125 },
+    { id: "d_tower", view: "tour",     target: "tour-start",       reward: 150 },
+    { id: "d_pvp",   view: "arene",    target: "arene-attack",     reward: 175 },
   ];
   const TOTAL_REWARD = STEPS.reduce((n, s) => n + s.reward, 0); // 675
 
   // Résumé LOCAL de la progression, calculé depuis l'état client `g`.
-  // flags : { towerPlayed, pvpPlayed } (localStorage, posés par guide.jsx).
-  function localSummary(g, flags) {
+  // Il ne sert plus qu'à une chose : savoir si l'équipe est complète, pour
+  // envoyer d'abord sur Équipe plutôt que sur la Fosse. Le reste (victoires,
+  // niveau, étages, drapeaux de Tour/Arène) a été retiré le 26/09/2026 avec le
+  // mode local du guide — le serveur est la seule source des étapes.
+  function localSummary(g) {
     const s = g || {};
     const roster = Array.isArray(s.roster) ? s.roster : [];
     const progress = s.campaignProgress || {};
@@ -59,30 +72,36 @@
       maxLevel: roster.reduce((m, b) => Math.max(m, (b && b.level) || 1), 1),
       campaignFloors: floors,
       selected: Array.isArray(s.selected) ? s.selected.length : 0,
-      towerPlayed: !!(flags && flags.towerPlayed),
-      pvpPlayed: !!(flags && flags.pvpPlayed),
     };
   }
 
   // Décide ce que le guide affiche.
+  // `disc` = réponse de GET /guide/state : { rewarded, steps:[{id,done,claimed,…}] }.
+  //   - rewarded : le compte est éligible au parcours RÉCOMPENSÉ (les claims
+  //     n'existent que là). Sinon le guide oriente, sans annoncer de montant.
+  //   - steps : les six étapes, recomptées par le serveur. Absentes tant que la
+  //     réponse n'est pas arrivée (ou hors ligne) : on ne guide rien plutôt que
+  //     de guider faux.
   // → { mode: "do" | "claim" | "done", step, index, total, target, view, reward, rewarded }
   //   mode "do"    : l'étape est à faire ; target = élément à mettre en avant.
   //   mode "claim" : l'étape est accomplie côté serveur mais pas réclamée (compte
   //                  éligible seulement) ; target = son bouton Réclamer.
   //   mode "done"  : tout est fait → le guide se retire.
-  function computeGuide({ disc, g, flags, view }) {
-    const eligible = !!(disc && disc.eligible && Array.isArray(disc.steps) && disc.steps.length);
-    const sum = localSummary(g, flags);
+  function computeGuide({ disc, g, view }) {
+    const rewarded = !!(disc && disc.rewarded);
+    const steps = (disc && Array.isArray(disc.steps)) ? disc.steps : [];
+    const sum = localSummary(g);
     for (let i = 0; i < STEPS.length; i++) {
       const st = STEPS[i];
-      const srv = eligible ? disc.steps.find((x) => x && x.id === st.id) : null;
-      if (eligible) {
-        if (!srv) continue;                  // étape inconnue du serveur : on ne la guide pas
-        if (srv.claimed) continue;
-        if (srv.done) {
+      const srv = steps.find((x) => x && x.id === st.id);
+      if (!srv) continue;                  // étape inconnue du serveur : on ne la guide pas
+      if (srv.claimed) continue;           // déjà réclamée
+      if (srv.done) {
+        // Accomplie côté serveur. Récompensée → on envoie réclamer ; sinon c'est
+        // une étape d'orientation déjà passée, on passe à la suivante.
+        if (rewarded) {
           return { mode: "claim", step: st, index: i, total: STEPS.length, view: "quests", target: "quest-claim-" + st.id, reward: srv.reward || st.reward, rewarded: true };
         }
-      } else if (st.local(sum)) {
         continue;
       }
       // À faire. Sur la Fosse, tant que l'équipe n'est pas complète, c'est
@@ -90,9 +109,9 @@
       let target = st.target, v = st.view;
       if (st.view === "fosse" && sum.selected < 3) { v = "team"; target = "team-grid"; }
       else if (st.view === "fosse" && view === "team") { target = "team-enter"; v = "team"; }
-      return { mode: "do", step: st, index: i, total: STEPS.length, view: v, target, reward: st.reward, rewarded: eligible };
+      return { mode: "do", step: st, index: i, total: STEPS.length, view: v, target, reward: st.reward, rewarded };
     }
-    return { mode: "done", step: null, index: STEPS.length, total: STEPS.length, view: null, target: null, reward: 0, rewarded: eligible };
+    return { mode: "done", step: null, index: STEPS.length, total: STEPS.length, view: null, target: null, reward: 0, rewarded };
   }
 
   // Clé i18n de la consigne d'une étape selon le contexte (équipe incomplète

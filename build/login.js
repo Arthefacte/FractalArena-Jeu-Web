@@ -33,9 +33,11 @@ function LoginGate() {
         setData(r.data);
         // Cohabitation 1er login : si le tutoriel ne s'est jamais affiché,
         // on diffère le cadeau jusqu'à sa fermeture.
+        // Le drapeau du COMPTE d'abord (tutorial.jsx) : un tutoriel vu sur un
+        // autre appareil ne doit pas rouvrir le cadeau de connexion derrière lui.
         let seen = false;
         try {
-          seen = localStorage.getItem(TUT_KEY) === "1";
+          seen = window.FA_TUT_SEEN ? window.FA_TUT_SEEN() : localStorage.getItem(TUT_KEY) === "1";
         } catch (e) {}
         if (seen) {
           setOpen(true);

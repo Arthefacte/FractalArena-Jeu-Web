@@ -14,7 +14,12 @@ const {
 } = window;
 const I18N = window.FA_I18N;
 
-// Clé localStorage dédiée (séparée de SAVE_KEY : survit à disconnect()).
+// Repli local dédié (séparé de SAVE_KEY : survit à disconnect()). Il ne sert plus
+// que pour un navigateur hors ligne ou sans compte : la VÉRITÉ est sur le compte
+// (ui_state.tutorial_seen, player-ui.js). Le tutoriel n'était marqué que dans le
+// localStorage, donc rouvert de zéro dans chaque navigateur neuf — dont le
+// navigateur intégré de l'app UniSat, où le joueur va retirer ses gains, ce qui
+// donnait l'impression d'un jeu « pas à jour ».
 const TUT_KEY = "fractal_arena_tutorial_v1";
 
 // Chaque icône doit illustrer le PROPOS du slide, pas un détail (retour user
@@ -38,6 +43,8 @@ const SLIDES = [{
   b: "TUT_SG_B"
 }];
 function tutSeen() {
+  // Le drapeau du compte d'abord : il suit le joueur d'un appareil à l'autre.
+  if (window.FA_UI_STATE && window.FA_UI_STATE.tutorial_seen === true) return true;
   try {
     return localStorage.getItem(TUT_KEY) === "1";
   } catch (e) {
@@ -48,6 +55,10 @@ function markTutSeen() {
   try {
     localStorage.setItem(TUT_KEY, "1");
   } catch (e) {}
+  // Marqué en mémoire tout de suite : les lectures qui suivent (cadeau de
+  // connexion, bandeau des gains verrouillés) voient l'effet sans attendre le
+  // serveur. L'écriture serveur, elle, se fait dans close().
+  if (window.FA_UI_STATE) window.FA_UI_STATE.tutorial_seen = true;
 }
 // Exposé pour app.jsx : le bandeau « gains verrouillés » attend que le tutoriel
 // ait été vu (une seule fenêtre à la fois au premier lancement).
@@ -59,7 +70,8 @@ function TutorialGate({
   blocked
 }) {
   const {
-    g
+    g,
+    actions
   } = useFA();
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
@@ -84,6 +96,11 @@ function TutorialGate({
   if (!open) return null;
   function close() {
     markTutSeen();
+    // Le compte retient le tutoriel vu : les autres navigateurs (navigateur
+    // intégré d'UniSat, PWA, autre ordinateur) ne le rouvriront plus.
+    actions.pushUiState({
+      tutorial_seen: true
+    });
     setOpen(false);
     // Signale au cadeau de connexion qu'il peut s'ouvrir (cohabitation 1er login).
     window.dispatchEvent(new Event("fa-tutorial-closed"));
