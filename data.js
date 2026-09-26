@@ -26,7 +26,7 @@ window.FA_API_URL = (typeof location !== "undefined" &&
 // l'installation alors que la prod servait le nouveau depuis une heure.
 // Ne sert plus que de REPLI : un asset absent du manifeste doit rester cache-busté
 // plutôt que servi indéfiniment par le CDN.
-window.FA_ASSET_V = "295";
+window.FA_ASSET_V = "296";
 
 // L'URL porte l'empreinte du CONTENU du fichier (asset-hashes.js, généré au build),
 // et non la version du jeu. Versionner par la version du jeu — ce que faisait la
@@ -339,77 +339,8 @@ window.FA_ASSET_URL = function (chemin) {
   function xpToNext(beast) { return beast.level * 100; }
   function displayName(b) { return b.custom_name || b.name; }
 
-  // ---- Simulated on-chain name-inscription scan ----
-  // Deterministic per wallet: a seeded RNG picks a handful of ".fb" names the
-  // wallet "owns". In a real build this would query the wallet's inscriptions.
-  const _NAME_POOL = [
-    "FractalArena", "Satoshi", "BlockForge", "HashKing", "DeepMiner", "Ordinal",
-    "ChainBreaker", "GenesisBlock", "MerkleRoot", "NodeRunner", "ProofOfWork",
-    "DiamondHands", "WhaleGod", "ByteLord", "CryptoSamurai", "LedgerWolf",
-    "MoonMiner", "FractalKnight", "BitForge", "VoidWalker",
-  ];
-  function _seedFromStr(s) { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
-  function _mulberry(seed) { return function () { seed |= 0; seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
-  function walletNameInscriptions(address) {
-    if (!address) return [];
-    const rng = _mulberry(_seedFromStr(address));
-    // Most wallets hold a handful; ~1 in 4 is a "collector" with many names.
-    const collector = rng() < 0.25;
-    const n = collector ? 30 + Math.floor(rng() * 110) : 2 + Math.floor(rng() * 5);
-    const out = [];
-    const seen = new Set();
-    let guard = 0;
-    while (out.length < n && guard++ < n * 6) {
-      const base = _NAME_POOL[Math.floor(rng() * _NAME_POOL.length)];
-      // numeric suffix keeps large collections unique (e.g. Satoshi420.fb)
-      const suffix = out.length < 4 && rng() < 0.5 ? "" : String(Math.floor(rng() * 9000) + 100);
-      const name = base + suffix + ".fb";
-      if (seen.has(name)) continue;
-      seen.add(name);
-      out.push({
-        name,
-        number: 4000000000 + Math.floor(rng() * 900000000),
-        sats: 330,
-        days: 1 + Math.floor(rng() * 120),
-      });
-    }
-    return out;
-  }
-
   // Grant XP to a team, returns events
-  function grantXp(team, xp) {
-    const events = [];
-    for (const b of team) {
-      b.xp += xp;
-      while (b.xp >= xpToNext(b)) {
-        b.xp -= xpToNext(b);
-        b.level += 1;
-        events.push({ type: "levelup", beast: b });
-        if (b.level >= ECON.MAX_LEVEL_UPGRADE && b.rarity !== "Legendary") {
-          upgradeRarity(b);
-          events.push({ type: "rarity_up", beast: b });
-          break;
-        }
-      }
-    }
-    return events;
-  }
 
-  function upgradeRarity(b) {
-    const nr = RARITY_UPGRADE[b.rarity];
-    if (nr === b.rarity) return;
-    const curHp = maxHp(b), curAtk = eff(b, "atk"), curDef = eff(b, "def"),
-      curSpd = eff(b, "spd"), curMag = eff(b, "mag");
-    const v = rarityVariance(nr);
-    b.rarity = nr;
-    b.base_hp = Math.floor(curHp * v);
-    b.base_atk = Math.floor(curAtk * v);
-    b.base_def = Math.floor(curDef * v);
-    b.base_spd = Math.floor(curSpd * v);
-    b.base_mag = Math.floor(curMag * v);
-    b.level = 1;
-    b.xp = 0;
-  }
 
   // Average / majority rarity of a team
   function avgRarity(team) {
@@ -428,32 +359,6 @@ window.FA_ASSET_URL = function (chemin) {
   }
 
   // Generate a mirror-style enemy team with a difficulty multiplier
-  function generateEnemyTeam(playerTeam, diffMult) {
-    const types = ["HASH", "MINING", "LEDGER", "NETWORK", "BLOCK", "GENESIS"];
-    // shuffle
-    for (let i = types.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0;[types[i], types[j]] = [types[j], types[i]]; }
-    const chosen = types.slice(0, 3);
-    const enemies = [];
-    for (let i = 0; i < 3; i++) {
-      const ptype = chosen[i];
-      const tname = pick(TEMPLATES_BY_TYPE[ptype]);
-      const mirrorRarity = playerTeam[i].rarity;
-      const g = mintBeast(tname, mirrorRarity);
-      g.level = playerTeam[i].level;
-      g.xp = 0;
-      g.name = TYPE_LABEL[ptype];
-      const m = diffMult * (0.96 + Math.random() * 0.08);
-      g.base_hp = Math.max(1, Math.floor(g.base_hp * m));
-      g.base_atk = Math.max(1, Math.floor(g.base_atk * m));
-      g.base_def = Math.max(1, Math.floor(g.base_def * m));
-      g.base_spd = Math.max(1, Math.floor(g.base_spd * m));
-      g.base_mag = Math.max(1, Math.floor(g.base_mag * m));
-      enemies.push(g);
-    }
-    // shuffle final
-    for (let i = enemies.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0;[enemies[i], enemies[j]] = [enemies[j], enemies[i]]; }
-    return enemies;
-  }
 
   // ============================================================
   //  PvE CAMPAIGN — 6 mondes × 10 étages, génération procédurale des étages
@@ -543,11 +448,6 @@ window.FA_ASSET_URL = function (chemin) {
   }
   // Renvoie une ÉQUIPE de 3 ennemis pour un (monde, étage). Puissance absolue,
   // aucune référence à l'équipe du joueur.
-  function generatePvEEnemy(worldIndex, floorIndex) {
-    const team = [];
-    for (let i = 0; i < 3; i++) team.push(generatePvEBeast(worldIndex, floorIndex, i));
-    return team;
-  }
 
   // ============================================================
   //  Contraintes d'étage — MIROIR CLIENT de campaign-mods.js (serveur).
@@ -663,14 +563,12 @@ window.FA_ASSET_URL = function (chemin) {
     TYPE_ADVANTAGE, getTypeMultiplier,
     TEMPLATES, TEMPLATE_KEYS, TEMPLATES_BY_TYPE,
     ECON, FORGE, BOOSTS,
-    rand, pick, rng, setRng, getRng, levelMult, rarityVariance, rollRarity, newId,
+    rand, pick, rng, setRng, getRng, levelMult, rarityVariance, newId,
     eff, maxHp, fmtStat, mintBeast, starterRoster, xpToNext, displayName,
-    grantXp, upgradeRarity, avgRarity, avgLevel, generateEnemyTeam,
-    walletNameInscriptions,
+    avgRarity, avgLevel,
     // PvE Campaign
     WORLDS, FLOORS_PER_WORLD, BOSS_FLOOR, STARS_PER_WORLD,
     campReward,
-    generatePvEEnemy,
     deriveCampaignTitles,
     CONSTRAINTS, floorConstraint, hash32,
     WEEKLY_COOLDOWN_MS, WEEKLY_REWARD, floorWeeklyState, bossWeeklyState, weeklyRewardPreview,
