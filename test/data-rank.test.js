@@ -29,11 +29,9 @@ test("starterRoster : tous rang C", () => {
   for (const b of D.starterRoster()) assert.strictEqual(b.rank, "C");
 });
 
-test("upgradeRarity préserve b.rank", () => {
-  const b = D.mintBeast("HashByte-1", "Common", null, "A");
-  D.upgradeRarity(b);
-  assert.strictEqual(b.rank, "A");
-});
+// `upgradeRarity` : test RETIRÉ avec la fonction (thème E1 — le miroir du moteur de la
+// Fosse n'est plus publié dans data.js). Le test vérifiait une fonction que le client n'appelait
+// jamais ; le garder obligerait à republier la fonction pour rester vert.
 
 test("artFor : chemin type × rang, défaut legacy C, repli art de base", () => {
   assert.strictEqual(D.artFor({ image_key: "BLOCK", rank: "S" }), "assets/BLOCK_S.webp");

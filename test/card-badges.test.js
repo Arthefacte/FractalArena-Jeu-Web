@@ -47,10 +47,15 @@ test("la jauge vise le palier de rareté, pas un nombre écrit en dur", () => {
 });
 
 test("la Légendaire n'affiche pas de cible qu'elle n'a pas", () => {
-  // data.js ne fait monter la rareté que si `b.rarity !== "Legendary"` : une
-  // Légendaire monte sans fin, donc aucun dénominateur n'est vrai pour elle.
+  // Une Légendaire monte sans fin, donc aucun dénominateur n'est vrai pour elle : c'est ce que la
+  // jauge doit distinguer.
+  // E1 (clôture de l'audit 2026-09) : la montée de rareté n'est PLUS publiée dans data.js — le
+  // miroir du moteur de la Fosse a été retiré du fichier servi aux visiteurs. Ce n'est donc plus
+  // la fonction qu'on épingle ici, mais le MODÈLE qui justifie la jauge, et qui reste publié :
+  // `RARITY_UPGRADE` renvoie une Légendaire sur elle-même, c'est-à-dire au bout de l'échelle.
   const data = read("data.js");
-  assert.match(data, /b\.rarity !== "Legendary"/, "le modèle a changé : revoir ce que la jauge raconte");
+  assert.match(data, /RARITY_UPGRADE\s*=\s*\{[^}]*Legendary:\s*"Legendary"/,
+    "le modèle doit toujours dire qu'une Légendaire est au bout de l'échelle — sinon revoir ce que la jauge raconte");
   for (const f of COMBAT) {
     assert.match(read(f), /maxRarity = meta\.rarity === "Legendary"/, f + " : le cas Légendaire doit être distingué");
   }
