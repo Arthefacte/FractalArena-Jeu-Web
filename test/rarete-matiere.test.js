@@ -1,8 +1,8 @@
 /* Idée esthétique #2 — « rareté-comme-matière ».
    La rareté ne se lisait qu'à une couleur, un tag et un reflet au SURVOL
    (--foil), donc invisible sur mobile. Elle devient une matière permanente :
-   métal brut / verre / cristal / or en fusion. Prototypé dans
-   _rarete-proto.html, validé, puis porté ici.
+   métal brut / verre / cristal / or en fusion. Prototypé à part, validé, puis
+   porté ici (le prototype a été retiré du dépôt : il n'était plus servi, cf. E9).
 
    Verrouillage au niveau SOURCE (modèle finisher-play.test.js) : ces règles
    sont du CSS et du JSX, non exécutables en node. */
