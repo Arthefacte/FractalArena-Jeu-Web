@@ -77,6 +77,25 @@ function mutedDepuis(g) {
   }
   return out;
 }
+
+// E3 (clôture de l'audit complet 2026-09, D10/M4, emplacement 6) : le salon s'identifie désormais par
+// l'identifiant OPAQUE (`player_id`, servi depuis C2). La liste des sourdines, elle, vit sur
+// l'appareil ET dans l'état du compte, et elle contient encore des adresses écrites avant cette
+// phase : on accepte donc les DEUX formes partout, sinon un joueur verrait réapparaître les messages
+// qu'il avait tus (et le compteur de non-lus se remettrait à clignoter pour eux).
+function idDe(m) {
+  return m && (m.player_id || m.wallet) || "";
+}
+function estMute(m, muted) {
+  if (!m) return false;
+  if (muted.includes(idDe(m))) return true;
+  return !!m.wallet && muted.includes(m.wallet);
+}
+function estMoi(m, myId, myWallet) {
+  if (!m) return false;
+  if (myId && m.player_id) return m.player_id === myId;
+  return !!m.wallet && m.wallet === myWallet;
+}
 // Nom sûr : si le player_name ressemble à une arnaque, on retombe sur le wallet tronqué
 const NAME_BAD_RE = /(https?:\/\/|www\.|\b(bc1|[13])[a-z0-9]{20,}\b|t\.me|telegram|whatsapp)/i;
 function safeName(m) {
@@ -108,6 +127,7 @@ function pickRoomText(m, lang) {
 function RoomPanel({
   messages,
   myWallet,
+  myId,
   muted,
   onMute,
   onSend,
@@ -116,7 +136,7 @@ function RoomPanel({
   const [input, setInput] = useState("");
   const listRef = useRef(null);
   const inputRef = useRef(null);
-  const visible = messages.filter(m => !muted.includes(m.wallet));
+  const visible = messages.filter(m => !estMute(m, muted));
   useEffect(() => {
     if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
   }, [messages, muted]);
@@ -152,7 +172,7 @@ function RoomPanel({
   }, visible.length === 0 && /*#__PURE__*/React.createElement("div", {
     className: "room-empty"
   }, I18N.t("ROOM_EMPTY")), visible.map(m => {
-    const mine = m.wallet === myWallet;
+    const mine = estMoi(m, myId, myWallet);
     return /*#__PURE__*/React.createElement("div", {
       key: m.id,
       className: cx("room-msg", mine && "mine")
@@ -160,7 +180,7 @@ function RoomPanel({
       className: "meta"
     }, /*#__PURE__*/React.createElement("span", null, safeName(m)), /*#__PURE__*/React.createElement("span", null, hhmm(m.created_at)), !mine && /*#__PURE__*/React.createElement("button", {
       className: "mute-btn",
-      onClick: () => onMute(m.wallet)
+      onClick: () => onMute(idDe(m))
     }, I18N.t("ROOM_MUTE"))), /*#__PURE__*/React.createElement("div", {
       className: "text"
     }, pickRoomText(m, I18N.getLang())));
@@ -263,8 +283,11 @@ function RoomFab() {
       setUnread(0);
       return;
     }
-    setUnread(messages.filter(m => m.id > seenIdRef.current && m.wallet !== g.wallet && !muted.includes(m.wallet)).length);
-  }, [messages, muted, open, g.wallet]);
+    // E3 (D10/M4, emplacement 6) : « pas les miens » et « pas les tus » se décident sur l'identifiant
+    // opaque, avec repli sur l'adresse (phase 1) — la même règle que dans le panneau, sinon le
+    // compteur et la liste ne diraient pas la même chose.
+    setUnread(messages.filter(m => m.id > seenIdRef.current && !estMoi(m, g.publicId, g.wallet) && !estMute(m, muted)).length);
+  }, [messages, muted, open, g.wallet, g.publicId]);
   async function send(text) {
     let res;
     try {
@@ -301,6 +324,7 @@ function RoomFab() {
   }, unread > 9 ? "9+" : unread)), open && /*#__PURE__*/React.createElement(RoomPanel, {
     messages: messages,
     myWallet: g.wallet,
+    myId: g.publicId,
     muted: muted,
     onMute: mute,
     onSend: send,

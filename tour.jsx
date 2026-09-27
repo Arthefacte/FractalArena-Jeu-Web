@@ -450,8 +450,8 @@ function Tour() {
 
           {!autoRunning && (
             <div style={{ marginBottom: 14 }}>
-              <window.ChampionRow champions={g.championsList} activeOwner={champ ? champ.owner_wallet : null}
-                runState={rosterState} myWallet={g.wallet}
+              <window.ChampionRow champions={g.championsList} activeOwner={champ ? (champ.owner_id || champ.owner_wallet) : null}
+                runState={rosterState} myWallet={g.wallet} myId={g.publicId}
                 onPick={(e) => actions.championPickBorrow(e)} onClear={() => actions.championClearBorrow()} />
               {champ && (
                 <div className="mono" style={{ fontSize: 11, color: "var(--elec)", marginTop: 4 }}>

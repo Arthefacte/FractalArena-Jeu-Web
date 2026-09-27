@@ -972,9 +972,10 @@ function Tour() {
     }
   }, /*#__PURE__*/React.createElement(window.ChampionRow, {
     champions: g.championsList,
-    activeOwner: champ ? champ.owner_wallet : null,
+    activeOwner: champ ? champ.owner_id || champ.owner_wallet : null,
     runState: rosterState,
     myWallet: g.wallet,
+    myId: g.publicId,
     onPick: e => actions.championPickBorrow(e),
     onClear: () => actions.championClearBorrow()
   }), champ && /*#__PURE__*/React.createElement("div", {

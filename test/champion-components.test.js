@@ -39,8 +39,13 @@ test("pas de rar-tag/lvl-tag sur la vignette de la tuile champion", () => {
   assert.ok(!/rar-tag|lvl-tag/.test(SRC));
 });
 
-test("ChampionRow retire le champion du joueur connecte (myWallet)", () => {
-  // On ne s'emprunte pas a soi-meme : la rangee filtre owner_wallet === mon wallet.
+test("ChampionRow retire le champion du joueur connecte (identifiant opaque, repli sur l'adresse)", () => {
+  // On ne s'emprunte pas a soi-meme. E3 : la reconnaissance se fait sur l'identifiant OPAQUE
+  // (owner_id) avec repli sur l'adresse tant que le serveur sert les deux (phase 1) — le test
+  // epingle donc les DEUX references, et l'ancienne comparaison seule ne doit plus suffire.
   assert.match(SRC, /myWallet/);
-  assert.match(SRC, /c\.owner_wallet !== myWallet/);
+  assert.match(SRC, /myId/);
+  assert.match(SRC, /c\.owner_id === myId/);
+  assert.match(SRC, /c\.owner_wallet === myWallet/);
+  assert.ok(!/c\.owner_wallet !== myWallet/.test(SRC), "l'ancienne comparaison seule ne doit plus etre le filtre");
 });

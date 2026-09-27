@@ -133,12 +133,17 @@ function ChampionRow({
   onPick,
   onClear,
   runState,
-  myWallet
+  myWallet,
+  myId
 }) {
   // Jamais son PROPRE champion dans « Champions alliés » : on ne s'emprunte pas à
   // soi-même (le champion désigné est déjà dans le roster). Le serveur renvoie la
   // liste publique complète, c'est ici qu'on retire la ligne du joueur connecté.
-  const list = (Array.isArray(champions) ? champions : []).filter(c => c.owner_wallet !== myWallet);
+  // E3 (D10/M4, emplacement 7) : la reconnaissance se fait sur l'identifiant OPAQUE (`owner_id`,
+  // servi depuis C2), avec repli sur l'adresse tant que le serveur sert les deux (phase 1).
+  const idDe = c => c && (c.owner_id || c.owner_wallet) || null;
+  const estMoi = c => myId && c && c.owner_id ? c.owner_id === myId : !!(c && c.owner_wallet && c.owner_wallet === myWallet);
+  const list = (Array.isArray(champions) ? champions : []).filter(c => !estMoi(c));
   return /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 10
@@ -163,10 +168,10 @@ function ChampionRow({
       gap: 8
     }
   }, list.map(entry => {
-    const active = activeOwner === entry.owner_wallet;
+    const active = !!activeOwner && activeOwner === idDe(entry);
     const st = runState ? CU.championRunState(runState, entry.beast.id) : null;
     return /*#__PURE__*/React.createElement(ChampionTile, {
-      key: entry.owner_wallet,
+      key: idDe(entry),
       entry: entry,
       active: active,
       dead: !!(st && st.dead),
