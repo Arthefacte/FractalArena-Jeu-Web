@@ -539,7 +539,7 @@ function Arene() {
     style: {
       fontWeight: 700
     }
-  }, a.attacker_name || (a.attacker || "").slice(0, 6) + "…" + (a.attacker || "").slice(-4)), /*#__PURE__*/React.createElement("span", {
+  }, a.attacker_name || a.attacker_id || "…"), /*#__PURE__*/React.createElement("span", {
     style: {
       color: a.attacker_won ? "var(--alert)" : "var(--success)"
     }
