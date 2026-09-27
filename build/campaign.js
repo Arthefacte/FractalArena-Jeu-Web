@@ -753,7 +753,7 @@ function CampaignCombat({
     tier: g.lpTier,
     fa: g.lpFa,
     size: 18
-  }), g.lpTier ? " " : "", g.ordinalName || g.playerName || I18N.t("AR_YOU")), round > 0 && /*#__PURE__*/React.createElement("span", {
+  }), g.lpTier ? " " : "", g.playerName || g.ordinalName || I18N.t("AR_YOU")), round > 0 && /*#__PURE__*/React.createElement("span", {
     className: "pill mono",
     style: {
       fontSize: 10

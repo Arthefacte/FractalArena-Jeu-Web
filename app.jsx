@@ -220,17 +220,19 @@ function serverToState(save, addr, s) {
 }
 
 function stateToServer(g) {
+  // E6 (audit D10, finding M3) — la charge envoyée est réduite à ce que le serveur écrit
+  // VRAIMENT : ses compteurs de session (il les persiste depuis la charge) et
+  // `ordinal_name` (l'aller-retour du nom BRUT, sinon le premier autosave l'effacerait).
+  //
+  // Retirés : `creatures` et les 11 champs SERVER-OWNED (arte_liquid, arte_locked,
+  // free_fights_remaining, free_fights_reset_timestamp, total_combat_count,
+  // loop_silver_today, loop_gold_today, loop_reset_timestamp, tickets_silver,
+  // tickets_gold, airdrop_claimed). Le serveur ignore les seconds et écrit SON roster
+  // (`starterRoster()`) — mais il VALIDAIT `creatures` : un roster fabriqué côté client
+  // que `validateCreatures` refusait répondait 400, et l'autosave mourait en silence
+  // (c'est ce silence que corrige E5). Les jusqu'à 200 bêtes envoyées à chaque autosave
+  // pour rien disparaissent aussi.
   return {
-    arte_liquid: g.liquid,
-    arte_locked: g.locked,
-    free_fights_remaining: g.freeFights,
-    free_fights_reset_timestamp: g.freeResetTs,
-    total_combat_count: g.totalFights,
-    loop_silver_today: g.loopSilverToday,
-    loop_gold_today: g.loopGoldToday,
-    loop_reset_timestamp: 0,
-    tickets_silver: g.ticketsSilver,
-    tickets_gold: g.ticketsGold,
     session_wins: g.session.wins,
     session_losses: g.session.losses,
     session_arte_net: g.session.net,
@@ -241,8 +243,6 @@ function stateToServer(g) {
     // reprenait ensuite le dessus — pour un compte sans portefeuille, son adresse serveur.
     ordinal_name: g.ordinalName,
     lang: g.lang,
-    airdrop_claimed: false,
-    creatures: g.roster,
   };
 }
 
@@ -481,19 +481,39 @@ function App() {
   useEffect(() => {
     if (!g.wallet || !g.authToken) return;
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    saveTimerRef.current = setTimeout(() => {
+    saveTimerRef.current = setTimeout(async () => {
       const s = gRef.current;
       if (!s.wallet || !s.authToken) return;
-      fetch(`${API_URL}/save/${s.wallet}`, {
-        method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
+      const doSave = () => fetch(`${API_URL}/save/${s.wallet}`, {
+        method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${gRef.current.authToken}` },
         // Parrainage : `ref` UNIQUEMENT pour un joueur nouveau (drapeau levé en 404),
         // jamais sur un resync — le serveur l'ignore de toute façon hors INSERT.
         body: JSON.stringify({ ...stateToServer(s), ...(newPlayerRef.current ? refBody() : {}) }),
-      }).then((r) => {
-        // Ligne créée (ou déjà là) : le code de parrain n'a plus d'usage.
-        if (r.ok) { newPlayerRef.current = false; refConsumed(); }
-        return r.ok ? r.json() : null;
-      }).then((data) => {
+      });
+      let r = await doSave();
+      // E5 (audit D10, finding M2) — la MÊME branche 401 que /fight, le totem et les
+      // forges : re-signer, puis rejouer UNE fois. Sans elle, un jeton expiré en cours de
+      // session faisait répondre 401 à l'autosave jusqu'à la fin : plus rien n'était
+      // persisté (`lang`, `ordinal_name`), et rien ne le disait au joueur.
+      if (r.status === 401) {
+        const re = await actions.authenticate(s.wallet);
+        if (!re) { toast(I18N.t("AUTH_EXPIRED"), "bad"); return; }
+        r = await doSave();
+      }
+      if (!r.ok) {
+        // Échec NON rejoué (400/403/429/5xx) : il est REMONTÉ au joueur, une fois, au lieu
+        // d'être jeté (`return r.ok ? r.json() : null` auparavant). Un 400 sur `creatures`
+        // tuait la sauvegarde sans que personne — joueur comme nous — ne le sache.
+        const j = await r.json().catch(() => ({}));
+        const code = (j && (j.code || j.error)) || "";
+        console.warn("[autosave] échec non rejoué —", r.status, code);
+        toast(I18N.t(I18N.localizeServerError(code || "ERR_GENERIC")), "bad");
+        return;
+      }
+      // Ligne créée (ou déjà là) : le code de parrain n'a plus d'usage.
+      newPlayerRef.current = false; refConsumed();
+      const data = await r.json().catch(() => null);
+      {
         // creatures SERVER-OWNED : on adopte le roster faisant foi renvoyé par le serveur
         // (roster de départ généré serveur pour un nouveau joueur, resync sinon). Compare
         // par signature pour ne PAS reboucler l'autosave quand c'est déjà synchrone.
@@ -501,7 +521,7 @@ function App() {
           const sig = (arr) => arr.map((b) => `${b.id}:${b.level}:${b.xp}:${b.rarity}`).join("|");
           setG((st) => (sig(st.roster) === sig(data.creatures) ? st : { ...st, roster: data.creatures }));
         }
-      }).catch(() => {});
+      }
     }, 1500);
   }, [g.liquid, g.locked, g.roster, g.freeFights, g.totalFights,
       g.ticketsSilver, g.ticketsGold, g.session.wins, g.session.losses,

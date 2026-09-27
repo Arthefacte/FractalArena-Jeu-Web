@@ -459,7 +459,7 @@ function Fosse() {
             {/* P1 */}
             <div style={{ flex: 1 }}>
               <div className="flex between center" style={{ marginBottom: 10 }}>
-                <span className="h2" style={{ color: "var(--elec)", fontSize: 15 }}><LpBadge tier={g.lpTier} fa={g.lpFa} size={18} />{g.lpTier ? " " : ""}{g.ordinalName || g.playerTitle || g.playerName || I18N.t("AR_YOU")}</span>
+                <span className="h2" style={{ color: "var(--elec)", fontSize: 15 }}><LpBadge tier={g.lpTier} fa={g.lpFa} size={18} />{g.lpTier ? " " : ""}{g.playerName || g.playerTitle || g.ordinalName || I18N.t("AR_YOU")}</span>
                 {round > 0 && <span className="pill mono" style={{ fontSize: 10 }}>{I18N.t("AR_ROUND", round)}</span>}
               </div>
               <div className="team-row" style={{ gridTemplateColumns: "repeat(3,1fr)" }}>

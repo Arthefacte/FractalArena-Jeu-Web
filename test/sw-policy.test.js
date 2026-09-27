@@ -51,7 +51,8 @@ test("les assets sont laissés au cache HTTP du navigateur", () => {
 });
 
 test("les hôtes tiers ne sont pas mis en cache par nous", () => {
-  // unpkg (React/Babel) et Google Fonts ont leurs propres en-têtes de cache ;
+  // Google Fonts et le bucket R2 ont leurs propres en-têtes de cache (React est
+  // désormais servi par le site, cf. test/react-production.test.js) ;
   // les dupliquer nous ferait porter la responsabilité de leur péremption.
   for (const u of ["https://unpkg.com/react@18.3.1/umd/react.development.js",
                    "https://fonts.gstatic.com/s/x.woff2",

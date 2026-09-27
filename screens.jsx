@@ -141,9 +141,9 @@ function Team() {
           <div className="muted mono" style={{ fontSize: 13, marginTop: 4 }}>{I18N.t("TEAM_HINT")}</div>
           {/* Le badge Liquidity Guardian suit le pseudo partout — ici le bandeau
               d'équipe est le premier écran vu après connexion. */}
-          {(g.ordinalName || g.playerName) && (
+          {(g.playerName || g.ordinalName) && (
             <div className="mono" style={{ fontSize: 13, marginTop: 6, color: "var(--elec)" }}>
-              <LpBadge tier={g.lpTier} fa={g.lpFa} size={18} />{g.lpTier ? " " : ""}{g.ordinalName || g.playerName}
+              <LpBadge tier={g.lpTier} fa={g.lpFa} size={18} />{g.lpTier ? " " : ""}{g.playerName || g.ordinalName}
             </div>
           )}
         </div>
@@ -1924,9 +1924,9 @@ function Options() {
                 fabriquée par le serveur et n'appartient pas au joueur. */}
             <LpBadge tier={g.lpTier} fa={g.lpFa} size={18} />{g.lpTier ? " " : ""}
             {(prestigeAffiche ? prestigeAffiche + " " : "")}
-            {g.ordinalName
-              ? ((g.playerTitle ? g.playerTitle + " " : "") + g.ordinalName)
-              : (g.playerName || "—")}
+            {(g.playerName || g.ordinalName)
+              ? ((g.playerTitle ? g.playerTitle + " " : "") + (g.playerName || g.ordinalName))
+              : "—"}
           </span>
         </div>
         <div className="mono" style={{ fontSize: 10.5, color: "var(--text-faint)", marginBottom: 14 }}>{I18N.t("OP_ORDINAL_HINT")}</div>

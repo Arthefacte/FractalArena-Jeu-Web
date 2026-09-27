@@ -221,7 +221,7 @@ function Team() {
       fontSize: 13,
       marginTop: 4
     }
-  }, I18N.t("TEAM_HINT")), (g.ordinalName || g.playerName) && /*#__PURE__*/React.createElement("div", {
+  }, I18N.t("TEAM_HINT")), (g.playerName || g.ordinalName) && /*#__PURE__*/React.createElement("div", {
     className: "mono",
     style: {
       fontSize: 13,
@@ -232,7 +232,7 @@ function Team() {
     tier: g.lpTier,
     fa: g.lpFa,
     size: 18
-  }), g.lpTier ? " " : "", g.ordinalName || g.playerName)), /*#__PURE__*/React.createElement("div", {
+  }), g.lpTier ? " " : "", g.playerName || g.ordinalName)), /*#__PURE__*/React.createElement("div", {
     className: "flex gap12 center"
   }, /*#__PURE__*/React.createElement("span", {
     className: "pill",
@@ -3852,7 +3852,7 @@ function Options() {
     tier: g.lpTier,
     fa: g.lpFa,
     size: 18
-  }), g.lpTier ? " " : "", prestigeAffiche ? prestigeAffiche + " " : "", g.ordinalName ? (g.playerTitle ? g.playerTitle + " " : "") + g.ordinalName : g.playerName || "—")), /*#__PURE__*/React.createElement("div", {
+  }), g.lpTier ? " " : "", prestigeAffiche ? prestigeAffiche + " " : "", g.playerName || g.ordinalName ? (g.playerTitle ? g.playerTitle + " " : "") + (g.playerName || g.ordinalName) : "—")), /*#__PURE__*/React.createElement("div", {
     className: "mono",
     style: {
       fontSize: 10.5,
