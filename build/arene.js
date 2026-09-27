@@ -82,12 +82,14 @@ function Arene() {
   const [defPosture, setDefPosture] = useState("equilibre");
   const seasonFlipTried = useRef(false); // anti-rafale : une seule tentative + backoff
 
+  // E4 : mon propre identifiant opaque quand il est là — la route accepte les deux formes
+  // (adresse ou identifiant), et l'identifiant n'apprend rien sur moi si la requête traînait.
   useEffect(() => {
     if (g.wallet) {
       actions.pvpRefresh().then(() => actions.pvpAttacksSeen());
-      actions.pvpDefenseOf(g.wallet).then(r => setDefPosture(r && r.posture || "equilibre"));
+      actions.pvpDefenseOf(g.publicId || g.wallet).then(r => setDefPosture(r && r.posture || "equilibre"));
     }
-  }, [g.wallet]);
+  }, [g.wallet, g.publicId]);
   useEffect(() => {
     const id = setInterval(() => setNowTs(Date.now()), 1000);
     return () => clearInterval(id);
@@ -425,9 +427,10 @@ function Arene() {
       className: "btn btn-success sm",
       disabled: busy,
       onClick: async () => {
-        const r = await actions.pvpDefenseOf(o.wallet);
+        const ref = o.player_id || o.wallet;
+        const r = await actions.pvpDefenseOf(ref);
         setPick({
-          target: o.wallet,
+          target: ref,
           revanche: true,
           ids: [...g.selected],
           oppTeam: o.team,
@@ -440,9 +443,10 @@ function Arene() {
       "data-guide": "arene-attack",
       disabled: busy,
       onClick: async () => {
-        const r = await actions.pvpDefenseOf(o.wallet);
+        const ref = o.player_id || o.wallet;
+        const r = await actions.pvpDefenseOf(ref);
         setPick({
-          target: o.wallet,
+          target: ref,
           revanche: false,
           ids: [...g.selected],
           oppTeam: o.team,

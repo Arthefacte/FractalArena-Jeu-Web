@@ -4278,7 +4278,7 @@ function App() {
             selected: selectedIds,
             posture: posture || "equilibre",
             ...(champion ? {
-              champion_owner_wallet: champion.owner_wallet,
+              champion_owner_wallet: champion.owner_id || champion.owner_wallet,
               champion_slot: window.FA_CHAMPION_UI.CHAMPION_SLOT
             } : {})
           })
@@ -4429,7 +4429,7 @@ function App() {
             beast_ids: selectedIds,
             posture: posture || "equilibre",
             ...(champion ? {
-              champion_owner_wallet: champion.owner_wallet,
+              champion_owner_wallet: champion.owner_id || champion.owner_wallet,
               champion_slot: window.FA_CHAMPION_UI.CHAMPION_SLOT
             } : {})
           })

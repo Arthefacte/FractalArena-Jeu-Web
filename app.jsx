@@ -2446,7 +2446,7 @@ function App() {
           headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
           body: JSON.stringify({
             world_index: worldIndex, floor_index: floorIndex, selected: selectedIds, posture: posture || "equilibre",
-            ...(champion ? { champion_owner_wallet: champion.owner_wallet, champion_slot: window.FA_CHAMPION_UI.CHAMPION_SLOT } : {}),
+            ...(champion ? { champion_owner_wallet: champion.owner_id || champion.owner_wallet, champion_slot: window.FA_CHAMPION_UI.CHAMPION_SLOT } : {}),
           }),
         });
         const data = await resp.json();
@@ -2527,7 +2527,7 @@ function App() {
           method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
           body: JSON.stringify({
             beast_ids: selectedIds, posture: posture || "equilibre",
-            ...(champion ? { champion_owner_wallet: champion.owner_wallet, champion_slot: window.FA_CHAMPION_UI.CHAMPION_SLOT } : {}),
+            ...(champion ? { champion_owner_wallet: champion.owner_id || champion.owner_wallet, champion_slot: window.FA_CHAMPION_UI.CHAMPION_SLOT } : {}),
           }),
         });
         const data = await resp.json();
