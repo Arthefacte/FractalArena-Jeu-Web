@@ -268,6 +268,15 @@ function CreatureCard({
       "--foil": FOIL_BY_RARITY[beast.rarity] || 0.4
     },
     onClick: onClick,
+    role: onClick ? "button" : undefined,
+    tabIndex: onClick ? 0 : undefined,
+    "aria-pressed": onClick && selectable ? !!selected : undefined,
+    onKeyDown: e => {
+      if (onClick && (e.key === "Enter" || e.key === " ")) {
+        e.preventDefault();
+        onClick(e);
+      }
+    },
     onMouseMove: onMove,
     onMouseLeave: onLeave
   }, /*#__PURE__*/React.createElement("div", {
@@ -654,7 +663,133 @@ function MarqueeName({
 // #root reste vide et boot-splash.js n'enlève jamais l'écran de démarrage — le jeu
 // n'ouvre plus (incident du 21/09, v273). Tout composant appelé depuis un autre .jsx
 // DOIT figurer ici.
+// The stage reflects the real selection; it never creates a creature or changes stats.
+function TeamStage({
+  roster,
+  selected,
+  onToggle,
+  onSelectSlot
+}) {
+  const cutouts = {
+    HashByte: "HashByte",
+    Miner: "Miner",
+    LEDGER: "LEDGER",
+    BLOCK: "Block",
+    NETWORK: "Network",
+    GENESIS: "Genesis"
+  };
+  const team = selected.map(id => roster.find(b => b.id === id)).filter(Boolean);
+  return /*#__PURE__*/React.createElement("section", {
+    className: "team-stage",
+    "aria-label": I18N.t("TEAM_SELECTED", team.length)
+  }, Array.from({
+    length: 3
+  }, (_, i) => {
+    const beast = team[i];
+    const cutout = beast && cutouts[beast.image_key];
+    return /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      key: beast ? beast.id : "slot-" + i,
+      className: cx("stage-slot", !beast && "empty", cutout && "cutout"),
+      onClick: () => onSelectSlot ? onSelectSlot(i) : beast ? onToggle(beast) : document.querySelector('[data-guide="team-grid"]')?.scrollIntoView({
+        behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+        block: 'start'
+      }),
+      "aria-label": beast ? D.displayName(beast) : I18N.t("TEAM_HINT"),
+      style: {
+        "--rc": beast ? D.RARITY_COLORS[beast.rarity] : "var(--elec)"
+      }
+    }, beast ? /*#__PURE__*/React.createElement("img", {
+      className: "stage-entity",
+      src: cutout ? "assets/entities/" + cutout + ".webp" : D.artFor(beast),
+      alt: "",
+      draggable: false
+    }) : /*#__PURE__*/React.createElement("span", {
+      className: "stage-empty",
+      "aria-hidden": "true"
+    }, "+"), /*#__PURE__*/React.createElement("span", {
+      className: "stage-plinth",
+      "aria-hidden": "true"
+    }), /*#__PURE__*/React.createElement("span", {
+      className: "stage-caption"
+    }, beast ? D.displayName(beast) : "—"), beast && /*#__PURE__*/React.createElement("span", {
+      className: "stage-rarity"
+    }, rarityLabel(beast.rarity)));
+  }));
+}
+
+// Native modal dialog: focus containment, Escape and focus return are browser-managed.
+function SceneDrawer({
+  title,
+  children,
+  onClose
+}) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const dialog = ref.current;
+    const previous = document.activeElement;
+    const overflow = document.body.style.overflow;
+    dialog.showModal();
+    document.body.style.overflow = "hidden";
+    return () => {
+      dialog.close();
+      document.body.style.overflow = overflow;
+      previous?.focus();
+    };
+  }, []);
+  return /*#__PURE__*/React.createElement("dialog", {
+    ref: ref,
+    className: "scene-drawer",
+    "aria-label": title,
+    onCancel: e => {
+      e.preventDefault();
+      onClose();
+    },
+    onClick: e => {
+      if (e.target === e.currentTarget) {
+        const r = e.currentTarget.getBoundingClientRect();
+        if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) onClose();
+      }
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "scene-drawer-head"
+  }, /*#__PURE__*/React.createElement("h2", {
+    className: "h2"
+  }, title), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    className: "btn ghost",
+    onClick: onClose,
+    "aria-label": I18N.t("CLOSE"),
+    autoFocus: true
+  }, "\u2715")), /*#__PURE__*/React.createElement("div", {
+    className: "scene-drawer-body"
+  }, children));
+}
+function EntitySilhouette({
+  beast
+}) {
+  const names = {
+    HashByte: "HashByte",
+    Miner: "Miner",
+    LEDGER: "LEDGER",
+    BLOCK: "Block",
+    NETWORK: "Network",
+    GENESIS: "Genesis"
+  };
+  return beast ? /*#__PURE__*/React.createElement("img", {
+    className: "scene-entity",
+    src: names[beast.image_key] ? "assets/entities/" + names[beast.image_key] + ".webp" : D.artFor(beast),
+    alt: D.displayName(beast),
+    draggable: false
+  }) : /*#__PURE__*/React.createElement("span", {
+    className: "scene-empty",
+    "aria-hidden": "true"
+  }, "+");
+}
 Object.assign(window, {
+  SceneDrawer,
+  EntitySilhouette,
+  TeamStage,
   FA_Ctx,
   useFA,
   cx,

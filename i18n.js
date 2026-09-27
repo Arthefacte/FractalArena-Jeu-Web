@@ -1574,7 +1574,13 @@
   };
 
   let lang = "FR";
-  function setLang(l) { if (["FR", "EN", "ZH"].includes(l)) lang = l; }
+  function setLang(l) {
+    if (!["FR", "EN", "ZH"].includes(l)) return;
+    lang = l;
+    if (typeof document !== "undefined" && document.documentElement) {
+      document.documentElement.lang = l === "ZH" ? "zh-CN" : l.toLowerCase();
+    }
+  }
   function getLang() { return lang; }
 
   // Langue par défaut d'un tout premier visiteur, depuis navigator.language.

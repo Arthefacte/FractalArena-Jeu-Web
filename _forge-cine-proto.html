@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Proto — Moment Forge</title>
+<style>
+  body { background:#0a0e14; color:#eaf4ff; font-family:monospace; padding:24px; }
+  button { margin:4px; padding:10px 14px; background:#141a24; color:#eaf4ff; border:1px solid #2a3446; cursor:pointer; }
+  #log { margin-top:12px; color:#8a8f98; font-size:12px; }
+</style>
+</head>
+<body>
+<h3>Moment Forge — proto</h3>
+<div>
+  Summon créature (rang, naît Commune) :
+  <button onclick="go('summon',true,'C')">Rang C</button>
+  <button onclick="go('summon',true,'B')">Rang B</button>
+  <button onclick="go('summon',true,'A')">Rang A</button>
+  <button onclick="go('summon',true,'S')">Rang S</button>
+</div>
+<div>
+  Fusion (rareté du résultat) :
+  <button onclick="go('fuse',true,'Rare')">Succès Rare</button>
+  <button onclick="go('fuse',true,'Legendary')">Succès Legendary</button>
+  <button onclick="go('fuse',true,'Epic',true)">Succès Epic PREMIUM</button>
+  <button onclick="go('fuse',false,'Rare')">ÉCHEC</button>
+</div>
+<div>
+  Relique (rareté au tirage) :
+  <button onclick="go('summon',true,'Common')">Commune</button>
+  <button onclick="go('summon',true,'Rare')">Rare</button>
+  <button onclick="go('summon',true,'Epic')">Épique</button>
+  <button onclick="go('summon',true,'Legendary')">Légendaire</button>
+</div>
+<div id="log">prêt</div>
+<script src="sfx.js"></script>
+<script src="forge-cine-ui.js"></script>
+<script src="forge-cine.js"></script>
+<script>
+  var RANKC = { C:"#9CA3AF", B:"#38BDF8", A:"#FB923C", S:"#FACC15" };
+  var RARC = { Common:"#9CA3AF", Rare:"#3B82F6", Epic:"#B026FF", Legendary:"#F7931A" };
+  function go(mode, success, tier, premium) {
+    document.getElementById("log").textContent = "play " + mode + " " + tier + (premium ? " premium" : "") + (success ? "" : " FAIL") + "…";
+    window.FA_FORGE_CINE.play({
+      mode: mode, success: success, tier: tier, premium: premium,
+      color: RANKC[tier] || RARC[tier] || "#46e6ff",
+      onDone: function () { document.getElementById("log").textContent = "onDone OK (" + mode + " " + tier + ")"; },
+    });
+  }
+</script>
+</body>
+</html>

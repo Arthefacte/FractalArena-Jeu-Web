@@ -100,6 +100,25 @@ function Team() {
     return g.roster.slice().sort((a, b) => D.RARITY_ORDER[b.rarity] - D.RARITY_ORDER[a.rarity] || b.level - a.level);
   }, [g.roster]);
   const selCount = g.selected.length;
+  const [drawer, setDrawer] = useState(null);
+  function choose(b) {
+    if (drawer === "collection") { toggle(b); return; }
+    if (busyIds.has(b.id)) { toast(I18N.t("EXP_ERR_bete_en_expedition"), "bad"); return; }
+    const existing = g.selected.indexOf(b.id);
+    const slot = Math.min(drawer, g.selected.length);
+    if (existing >= 0) {
+      if (existing !== slot && slot < g.selected.length) actions.pvpReorderDefense(existing, slot);
+    } else {
+      const occupant = g.selected[slot];
+      if (occupant) actions.toggleSelect(occupant);
+      actions.toggleSelect(b.id);
+      if (occupant && slot < g.selected.length - 1) {
+        // Restore formation order after the functional toggle updates append the replacement.
+        for (let i = g.selected.length - 1; i > slot; i--) actions.pvpReorderDefense(i, i - 1);
+      }
+    }
+    setDrawer(null);
+  }
 
   // Entités parties en expédition : non sélectionnables ici (même garde que le
   // serveur, qui refuse le combat avec bete_en_expedition — miroir d'expeditions.jsx).
@@ -133,8 +152,8 @@ function Team() {
   }
 
   return (
-    <div className="container">
-      <div className="flex between center wrap" style={{ marginBottom: 22, gap: 12 }}>
+    <div className="container scene-team">
+      <div className="scene-heading flex between center wrap" style={{ gap: 12 }}>
         <div>
           <div className="eyebrow">{I18N.t("TEAM_COUNT", g.roster.length)}</div>
           <div className="h1" style={{ marginBottom: 0 }}>{I18N.t("TEAM_TITLE")}</div>
@@ -147,11 +166,13 @@ function Team() {
             </div>
           )}
         </div>
-        <div className="flex gap12 center">
+        <div className="scene-deploy flex gap12 center">
           <span className="pill" style={{ color: selCount === 3 ? "var(--success)" : "var(--text-dim)", fontSize: 13 }}>{I18N.t("TEAM_SELECTED", selCount)}</span>
           <button className="btn btn-elec lg" data-guide="team-enter" disabled={selCount !== 3} onClick={() => actions.setView("fosse")}>{I18N.t("TEAM_ENTER")} →</button>
         </div>
       </div>
+      <window.TeamStage roster={g.roster} selected={g.selected} onToggle={toggle} onSelectSlot={setDrawer} />
+      <div className="scene-collection-control"><button className="btn" data-guide="team-grid" onClick={() => setDrawer("collection")} aria-haspopup="dialog">▦ {I18N.t("TEAM_COUNT", g.roster.length)}</button></div>
       {/* Slot Capitaine (Totem) — affichage seul, clic → écran Lien */}
       {(() => {
         const TU = window.FA_TOTEM_UI;
@@ -176,13 +197,16 @@ function Team() {
           </div>
         );
       })()}
-      <div className="grid-cards" data-guide="team-grid">
+      <div className="scene-collection-anchor">
+      {drawer !== null && <window.SceneDrawer title={I18N.t("TEAM_COUNT", g.roster.length)} onClose={() => setDrawer(null)}>
+      <p className="muted mono">{I18N.t("TEAM_HINT")}</p>
+      <div className="grid-cards">
         {sorted.map((b) => {
           const busy = busyIds.has(b.id);
           const isChamp = g.championBeastId === b.id;
           return (
             <div key={b.id} style={{ display: "flex", flexDirection: "column", ...(busy ? { opacity: 0.55, filter: "saturate(0.4)" } : {}) }}>
-              <CreatureCard beast={b} selectable={!busy} selected={g.selected.includes(b.id)} onClick={() => toggle(b)} showXp
+              <CreatureCard beast={b} selectable={!busy} selected={g.selected.includes(b.id)} onClick={() => choose(b)} showXp
                 badge={busy ? (
                   <div style={{ position: "absolute", bottom: 8, left: 8, right: 8, textAlign: "center", background: "rgba(6,9,18,0.85)", border: "1px solid var(--elec)", color: "var(--elec)", fontSize: 11, padding: "3px 6px", borderRadius: 6 }} className="mono">
                     ⏳ {I18N.t("TEAM_BUSY_EXP")}
@@ -227,6 +251,8 @@ function Team() {
             </div>
           ));
         })()}
+      </div>
+      </window.SceneDrawer>}
       </div>
     </div>
   );
@@ -463,7 +489,7 @@ function Forge() {
   // forgeait un core au lieu d'une relique (vécu 20/09 puis 25/09).
   const tabs = [{ k: "fusion", c: "var(--forge)" }, { k: "reroll", c: "var(--elec)" }, { k: "summon", c: "var(--fire)" }, { k: "reliques", c: "var(--gold)" }, { k: "cores", c: "var(--elec)" }];
   return (
-    <div className="container">
+    <div className="container scene-forge">
       <SectionHead eyebrow={I18N.t("FG_SUB")} title={I18N.t("FG_TITLE")} />
       <div className="subtabs">
         {tabs.map((t) => (
@@ -484,6 +510,7 @@ function Forge() {
 function ForgeFusion() {
   const { g, actions, toast } = useFA();
   const [sel, setSel] = useState([]);
+  const [slot, setSlot] = useState(null);
   const [fuseBusy, setFuseBusy] = useState(false);
   const [goldMode, setGoldMode] = useState(false);
   const elig = g.roster.filter((b) => b.rarity !== "Legendary");
@@ -491,13 +518,18 @@ function ForgeFusion() {
   const first = sel[0] ? g.roster.find((b) => b.id === sel[0]) : null;
 
   function clickable(b) {
-    if (!first) return true;
-    if (b.id === first.id) return true;
-    return b.rarity === first.rarity;
+    if (slot === 0 || !first) return true;
+    return b.id !== first.id && b.rarity === first.rarity;
   }
   function toggle(b) {
-    if (sel.includes(b.id)) setSel(sel.filter((x) => x !== b.id));
-    else if (sel.length < 2 && clickable(b)) setSel([...sel, b.id]);
+    if (slot === null || fuseBusy) return;
+    if (sel.includes(b.id) && sel[slot] !== b.id) return;
+    const next = [...sel];
+    next[slot] = b.id;
+    const other = g.roster.find((x) => x.id === next[1 - slot]);
+    if (other && other.rarity !== b.rarity) next[1 - slot] = null;
+    setSel(next);
+    setSlot(null);
   }
   async function doFuse(gold) {
     if (fuseBusy) return;
@@ -526,12 +558,25 @@ function ForgeFusion() {
   const F = window.FA_FORGE_UI;
   const cost = first ? D.FORGE.FUSION_COST[first.rarity] : 0;
   const rate = first ? D.FORGE.FUSION_RATE[first.rarity] : 0;
-  const canFuse = sel.length === 2;
+  const canFuse = !!(sel[0] && sel[1]);
   const btn = F.fusionButtonState({ gold: goldMode, cost, balance: g.liquid + g.locked, ticketsGold: g.ticketsGold, busy: fuseBusy });
 
   return (
-    <div>
-      <div className="flex between center wrap" style={{ marginBottom: 16, gap: 10 }}>
+    <div className="forge-machine">
+      <div className="forge-stations">
+        {[0, 1].map((i) => {
+          const beast = g.roster.find((b) => b.id === sel[i]);
+          return <button type="button" className={cx("forge-station", i === 1 && "sacrifice")} key={i}
+            disabled={fuseBusy || (i === 1 && !first)} onClick={() => setSlot(i)} aria-haspopup="dialog">
+            <span className="forge-station-role">{I18N.t(i === 0 ? "FG_KEPT" : "FG_SACRIFICED")}</span>
+            <window.EntitySilhouette beast={beast} />
+            <span className="forge-ring" aria-hidden="true" />
+            <span className="stage-caption">{beast ? D.displayName(beast) : I18N.t("FG_FUSION")}</span>
+          </button>;
+        })}
+        <div className="forge-conduit" aria-hidden="true">◇</div>
+      </div>
+      <div className="forge-console flex between center wrap" style={{ marginBottom: 16, gap: 10 }}>
         <div className="mono muted" style={{ fontSize: 13 }}>{first ? I18N.t("FG_PICK_SAME", rarityLabel(first.rarity)) : I18N.t("FG_FUSION_HINT")}</div>
         {canFuse && (
           <div className="flex gap12 center">
@@ -546,6 +591,8 @@ function ForgeFusion() {
         )}
       </div>
       {btn.showInsufficient && canFuse && <div className="mono" style={{ color: "var(--alert)", fontSize: 12, marginBottom: 10 }}>{I18N.t("INSUFFICIENT", g.liquid + g.locked, cost)}</div>}
+      {slot !== null && <window.SceneDrawer title={I18N.t(slot === 0 ? "FG_KEPT" : "FG_SACRIFICED")} onClose={() => setSlot(null)}>
+      <p className="muted mono">{first && slot === 1 ? I18N.t("FG_PICK_SAME", rarityLabel(first.rarity)) : I18N.t("FG_FUSION_HINT")}</p>
       <div className="grid-cards">
         {sorted.map((b) => {
           const role = sel[0] === b.id ? "kept" : sel[1] === b.id ? "sacrificed" : null;
@@ -557,11 +604,12 @@ function ForgeFusion() {
           );
           return (
             <div key={b.id} style={{ opacity: clickable(b) ? 1 : 0.32, pointerEvents: clickable(b) ? "auto" : "none", transition: "opacity .2s" }}>
-              <CreatureCard beast={b} selectable selected={sel.includes(b.id)} onClick={() => toggle(b)} badge={roleBadge} />
+              <CreatureCard beast={b} selectable={clickable(b)} selected={sel.includes(b.id)} onClick={clickable(b) ? () => toggle(b) : undefined} badge={roleBadge} />
             </div>
           );
         })}
       </div>
+      </window.SceneDrawer>}
     </div>
   );
 }

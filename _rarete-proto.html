@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<title>Proto — rareté comme matière</title>
+<link rel="stylesheet" href="styles.css?v=108" />
+<style>
+  /* ------------------------------------------------------------------
+     PROTOTYPE idée esthétique #2 — « rareté-comme-matière ».
+     Rien d'ici n'est chargé par le jeu : page autonome, à porter dans
+     styles.css si la direction est retenue. Tout est en CSS pur — aucun
+     asset, aucune dette de tris (cf. la leçon des reliques 3D).
+     ------------------------------------------------------------------ */
+  body { padding: 24px; background: var(--bg, #05070f); color: var(--text, #EAF1FF); font-family: var(--font-ui, system-ui); }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  .sub { color: var(--text-dim, #7F8DAD); font-size: 13px; margin-bottom: 18px; }
+  .row { display: flex; gap: 18px; flex-wrap: wrap; margin-bottom: 26px; }
+  .card { width: 210px; }
+  .lab { font-family: var(--font-mono, monospace); font-size: 11px; color: var(--text-dim, #7F8DAD);
+         letter-spacing: 1.5px; text-transform: uppercase; margin: 0 0 10px; }
+  .switch { display: flex; gap: 8px; margin-bottom: 20px; }
+  .switch button { font-family: var(--font-mono, monospace); font-size: 12px; padding: 7px 14px;
+                   background: #0a0f1e; color: #EAF1FF; border: 1px solid #1d2740; cursor: pointer; }
+  .switch button.on { border-color: #00F0FF; color: #00F0FF; }
+  .card .body { padding: 10px; }
+  .cname { font-weight: 700; font-size: 13px; }
+  .cpreset { font-family: var(--font-mono, monospace); font-size: 10px; letter-spacing: 1px; text-transform: uppercase; }
+
+  /* ================= APRÈS — la rareté devient une matière =================
+     Principe : la matière se voit SANS survol (donc aussi sur mobile, là où
+     le --foil actuel ne se déclenche jamais), et une seule rareté bouge. */
+  /* v2 — le voile ne couvre QUE l'illustration (v1 le passait sur toute la carte :
+     le nom et les stats viraient au laiteux, l'art paraissait délavé), et il se
+     fond en `screen` pour ajouter de la lumière au lieu de poser un calque blanc.
+     La matière se joue surtout sur le CADRE — les cartes v87 sont déjà chargées. */
+  .apres .card { position: relative; }
+  .apres .card .art::after {
+    content: ""; position: absolute; inset: 0; z-index: 3; pointer-events: none;
+    mix-blend-mode: screen;
+  }
+
+  /* Commune — métal brut : grain mat, aucun reflet. La matière « pauvre ». */
+  .apres .card.r-common {
+    border-color: color-mix(in srgb, var(--rc) 30%, #1d2740);
+  }
+  .apres .card.r-common .art::after {
+    background-image: repeating-linear-gradient(115deg, rgba(255,255,255,0.03) 0 1px, rgba(0,0,0,0) 1px 3px);
+    opacity: .55;
+  }
+
+  /* Rare — verre : une seule bande de lumière, figée, et un liseré interne. */
+  .apres .card.r-rare {
+    border-color: color-mix(in srgb, var(--rc) 60%, #1d2740);
+    box-shadow: inset 0 0 0 1px rgba(59,130,246,0.16);
+  }
+  .apres .card.r-rare .art::after {
+    background-image: linear-gradient(114deg, rgba(255,255,255,0) 36%, rgba(180,215,255,0.16) 47%, rgba(255,255,255,0) 58%);
+  }
+
+  /* Épique — cristal : facettes croisées + halo froid. Statique. */
+  .apres .card.r-epic {
+    border-color: color-mix(in srgb, var(--rc) 75%, #1d2740);
+    box-shadow: inset 0 0 0 1px rgba(176,38,255,0.22), 0 0 18px -6px rgba(176,38,255,0.5);
+  }
+  .apres .card.r-epic .art::after {
+    background-image:
+      linear-gradient(128deg, rgba(176,38,255,0) 32%, rgba(199,120,255,0.15) 43%, rgba(176,38,255,0) 53%),
+      linear-gradient(-142deg, rgba(120,80,255,0) 46%, rgba(160,120,255,0.10) 57%, rgba(120,80,255,0) 67%);
+  }
+
+  /* Légendaire — or en fusion : la SEULE rareté animée, lentement. */
+  .apres .card.r-legendary {
+    border-color: color-mix(in srgb, var(--rc) 92%, #1d2740);
+    box-shadow: inset 0 0 0 1px rgba(247,147,26,0.30), 0 0 26px -8px rgba(247,147,26,0.75);
+  }
+  .apres .card.r-legendary .art::after {
+    background-image: linear-gradient(100deg,
+      rgba(247,147,26,0) 30%, rgba(255,205,110,0.15) 45%,
+      rgba(255,240,200,0.22) 50%, rgba(255,205,110,0.15) 55%, rgba(247,147,26,0) 70%);
+    background-size: 300% 100%;
+    animation: fusion 7s linear infinite;
+  }
+  /* La bordure vit, elle aussi : c'est là que l'or se lit sans toucher à l'art. */
+  .apres .card.r-legendary { animation: fusion-bord 7s ease-in-out infinite; }
+  @keyframes fusion-bord {
+    0%, 100% { box-shadow: inset 0 0 0 1px rgba(247,147,26,0.30), 0 0 22px -9px rgba(247,147,26,0.65); }
+    50%      { box-shadow: inset 0 0 0 1px rgba(255,214,120,0.55), 0 0 30px -7px rgba(247,147,26,0.95); }
+  }
+  @keyframes fusion { from { background-position: 140% 0; } to { background-position: -40% 0; } }
+
+  /* Le tag de rareté prend la matière lui aussi. */
+  .apres .card.r-legendary .rar-tag { box-shadow: 0 0 12px -3px rgba(247,147,26,0.9); }
+  .apres .card.r-epic .rar-tag { box-shadow: 0 0 10px -3px rgba(176,38,255,0.8); }
+
+  /* Le jeu coupe TOUTES ses animations sous reduced-motion : l'or se fige. */
+  @media (prefers-reduced-motion: reduce) {
+    .apres .card.r-legendary .art::after { animation: none; background-position: 50% 0; }
+    .apres .card.r-legendary { animation: none; }
+  }
+</style>
+</head>
+<body>
+  <h1>Rareté comme matière — prototype</h1>
+  <div class="sub">Idée #2 de la roadmap esthétique. À gauche l'état actuel (couleur + tag + reflet au survol), à droite la matière proposée. Aucun asset : CSS pur.</div>
+
+  <div class="switch">
+    <button id="b-avant" class="on">Actuel</button>
+    <button id="b-apres">Proposé</button>
+    <button id="b-cote">Les deux</button>
+  </div>
+
+  <div id="zone"></div>
+
+<script>
+const RARETES = [
+  { key: "Common",    label: "Commune",    rc: "#9CA3AF", foil: 0.4,  art: "assets/HASHBYTE_C.webp", nom: "HashByte #1", preset: "Agressive" },
+  { key: "Rare",      label: "Rare",       rc: "#3B82F6", foil: 0.55, art: "assets/LEDGER_B.webp",   nom: "Ledger #7",   preset: "Tacticienne" },
+  { key: "Epic",      label: "Épique",     rc: "#B026FF", foil: 0.72, art: "assets/NETWORK_A.webp",  nom: "Network #3",  preset: "Contrôle" },
+  { key: "Legendary", label: "Légendaire", rc: "#F7931A", foil: 0.92, art: "assets/GENESIS_S.webp",  nom: "Genesis #1",  preset: "Sniper" },
+];
+function carte(r) {
+  return `<div class="card r-${r.key.toLowerCase()}" style="--rc:${r.rc};--foil:${r.foil}">
+    <div class="art">
+      <img src="${r.art}" alt="" draggable="false" onerror="this.src='assets/HASHBYTE.png'" />
+      <div class="rar-tag">${r.label}</div>
+      <div class="lvl-tag">LV 42</div>
+    </div>
+    <div class="body">
+      <div class="cname">${r.nom}</div>
+      <div class="cpreset" style="color:#F7931A">${r.preset}</div>
+    </div>
+    <div class="foil" aria-hidden="true"></div>
+  </div>`;
+}
+function bloc(mode, titre) {
+  return `<div class="${mode}"><p class="lab">${titre}</p><div class="row">${RARETES.map(carte).join("")}</div></div>`;
+}
+const zone = document.getElementById("zone");
+const rendre = (quoi) => {
+  zone.innerHTML = quoi === "avant" ? bloc("avant", "Actuel — la rareté n'est qu'une couleur")
+    : quoi === "apres" ? bloc("apres", "Proposé — chaque rareté a sa matière")
+    : bloc("avant", "Actuel — la rareté n'est qu'une couleur") + bloc("apres", "Proposé — chaque rareté a sa matière");
+  for (const b of document.querySelectorAll(".switch button")) b.classList.remove("on");
+  document.getElementById("b-" + quoi).classList.add("on");
+};
+document.getElementById("b-avant").onclick = () => rendre("avant");
+document.getElementById("b-apres").onclick = () => rendre("apres");
+document.getElementById("b-cote").onclick = () => rendre("cote");
+rendre("cote");
+</script>
+</body>
+</html>

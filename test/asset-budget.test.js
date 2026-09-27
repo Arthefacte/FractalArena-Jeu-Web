@@ -137,12 +137,33 @@ test("aucun .glb ne dépasse le budget de fichier ni de VRAM", () => {
 // compresse moins bien que l'ancien emblème lisse (427 Ko même à q4).
 const IMAGE_EXCEPTIONS = { "assets/emblem-spin.webp": 600 * 1024 };
 
+// Fonds AVIF : choix explicite du fondateur — le maximum utile (q100, écart moyen 0,3/255
+// au master, indistinguable), à ~2 Mo par écran contre 360 Ko pour le WebP. Décision
+// étendue au MOBILE le 2026-09-27 (« je veux la qualité sur mobile et sur desktop ») :
+// encodés depuis les masters mobiles eux aussi, à 1,7 Mo en @2x (moins cher que le bureau)
+// et 0,55 Mo en 1x. Ce qu'un joueur télécharge reste UNE peinture par écran affiché,
+// gardée en cache, et les WebP servis restent le repli des navigateurs sans AVIF.
+const FOND_DESKTOP_AVIF = /^assets\/backgrounds\/[a-z]+-desktop\.avif$/;
+const FOND_DESKTOP_MAX = 2.6 * 1024 * 1024;
+const FOND_MOBILE_2X_AVIF = /^assets\/backgrounds\/[a-z]+-mobile@2x\.avif$/;
+const FOND_MOBILE_2X_MAX = 2.6 * 1024 * 1024;
+const FOND_MOBILE_AVIF = /^assets\/backgrounds\/[a-z]+-mobile\.avif$/;
+const FOND_MOBILE_MAX = 800 * 1024;
+// Le 1x mobile a son plafond à lui : sans ça, un 1x cassé (resté au format bloc-note de
+// 2 Mo) passerait sous le plafond du @2x sans être vu.
+function plafondImage(chemin) {
+  if (FOND_DESKTOP_AVIF.test(chemin)) return FOND_DESKTOP_MAX;
+  if (FOND_MOBILE_2X_AVIF.test(chemin)) return FOND_MOBILE_2X_MAX;
+  if (FOND_MOBILE_AVIF.test(chemin)) return FOND_MOBILE_MAX;
+  return IMAGE_EXCEPTIONS[chemin] || MAX_IMAGE_FILE;
+}
+
 test("aucune image servie ne dépasse le budget de poids", () => {
   const dep = [];
   for (const f of files) {
-    if (!/\.(png|jpe?g|webp)$/i.test(f)) continue;
+    if (!/\.(png|jpe?g|webp|avif)$/i.test(f)) continue;
     const bytes = fs.statSync(f).size;
-    const max = IMAGE_EXCEPTIONS[rel(f)] || MAX_IMAGE_FILE;
+    const max = plafondImage(rel(f));
     if (bytes > max) dep.push(`${rel(f)} : ${(bytes / 1024).toFixed(0)} Ko > ${max / 1024} Ko`);
   }
   assert.deepStrictEqual(dep, [], "\n  " + dep.join("\n  ") + "\n");
