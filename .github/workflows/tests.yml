@@ -15,6 +15,10 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+      # E9 (audit D10/F4) : le test de cache-busting compare le numéro de la branche à celui
+      # d'origin/main pour échouer quand un fichier servi change sans bump. Sans cette
+      # récupération, le test serait neutre en CI et la garde n'existerait que sur mon poste.
+      - run: git fetch --no-tags --depth=1 origin main:refs/remotes/origin/main
       - uses: actions/setup-node@v4
         with:
           node-version: "24"

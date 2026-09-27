@@ -84,7 +84,10 @@ test("app.jsx : le code est consommé après une création acceptée par le serv
   // Une réponse OK sur l'un des trois points de création = ligne créée : le code n'a plus d'usage.
   assert.match(action(APP, "createAccount"), /refConsumed\(\)/, "createAccount ne consomme pas le code");
   assert.match(action(APP, "claimAirdropIfNew"), /refConsumed\(\)/, "claimAirdropIfNew ne consomme pas le code");
-  assert.match(bloc(APP, "// server save debounced", 1400), /refConsumed\(\)/, "l'autosave ne consomme pas le code");
+  // Fenêtre élargie (E5) : l'autosave porte désormais la branche 401 (re-signature +
+  // rejeu) et le toast d'échec non rejoué, donc `refConsumed()` est plus loin du repère.
+  // La fenêtre doit couvrir tout le bloc, pas la longueur qu'il avait avant.
+  assert.match(bloc(APP, "// server save debounced", 3200), /refConsumed\(\)/, "l'autosave ne consomme pas le code");
 });
 
 test("app.jsx : fetchReferral lit GET /referral/:wallet avec le Bearer de session (svOpts) et distingue 403/404", () => {

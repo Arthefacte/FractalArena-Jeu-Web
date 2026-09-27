@@ -1,0 +1,847 @@
+{
+  "_lisez": "Instantané des codes 4xx du serveur. Régénérer : node tools/snapshot-server-codes.mjs <chemin du dépôt serveur>",
+  "serveur_commit": "0a50789",
+  "fichiers_lus": 90,
+  "codes": [
+    {
+      "code": "above_maximum",
+      "statut": 400,
+      "fichiers": [
+        "server.js"
+      ]
+    },
+    {
+      "code": "account_frozen",
+      "statut": 403,
+      "fichiers": [
+        "server.js"
+      ]
+    },
+    {
+      "code": "airdrop_cap_reached",
+      "statut": 429,
+      "fichiers": [
+        "server.js"
+      ]
+    },
+    {
+      "code": "already_answered",
+      "statut": 400,
+      "fichiers": [
+        "quiz.js"
+      ]
+    },
+    {
+      "code": "already_claimed",
+      "statut": 400,
+      "fichiers": [
+        "login.js",
+        "quests.js"
+      ]
+    },
+    {
+      "code": "auto_achat_interdit",
+      "statut": 400,
+      "fichiers": [
+        "market.js"
+      ]
+    },
+    {
+      "code": "auto_attaque_interdite",
+      "statut": 400,
+      "fichiers": [
+        "pvp.js"
+      ]
+    },
+    {
+      "code": "beast_id_requis",
+      "statut": 400,
+      "fichiers": [
+        "champions.js"
+      ]
+    },
+    {
+      "code": "below_minimum",
+      "statut": 400,
+      "fichiers": [
+        "server.js"
+      ]
+    },
+    {
+      "code": "bete_en_expedition",
+      "statut": 409,
+      "fichiers": [
+        "campaign.js",
+        "expeditions.js",
+        "fight.js",
+        "forge.js",
+        "pvp.js",
+        "tower.js"
+      ]
+    },
+    {
+      "code": "bete_introuvable",
+      "statut": 404,
+      "fichiers": [
+        "talents.js"
+      ]
+    },
+    {
+      "code": "betes_invalides",
+      "statut": 400,
+      "fichiers": [
+        "expeditions.js",
+        "tower.js"
+      ]
+    },
+    {
+      "code": "champion_epuise",
+      "statut": 409,
+      "fichiers": [
+        "campaign.js",
+        "tower.js"
+      ]
+    },
+    {
+      "code": "champion_indisponible",
+      "statut": 409,
+      "fichiers": [
+        "campaign.js",
+        "tower.js"
+      ]
+    },
+    {
+      "code": "champion_slot_invalide",
+      "statut": 400,
+      "fichiers": [
+        "campaign.js",
+        "tower.js"
+      ]
+    },
+    {
+      "code": "chat_banned",
+      "statut": 403,
+      "fichiers": [
+        "agent-chat.js"
+      ]
+    },
+    {
+      "code": "chat_blocked",
+      "statut": 400,
+      "fichiers": [
+        "agent-chat.js"
+      ]
+    },
+    {
+      "code": "cible_invalide",
+      "statut": 400,
+      "fichiers": [
+        "pvp.js"
+      ]
+    },
+    {
+      "code": "cible_sans_fantome",
+      "statut": 404,
+      "fichiers": [
+        "pvp.js"
+      ]
+    },
+    {
+      "code": "code_invalide",
+      "statut": 401,
+      "fichiers": [
+        "accounts.js",
+        "device-link.js"
+      ]
+    },
+    {
+      "code": "code_requis",
+      "statut": 400,
+      "fichiers": [
+        "accounts.js"
+      ]
+    },
+    {
+      "code": "compte_deja_lie",
+      "statut": 409,
+      "fichiers": [
+        "accounts.js"
+      ]
+    },
+    {
+      "code": "compte_introuvable",
+      "statut": 404,
+      "fichiers": [
+        "accounts.js"
+      ]
+    },
+    {
+      "code": "compte_non_verifie",
+      "statut": 400,
+      "fichiers": [
+        "quiz.js",
+        "server.js"
+      ]
+    },
+    {
+      "code": "compte_reserve_au_retrait",
+      "statut": 400,
+      "fichiers": [
+        "auth.js"
+      ]
+    },
+    {
+      "code": "core_ids_invalide",
+      "statut": 400,
+      "fichiers": [
+        "forge.js"
+      ]
+    },
+    {
+      "code": "core_introuvable",
+      "statut": 400,
+      "fichiers": [
+        "forge.js"
+      ]
+    },
+    {
+      "code": "core_invalide",
+      "statut": 400,
+      "fichiers": [
+        "forge.js"
+      ]
+    },
+    {
+      "code": "core_max_rarity",
+      "statut": 400,
+      "fichiers": [
+        "forge.js"
+      ]
+    },
+    {
+      "code": "core_rarity_mismatch",
+      "statut": 400,
+      "fichiers": [
+        "forge.js"
+      ]
+    },
+    {
+      "code": "daily_paid_cap_reached",
+      "statut": 429,
+      "fichiers": [
+        "agent-ladder.js"
+      ]
+    },
+    {
+      "code": "defense_corrompue",
+      "statut": 409,
+      "fichiers": [
+        "pvp.js"
+      ]
+    },
+    {
+      "code": "deja_choisi",
+      "statut": 400,
+      "fichiers": [
+        "talents.js"
+      ]
+    },
+    {
+      "code": "deja_reclame",
+      "statut": 409,
+      "fichiers": [
+        "discovery.js",
+        "expeditions.js"
+      ]
+    },
+    {
+      "code": "deja_vendu",
+      "statut": 409,
+      "fichiers": [
+        "market.js"
+      ]
+    },
+    {
+      "code": "destination_already_claimed",
+      "statut": 409,
+      "fichiers": [
+        "server.js"
+      ]
+    },
+    {
+      "code": "destination_cap_reached",
+      "statut": 429,
+      "fichiers": [
+        "server.js"
+      ]
+    },
+    {
+      "code": "destination_invalide",
+      "statut": 400,
+      "fichiers": [
+        "expeditions.js"
+      ]
+    },
+    {
+      "code": "destination_occupee",
+      "statut": 409,
+      "fichiers": [
+        "expeditions.js"
+      ]
+    },
+    {
+      "code": "duree_invalide",
+      "statut": 400,
+      "fichiers": [
+        "expeditions.js"
+      ]
+    },
+    {
+      "code": "entite_introuvable",
+      "statut": 404,
+      "fichiers": [
+        "champions.js"
+      ]
+    },
+    {
+      "code": "entry_invalide",
+      "statut": 400,
+      "fichiers": [
+        "pvp.js"
+      ]
+    },
+    {
+      "code": "error",
+      "statut": 400,
+      "fichiers": [
+        "chatroom.js"
+      ]
+    },
+    {
+      "code": "etape_inconnue",
+      "statut": 400,
+      "fichiers": [
+        "discovery.js"
+      ]
+    },
+    {
+      "code": "expedition_en_cours",
+      "statut": 400,
+      "fichiers": [
+        "expeditions.js"
+      ]
+    },
+    {
+      "code": "expedition_introuvable",
+      "statut": 404,
+      "fichiers": [
+        "expeditions.js"
+      ]
+    },
+    {
+      "code": "expedition_non_rappelable",
+      "statut": 409,
+      "fichiers": [
+        "expeditions.js"
+      ]
+    },
+    {
+      "code": "expedition_rappelee",
+      "statut": 409,
+      "fichiers": [
+        "expeditions.js"
+      ]
+    },
+    {
+      "code": "fantome_corrompu",
+      "statut": 409,
+      "fichiers": [
+        "pvp.js"
+      ]
+    },
+    {
+      "code": "fragments_insuffisants",
+      "statut": 400,
+      "fichiers": [
+        "expeditions.js"
+      ]
+    },
+    {
+      "code": "id_invalide",
+      "statut": 400,
+      "fichiers": [
+        "expeditions.js"
+      ]
+    },
+    {
+      "code": "insufficient_balance",
+      "statut": 400,
+      "fichiers": [
+        "agent-forge.js",
+        "agent-fosse.js",
+        "agent-ladder.js",
+        "agent-talents.js"
+      ]
+    },
+    {
+      "code": "invalid_tx",
+      "statut": 400,
+      "fichiers": [
+        "server.js"
+      ]
+    },
+    {
+      "code": "joueur_introuvable",
+      "statut": 404,
+      "fichiers": [
+        "expeditions.js",
+        "market.js",
+        "talents.js",
+        "tower.js"
+      ]
+    },
+    {
+      "code": "liaison_absente",
+      "statut": 403,
+      "fichiers": [
+        "auth.js"
+      ]
+    },
+    {
+      "code": "limite_listings",
+      "statut": 400,
+      "fichiers": [
+        "market.js"
+      ]
+    },
+    {
+      "code": "listing_expire",
+      "statut": 409,
+      "fichiers": [
+        "market.js"
+      ]
+    },
+    {
+      "code": "listing_indisponible",
+      "statut": 409,
+      "fichiers": [
+        "market.js"
+      ]
+    },
+    {
+      "code": "listing_introuvable",
+      "statut": 400,
+      "fichiers": [
+        "market.js"
+      ]
+    },
+    {
+      "code": "locks_invalide",
+      "statut": 400,
+      "fichiers": [
+        "forge.js"
+      ]
+    },
+    {
+      "code": "max_rarity",
+      "statut": 400,
+      "fichiers": [
+        "forge.js"
+      ]
+    },
+    {
+      "code": "mode_invalide",
+      "statut": 400,
+      "fichiers": [
+        "expeditions.js"
+      ]
+    },
+    {
+      "code": "no_account",
+      "statut": 404,
+      "fichiers": [
+        "server.js"
+      ]
+    },
+    {
+      "code": "no_charges",
+      "statut": 400,
+      "fichiers": [
+        "boosts.js"
+      ]
+    },
+    {
+      "code": "no_entry",
+      "statut": 400,
+      "fichiers": [
+        "campaign.js"
+      ]
+    },
+    {
+      "code": "no_free_fights",
+      "statut": 400,
+      "fichiers": [
+        "agent-ladder.js"
+      ]
+    },
+    {
+      "code": "non_accompli",
+      "statut": 400,
+      "fichiers": [
+        "discovery.js"
+      ]
+    },
+    {
+      "code": "not_complete",
+      "statut": 400,
+      "fichiers": [
+        "quests.js"
+      ]
+    },
+    {
+      "code": "not_found",
+      "statut": 404,
+      "fichiers": [
+        "player-ui.js",
+        "server.js"
+      ]
+    },
+    {
+      "code": "objet_introuvable",
+      "statut": 400,
+      "fichiers": [
+        "forge.js"
+      ]
+    },
+    {
+      "code": "objet_invalide",
+      "statut": 400,
+      "fichiers": [
+        "forge.js"
+      ]
+    },
+    {
+      "code": "objet_invendable",
+      "statut": 400,
+      "fichiers": [
+        "market.js"
+      ]
+    },
+    {
+      "code": "palier_verrouille",
+      "statut": 403,
+      "fichiers": [
+        "talents.js"
+      ]
+    },
+    {
+      "code": "parametres_invalides",
+      "statut": 400,
+      "fichiers": [
+        "accounts.js"
+      ]
+    },
+    {
+      "code": "parcours_non_applicable",
+      "statut": 403,
+      "fichiers": [
+        "accounts.js",
+        "discovery.js"
+      ]
+    },
+    {
+      "code": "pas_de_defense",
+      "statut": 400,
+      "fichiers": [
+        "pvp.js"
+      ]
+    },
+    {
+      "code": "pas_de_fantome",
+      "statut": 404,
+      "fichiers": [
+        "pvp.js"
+      ]
+    },
+    {
+      "code": "pas_de_pending",
+      "statut": 400,
+      "fichiers": [
+        "forge.js"
+      ]
+    },
+    {
+      "code": "pas_de_revanche",
+      "statut": 400,
+      "fichiers": [
+        "pvp.js"
+      ]
+    },
+    {
+      "code": "pas_de_run",
+      "statut": 400,
+      "fichiers": [
+        "tower.js"
+      ]
+    },
+    {
+      "code": "pas_de_ticket",
+      "statut": 400,
+      "fichiers": [
+        "expeditions.js",
+        "pvp.js"
+      ]
+    },
+    {
+      "code": "pas_le_vendeur",
+      "statut": 403,
+      "fichiers": [
+        "market.js"
+      ]
+    },
+    {
+      "code": "pas_un_core",
+      "statut": 400,
+      "fichiers": [
+        "forge.js"
+      ]
+    },
+    {
+      "code": "pas_une_relique",
+      "statut": 400,
+      "fichiers": [
+        "forge.js"
+      ]
+    },
+    {
+      "code": "portefeuille_deja_lie",
+      "statut": 409,
+      "fichiers": [
+        "accounts.js"
+      ]
+    },
+    {
+      "code": "portefeuille_identique",
+      "statut": 400,
+      "fichiers": [
+        "accounts.js"
+      ]
+    },
+    {
+      "code": "portefeuille_non_lie",
+      "statut": 403,
+      "fichiers": [
+        "server.js"
+      ]
+    },
+    {
+      "code": "poussiere_non_envoyee",
+      "statut": 400,
+      "fichiers": [
+        "discovery.js"
+      ]
+    },
+    {
+      "code": "preuve_onchain_requise",
+      "statut": 403,
+      "fichiers": [
+        "server.js"
+      ]
+    },
+    {
+      "code": "prix_invalide",
+      "statut": 400,
+      "fichiers": [
+        "market.js"
+      ]
+    },
+    {
+      "code": "question_inconnue",
+      "statut": 400,
+      "fichiers": [
+        "quiz.js"
+      ]
+    },
+    {
+      "code": "rang_invalide",
+      "statut": 400,
+      "fichiers": [
+        "expeditions.js"
+      ]
+    },
+    {
+      "code": "rarete_inconnue",
+      "statut": 400,
+      "fichiers": [
+        "forge.js"
+      ]
+    },
+    {
+      "code": "rarity_mismatch",
+      "statut": 400,
+      "fichiers": [
+        "forge.js"
+      ]
+    },
+    {
+      "code": "rate_limited",
+      "statut": 429,
+      "fichiers": [
+        "agent-chat.js",
+        "chatroom.js"
+      ]
+    },
+    {
+      "code": "relic_ids_invalide",
+      "statut": 400,
+      "fichiers": [
+        "forge.js"
+      ]
+    },
+    {
+      "code": "relique_introuvable",
+      "statut": 400,
+      "fichiers": [
+        "forge.js",
+        "market.js"
+      ]
+    },
+    {
+      "code": "rien_a_offrir",
+      "statut": 400,
+      "fichiers": [
+        "quiz.js"
+      ]
+    },
+    {
+      "code": "roster_insuffisant",
+      "statut": 400,
+      "fichiers": [
+        "tower.js"
+      ]
+    },
+    {
+      "code": "run_actif",
+      "statut": 400,
+      "fichiers": [
+        "tower.js"
+      ]
+    },
+    {
+      "code": "saison_pas_demarree",
+      "statut": 403,
+      "fichiers": [
+        "pvp.js"
+      ]
+    },
+    {
+      "code": "selection_invalide",
+      "statut": 400,
+      "fichiers": [
+        "pvp.js"
+      ]
+    },
+    {
+      "code": "session_revoked",
+      "statut": 401,
+      "fichiers": [
+        "auth.js"
+      ]
+    },
+    {
+      "code": "signature_invalide",
+      "statut": 401,
+      "fichiers": [
+        "accounts.js"
+      ]
+    },
+    {
+      "code": "solde_insuffisant",
+      "statut": 400,
+      "fichiers": [
+        "pvp.js",
+        "quiz.js",
+        "talents.js",
+        "tower.js"
+      ]
+    },
+    {
+      "code": "talent_invalide",
+      "statut": 400,
+      "fichiers": [
+        "talents.js"
+      ]
+    },
+    {
+      "code": "ticket_invalide",
+      "statut": 400,
+      "fichiers": [
+        "expeditions.js"
+      ]
+    },
+    {
+      "code": "tier_invalide",
+      "statut": 400,
+      "fichiers": [
+        "talents.js"
+      ]
+    },
+    {
+      "code": "trop_de_codes_actifs",
+      "statut": 429,
+      "fichiers": [
+        "device-link.js"
+      ]
+    },
+    {
+      "code": "trop_rapide",
+      "statut": 429,
+      "fichiers": [
+        "accounts.js",
+        "tower.js"
+      ]
+    },
+    {
+      "code": "trop_tard",
+      "statut": 400,
+      "fichiers": [
+        "quiz.js"
+      ]
+    },
+    {
+      "code": "txid_invalide",
+      "statut": 400,
+      "fichiers": [
+        "discovery.js"
+      ]
+    },
+    {
+      "code": "txid_requis",
+      "statut": 400,
+      "fichiers": [
+        "discovery.js"
+      ]
+    },
+    {
+      "code": "verification_requise",
+      "statut": 403,
+      "fichiers": [
+        "boosts.js"
+      ]
+    },
+    {
+      "code": "wallet_invalide",
+      "statut": 400,
+      "fichiers": [
+        "pvp.js"
+      ]
+    },
+    {
+      "code": "withdraw_frozen",
+      "statut": 403,
+      "fichiers": [
+        "server.js"
+      ]
+    }
+  ]
+}

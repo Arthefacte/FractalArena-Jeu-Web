@@ -12,7 +12,13 @@ const MKT = window.FA_MARKET;
 
 // Message d'erreur : clé serveur connue → traduction dédiée, sinon générique.
 // (Ne PAS faire I18N.t("MKT_ERR_" + e) || generic : une clé inconnue renvoie la clé brute, truthy.)
-const MKT_ERR_KEYS = ["deja_vendu", "listing_expire", "auto_achat_interdit", "limite_listings", "prix_invalide"];
+// E7 (audit D10, finding F1) : les sanctions de compte posées par sanctions.js
+// (`trade_frozen` sur toute mutation du marché) et le 409 `listing_indisponible` d'un
+// vendeur gelé n'étaient PAS dans cette liste : un joueur sanctionné lisait « erreur du
+// Marché » alors que le serveur lui écrit un message précis. `account_frozen` et
+// `withdraw_frozen` entrent par la même porte (un refus de retrait croisé depuis l'écran).
+const MKT_ERR_KEYS = ["deja_vendu", "listing_expire", "auto_achat_interdit", "limite_listings", "prix_invalide",
+                      "trade_frozen", "listing_indisponible", "account_frozen", "withdraw_frozen"];
 function mktErrMsg(j) {
   const e = j && j.error;
   return MKT_ERR_KEYS.indexOf(e) >= 0 ? I18N.t("MKT_ERR_" + e) : I18N.t("MKT_ERR_generic");

@@ -909,6 +909,24 @@
     MKT_ERR_limite_listings: { FR: "Limite atteinte : 10 ventes actives max.", EN: "Limit reached: 10 active listings max.", ZH: "已达上限：最多 10 个在售商品。" },
     MKT_ERR_prix_invalide: { FR: "Prix invalide (100 à 1 000 000 FA, entier).", EN: "Invalid price (100 to 1,000,000 FA, integer).", ZH: "价格无效（100 至 1,000,000 FA，整数）。" },
     MKT_ERR_generic: { FR: "Erreur du Marché, réessaie.", EN: "Market error, please retry.", ZH: "市场错误，请重试。" },
+    // Sanctions de compte (E7, audit D10/F1) : le serveur distingue le gel des retraits du
+    // gel des échanges ; le client les confondait dans « erreur générique ».
+    // Refus explicables au joueur (E7, audit D10/F2) — mêmes clés que SERVER_ERROR_KEYS.
+    E7_preuve_onchain_requise: { FR: "Vérification on-chain requise : relie ton portefeuille pour cette action.", EN: "On-chain verification required: link your wallet for this action.", ZH: "需要链上验证：请先绑定钱包。" },
+    E7_verification_requise: { FR: "Vérifie ton compte pour continuer (vérification on-chain).", EN: "Verify your account to continue (on-chain verification).", ZH: "请先完成账户验证（链上验证）。" },
+    E7_palier_verrouille: { FR: "Ce palier est encore verrouillé : débloque le précédent.", EN: "This tier is still locked: unlock the previous one.", ZH: "该等级尚未解锁：请先解锁上一级。" },
+    E7_compte_reserve_au_retrait: { FR: "Ce compte a été créé pour un retrait : il ne peut pas faire cette action.", EN: "This account was created for a withdrawal: it cannot do this action.", ZH: "该账户为提现创建，无法执行此操作。" },
+    E7_roster_insuffisant: { FR: "Ton équipe ne suffit pas pour ce combat : il faut 3 entités.", EN: "Your team is not enough for this fight: 3 entities are required.", ZH: "队伍不足：需要 3 个实体。" },
+    E7_no_entry: { FR: "Aucun ticket ni entrée gratuite pour ce tournoi.", EN: "No ticket or free entry for this tournament.", ZH: "没有该锦标赛的门票或免费名额。" },
+    E7_talent_invalide: { FR: "Ce talent n'est pas valide pour cette entité.", EN: "This talent is not valid for this entity.", ZH: "该天赋不适用于此实体。" },
+    E7_run_actif: { FR: "Une expédition est déjà en cours ici.", EN: "An expedition is already running here.", ZH: "此处已有进行中的远征。" },
+    E7_no_charges: { FR: "Plus de charges disponibles : attends le rechargement.", EN: "No charges left: wait for the recharge.", ZH: "充能已用尽：请等待恢复。" },
+    E7_trop_rapide: { FR: "Trop vite : ralentis un instant avant de réessayer.", EN: "Too fast: slow down a moment before retrying.", ZH: "操作过快：请稍后再试。" },
+    E7_session_revoked: { FR: "Session révoquée : reconnecte-toi (une autre session a été fermée, ou ton compte a été récupéré).", EN: "Session revoked: sign in again (another session was closed, or your account was recovered).", ZH: "会话已失效：请重新登录（其他会话被关闭，或账户已被找回）。" },
+    MKT_ERR_trade_frozen: { FR: "Échanges au Marché suspendus sur ce compte (sanction). Contacte le support.", EN: "Market trades are suspended on this account (sanction). Contact support.", ZH: "该账户已被禁止市场交易（制裁）。请联系客服。" },
+    MKT_ERR_account_frozen: { FR: "Compte gelé : les retraits sont suspendus (sanction). Contacte le support.", EN: "Account frozen: withdrawals are suspended (sanction). Contact support.", ZH: "账户已冻结：提现已暂停（制裁）。请联系客服。" },
+    MKT_ERR_withdraw_frozen: { FR: "Retraits suspendus sur ce compte (sanction). Contacte le support.", EN: "Withdrawals are suspended on this account (sanction). Contact support.", ZH: "该账户提现已被暂停（制裁）。请联系客服。" },
+    MKT_ERR_listing_indisponible: { FR: "Annonce indisponible : son vendeur ne peut plus échanger.", EN: "Listing unavailable: its seller can no longer trade.", ZH: "商品不可用：卖家已无法交易。" },
 
     // ===== Campaign (PvE) =====
     CAMP_TITLE: { FR: "Mode Histoire", EN: "Story Mode", ZH: "故事模式" },
@@ -1642,6 +1660,26 @@
     sender_unverified: "WL_DEP_SENDER_UNVERIFIED",
     invalid_tx: "WL_DEP_TXID_INVALID",
     txid_not_found: "WL_DEP_NOT_FOUND",
+    // Sanctions de compte (E7, audit D10/F1+F7) : hors marché aussi — un retrait refusé et
+    // l'airdrop de bienvenue d'un compte gelé renvoient ces codes.
+    // Refus explicables au joueur (E7, audit D10/F2) : ces codes tombaient sur « Une
+    // erreur est survenue » alors qu'ils disent au joueur quoi faire. Le reste de la
+    // dette (codes de protocole, corps malformés) est LOCKÉ par le test E7.
+    preuve_onchain_requise: "E7_preuve_onchain_requise",
+    verification_requise: "E7_verification_requise",
+    palier_verrouille: "E7_palier_verrouille",
+    compte_reserve_au_retrait: "E7_compte_reserve_au_retrait",
+    roster_insuffisant: "E7_roster_insuffisant",
+    no_entry: "E7_no_entry",
+    talent_invalide: "E7_talent_invalide",
+    run_actif: "E7_run_actif",
+    no_charges: "E7_no_charges",
+    trop_rapide: "E7_trop_rapide",
+    session_revoked: "E7_session_revoked",
+    trade_frozen: "MKT_ERR_trade_frozen",
+    listing_indisponible: "MKT_ERR_listing_indisponible",
+    account_frozen: "MKT_ERR_account_frozen",
+    withdraw_frozen: "MKT_ERR_withdraw_frozen",
   };
   function localizeServerError(code) {
     if (!code) return t("ERR_GENERIC");
