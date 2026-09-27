@@ -1258,9 +1258,15 @@ function WorldSelect({
   })), D.WORLDS.map((w, i) => {
     const unlocked = allStars >= w.starsReq;
     const total = worldStarTotal(g, w.id);
+    /* `done` (toutes les etoiles) et la vignette d'art du monde existaient dans la
+       grille de cartes d'avant la refonte : le rework les a perdus, donc un joueur
+       ne voyait plus quels mondes il avait termines. Remis dans sa mise en page
+       (les balises sur la carte), sans la refaire. */
+    const done = total === D.STARS_PER_WORLD;
+    const nom = I18N.t("CAMP_W" + (w.id + 1) + "_NAME");
     return /*#__PURE__*/React.createElement("button", {
       key: w.id,
-      className: cx("world-beacon", !unlocked && "locked"),
+      className: cx("world-beacon", !unlocked && "locked", done && "done"),
       style: {
         "--world-color": w.color,
         "--world-index": i
@@ -1272,9 +1278,49 @@ function WorldSelect({
       "aria-hidden": "true"
     }, unlocked ? "◇" : "⌑"), /*#__PURE__*/React.createElement("span", {
       className: "world-beacon-label"
-    }, /*#__PURE__*/React.createElement("strong", null, I18N.t("CAMP_W" + (w.id + 1) + "_NAME")), /*#__PURE__*/React.createElement("span", null, unlocked ? I18N.t("CAMP_STARS", total, D.STARS_PER_WORLD) : I18N.t("CAMP_LOCKED", w.starsReq)), /*#__PURE__*/React.createElement("span", {
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        display: "flex",
+        gap: 8,
+        alignItems: "center"
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        width: 34,
+        height: 34,
+        flex: "none",
+        display: "grid",
+        placeItems: "center",
+        background: "rgba(0,0,0,0.3)",
+        borderRadius: 7,
+        border: "1px solid " + w.color
+      }
+    }, /*#__PURE__*/React.createElement("img", {
+      src: D.ART[w.img],
+      alt: nom,
+      draggable: "false",
+      style: {
+        width: 26,
+        height: 26,
+        objectFit: "contain",
+        filter: unlocked ? "none" : "grayscale(1)"
+      }
+    })), /*#__PURE__*/React.createElement("strong", null, nom)), /*#__PURE__*/React.createElement("span", null, unlocked ? I18N.t("CAMP_STARS", total, D.STARS_PER_WORLD) : I18N.t("CAMP_LOCKED", w.starsReq)), /*#__PURE__*/React.createElement("span", {
       className: "world-description"
-    }, I18N.t("CAMP_W" + (w.id + 1) + "_DESC"))));
+    }, I18N.t("CAMP_W" + (w.id + 1) + "_DESC"))), done && /*#__PURE__*/React.createElement("span", {
+      style: {
+        position: "absolute",
+        top: 6,
+        right: 6,
+        background: "rgba(247,147,26,0.16)",
+        border: "1px solid rgba(247,147,26,0.6)",
+        color: "var(--gold)",
+        borderRadius: 9,
+        fontSize: 10,
+        fontWeight: 700,
+        padding: "1px 7px"
+      }
+    }, "100 % \u2713"));
   })), /*#__PURE__*/React.createElement("details", {
     className: "scene-records"
   }, /*#__PURE__*/React.createElement("summary", null, I18N.t("CAMP_TITLES")), /*#__PURE__*/React.createElement(CampaignTitles, null)));

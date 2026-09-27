@@ -5653,6 +5653,20 @@ function Nav() {
   // Même prédicat que l'écran (statusOf) : une seule définition de « prête ».
   const expNow = Date.now() + (g.expNowOffset || 0);
   const expReady = (g.expeditions || []).filter(e => XU.statusOf(e, expNow) === "ready").length;
+  // Pastilles d'alerte de la barre de BUREAU. La refonte a regroupe Arène sous
+  // « Fosse » et Expeditions sous « Campagne » : le code des pastilles est reste
+  // accroche aux onglets arene/expeditions, qui ne sont plus dans PRIMARY — donc
+  // plus aucune alerte ne s'affichait en bureau (la barre mobile, qui les portait,
+  // est masquee par .fa-mnav). La pastille se pose maintenant sur le GROUPE, donc
+  // visible depuis n'importe quel ecran, et aussi sur le sous-onglet ouvert.
+  const pastilleDe = k => k === "fosse" || k === "arene" ? areneBadge : k === "campaign" || k === "expeditions" ? expReady : 0;
+  const tonDe = k => k === "fosse" || k === "arene" ? {
+    background: "var(--alert)",
+    color: "#fff"
+  } : {
+    background: "var(--fire)",
+    color: "#180a02"
+  };
   return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("nav", {
     className: "nav",
     "aria-label": I18N.t("NAV_MORE")
@@ -5677,29 +5691,17 @@ function Nav() {
     draggable: "false"
   }), /*#__PURE__*/React.createElement("span", {
     className: "nav-label"
-  }, I18N.t(key)), k === "arene" && areneBadge > 0 && /*#__PURE__*/React.createElement("span", {
+  }, I18N.t(key)), pastilleDe(k) > 0 && /*#__PURE__*/React.createElement("span", {
     className: "nav-badge",
     style: {
       marginLeft: 4,
-      background: "var(--alert)",
-      color: "#fff",
       borderRadius: 9,
       fontSize: 10,
       padding: "0 5px",
-      fontWeight: 700
+      fontWeight: 700,
+      ...tonDe(k)
     }
-  }, areneBadge), k === "expeditions" && expReady > 0 && /*#__PURE__*/React.createElement("span", {
-    className: "nav-badge",
-    style: {
-      marginLeft: 4,
-      background: "var(--fire)",
-      color: "#180a02",
-      borderRadius: 9,
-      fontSize: 10,
-      padding: "0 5px",
-      fontWeight: 700
-    }
-  }, expReady))), /*#__PURE__*/React.createElement("button", {
+  }, pastilleDe(k)))), /*#__PURE__*/React.createElement("button", {
     className: cx("nav-tab", "nav-settings", g.view === "options" && "on"),
     onClick: () => go("options")
   }, /*#__PURE__*/React.createElement("img", {
@@ -5714,7 +5716,17 @@ function Nav() {
     key: k,
     className: cx("btn", "sm", g.view === k && "on"),
     onClick: () => go(k)
-  }, I18N.t(tabs.find(([id]) => id === k)[1])))), /*#__PURE__*/React.createElement("nav", {
+  }, I18N.t(tabs.find(([id]) => id === k)[1]), pastilleDe(k) > 0 && /*#__PURE__*/React.createElement("span", {
+    className: "nav-badge",
+    style: {
+      marginLeft: 4,
+      borderRadius: 9,
+      fontSize: 10,
+      padding: "0 5px",
+      fontWeight: 700,
+      ...tonDe(k)
+    }
+  }, pastilleDe(k))))), /*#__PURE__*/React.createElement("nav", {
     className: "fa-mnav"
   }, /*#__PURE__*/React.createElement("span", {
     className: "fa-mnav-liseret",
