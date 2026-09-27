@@ -6,6 +6,15 @@ const D = window.FA_DATA, I18N = window.FA_I18N;
 const { useFA, cx, fmt, presetLabel, rarityLabel, AreneBattle, PostureSelect, FaText } = window;
 const AU = window.FA_ARENE_UI;
 
+// E3 (clôture de l'audit complet 2026-09, D10/M4, emplacement 5) : « c'est toi » se décide sur
+// l'identifiant OPAQUE, avec repli sur l'adresse tant que le serveur sert les deux (phase 1). Une
+// seule fonction, pour que l'arène et son classement répondent la même chose.
+function estMoi(row, g) {
+  if (!row) return false;
+  if (g.publicId && row.player_id) return row.player_id === g.publicId;
+  return !!row.wallet && row.wallet === g.wallet;
+}
+
 function TeamPreview({ team }) {
   const list = Array.isArray(team) ? team.slice(0, 3) : [];
   return (
@@ -165,19 +174,25 @@ function Arene() {
           {(!pvp.opponents || pvp.opponents.length === 0) && <div className="mono" style={{ color: "var(--text-dim)", fontSize: 13 }}>{I18N.t("AR2_NO_OPPONENTS")}</div>}
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {(pvp.opponents || []).map((o) => {
-              const canRevanche = Array.isArray(pvp.revanches) && pvp.revanches.includes(o.wallet);
+              // E3 (D10/M4, emplacements 2 et 3) : l'identifiant opaque de l'adversaire devient la
+              // CLÉ de cette liste. La liste de revanches de l'appareil contient encore des adresses
+              // (elles y étaient écrites avant cette phase) : on accepte donc les deux formes, pour
+              // qu'aucune revanche déjà gagnée ne disparaisse du jour au lendemain.
+              const oId = o.opponent_id || o.wallet;
+              const canRevanche = Array.isArray(pvp.revanches) &&
+                (pvp.revanches.includes(oId) || (o.opponent_id && pvp.revanches.includes(o.wallet)));
               // L'appariement se fait sur la puissance : c'est l'écart qui dit si le
               // combat est jouable, pas l'ELO (tout le monde y démarre à 1000).
               const gap = AU.powerGapPct(pvp.power, o.power);
               const tone = AU.powerGapTone(gap);
               const gapColor = tone === "even" ? "var(--success)" : tone === "edge" ? "var(--gold)" : "var(--alert)";
               return (
-                <div key={o.wallet} className="oct-sm" style={{ border: "1px solid var(--line-soft)", padding: 10, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
+                <div key={oId} className="oct-sm" style={{ border: "1px solid var(--line-soft)", padding: 10, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
                   <div style={{ minWidth: 0 }}>
-                    {/* Nom composé serveur (décision user 2026-08-22) ; repli wallet
-                        raccourci si un vieux serveur ne l'envoie pas encore. */}
+                    {/* Nom composé serveur (décision user 2026-08-22) ; repli sur l'identifiant
+                        opaque si un vieux serveur ne l'envoie pas encore — plus d'adresse ici. */}
                     <div className="mono" style={{ fontWeight: 700, fontSize: 13, marginBottom: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                      {o.name || ((o.wallet || "").slice(0, 6) + "…" + (o.wallet || "").slice(-4))}
+                      {o.name || oId}
                     </div>
                     <div className="flex gap8 center">
                       <span className="mono" style={{ fontSize: 12, color: AU.leagueColor(o.league) }}>{AU.leagueLabel(o.league)}</span>
@@ -205,11 +220,11 @@ function Arene() {
           <span className="h2" style={{ fontSize: 14, color: "var(--gold)" }}>{I18N.t("AR2_LADDER")} — {AU.leagueLabel(pvp.league)}</span>
           <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 4 }}>
             {(pvp.ladder || []).map((row) => (
-              <div key={row.wallet} className="flex between" style={{ padding: "5px 8px", background: row.wallet === g.wallet ? "rgba(0,240,255,0.08)" : "transparent", fontSize: 12 }}>
+              <div key={row.player_id || row.wallet} className="flex between" style={{ padding: "5px 8px", background: estMoi(row, g) ? "rgba(0,240,255,0.08)" : "transparent", fontSize: 12 }}>
                 {/* 24 : les noms composés du serveur dépassent les 14 caractères de l'ancienne
                     coupe (« Le Grand Arthefacte.fb » = 22) — à 14, un joueur ne se
                     reconnaissait plus dans sa propre ligne. Ellipse si ça dépasse. */}
-                <span className="mono">{row.rank}. {row.wallet === g.wallet ? "➔ " : ""}{(row.name || "").slice(0, 24)}{(row.name || "").length > 24 ? "…" : ""}</span>
+                <span className="mono">{row.rank}. {estMoi(row, g) ? "➔ " : ""}{(row.name || "").slice(0, 24)}{(row.name || "").length > 24 ? "…" : ""}</span>
                 <span className="mono" style={{ color: "var(--elec)" }}>{row.rating} · {row.wins || 0}-{row.losses || 0}</span>
               </div>
             ))}

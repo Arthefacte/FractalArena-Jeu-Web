@@ -21,7 +21,7 @@ function bloc(src, marker, len) {
 }
 
 test("app.jsx : serverToState expose lp_tier (null si absent) et freshState l'amorce", () => {
-  const b = bloc(app, "function serverToState", 3200);
+  const b = bloc(app, "function serverToState", 4200); // 4200 : E3 a ajoute `publicId` (et son commentaire) dans ce bloc
   assert.match(b, /lpTier: save\.lp_tier \|\| null/, "lp_tier du payload /save non chargé");
   const f = bloc(app, "function freshState", 3600);
   assert.match(f, /lpTier: null/, "lpTier absent de l'état initial");
