@@ -1,7 +1,7 @@
 {
   "_lisez": "Instantané des codes 4xx du serveur. Régénérer : node tools/snapshot-server-codes.mjs <chemin du dépôt serveur>",
-  "serveur_commit": "0a50789",
-  "fichiers_lus": 90,
+  "serveur_commit": "125d6c8",
+  "fichiers_lus": 91,
   "codes": [
     {
       "code": "above_maximum",
@@ -130,6 +130,13 @@
       "statut": 400,
       "fichiers": [
         "agent-chat.js"
+      ]
+    },
+    {
+      "code": "cible_hors_portee",
+      "statut": 400,
+      "fichiers": [
+        "pvp.js"
       ]
     },
     {
