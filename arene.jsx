@@ -42,7 +42,9 @@ function Arene() {
   const [defPosture, setDefPosture] = useState("equilibre");
   const seasonFlipTried = useRef(false); // anti-rafale : une seule tentative + backoff
 
-  useEffect(() => { if (g.wallet) { actions.pvpRefresh().then(() => actions.pvpAttacksSeen()); actions.pvpDefenseOf(g.wallet).then((r) => setDefPosture((r && r.posture) || "equilibre")); } }, [g.wallet]);
+  // E4 : mon propre identifiant opaque quand il est là — la route accepte les deux formes
+  // (adresse ou identifiant), et l'identifiant n'apprend rien sur moi si la requête traînait.
+  useEffect(() => { if (g.wallet) { actions.pvpRefresh().then(() => actions.pvpAttacksSeen()); actions.pvpDefenseOf(g.publicId || g.wallet).then((r) => setDefPosture((r && r.posture) || "equilibre")); } }, [g.wallet, g.publicId]);
   useEffect(() => {
     const id = setInterval(() => setNowTs(Date.now()), 1000);
     return () => clearInterval(id);
@@ -207,8 +209,8 @@ function Arene() {
                     <div style={{ marginTop: 6 }}><TeamPreview team={o.team} /></div>
                   </div>
                   {canRevanche
-                    ? <button className="btn btn-success sm" disabled={busy} onClick={async () => { const r = await actions.pvpDefenseOf(o.wallet); setPick({ target: o.wallet, revanche: true, ids: [...g.selected], oppTeam: o.team, posture: "equilibre", oppPosture: (r && r.posture) || null }); }}>{I18N.t("AR2_REVANCHE")}</button>
-                    : <button className="btn btn-elec sm" data-guide="arene-attack" disabled={busy} onClick={async () => { const r = await actions.pvpDefenseOf(o.wallet); setPick({ target: o.wallet, revanche: false, ids: [...g.selected], oppTeam: o.team, posture: "equilibre", oppPosture: (r && r.posture) || null }); }}>{I18N.t("AR2_ATTACK")}</button>}
+                    ? <button className="btn btn-success sm" disabled={busy} onClick={async () => { const ref = o.player_id || o.wallet; const r = await actions.pvpDefenseOf(ref); setPick({ target: ref, revanche: true, ids: [...g.selected], oppTeam: o.team, posture: "equilibre", oppPosture: (r && r.posture) || null }); }}>{I18N.t("AR2_REVANCHE")}</button>
+                    : <button className="btn btn-elec sm" data-guide="arene-attack" disabled={busy} onClick={async () => { const ref = o.player_id || o.wallet; const r = await actions.pvpDefenseOf(ref); setPick({ target: ref, revanche: false, ids: [...g.selected], oppTeam: o.team, posture: "equilibre", oppPosture: (r && r.posture) || null }); }}>{I18N.t("AR2_ATTACK")}</button>}
                 </div>
               );
             })}
