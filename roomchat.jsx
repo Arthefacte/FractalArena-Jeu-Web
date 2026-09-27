@@ -237,6 +237,29 @@ function RoomFab() {
     ).length);
   }, [messages, muted, open, g.wallet, g.publicId]);
 
+  // Phase 2 : les sourdines écrites AVANT cette phase sont des adresses. Le serveur va cesser
+  // d'envoyer `wallet`, et une sourdine en forme d'adresse cesserait alors de correspondre — les
+  // messages tus réapparaîtraient, et le compteur de non-lus se remettrait à clignoter pour eux.
+  // Tant que les deux formes circulent, on réécrit les entrées reconnaissables : la liste se
+  // soigne toute seule, message après message, sans rien perdre ni rien inventer.
+  useEffect(() => {
+    if (!muted.length || !messages.length) return;
+    const parAdresse = new Map();
+    for (const m of messages) if (m && m.wallet && m.player_id) parAdresse.set(m.wallet, m.player_id);
+    if (!parAdresse.size) return;
+    let change = false;
+    const next = muted.map((w) => {
+      const id = parAdresse.get(w);
+      if (id && id !== w) { change = true; return id; }
+      return w;
+    });
+    if (!change) return;
+    const uniques = next.filter((w, i) => next.indexOf(w) === i);
+    setMuted(uniques);
+    saveMuted(g.wallet, uniques);                 // cache de ce navigateur
+    actions.pushUiState({ room_muted: uniques }); // et le compte, pour les autres
+  }, [messages, muted, g.wallet]);
+
   async function send(text) {
     let res;
     try {
