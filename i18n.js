@@ -1561,6 +1561,7 @@
     AR2_ERR_SELECTION:   { FR: "Sélection invalide : choisis 3 entités.", EN: "Invalid selection: pick 3 entities.", ZH: "选择无效：请选 3 个实体。" },
     AR2_ERR_SELF:        { FR: "Tu ne peux pas t'attaquer toi-même.", EN: "You can't attack yourself.", ZH: "你不能攻击自己。" },
     AR2_ERR_TARGET:      { FR: "Adversaire invalide.", EN: "Invalid opponent.", ZH: "对手无效。" },
+    AR2_ERR_RANGE:       { FR: "Adversaire hors de portée : ni dans votre ligue, ni assez proche en ELO.", EN: "Opponent out of reach: not in your league, and not close enough in ELO.", ZH: "对手超出范围：不在同一联赛，或 ELO 差距过大。" },
     AR2_ERR_NO_GHOST:    { FR: "Cet adversaire n'a pas de défense à affronter.", EN: "This opponent has no defense to fight.", ZH: "该对手没有可对战的防守。" },
     AR2_ERR_GHOST_BROKEN:{ FR: "La défense adverse est illisible — réessaie dans un instant.", EN: "The opponent's defense can't be read — try again shortly.", ZH: "对手的防守数据异常——请稍后重试。" },
     AR2_ERR_DEF_BROKEN:  { FR: "Ta défense est illisible — repose-la avant d'attaquer.", EN: "Your defense can't be read — set it again before attacking.", ZH: "你的防守数据异常——请重新设置后再进攻。" },
@@ -1634,6 +1635,7 @@
     // dans la figure du joueur (audit 22/09/2026).
     wallet_invalide: "AR2_ERR_TARGET",
     cible_invalide: "AR2_ERR_TARGET",
+    cible_hors_portee: "AR2_ERR_RANGE",
     selection_invalide: "AR2_ERR_SELECTION",
     auto_attaque_interdite: "AR2_ERR_SELF",
     entry_invalide: "AR2_ERR_ENTRY",
