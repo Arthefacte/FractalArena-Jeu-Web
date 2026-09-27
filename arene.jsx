@@ -244,7 +244,9 @@ function Arene() {
             : pvp.attacks.map((a, i) => (
               <div key={i} style={{ borderTop: i ? "1px solid var(--line,#1c2740)" : "none", padding: "8px 0" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
-                  <span style={{ fontWeight: 700 }}>{a.attacker_name || ((a.attacker || "").slice(0, 6) + "…" + (a.attacker || "").slice(-4))}</span>
+                  {/* Phase 2 : l'adresse de l'attaquant ne sort plus du serveur. On affiche son
+                      nom composé, sinon son identifiant opaque ; jamais un fragment d'adresse. */}
+                  <span style={{ fontWeight: 700 }}>{a.attacker_name || a.attacker_id || "…"}</span>
                   <span style={{ color: a.attacker_won ? "var(--alert)" : "var(--success)" }}>
                     {a.attacker_won ? I18N.t("AR2_ATTACKS_BEAT") : I18N.t("AR2_ATTACKS_REPELLED")}
                   </span>
