@@ -104,6 +104,6 @@ test("le classement d'Arène ne tronque pas « Joueur 48213 » ni les noms .fb",
 test("matchmaking : la carte adversaire affiche le nom composé serveur", () => {
   const i = ARENE.indexOf("(pvp.opponents || []).map");
   assert.ok(i > 0, "bloc des adversaires introuvable dans arene.jsx");
-  const bloc = ARENE.slice(i, i + 1400);
+  const bloc = ARENE.slice(i, i + 2400); // 2400 : E3 a ajoute l'identifiant opaque et son commentaire avant le nom
   assert.match(bloc, /o\.name/, "la carte ne montre que la puissance — le nom manque");
 });

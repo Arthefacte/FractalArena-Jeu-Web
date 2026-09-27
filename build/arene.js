@@ -21,6 +21,15 @@ const {
   FaText
 } = window;
 const AU = window.FA_ARENE_UI;
+
+// E3 (clôture de l'audit complet 2026-09, D10/M4, emplacement 5) : « c'est toi » se décide sur
+// l'identifiant OPAQUE, avec repli sur l'adresse tant que le serveur sert les deux (phase 1). Une
+// seule fonction, pour que l'arène et son classement répondent la même chose.
+function estMoi(row, g) {
+  if (!row) return false;
+  if (g.publicId && row.player_id) return row.player_id === g.publicId;
+  return !!row.wallet && row.wallet === g.wallet;
+}
 function TeamPreview({
   team
 }) {
@@ -338,14 +347,19 @@ function Arene() {
       gap: 10
     }
   }, (pvp.opponents || []).map(o => {
-    const canRevanche = Array.isArray(pvp.revanches) && pvp.revanches.includes(o.wallet);
+    // E3 (D10/M4, emplacements 2 et 3) : l'identifiant opaque de l'adversaire devient la
+    // CLÉ de cette liste. La liste de revanches de l'appareil contient encore des adresses
+    // (elles y étaient écrites avant cette phase) : on accepte donc les deux formes, pour
+    // qu'aucune revanche déjà gagnée ne disparaisse du jour au lendemain.
+    const oId = o.opponent_id || o.wallet;
+    const canRevanche = Array.isArray(pvp.revanches) && (pvp.revanches.includes(oId) || o.opponent_id && pvp.revanches.includes(o.wallet));
     // L'appariement se fait sur la puissance : c'est l'écart qui dit si le
     // combat est jouable, pas l'ELO (tout le monde y démarre à 1000).
     const gap = AU.powerGapPct(pvp.power, o.power);
     const tone = AU.powerGapTone(gap);
     const gapColor = tone === "even" ? "var(--success)" : tone === "edge" ? "var(--gold)" : "var(--alert)";
     return /*#__PURE__*/React.createElement("div", {
-      key: o.wallet,
+      key: oId,
       className: "oct-sm",
       style: {
         border: "1px solid var(--line-soft)",
@@ -369,7 +383,7 @@ function Arene() {
         overflow: "hidden",
         textOverflow: "ellipsis"
       }
-    }, o.name || (o.wallet || "").slice(0, 6) + "…" + (o.wallet || "").slice(-4)), /*#__PURE__*/React.createElement("div", {
+    }, o.name || oId), /*#__PURE__*/React.createElement("div", {
       className: "flex gap8 center"
     }, /*#__PURE__*/React.createElement("span", {
       className: "mono",
@@ -457,16 +471,16 @@ function Arene() {
       gap: 4
     }
   }, (pvp.ladder || []).map(row => /*#__PURE__*/React.createElement("div", {
-    key: row.wallet,
+    key: row.player_id || row.wallet,
     className: "flex between",
     style: {
       padding: "5px 8px",
-      background: row.wallet === g.wallet ? "rgba(0,240,255,0.08)" : "transparent",
+      background: estMoi(row, g) ? "rgba(0,240,255,0.08)" : "transparent",
       fontSize: 12
     }
   }, /*#__PURE__*/React.createElement("span", {
     className: "mono"
-  }, row.rank, ". ", row.wallet === g.wallet ? "➔ " : "", (row.name || "").slice(0, 24), (row.name || "").length > 24 ? "…" : ""), /*#__PURE__*/React.createElement("span", {
+  }, row.rank, ". ", estMoi(row, g) ? "➔ " : "", (row.name || "").slice(0, 24), (row.name || "").length > 24 ? "…" : ""), /*#__PURE__*/React.createElement("span", {
     className: "mono",
     style: {
       color: "var(--elec)"

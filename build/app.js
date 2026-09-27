@@ -249,6 +249,13 @@ function serverToState(save, addr, s) {
   return {
     ...s,
     wallet: addr,
+    // E3 (clôture de l'audit complet 2026-09, D10/M4) : l'identifiant OPAQUE du joueur, calculé par
+    // le serveur (`public_id` de la sauvegarde). C'est lui qui remplace le wallet comme clé
+    // d'identité dans les listes publiques (classement, arène, salon) : le client compare des
+    // identifiants, et l'adresse n'a plus à circuler pour qu'on se reconnaisse. Chaque emplacement
+    // garde un repli sur `wallet` tant que le serveur sert les deux (phase 1) — le client fonctionne
+    // donc aussi contre un serveur plus ancien, et l'ordre de déploiement n'a pas d'importance.
+    publicId: save.public_id || "",
     liquid: save.arte_liquid ?? 0,
     locked: save.arte_locked ?? 0,
     ...dailyPatch(q),
@@ -4530,7 +4537,9 @@ function App() {
         }).then(r => r.json()).catch(() => ({})), fetch(`${API_URL}/pvp/ladder?wallet=${encodeURIComponent(w)}`).then(r => r.json()).catch(() => ({})), fetch(`${API_URL}/pvp/attacks-on-me`, {
           headers: authHeaders()
         }).then(r => r.json()).catch(() => ({}))]);
-        const myRow = (ladder.ladder || []).find(x => x.wallet === w);
+        // E3 (D10/M4, emplacement 1) : on se reconnaît par l'identifiant opaque servi à la racine de
+        // la réponse (`me_player_id`), avec repli sur l'adresse tant qu'elle est là (phase 1).
+        const myRow = (ladder.ladder || []).find(x => ladder.me_player_id && x.player_id ? x.player_id === ladder.me_player_id : x.wallet === w);
         setG(s => ({
           ...s,
           pvp: {
