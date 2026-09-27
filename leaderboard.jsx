@@ -113,7 +113,12 @@ function Leaderboard() {
     setBoard(SECTIONS[sec][0][0]);
   };
 
+  // E3 (D10/M4, emplacement 5) : « c'est toi » se décide sur l'identifiant opaque servi par le
+  // classement (`player_id`), avec repli sur l'adresse tronquée tant que le serveur sert les deux
+  // (phase 1). Le repli est indispensable : sans lui, un serveur plus ancien afficherait une liste
+  // où personne n'est jamais soi.
   const myShort = g.wallet ? g.wallet.slice(0, 6) + "…" + g.wallet.slice(-4) : "";
+  const estMoi = (row) => (g.publicId && row.player_id) ? row.player_id === g.publicId : row.wallet_short === myShort;
 
   return (
     <div className="container" style={{ maxWidth: 640 }}>
@@ -143,7 +148,7 @@ function Leaderboard() {
           {st.top.length === 0 && <div className="muted" style={{ textAlign: "center", padding: 24 }}>{I18N.t("LB_EMPTY")}</div>}
           {st.top.map((row) => (
             <div key={LU.rowKey(row)}
-              className={cx("lb-row", row.wallet_short === myShort && "mine", row.rank <= 3 && "top" + row.rank)}
+              className={cx("lb-row", estMoi(row) && "mine", row.rank <= 3 && "top" + row.rank)}
               style={{ transition: "background 0.8s ease",
                 background: flash.has(LU.rowKey(row)) ? "rgba(0,240,255,0.14)" : undefined }}>
               <span className="lb-rank">
