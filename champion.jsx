@@ -48,11 +48,15 @@ function ChampionTile({ entry, active, dead, onClick, hpFrac }) {
 
 /* Rangée « Champions alliés » — Campagne et Tour. runState (Tour) grise un
    champion tombé dans le run courant. Re-cliquer la tuile active la retire. */
-function ChampionRow({ champions, activeOwner, onPick, onClear, runState, myWallet }) {
+function ChampionRow({ champions, activeOwner, onPick, onClear, runState, myWallet, myId }) {
   // Jamais son PROPRE champion dans « Champions alliés » : on ne s'emprunte pas à
   // soi-même (le champion désigné est déjà dans le roster). Le serveur renvoie la
   // liste publique complète, c'est ici qu'on retire la ligne du joueur connecté.
-  const list = (Array.isArray(champions) ? champions : []).filter((c) => c.owner_wallet !== myWallet);
+  // E3 (D10/M4, emplacement 7) : la reconnaissance se fait sur l'identifiant OPAQUE (`owner_id`,
+  // servi depuis C2), avec repli sur l'adresse tant que le serveur sert les deux (phase 1).
+  const idDe = (c) => (c && (c.owner_id || c.owner_wallet)) || null;
+  const estMoi = (c) => (myId && c && c.owner_id ? c.owner_id === myId : !!(c && c.owner_wallet && c.owner_wallet === myWallet));
+  const list = (Array.isArray(champions) ? champions : []).filter((c) => !estMoi(c));
   return (
     <div style={{ marginTop: 10 }}>
       <div className="h2" style={{ fontSize: 13, color: "var(--elec)", marginBottom: 6 }}>{I18N.t("CHAMP_ROW_TITLE")}</div>
@@ -60,9 +64,9 @@ function ChampionRow({ champions, activeOwner, onPick, onClear, runState, myWall
         ? <div className="muted mono" style={{ fontSize: 11 }}>{I18N.t("CHAMP_EMPTY")}</div>
         : <div className="champ-row" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(96px, 1fr))", gap: 8 }}>
             {list.map((entry) => {
-              const active = activeOwner === entry.owner_wallet;
+              const active = !!activeOwner && activeOwner === idDe(entry);
               const st = runState ? CU.championRunState(runState, entry.beast.id) : null;
-              return <ChampionTile key={entry.owner_wallet} entry={entry} active={active}
+              return <ChampionTile key={idDe(entry)} entry={entry} active={active}
                 dead={!!(st && st.dead)} hpFrac={st ? st.hpFrac : null}
                 onClick={() => (active ? onClear() : onPick(entry))} />;
             })}
