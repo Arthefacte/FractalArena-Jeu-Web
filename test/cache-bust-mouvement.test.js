@@ -7,14 +7,21 @@
  * restaient sur les anciens scripts du cache HTTP alors que l'API, elle, avait bougé.
  * C'est le pire des deux mondes : un client périmé qui parle à un serveur à jour.
 
- * La comparaison se fait contre `origin/main`, la branche de référence :
- *   - sur une PULL REQUEST, la CI récupère `origin/main` (étape ajoutée à tests.yml),
- *     le diff `origin/main...HEAD` liste ce que la branche change, et le test exige que
- *     le numéro ait augmenté dès qu'un fichier servi est touché ;
- *   - sur un push sur `main`, le diff est vide (on compare la branche à elle-même) :
- *     le test ne dit rien, ce qui est exact — il n'y a rien à bumper ;
- *   - si `origin/main` est absent (clone superficiel, poste sans remote), le test est
- *     NEUTRE et le DIT : une garde qui fait semblant de garder est pire que rien.
+ * La règle est celle du geste réel : **le commit qui change un fichier servi doit porter
+ * le bump**. On compare donc HEAD à son parent (`git show HEAD^:index.html` contre
+ * `index.html`), et on exige que le numéro ait augmenté dès qu'un fichier servi figure
+ * dans le diff.
+ *
+ * Pourquoi PAS `origin/main` : la première version de ce test comparait à `origin/main`,
+ * et elle a cassé la CI — `git diff origin/main...HEAD` a besoin d'un ancêtre commun, que
+ * le clone de la CI (profondeur 1) n'a pas. Elle échouait donc sur l'environnement, pas sur
+ * un vrai oubli de bump. La comparaison au parent, elle, ne dépend d'aucune référence
+ * distante et ne se laisse pas tromper par une `main` qui avance pendant qu'une branche
+ * attend (ce qui aurait fait échouer une branche innocente). La CI fait `fetch-depth: 2`
+ * pour que le parent soit présent.
+ *
+ * Cas du commit de FUSION : ignoré, et le test le DIT — son contenu a déjà été confronté à
+ * cette règle par la CI de la branche fusionnée.
 
  * Ce qui compte comme « fichier servi » : ce que le navigateur met en cache sous
  * `?v=` — le HTML, le CSS, les .js de la racine et de build/, et les .jsx qui les
@@ -47,34 +54,46 @@ function versionDe(html) {
   return Number(m[1]);
 }
 
-test("le numéro de cache-busting avance dès qu'un fichier servi change", () => {
-  const main = git("show origin/main:index.html");
-  const ici = fs.readFileSync(path.join(RACINE, "index.html"), "utf8");
+function fichiersServis(liste) {
+  return (liste || "").split("\n").filter((f) => f && SERVI.test(f) && !DEVELOPPEMENT.test(f));
+}
 
-  if (!main) {
-    console.log("[E9] origin/main indisponible : garde neutre (la CI la fournit — cf. tests.yml)");
+test("le numéro de cache-busting avance dès qu'un fichier servi change", () => {
+  const parents = git("rev-list --parents -n 1 HEAD");
+  if (!parents) {
+    console.log("[E9] dépôt git illisible : garde neutre (archive exportée ?)");
+    return;
+  }
+  const champs = parents.split(/\s+/);
+  if (champs.length > 2) {
+    console.log("[E9] HEAD est un commit de fusion : garde neutre (son contenu a été vérifié par la CI de la branche fusionnée)");
+    return;
+  }
+  const parent = champs[1];
+  const avant = git(`show ${parent}:index.html`);
+  if (!avant) {
+    console.log("[E9] parent illisible : garde neutre (la CI fait fetch-depth: 2, cf. tests.yml)");
     return;
   }
 
-  const vMain = versionDe(main);
-  const vIci = versionDe(ici);
-
-  const diff = git("diff --name-only origin/main...HEAD");
-  assert.notStrictEqual(diff, null, "diff avec origin/main illisible");
-  const servis = diff.split("\n").filter((f) => f && SERVI.test(f) && !DEVELOPPEMENT.test(f));
+  const vAvant = versionDe(avant);
+  const vIci = versionDe(fs.readFileSync(path.join(RACINE, "index.html"), "utf8"));
+  const servis = fichiersServis(git(`diff --name-only ${parent} HEAD`));
 
   if (servis.length === 0) {
-    // Rien de servi n'a changé (documentation, tests, outillage) : aucun bump attendu.
-    assert.ok(vIci >= vMain, `le numéro a reculé (${vIci} < ${vMain}) sans nécessité`);
+    // Ce commit ne touche que des tests, de l'outillage ou de la documentation : aucun
+    // bump attendu (mais un recul du numéro resterait anormal).
+    assert.ok(vIci >= vAvant, `le numéro a reculé (v${vIci} < v${vAvant}) sans qu'aucun fichier servi ne change`);
     return;
   }
 
   assert.ok(
-    vIci > vMain,
-    `des fichiers servis ont changé (${servis.slice(0, 6).join(", ")}${servis.length > 6 ? "…" : ""}) ` +
-      `mais le cache-busting est resté à v${vIci} (origin/main : v${vMain}).\n` +
+    vIci > vAvant,
+    `ce commit change des fichiers servis (${servis.slice(0, 6).join(", ")}${servis.length > 6 ? "…" : ""}) ` +
+      `mais le cache-busting est resté à v${vIci} (v${vAvant} avant).\n` +
       `Sans bump, les joueurs gardent les anciens fichiers dans le cache HTTP : incrémenter les ?v= de\n` +
-      `index.html, FA_ASSET_V dans data.js, CACHE (sw-policy.js) et les assertions épinglées des tests.`
+      `index.html, FA_ASSET_V (data.js), CACHE (sw-policy.js), les icônes de manifest.webmanifest, et les\n` +
+      `assertions épinglées des tests.`
   );
 });
 
