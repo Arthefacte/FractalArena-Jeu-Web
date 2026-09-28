@@ -58,10 +58,45 @@ test("app.jsx : les 42 fichiers de fond existent sur le disque", () => {
 
 test("assets/backgrounds : les masters PNG de 3 Mo ne sont PAS embarqués", () => {
   const d = path.join(__dirname, "..", "assets", "backgrounds");
-  const lourds = fs.readdirSync(d).filter((f) => !f.endsWith(".webp"));
-  assert.deepStrictEqual(lourds, [], `fichiers non-WebP embarqués : ${lourds.join(", ")}`);
+  // Seuls les deux formats SERVIS sont admis : le WebP (repli) et l'AVIF (choisi par
+  // les navigateurs qui le lisent, encodé depuis les masters à poids égal).
+  const lourds = fs.readdirSync(d).filter((f) => !/\.(webp|avif)$/.test(f));
+  assert.deepStrictEqual(lourds, [], `fichiers non servis embarqués : ${lourds.join(", ")}`);
   const total = fs.readdirSync(d).reduce((a, f) => a + fs.statSync(path.join(d, f)).size, 0);
-  assert.ok(total < 16 * 1024 * 1024, `poids total des fonds : ${(total / 1e6).toFixed(1)} Mo`);
+  // Les deux formats cohabitent : le plafond compte donc le dossier entier, pas ce
+  // qu'un joueur télécharge (un seul format part par écran, selon son navigateur).
+  // Il monte avec les fonds AVIF à q100 — choix explicite du fondateur, ~2 Mo par écran
+  // au lieu de 360 Ko, pour une peinture indistinguable du master, et étendu au mobile
+  // le 2026-09-27 (1,7 Mo en @2x, 0,55 Mo en 1x). Plafond : 105 fichiers = 15 écrans
+  // × (WebP bureau + WebP mobile + WebP mobile@2x + AVIF bureau + AVIF mobile + AVIF mobile@2x).
+  assert.ok(total < 85 * 1024 * 1024, `poids total des fonds : ${(total / 1e6).toFixed(1)} Mo`);
+});
+
+test("assets/backgrounds : chaque peinture a son AVIF à q100 — bureau ET mobile", () => {
+  // La finesse des fonds vient de l'AVIF : s'il disparaît d'un écran, ce fond retombe
+  // silencieusement sur le WebP et le joueur ne voit plus la différence.
+  // q100 = le maximum utile (écart moyen 0,3/255 au master, indiscernable de l'œil).
+  // Le mobile est encodé depuis les MASTERS mobiles, pas depuis les WebP servis.
+  const d = path.join(__dirname, "..", "assets", "backgrounds");
+  const src = read("app.jsx");
+  for (const v of cles(src, "WORLD_BG")) {
+    const f = `assets/backgrounds/${v}-desktop.avif`;
+    assert.ok(existe(f), `AVIF manquant : ${f}`);
+    const ko = fs.statSync(path.join(d, `${v}-desktop.avif`)).size / 1024;
+    assert.ok(ko > 1000, `${f} n'est pas encodé au maximum (${ko.toFixed(0)} Ko au lieu de ~2000)`);
+    assert.ok(ko <= 2.6 * 1024, `${f} dépasse 2,6 Mo (${(ko / 1024).toFixed(2)} Mo)`);
+    // Deux tailles mobiles, chacune à son niveau : un 1x resté léger trahirait un encodage
+    // oublié, un @2x sous 1,4 Mo ne serait pas au maximum.
+    for (const [suffixe, mini, maxi] of [["mobile", 300, 800], ["mobile@2x", 1400, 2.6 * 1024]]) {
+      const fm = `assets/backgrounds/${v}-${suffixe}.avif`;
+      assert.ok(existe(fm), `AVIF mobile manquant : ${fm}`);
+      const kom = fs.statSync(path.join(d, `${v}-${suffixe}.avif`)).size / 1024;
+      assert.ok(kom > mini, `${fm} n'est pas encodé au maximum (${kom.toFixed(0)} Ko)`);
+      assert.ok(kom <= maxi, `${fm} dépasse ${maxi} Ko`);
+    }
+  }
+  assert.ok(existe("assets/backgrounds/quiz-desktop.avif"), "AVIF du quiz manquant (il reste en réserve)");
+  assert.ok(existe("assets/backgrounds/quiz-mobile@2x.avif"), "AVIF mobile du quiz manquant");
 });
 
 test("assets/backgrounds : la peinture du quiz existe mais reste en réserve", () => {
@@ -78,16 +113,23 @@ test("app.jsx : le fond est branché sur la vue, en <picture>, et il est décora
   assert.match(src, /<picture className="world-backdrop" aria-hidden="true">/);
   assert.match(src, /<source media="\(max-width: 700px\)"/);
   assert.match(src, /srcSet=\{`\$\{bgMobile\} 1x, \$\{bgMobile2x\} 2x`\}/);
+  // L'AVIF mobile doit précéder le repli WebP mobile : sinon il ne serait jamais choisi.
+  assert.match(src, /<source type="image\/avif" media="\(max-width: 700px\)" srcSet=\{`\$\{bgMobileAvif\} 1x, \$\{bgMobile2xAvif\} 2x`\} \/>/);
+  assert.ok(src.indexOf("bgMobileAvif") < src.indexOf("${bgMobile} 1x"),
+    "la source AVIF mobile doit venir AVANT le repli WebP mobile");
   assert.match(src, /<img src=\{bgDesktop\} alt="" draggable=\{false\} \/>/);
   // Même source de vérité que l'accent contextuel : g.view, pas un second état.
   assert.match(src, /<Ambient view=\{g\.wallet \? g\.view : "compte"\} \/>/);
   assert.strictEqual((src.match(/<Ambient /g) || []).length, 2, "les deux coquilles (avant/après connexion) doivent passer la vue");
 });
 
-test("app.jsx : le drapeau est éteint par défaut et mémorisé par l'URL", () => {
+test("app.jsx : les décors peints sont le fond par défaut, l'ancien se mémorise par l'URL", () => {
   const src = read("app.jsx");
   assert.match(src, /new URLSearchParams\(location\.search\)\.get\("cite"\)/);
-  assert.match(src, /localStorage\.getItem\("fa_fond"\) === "cite"/);
+  // Défaut = peinture ; seul un choix explicite « ancien » (?cite=0) l'éteint, et il est
+  // mémorisé pour la visite suivante.
+  assert.match(src, /localStorage\.setItem\("fa_fond", "ancien"\)/);
+  assert.match(src, /return localStorage\.getItem\("fa_fond"\) !== "ancien"/);
   // Le rendu de la peinture est conditionné : pas de `cite &&`, pas de fond.
   assert.match(src, /\{cite && \(\s*<picture/);
   // Les URL passent par FA_ASSET_URL (cache-bust par la version du jeu, convention

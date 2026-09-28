@@ -333,3 +333,127 @@
   .hdr-title { font-size: 15px; letter-spacing: 3px; }
   .hdr-sub { display: block; font-size: 8.5px; letter-spacing: 2px; }
 }
+
+/* Data Citadel : même jeu, compositions portrait et commandes tactiles. */
+@media(max-width:1099px) {
+  .nav-brand { display:none; }
+  body[data-fond="cite"] .nav { overflow-x:auto; justify-content:flex-start; }
+  body[data-fond="cite"] .nav-tab { flex-shrink:0; }
+}
+@media(max-width:700px) {
+  body[data-fond="cite"] .container { padding:24px 16px 110px; }
+  body[data-fond="cite"] .h1 { font-size:36px; letter-spacing:-.025em; overflow-wrap:anywhere; }
+  body[data-fond="cite"] .grid-cards { grid-template-columns:minmax(0,1fr); gap:20px; }
+  body[data-fond="cite"] .grid-cards > * { min-width:0; }
+  body[data-fond="cite"] .hdr { padding-left:12px; padding-right:12px; }
+  .nav-context { padding:0 16px; margin-top:14px; gap:6px; }
+  .nav-context .btn { flex:1 1 auto; min-height:40px; padding:8px 10px; font-size:11px; }
+  .team-stage { min-height:240px; gap:3px; margin:0 -8px 24px; }
+  .stage-slot { height:245px; padding:0 2px 8px; }
+  .stage-slot:nth-child(2) { transform:translateY(-10px); }
+  .stage-entity { height:185px; }
+  .stage-slot:not(.cutout) .stage-entity { height:155px; width:88%; }
+  .stage-empty { height:175px; font-size:34px; }
+  .stage-plinth { width:94%; height:33px; bottom:40px; }
+  .stage-plinth::after { inset:4px 7px 10px; }
+  .stage-caption { font-size:11px; padding:5px 7px; }
+  .stage-rarity { font-size:9px; }
+  body[data-fond="cite"] .guide-wrap { padding:0 16px; }
+  body[data-fond="cite"] .fa-mnav { background:rgba(11,28,36,.97); border-top:1px solid #62787d; }
+  body[data-fond="cite"] .fa-sheet { background:linear-gradient(155deg,#1c313b,#0b1b24); }
+  .onboarding-shell .onboarding-card { width:calc(100% - 28px); padding:24px 18px !important; }
+  .onboarding-card .hdr-title { font-size:32px !important; letter-spacing:3px !important; }
+  body[data-fond="cite"] .modal { max-width:calc(100vw - 24px); }
+}
+/* Scènes tactiles : même interaction, composition portrait. */
+@media(max-width:700px) {
+  body[data-fond="cite"] .scene-team { min-height:calc(100svh - 180px); padding-bottom:215px; }
+  .scene-team .scene-heading { padding-right:0; }
+  .scene-collection-control { position:static; align-self:center; margin:0 0 12px; }
+  .scene-team .team-stage { min-height:275px; margin:20px -8px 0; width:calc(100% + 16px); }
+  .scene-team .stage-slot { height:255px; }
+  .scene-team .stage-entity { height:200px; }
+  .scene-team .stage-empty { height:180px; }
+  .scene-team .scene-deploy { bottom:90px; left:16px; right:16px; justify-content:space-between; gap:8px; }
+  .scene-team .scene-deploy .btn { flex:1; font-size:12px; padding:12px 10px; }
+  .scene-team .scene-deploy .pill { font-size:11px !important; }
+  .scene-team .totem-slot { left:16px; right:16px; bottom:142px; max-width:none; padding:7px !important; font-size:10px; }
+  .scene-team .totem-slot img { width:34px !important; height:34px !important; }
+  .scene-drawer { inset:auto 0 0; width:100%; height:88dvh; max-width:100%; border-left:0; border-top:1px solid #789399; border-radius:18px 18px 0 0; }
+  .scene-drawer-head { padding:12px 16px; }
+  .scene-drawer-body { padding:8px 16px max(24px,env(safe-area-inset-bottom)); }
+  .scene-drawer .grid-cards { grid-template-columns:minmax(0,1fr); }
+  .forge-stations { gap:24px; margin:18px 0 10px; }
+  .forge-station { padding:15px 0 35px; }
+  .forge-station-role { font-size:10px; padding:8px 3px; width:100%; text-align:center; }
+  .scene-entity,.scene-empty { height:215px; }
+  .forge-ring { height:40px; bottom:48px; }
+  .forge-conduit { font-size:30px; }
+  .forge-console { padding:14px; }
+  .forge-console > .flex { gap:8px; }
+  .forge-console .btn { width:100%; }
+  .scene-forge .subtabs { width:100%; gap:4px; }
+  .scene-forge .subtab { flex:1 1 auto; padding:10px 8px; font-size:11px; }
+  .campaign-map { height:780px; margin:10px -4px 0; }
+  .campaign-route { display:none; }
+  .campaign-map::before { content:""; position:absolute; left:50%; top:30px; bottom:55px; border-left:1px dashed #ffce8880; transform:rotate(5deg); }
+  .world-beacon { width:195px; }
+  .world-beacon:nth-of-type(1) { left:32%; top:9%; }
+  .world-beacon:nth-of-type(2) { left:68%; top:25%; }
+  .world-beacon:nth-of-type(3) { left:32%; top:41%; }
+  .world-beacon:nth-of-type(4) { left:68%; top:57%; }
+  .world-beacon:nth-of-type(5) { left:32%; top:74%; }
+  .world-beacon:nth-of-type(6) { left:68%; top:90%; }
+  .world-beacon-label { padding:9px; }
+  .world-beacon-label strong { font-size:17px; }
+  .world-beacon-label > span { font-size:10px; }
+  .world-beacon-marker { font-size:30px; }
+}
+/* Réponse tactile des commandes Data Citadel. */
+@media(max-width:700px) {
+ body[data-fond="cite"] .btn { min-height:44px; letter-spacing:.025em; }
+ body[data-fond="cite"] .nav-context { gap:7px; }
+ body[data-fond="cite"] .nav-context .btn { padding:10px 12px; }
+ body[data-fond="cite"] .fa-mnav { background:linear-gradient(180deg,#344143 0,#111f25 5%,#07151bf5); box-shadow:0 -5px 20px #0008; }
+ body[data-fond="cite"] .fa-mnav-socket { transition:transform 120ms,filter 180ms; }
+ body[data-fond="cite"] .fa-mnav-slot:active .fa-mnav-socket { transform:translateY(3px) scale(.92); filter:brightness(1.4); }
+ body[data-fond="cite"] .fa-mnav-slot.on .fa-mnav-ico { animation:citadel-emblem 320ms ease-out both; }
+ body[data-fond="cite"] .fa-sheet-item { background:radial-gradient(ellipse at 50% 30%,#384548,#132129 75%); border:1px solid #71827b; border-radius:12px 2px; box-shadow:inset 0 2px 4px #0008; }
+ body[data-fond="cite"] .fa-sheet-item:active { transform:translateY(2px); border-color:var(--fire); }
+ body[data-fond="cite"] .scene-drawer[open] { animation:citadel-sheet 240ms ease-out both; }
+ @keyframes citadel-sheet { from { opacity:0; transform:translateY(25px); } to { opacity:1; transform:translateY(0); } }
+}
+@media(prefers-reduced-motion:reduce) {
+ body[data-fond="cite"] .scene-drawer[open],body[data-fond="cite"] .fa-mnav-slot.on .fa-mnav-ico { animation:none!important; }
+ body[data-fond="cite"] .fa-mnav-socket,body[data-fond="cite"] .fa-sheet-item { transition:none!important; }
+}
+/* Instruments passifs : lecture compacte, sans mouvement au toucher. */
+@media(max-width:700px) {
+ body[data-fond="cite"] .chip { padding:6px 8px; font-size:12px; }
+ body[data-fond="cite"] .bb-ticker { padding:8px 12px; gap:4px; }
+ body[data-fond="cite"] .bb-line { flex-wrap:wrap; gap:6px 8px; }
+ body[data-fond="cite"] .bb-label { white-space:normal; overflow-wrap:anywhere; }
+ body[data-fond="cite"] .bb-bar { min-width:52px; flex:1 1 52px; }
+ body[data-fond="cite"] .bb-nums { max-width:100%; white-space:normal; overflow-wrap:anywhere; font-size:11px; }
+ body[data-fond="cite"] .bb-sub { padding-left:0; font-size:11px; }
+ body[data-fond="cite"] .stat { padding:6px; min-width:0; }
+ body[data-fond="cite"] .stage-caption { font-size:11px; padding:6px 8px; }
+ body[data-fond="cite"] .toast { max-width:calc(100vw - 28px); overflow-wrap:anywhere; }
+}
+/* Typographie tactile : libellés complets et chiffres stables. */
+@media(max-width:700px) {
+ body[data-fond="cite"] .h1 { font-size:38px; line-height:1.08; letter-spacing:.015em; overflow-wrap:break-word; }
+ body[data-fond="cite"] .h2 { font-size:23px; }
+ body[data-fond="cite"] .btn { font-size:15px; letter-spacing:.025em; white-space:normal; }
+ body[data-fond="cite"] .btn.lg { font-size:17px; }
+ body[data-fond="cite"] .btn.sm { font-size:13px; }
+ body[data-fond="cite"] .nav-context .btn { font-size:14px; padding:9px 10px; }
+ body[data-fond="cite"] .scene-forge .subtab { font-size:14px; letter-spacing:.025em; }
+ body[data-fond="cite"] .stage-caption { font-size:14px; padding:6px; }
+ body[data-fond="cite"] .fa-mnav-label { font-size:12px; font-weight:600; letter-spacing:.025em; }
+ body[data-fond="cite"] .scene-team .scene-deploy .btn { font-size:15px; }
+ body[data-fond="cite"] .world-beacon-label strong { font-size:20px; }
+ html:lang(zh) body[data-fond="cite"] .h1 { font-size:34px; }
+ html:lang(zh) body[data-fond="cite"] .btn { font-size:14px; }
+ html:lang(zh) body[data-fond="cite"] .stage-caption { font-size:13px; }
+}

@@ -634,57 +634,49 @@ function FloorSelect({ worldIndex, onBack, onPickFloor }) {
 function WorldSelect({ onPickWorld }) {
   const { g } = useFA();
   const allStars = totalStarsAll(g);
-
-  return (
-    <div className="container">
-      <SectionHead eyebrow="📜 PVE" title={I18N.t("CAMP_TITLE")} sub={I18N.t("CAMP_SUB")} />
-
-      <div className="flex between center wrap" style={{ marginBottom: 16, gap: 10 }}>
-        <span className="pill" style={{ color: "var(--gold)" }}>{I18N.t("CAMP_TOTAL_STARS", allStars)}</span>
-        <span className="pill" style={{ color: "var(--elec)" }}>{I18N.t("CAMP_TICKETS", g.ticketsSilver, g.ticketsGold)}</span>
-      </div>
-
-      <div className="camp-world-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 14 }}>
-        {D.WORLDS.map((w) => {
-          const unlocked = allStars >= w.starsReq;
-          const total = worldStarTotal(g, w.id);
-          const done = total === D.STARS_PER_WORLD;
-          const name = I18N.t("CAMP_W" + (w.id + 1) + "_NAME");
-          return (
-            <button key={w.id} disabled={!unlocked} onClick={() => unlocked && onPickWorld(w.id)}
-              className="panel oct"
-              style={{
-                border: "1px solid " + (done ? "rgba(247,147,26,0.6)" : "var(--line)"),
-                padding: 0, textAlign: "left", cursor: unlocked ? "pointer" : "not-allowed",
-                opacity: unlocked ? 1 : 0.5, overflow: "hidden", position: "relative",
-              }}>
-              <div style={{ display: "flex", gap: 12, alignItems: "center", padding: 14 }}>
-                <div style={{ width: 64, height: 64, flex: "none", display: "grid", placeItems: "center", background: "rgba(0,0,0,0.3)", borderRadius: 8, border: "1px solid " + w.color }}>
-                  <img src={D.ART[w.img]} alt={name} draggable="false" style={{ width: 52, height: 52, objectFit: "contain", filter: unlocked ? "none" : "grayscale(1)" }} />
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div className="mono" style={{ fontSize: 10, color: "var(--text-dim)" }}>{I18N.t("CAMP_FLOOR_N", w.id + 1)}</div>
-                  <div className="h2" style={{ fontSize: 17, color: unlocked ? "var(--text)" : "var(--text-dim)" }}>{name}</div>
-                  <div className="mono" style={{ fontSize: 10, color: "var(--text-faint)", marginTop: 2, fontStyle: "italic" }}>{I18N.t("CAMP_W" + (w.id + 1) + "_DESC")}</div>
-                  {unlocked ? (
-                    <div style={{ marginTop: 4 }}>
-                      <Stars n={Math.round(total / 10)} size={13} />
-                      <span className="mono" style={{ fontSize: 11, color: "var(--text-dim)", marginLeft: 8 }}>{I18N.t("CAMP_STARS", total, D.STARS_PER_WORLD)}</span>
-                    </div>
-                  ) : (
-                    <div className="mono" style={{ fontSize: 12, color: "var(--alert)", marginTop: 4 }}>{I18N.t("CAMP_LOCKED", w.starsReq)}</div>
-                  )}
-                </div>
-              </div>
-              {done && <div style={{ position: "absolute", top: 8, right: 10, fontSize: 11, fontWeight: 700, color: "var(--gold)" }}>100% ✓</div>}
-            </button>
-          );
-        })}
-      </div>
-
-      <CampaignTitles />
+  return <div className="container scene-campaign">
+    <SectionHead title={I18N.t("CAMP_TITLE")} sub={I18N.t("CAMP_SUB")} />
+    <div className="campaign-resources flex gap12 wrap">
+      <span className="pill">{I18N.t("CAMP_TOTAL_STARS", allStars)}</span>
+      <span className="pill">{I18N.t("CAMP_TICKETS", g.ticketsSilver, g.ticketsGold)}</span>
     </div>
-  );
+    <div className="campaign-map" aria-label={I18N.t("CAMP_TITLE")}>
+      <svg className="campaign-route" viewBox="0 0 1000 600" preserveAspectRatio="none" aria-hidden="true"><path d="M130 490 L400 395 L735 440 L825 230 L530 130 L245 205" /></svg>
+      {D.WORLDS.map((w, i) => {
+        const unlocked = allStars >= w.starsReq;
+        const total = worldStarTotal(g, w.id);
+        /* `done` (toutes les etoiles) et la vignette d'art du monde existaient dans la
+           grille de cartes d'avant la refonte : le rework les a perdus, donc un joueur
+           ne voyait plus quels mondes il avait termines. Remis dans sa mise en page
+           (les balises sur la carte), sans la refaire. */
+        const done = total === D.STARS_PER_WORLD;
+        const nom = I18N.t("CAMP_W" + (w.id + 1) + "_NAME");
+        return <button key={w.id} className={cx("world-beacon", !unlocked && "locked", done && "done")}
+          style={{ "--world-color": w.color, "--world-index": i }}
+          disabled={!unlocked} onClick={() => onPickWorld(w.id)}>
+          <span className="world-beacon-marker" aria-hidden="true">{unlocked ? "◇" : "⌑"}</span>
+          <span className="world-beacon-label">
+            <span style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <span style={{ width: 34, height: 34, flex: "none", display: "grid", placeItems: "center",
+                background: "rgba(0,0,0,0.3)", borderRadius: 7, border: "1px solid " + w.color }}>
+                <img src={D.ART[w.img]} alt={nom} draggable="false"
+                  style={{ width: 26, height: 26, objectFit: "contain", filter: unlocked ? "none" : "grayscale(1)" }} />
+              </span>
+              <strong>{nom}</strong>
+            </span>
+            <span>{unlocked ? I18N.t("CAMP_STARS", total, D.STARS_PER_WORLD) : I18N.t("CAMP_LOCKED", w.starsReq)}</span>
+            <span className="world-description">{I18N.t("CAMP_W" + (w.id + 1) + "_DESC")}</span>
+          </span>
+          {done && (
+            <span style={{ position: "absolute", top: 6, right: 6, background: "rgba(247,147,26,0.16)",
+              border: "1px solid rgba(247,147,26,0.6)", color: "var(--gold)", borderRadius: 9,
+              fontSize: 10, fontWeight: 700, padding: "1px 7px" }}>100 % ✓</span>
+          )}
+        </button>;
+      })}
+    </div>
+    <details className="scene-records"><summary>{I18N.t("CAMP_TITLES")}</summary><CampaignTitles /></details>
+  </div>;
 }
 
 function CampaignTitles() {
