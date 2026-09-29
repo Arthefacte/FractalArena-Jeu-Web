@@ -207,3 +207,24 @@ test("la ligne ne promet rien quand rien n'est chargé (rendu null)", () => {
   assert.match(bloc, /const r = etat && window\.FA_POT \? window\.FA_POT\.resume\(etat\) : null;/);
   assert.match(bloc, /if \(!r\) return null;/);
 });
+
+test("un combat paye relit la ligne tout de suite (le cycle de 60 s n'est plus le seul chemin)", () => {
+  // Le compteur du jour se compte en base (fight_history) : apres un combat paye, la
+  // ligne doit etre relue sans attendre le prochain cycle. Verifie dans la FONCTION qui
+  // traite la reponse de /fight, bornee des deux cotes (declaration suivante), sinon un
+  // slice non borne passerait au vert en lisant tout le fichier.
+  const src = lire("app.jsx");
+  const debut = src.indexOf("async callFight({");
+  assert.ok(debut > 0, "app.jsx doit porter l'action callFight");
+  const bloc = src.slice(debut, src.indexOf("async buyBoost(", debut));
+  assert.match(bloc, /if \(!free\) window\.FA_POT_REFRESH\?\.\(\);/,
+    "un combat paye vient de faire bouger le compteur : la ligne se relit ici, pas dans 60 s");
+
+  // Et la relecture existe vraiment, exposee par l'etat partage (components.jsx).
+  const comp = lire("components.jsx");
+  assert.match(comp, /function rafraichirPot\(\)/);
+  assert.match(comp, /_potCharger\(_potWallet, _potToken\)/, "la relecture repasse par le MEME chargeur partage");
+  assert.match(comp, /window\.FA_POT_REFRESH = rafraichirPot/);
+  assert.match(comp, /if \(_potAbonnes\.size === 0 \|\| !_potWallet \|\| !_potToken\) return;/,
+    "sans surface affichee, aucune requete inutile");
+});

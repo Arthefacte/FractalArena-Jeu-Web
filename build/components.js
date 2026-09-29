@@ -88,6 +88,8 @@ let _potEtat = null;
 let _potCle = null;
 let _potEnVol = false;
 let _potTimer = 0;
+let _potWallet = null;
+let _potToken = null;
 const _potAbonnes = new Set();
 function _potDiffuser() {
   _potAbonnes.forEach(f => f(_potEtat));
@@ -108,6 +110,14 @@ function _potCharger(wallet, token) {
     _potEnVol = false;
   });
 }
+// Relecture A LA DEMANDE, pour ce qui vient de faire bouger le compteur du jour sans
+// changer d'ecran : un combat paye de la Fosse (il compte dans fight_history). Le cycle
+// de 60 s reste le filet de securite, mais il ne doit plus etre le SEUL chemin — sinon
+// le joueur lit un « 22/150 » perime juste apres son combat (signale en ZH).
+function rafraichirPot() {
+  if (_potAbonnes.size === 0 || !_potWallet || !_potToken) return;
+  _potCharger(_potWallet, _potToken);
+}
 function usePotEligibility(wallet, token) {
   const [etat, setEtat] = useState(_potEtat);
   useEffect(() => {
@@ -120,6 +130,9 @@ function usePotEligibility(wallet, token) {
       _potCle = cle;
       _potEtat = null;
     } // nouveau compte : cache vidé
+    _potWallet = wallet;
+    _potToken = token;
+    window.FA_POT_REFRESH = rafraichirPot;
     _potAbonnes.add(setEtat);
     setEtat(_potEtat);
     _potCharger(wallet, token);
@@ -130,6 +143,7 @@ function usePotEligibility(wallet, token) {
         clearInterval(_potTimer);
         _potTimer = 0;
       }
+      if (_potAbonnes.size === 0 && window.FA_POT_REFRESH === rafraichirPot) delete window.FA_POT_REFRESH;
     };
   }, [wallet, token]);
   return etat;

@@ -1447,6 +1447,10 @@ function App() {
         reveilDiffere.current = false;
         if (!win && !free) emetReveil();
       }
+      // « 22/150 » se compte en BASE (fight_history, combats payes du jour) : ce combat
+      // vient de le faire bouger, donc on relit la cagnotte MAINTENANT au lieu de laisser
+      // un chiffre perime a l'ecran jusqu'au prochain cycle de 60 s (components.jsx).
+      if (!free) window.FA_POT_REFRESH?.();
       return summary;
     },
 
