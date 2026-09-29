@@ -2921,22 +2921,20 @@ const WORLD_BG = {
 // (`quiz` n'est pas listé : le quiz du jeu n'est pas un écran, c'est une modale — sa
 // peinture est livrée et gardée en réserve, à brancher le jour où il aura une surface.)
 const WORLD_BG_PARENT = {
-  perso: "options", lien: "team", parrainage: "options",
+  perso: "team", lien: "team", parrainage: "team",
 };
 function worldBackdrop(view) {
   return WORLD_BG[view] || WORLD_BG_PARENT[view] || "team";
 }
 // Le drapeau voyage dans l'URL (?cite=1 / ?cite=0) et se mémorise : on peut comparer
-// les deux fonds en direct, sans redéployer. Depuis l'intégration des décors, le fond
-// peint est celui PAR DÉFAUT — l'ancien fond s'obtient avec ?cite=0, le choix étant
-// mémorisé pour la visite suivante.
+// les deux fonds en direct sur le site, sans redéployer.
 function worldBackdropActif() {
   try {
     const q = new URLSearchParams(location.search).get("cite");
     if (q === "1") { localStorage.setItem("fa_fond", "cite"); return true; }
-    if (q === "0") { localStorage.setItem("fa_fond", "ancien"); return false; }
-    return localStorage.getItem("fa_fond") !== "ancien";
-  } catch (e) { return true; }
+    if (q === "0") { localStorage.removeItem("fa_fond"); return false; }
+    return localStorage.getItem("fa_fond") === "cite";
+  } catch (e) { return false; }
 }
 // Les peintures passent par FA_ASSET_URL comme les autres images du balisage : elles ne
 // sont PAS dans le manifeste d'empreintes (tools/asset-hashes.mjs ne hache que les .glb et
@@ -2961,16 +2959,6 @@ function Ambient({ view }) {
   const bgDesktop = assetDeFond(`assets/backgrounds/${bg}-desktop.webp`);
   const bgMobile = assetDeFond(`assets/backgrounds/${bg}-mobile.webp`);
   const bgMobile2x = assetDeFond(`assets/backgrounds/${bg}-mobile@2x.webp`);
-  // Le fond de BUREAU existe aussi en AVIF, encodé depuis le master : à poids égal il
-  // garde ~30 % de détail en plus (mesuré sur les 15). Le <picture> le choisit seul, et
-  // le WebP reste le repli.
-  // Idem pour le MOBILE depuis le 2026-09-27 : à poids égal l'AVIF n'y gagnait rien, mais
-  // le fondateur veut la même qualité que sur bureau — au q100 le mobile est même moins
-  // cher par écran (1,68 Mo en @2x contre 2,04 Mo en bureau), pour le même écart au master
-  // (0,32/255). Encodé depuis les masters mobiles, jamais depuis les WebP servis.
-  const bgDesktopAvif = assetDeFond(`assets/backgrounds/${bg}-desktop.avif`);
-  const bgMobileAvif = assetDeFond(`assets/backgrounds/${bg}-mobile.avif`);
-  const bgMobile2xAvif = assetDeFond(`assets/backgrounds/${bg}-mobile@2x.avif`);
   const embers = useMemo(() => {
     const arr = [];
     for (let i = 0; i < 26; i++) {
@@ -2992,9 +2980,7 @@ function Ambient({ view }) {
           distincts, pas des recadrages automatiques). Décoratif : aria-hidden. */}
       {cite && (
         <picture className="world-backdrop" aria-hidden="true">
-          <source type="image/avif" media="(max-width: 700px)" srcSet={`${bgMobileAvif} 1x, ${bgMobile2xAvif} 2x`} />
           <source media="(max-width: 700px)" srcSet={`${bgMobile} 1x, ${bgMobile2x} 2x`} />
-          <source type="image/avif" srcSet={bgDesktopAvif} />
           <img src={bgDesktop} alt="" draggable={false} />
         </picture>
       )}
@@ -3246,10 +3232,6 @@ function Nav() {
     ["team", "NAV_TEAM"], ["fosse", "NAV_FOSSE"], ["arene", "NAV_ARENE"], ["campaign", "NAV_CAMPAIGN"], ["tour", "NAV_TOUR"], ["expeditions", "NAV_EXPEDITIONS"], ["quests", "NAV_QUESTS"], ["forge", "NAV_FORGE"], ["market", "NAV_MARKET"],
     ["wallet", "NAV_WALLET"], ["boosts", "NAV_BOOSTS"], ["perso", "NAV_PERSO"], ["leaderboard", "NAV_LEADERBOARD"], ["options", "NAV_OPTIONS"],
   ];
-  const PRIMARY = ["team", "fosse", "campaign", "forge", "market", "quests", "leaderboard", "wallet"];
-  const GROUPS = { team: ["team", "perso", "options"], fosse: ["fosse", "arene", "tour"], campaign: ["campaign", "expeditions"], forge: ["forge", "boosts"] };
-  const parent = Object.keys(GROUPS).find((key) => GROUPS[key].includes(g.view)) || g.view;
-  const contextTabs = GROUPS[parent] || [];
   const MAIN = ["team", "fosse", "arene", "campaign"];
   const more = tabs.filter(([k]) => !MAIN.includes(k));
   const go = (k) => { if (window.FA_SFX) window.FA_SFX.play("tab"); actions.setView(k); setSheetOpen(false); };
@@ -3269,51 +3251,26 @@ function Nav() {
   // Même prédicat que l'écran (statusOf) : une seule définition de « prête ».
   const expNow = Date.now() + (g.expNowOffset || 0);
   const expReady = (g.expeditions || []).filter((e) => XU.statusOf(e, expNow) === "ready").length;
-  // Pastilles d'alerte de la barre de BUREAU. La refonte a regroupe Arène sous
-  // « Fosse » et Expeditions sous « Campagne » : le code des pastilles est reste
-  // accroche aux onglets arene/expeditions, qui ne sont plus dans PRIMARY — donc
-  // plus aucune alerte ne s'affichait en bureau (la barre mobile, qui les portait,
-  // est masquee par .fa-mnav). La pastille se pose maintenant sur le GROUPE, donc
-  // visible depuis n'importe quel ecran, et aussi sur le sous-onglet ouvert.
-  const pastilleDe = (k) => ((k === "fosse" || k === "arene") ? areneBadge : ((k === "campaign" || k === "expeditions") ? expReady : 0));
-  const tonDe = (k) => ((k === "fosse" || k === "arene")
-    ? { background: "var(--alert)", color: "#fff" }
-    : { background: "var(--fire)", color: "#180a02" });
   return (
     <>
-      <nav className="nav" aria-label={I18N.t("NAV_MORE")}>
-        <button className="nav-brand" onClick={() => go("team")} aria-label={I18N.t("NAV_TEAM")}>
-          <img src="assets/LOGO_cut.webp" alt="Fractal Arena" /><span>FRACTAL<br />ARENA</span>
-        </button>
-        {PRIMARY.map((k) => tabs.find(([id]) => id === k)).map(([k, key]) => (
-          <button key={k} className={cx("nav-tab", parent === k && "on")} title={I18N.t(key)} aria-label={I18N.t(key)} onClick={() => go(k)}>
+      <nav className="nav">
+        {tabs.map(([k, key]) => (
+          <button key={k} className={cx("nav-tab", g.view === k && "on")} onClick={() => go(k)}>
             <img className="nav-icon" src={`assets/nav-icons/${k}.png?v=216`} alt="" aria-hidden="true" draggable="false" />
             <span className="nav-label">{I18N.t(key)}</span>
-            {pastilleDe(k) > 0 && (
-              <span className="nav-badge" style={{ marginLeft: 4, borderRadius: 9, fontSize: 10, padding: "0 5px", fontWeight: 700, ...tonDe(k) }}>
-                {pastilleDe(k)}
+            {k === "arene" && areneBadge > 0 && (
+              <span className="nav-badge" style={{ marginLeft: 4, background: "var(--alert)", color: "#fff", borderRadius: 9, fontSize: 10, padding: "0 5px", fontWeight: 700 }}>
+                {areneBadge}
+              </span>
+            )}
+            {k === "expeditions" && expReady > 0 && (
+              <span className="nav-badge" style={{ marginLeft: 4, background: "var(--fire)", color: "#180a02", borderRadius: 9, fontSize: 10, padding: "0 5px", fontWeight: 700 }}>
+                {expReady}
               </span>
             )}
           </button>
         ))}
-        <button className={cx("nav-tab", "nav-settings", g.view === "options" && "on")} onClick={() => go("options")}>
-          <img className="nav-icon" src="assets/nav-icons/options.png?v=216" alt="" /><span className="nav-label">{I18N.t("NAV_OPTIONS")}</span>
-        </button>
       </nav>
-      {contextTabs.length > 0 && (
-        <div className="nav-context">
-          {contextTabs.map((k) => (
-            <button key={k} className={cx("btn", "sm", g.view === k && "on")} onClick={() => go(k)}>
-              {I18N.t(tabs.find(([id]) => id === k)[1])}
-              {pastilleDe(k) > 0 && (
-                <span className="nav-badge" style={{ marginLeft: 4, borderRadius: 9, fontSize: 10, padding: "0 5px", fontWeight: 700, ...tonDe(k) }}>
-                  {pastilleDe(k)}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
-      )}
       <nav className="fa-mnav">
         <span className="fa-mnav-liseret" aria-hidden="true" />
         {MAIN.map((k) => {
@@ -3406,8 +3363,8 @@ function Onboarding({ onAccountCreated }) {
   }
 
   return (
-    <div className="app-shell onboarding-shell" style={{ minHeight: "100vh", display: "grid", placeItems: "center", position: "relative", zIndex: 1 }}>
-      <div className="onboarding-card" style={{ textAlign: "center", maxWidth: 540, padding: 28, position: "relative" }}>
+    <div className="app-shell" style={{ minHeight: "100vh", display: "grid", placeItems: "center", position: "relative", zIndex: 1 }}>
+      <div style={{ textAlign: "center", maxWidth: 540, padding: 28, position: "relative" }}>
         <div className="ob-logo" style={{ position: "relative", width: 168, height: 168, margin: "0 auto 26px", animation: "obFloat 4.5s ease-in-out infinite" }}>
           {window.Emblem3D
             ? <window.Emblem3D style={{ filter: "drop-shadow(0 0 18px rgba(247,147,26,0.35))" }} />
