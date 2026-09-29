@@ -314,7 +314,20 @@ function CreatureCard({
     style: {
       color: pc
     }
-  }, presetLabel(beast.preset)), /*#__PURE__*/React.createElement(StatGrid, {
+  }, presetLabel(beast.preset), beast.summon_roll_max && /*#__PURE__*/React.createElement("span", {
+    className: "mono",
+    title: I18N.t("CARD_ROLL_MAX_TIP"),
+    style: {
+      marginLeft: 6,
+      color: "var(--gold)",
+      border: "1px solid var(--gold)",
+      borderRadius: 3,
+      padding: "0 4px",
+      fontSize: 9,
+      letterSpacing: 0.5,
+      whiteSpace: "nowrap"
+    }
+  }, "\u2726 ", I18N.t("CARD_ROLL_MAX"))), /*#__PURE__*/React.createElement(StatGrid, {
     beast: beast
   }), showXp && /*#__PURE__*/React.createElement("div", {
     style: {
