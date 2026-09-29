@@ -1235,95 +1235,138 @@ function WorldSelect({
   } = useFA();
   const allStars = totalStarsAll(g);
   return /*#__PURE__*/React.createElement("div", {
-    className: "container scene-campaign"
+    className: "container"
   }, /*#__PURE__*/React.createElement(SectionHead, {
+    eyebrow: "\uD83D\uDCDC PVE",
     title: I18N.t("CAMP_TITLE"),
     sub: I18N.t("CAMP_SUB")
   }), /*#__PURE__*/React.createElement("div", {
-    className: "campaign-resources flex gap12 wrap"
+    className: "flex between center wrap",
+    style: {
+      marginBottom: 16,
+      gap: 10
+    }
   }, /*#__PURE__*/React.createElement("span", {
-    className: "pill"
+    className: "pill",
+    style: {
+      color: "var(--gold)"
+    }
   }, I18N.t("CAMP_TOTAL_STARS", allStars)), /*#__PURE__*/React.createElement("span", {
-    className: "pill"
+    className: "pill",
+    style: {
+      color: "var(--elec)"
+    }
   }, I18N.t("CAMP_TICKETS", g.ticketsSilver, g.ticketsGold))), /*#__PURE__*/React.createElement("div", {
-    className: "campaign-map",
-    "aria-label": I18N.t("CAMP_TITLE")
-  }, /*#__PURE__*/React.createElement("svg", {
-    className: "campaign-route",
-    viewBox: "0 0 1000 600",
-    preserveAspectRatio: "none",
-    "aria-hidden": "true"
-  }, /*#__PURE__*/React.createElement("path", {
-    d: "M130 490 L400 395 L735 440 L825 230 L530 130 L245 205"
-  })), D.WORLDS.map((w, i) => {
+    className: "camp-world-grid",
+    style: {
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
+      gap: 14
+    }
+  }, D.WORLDS.map(w => {
     const unlocked = allStars >= w.starsReq;
     const total = worldStarTotal(g, w.id);
-    /* `done` (toutes les etoiles) et la vignette d'art du monde existaient dans la
-       grille de cartes d'avant la refonte : le rework les a perdus, donc un joueur
-       ne voyait plus quels mondes il avait termines. Remis dans sa mise en page
-       (les balises sur la carte), sans la refaire. */
     const done = total === D.STARS_PER_WORLD;
-    const nom = I18N.t("CAMP_W" + (w.id + 1) + "_NAME");
+    const name = I18N.t("CAMP_W" + (w.id + 1) + "_NAME");
     return /*#__PURE__*/React.createElement("button", {
       key: w.id,
-      className: cx("world-beacon", !unlocked && "locked", done && "done"),
-      style: {
-        "--world-color": w.color,
-        "--world-index": i
-      },
       disabled: !unlocked,
-      onClick: () => onPickWorld(w.id)
-    }, /*#__PURE__*/React.createElement("span", {
-      className: "world-beacon-marker",
-      "aria-hidden": "true"
-    }, unlocked ? "◇" : "⌑"), /*#__PURE__*/React.createElement("span", {
-      className: "world-beacon-label"
-    }, /*#__PURE__*/React.createElement("span", {
+      onClick: () => unlocked && onPickWorld(w.id),
+      className: "panel oct",
+      style: {
+        border: "1px solid " + (done ? "rgba(247,147,26,0.6)" : "var(--line)"),
+        padding: 0,
+        textAlign: "left",
+        cursor: unlocked ? "pointer" : "not-allowed",
+        opacity: unlocked ? 1 : 0.5,
+        overflow: "hidden",
+        position: "relative"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
-        gap: 8,
-        alignItems: "center"
+        gap: 12,
+        alignItems: "center",
+        padding: 14
       }
-    }, /*#__PURE__*/React.createElement("span", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
-        width: 34,
-        height: 34,
+        width: 64,
+        height: 64,
         flex: "none",
         display: "grid",
         placeItems: "center",
         background: "rgba(0,0,0,0.3)",
-        borderRadius: 7,
+        borderRadius: 8,
         border: "1px solid " + w.color
       }
     }, /*#__PURE__*/React.createElement("img", {
       src: D.ART[w.img],
-      alt: nom,
+      alt: name,
       draggable: "false",
       style: {
-        width: 26,
-        height: 26,
+        width: 52,
+        height: 52,
         objectFit: "contain",
         filter: unlocked ? "none" : "grayscale(1)"
       }
-    })), /*#__PURE__*/React.createElement("strong", null, nom)), /*#__PURE__*/React.createElement("span", null, unlocked ? I18N.t("CAMP_STARS", total, D.STARS_PER_WORLD) : I18N.t("CAMP_LOCKED", w.starsReq)), /*#__PURE__*/React.createElement("span", {
-      className: "world-description"
-    }, I18N.t("CAMP_W" + (w.id + 1) + "_DESC"))), done && /*#__PURE__*/React.createElement("span", {
+    })), /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1,
+        minWidth: 0
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "mono",
+      style: {
+        fontSize: 10,
+        color: "var(--text-dim)"
+      }
+    }, I18N.t("CAMP_FLOOR_N", w.id + 1)), /*#__PURE__*/React.createElement("div", {
+      className: "h2",
+      style: {
+        fontSize: 17,
+        color: unlocked ? "var(--text)" : "var(--text-dim)"
+      }
+    }, name), /*#__PURE__*/React.createElement("div", {
+      className: "mono",
+      style: {
+        fontSize: 10,
+        color: "var(--text-faint)",
+        marginTop: 2,
+        fontStyle: "italic"
+      }
+    }, I18N.t("CAMP_W" + (w.id + 1) + "_DESC")), unlocked ? /*#__PURE__*/React.createElement("div", {
+      style: {
+        marginTop: 4
+      }
+    }, /*#__PURE__*/React.createElement(Stars, {
+      n: Math.round(total / 10),
+      size: 13
+    }), /*#__PURE__*/React.createElement("span", {
+      className: "mono",
+      style: {
+        fontSize: 11,
+        color: "var(--text-dim)",
+        marginLeft: 8
+      }
+    }, I18N.t("CAMP_STARS", total, D.STARS_PER_WORLD))) : /*#__PURE__*/React.createElement("div", {
+      className: "mono",
+      style: {
+        fontSize: 12,
+        color: "var(--alert)",
+        marginTop: 4
+      }
+    }, I18N.t("CAMP_LOCKED", w.starsReq)))), done && /*#__PURE__*/React.createElement("div", {
       style: {
         position: "absolute",
-        top: 6,
-        right: 6,
-        background: "rgba(247,147,26,0.16)",
-        border: "1px solid rgba(247,147,26,0.6)",
-        color: "var(--gold)",
-        borderRadius: 9,
-        fontSize: 10,
+        top: 8,
+        right: 10,
+        fontSize: 11,
         fontWeight: 700,
-        padding: "1px 7px"
+        color: "var(--gold)"
       }
-    }, "100 % \u2713"));
-  })), /*#__PURE__*/React.createElement("details", {
-    className: "scene-records"
-  }, /*#__PURE__*/React.createElement("summary", null, I18N.t("CAMP_TITLES")), /*#__PURE__*/React.createElement(CampaignTitles, null)));
+    }, "100% \u2713"));
+  })), /*#__PURE__*/React.createElement(CampaignTitles, null));
 }
 function CampaignTitles() {
   const {

@@ -173,31 +173,6 @@ function Team() {
     return g.roster.slice().sort((a, b) => D.RARITY_ORDER[b.rarity] - D.RARITY_ORDER[a.rarity] || b.level - a.level);
   }, [g.roster]);
   const selCount = g.selected.length;
-  const [drawer, setDrawer] = useState(null);
-  function choose(b) {
-    if (drawer === "collection") {
-      toggle(b);
-      return;
-    }
-    if (busyIds.has(b.id)) {
-      toast(I18N.t("EXP_ERR_bete_en_expedition"), "bad");
-      return;
-    }
-    const existing = g.selected.indexOf(b.id);
-    const slot = Math.min(drawer, g.selected.length);
-    if (existing >= 0) {
-      if (existing !== slot && slot < g.selected.length) actions.pvpReorderDefense(existing, slot);
-    } else {
-      const occupant = g.selected[slot];
-      if (occupant) actions.toggleSelect(occupant);
-      actions.toggleSelect(b.id);
-      if (occupant && slot < g.selected.length - 1) {
-        // Restore formation order after the functional toggle updates append the replacement.
-        for (let i = g.selected.length - 1; i > slot; i--) actions.pvpReorderDefense(i, i - 1);
-      }
-    }
-    setDrawer(null);
-  }
 
   // Entités parties en expédition : non sélectionnables ici (même garde que le
   // serveur, qui refuse le combat avec bete_en_expedition — miroir d'expeditions.jsx).
@@ -226,10 +201,11 @@ function Team() {
     if (g.selected.includes(b.id)) actions.toggleSelect(b.id);else if (busyIds.has(b.id)) toast(I18N.t("EXP_ERR_bete_en_expedition"), "bad");else if (selCount >= 3) toast(I18N.t("TEAM_FULL"), "bad");else actions.toggleSelect(b.id);
   }
   return /*#__PURE__*/React.createElement("div", {
-    className: "container scene-team"
+    className: "container"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "scene-heading flex between center wrap",
+    className: "flex between center wrap",
     style: {
+      marginBottom: 22,
       gap: 12
     }
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
@@ -257,7 +233,7 @@ function Team() {
     fa: g.lpFa,
     size: 18
   }), g.lpTier ? " " : "", g.playerName || g.ordinalName)), /*#__PURE__*/React.createElement("div", {
-    className: "scene-deploy flex gap12 center"
+    className: "flex gap12 center"
   }, /*#__PURE__*/React.createElement("span", {
     className: "pill",
     style: {
@@ -269,19 +245,7 @@ function Team() {
     "data-guide": "team-enter",
     disabled: selCount !== 3,
     onClick: () => actions.setView("fosse")
-  }, I18N.t("TEAM_ENTER"), " \u2192"))), /*#__PURE__*/React.createElement(window.TeamStage, {
-    roster: g.roster,
-    selected: g.selected,
-    onToggle: toggle,
-    onSelectSlot: setDrawer
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "scene-collection-control"
-  }, /*#__PURE__*/React.createElement("button", {
-    className: "btn",
-    "data-guide": "team-grid",
-    onClick: () => setDrawer("collection"),
-    "aria-haspopup": "dialog"
-  }, "\u25A6 ", I18N.t("TEAM_COUNT", g.roster.length))), (() => {
+  }, I18N.t("TEAM_ENTER"), " \u2192"))), (() => {
     const TU = window.FA_TOTEM_UI;
     const t = g.totem;
     return /*#__PURE__*/React.createElement("div", {
@@ -326,14 +290,8 @@ function Team() {
       }
     }, "\u203A"));
   })(), /*#__PURE__*/React.createElement("div", {
-    className: "scene-collection-anchor"
-  }, drawer !== null && /*#__PURE__*/React.createElement(window.SceneDrawer, {
-    title: I18N.t("TEAM_COUNT", g.roster.length),
-    onClose: () => setDrawer(null)
-  }, /*#__PURE__*/React.createElement("p", {
-    className: "muted mono"
-  }, I18N.t("TEAM_HINT")), /*#__PURE__*/React.createElement("div", {
-    className: "grid-cards"
+    className: "grid-cards",
+    "data-guide": "team-grid"
   }, sorted.map(b => {
     const busy = busyIds.has(b.id);
     const isChamp = g.championBeastId === b.id;
@@ -351,7 +309,7 @@ function Team() {
       beast: b,
       selectable: !busy,
       selected: g.selected.includes(b.id),
-      onClick: () => choose(b),
+      onClick: () => toggle(b),
       showXp: true,
       badge: busy ? /*#__PURE__*/React.createElement("div", {
         style: {
@@ -448,7 +406,7 @@ function Team() {
         marginTop: 2
       }
     }, I18N.t("CHAMP_USES_BY", a.names.join(", ")))));
-  })()))));
+  })()));
 }
 function RelicSlot({
   beast
@@ -909,7 +867,7 @@ function Forge() {
     c: "var(--elec)"
   }];
   return /*#__PURE__*/React.createElement("div", {
-    className: "container scene-forge"
+    className: "container"
   }, /*#__PURE__*/React.createElement(SectionHead, {
     eyebrow: I18N.t("FG_SUB"),
     title: I18N.t("FG_TITLE")
@@ -931,25 +889,18 @@ function ForgeFusion() {
     toast
   } = useFA();
   const [sel, setSel] = useState([]);
-  const [slot, setSlot] = useState(null);
   const [fuseBusy, setFuseBusy] = useState(false);
   const [goldMode, setGoldMode] = useState(false);
   const elig = g.roster.filter(b => b.rarity !== "Legendary");
   const sorted = elig.slice().sort((a, b) => D.RARITY_ORDER[b.rarity] - D.RARITY_ORDER[a.rarity]);
   const first = sel[0] ? g.roster.find(b => b.id === sel[0]) : null;
   function clickable(b) {
-    if (slot === 0 || !first) return true;
-    return b.id !== first.id && b.rarity === first.rarity;
+    if (!first) return true;
+    if (b.id === first.id) return true;
+    return b.rarity === first.rarity;
   }
   function toggle(b) {
-    if (slot === null || fuseBusy) return;
-    if (sel.includes(b.id) && sel[slot] !== b.id) return;
-    const next = [...sel];
-    next[slot] = b.id;
-    const other = g.roster.find(x => x.id === next[1 - slot]);
-    if (other && other.rarity !== b.rarity) next[1 - slot] = null;
-    setSel(next);
-    setSlot(null);
+    if (sel.includes(b.id)) setSel(sel.filter(x => x !== b.id));else if (sel.length < 2 && clickable(b)) setSel([...sel, b.id]);
   }
   async function doFuse(gold) {
     if (fuseBusy) return;
@@ -982,7 +933,7 @@ function ForgeFusion() {
   const F = window.FA_FORGE_UI;
   const cost = first ? D.FORGE.FUSION_COST[first.rarity] : 0;
   const rate = first ? D.FORGE.FUSION_RATE[first.rarity] : 0;
-  const canFuse = !!(sel[0] && sel[1]);
+  const canFuse = sel.length === 2;
   const btn = F.fusionButtonState({
     gold: goldMode,
     cost,
@@ -990,34 +941,8 @@ function ForgeFusion() {
     ticketsGold: g.ticketsGold,
     busy: fuseBusy
   });
-  return /*#__PURE__*/React.createElement("div", {
-    className: "forge-machine"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "forge-stations"
-  }, [0, 1].map(i => {
-    const beast = g.roster.find(b => b.id === sel[i]);
-    return /*#__PURE__*/React.createElement("button", {
-      type: "button",
-      className: cx("forge-station", i === 1 && "sacrifice"),
-      key: i,
-      disabled: fuseBusy || i === 1 && !first,
-      onClick: () => setSlot(i),
-      "aria-haspopup": "dialog"
-    }, /*#__PURE__*/React.createElement("span", {
-      className: "forge-station-role"
-    }, I18N.t(i === 0 ? "FG_KEPT" : "FG_SACRIFICED")), /*#__PURE__*/React.createElement(window.EntitySilhouette, {
-      beast: beast
-    }), /*#__PURE__*/React.createElement("span", {
-      className: "forge-ring",
-      "aria-hidden": "true"
-    }), /*#__PURE__*/React.createElement("span", {
-      className: "stage-caption"
-    }, beast ? D.displayName(beast) : I18N.t("FG_FUSION")));
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "forge-conduit",
-    "aria-hidden": "true"
-  }, "\u25C7")), /*#__PURE__*/React.createElement("div", {
-    className: "forge-console flex between center wrap",
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "flex between center wrap",
     style: {
       marginBottom: 16,
       gap: 10
@@ -1062,12 +987,7 @@ function ForgeFusion() {
       fontSize: 12,
       marginBottom: 10
     }
-  }, I18N.t("INSUFFICIENT", g.liquid + g.locked, cost)), slot !== null && /*#__PURE__*/React.createElement(window.SceneDrawer, {
-    title: I18N.t(slot === 0 ? "FG_KEPT" : "FG_SACRIFICED"),
-    onClose: () => setSlot(null)
-  }, /*#__PURE__*/React.createElement("p", {
-    className: "muted mono"
-  }, first && slot === 1 ? I18N.t("FG_PICK_SAME", rarityLabel(first.rarity)) : I18N.t("FG_FUSION_HINT")), /*#__PURE__*/React.createElement("div", {
+  }, I18N.t("INSUFFICIENT", g.liquid + g.locked, cost)), /*#__PURE__*/React.createElement("div", {
     className: "grid-cards"
   }, sorted.map(b => {
     const role = sel[0] === b.id ? "kept" : sel[1] === b.id ? "sacrificed" : null;
@@ -1094,12 +1014,12 @@ function ForgeFusion() {
       }
     }, /*#__PURE__*/React.createElement(CreatureCard, {
       beast: b,
-      selectable: clickable(b),
+      selectable: true,
       selected: sel.includes(b.id),
-      onClick: clickable(b) ? () => toggle(b) : undefined,
+      onClick: () => toggle(b),
       badge: roleBadge
     }));
-  }))));
+  })));
 }
 function RerollPreviewModal({
   preview,
