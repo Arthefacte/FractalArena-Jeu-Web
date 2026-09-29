@@ -739,10 +739,13 @@ function ForgeSummon() {
           <div style={{ width: "100%" }}>
             <div className="eyebrow" style={{ textAlign: "center", marginBottom: 10, color: D.RANK_COLORS[last.rank || "C"] }}>{I18N.t("MINT_TITLE")}</div>
             <CreatureCard beast={last} />
-            {/* L'invocation au plafond est l'événement rare (1 sur 15) : il doit se lire sur
-                l'écran d'invocation, pas seulement dans la collection plus tard. */}
-            {last.summon_roll_max && (
-              <div className="mono" style={{ textAlign: "center", marginTop: 10, fontSize: 12, color: "var(--gold)" }}>{I18N.t("FG_SUMMON_ROLL_MAX")}</div>
+            {/* La qualité du tirage est l'information neuve de l'invocation : elle s'affiche
+                pour TOUTE carte (pas seulement le plafond), en % du maximum de son rang —
+                c'est ce que le joueur doit pouvoir lire d'un coup d'œil. */}
+            {typeof last.summon_roll_pct === "number" && (
+              <div className="mono" style={{ textAlign: "center", marginTop: 10, fontSize: 12, color: last.summon_roll_max ? "var(--gold)" : "var(--text-dim)" }}>
+                {last.summon_roll_max ? I18N.t("FG_SUMMON_ROLL_MAX") : I18N.t("FG_SUMMON_ROLL", last.summon_roll_pct)}
+              </div>
             )}
           </div>
         ) : (

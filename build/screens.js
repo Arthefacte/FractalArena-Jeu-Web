@@ -1399,15 +1399,15 @@ function ForgeSummon() {
     }
   }, I18N.t("MINT_TITLE")), /*#__PURE__*/React.createElement(CreatureCard, {
     beast: last
-  }), last.summon_roll_max && /*#__PURE__*/React.createElement("div", {
+  }), typeof last.summon_roll_pct === "number" && /*#__PURE__*/React.createElement("div", {
     className: "mono",
     style: {
       textAlign: "center",
       marginTop: 10,
       fontSize: 12,
-      color: "var(--gold)"
+      color: last.summon_roll_max ? "var(--gold)" : "var(--text-dim)"
     }
-  }, I18N.t("FG_SUMMON_ROLL_MAX"))) : /*#__PURE__*/React.createElement("div", {
+  }, last.summon_roll_max ? I18N.t("FG_SUMMON_ROLL_MAX") : I18N.t("FG_SUMMON_ROLL", last.summon_roll_pct))) : /*#__PURE__*/React.createElement("div", {
     className: "mono",
     style: {
       color: "var(--text-faint)",
