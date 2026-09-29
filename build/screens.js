@@ -891,15 +891,21 @@ function ForgeFusion() {
   const [sel, setSel] = useState([]);
   const [fuseBusy, setFuseBusy] = useState(false);
   const [goldMode, setGoldMode] = useState(false);
+  // Garde anti-sacrifice : quand l'entité sacrifiée est plus forte que celle conservée,
+  // le premier clic ARME la confirmation, le second fusionne. Sinon le joueur qui ne lit
+  // pas le guide perdait son meilleur tirage sans qu'aucun écran ne l'ait dit.
+  const [confirmWeak, setConfirmWeak] = useState(false);
   const elig = g.roster.filter(b => b.rarity !== "Legendary");
   const sorted = elig.slice().sort((a, b) => D.RARITY_ORDER[b.rarity] - D.RARITY_ORDER[a.rarity]);
   const first = sel[0] ? g.roster.find(b => b.id === sel[0]) : null;
+  const second = sel[1] ? g.roster.find(b => b.id === sel[1]) : null;
   function clickable(b) {
     if (!first) return true;
     if (b.id === first.id) return true;
     return b.rarity === first.rarity;
   }
   function toggle(b) {
+    setConfirmWeak(false);
     if (sel.includes(b.id)) setSel(sel.filter(x => x !== b.id));else if (sel.length < 2 && clickable(b)) setSel([...sel, b.id]);
   }
   async function doFuse(gold) {
@@ -941,6 +947,9 @@ function ForgeFusion() {
     ticketsGold: g.ticketsGold,
     busy: fuseBusy
   });
+  // Comparaison des deux candidates : rien à signaler → null (cas normal).
+  const keepWarn = F.fusionKeepWarning(first, second);
+  const needConfirm = !!keepWarn && !confirmWeak;
   return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "flex between center wrap",
     style: {
@@ -964,7 +973,10 @@ function ForgeFusion() {
     style: {
       cursor: "pointer"
     },
-    onClick: () => setSel(F.fusionSwap(sel))
+    onClick: () => {
+      setSel(F.fusionSwap(sel));
+      setConfirmWeak(false);
+    }
   }, "\u21C4 ", I18N.t("FG_SWAP")), /*#__PURE__*/React.createElement("span", {
     className: "pill",
     style: {
@@ -975,10 +987,10 @@ function ForgeFusion() {
     },
     onClick: () => g.ticketsGold >= 1 && setGoldMode(!goldMode)
   }, "\uD83C\uDF9F ", I18N.t("FG_GOLD"), " ", goldMode ? "✓" : ""), /*#__PURE__*/React.createElement("button", {
-    className: cx("btn", goldMode ? "btn-gold" : "btn-forge"),
+    className: cx("btn", needConfirm ? "btn-alert" : goldMode ? "btn-gold" : "btn-forge"),
     disabled: btn.disabled,
-    onClick: () => doFuse(goldMode)
-  }, fuseBusy ? "…" : goldMode ? I18N.t("FG_FUSE_BTN_GOLD") : /*#__PURE__*/React.createElement(FaText, {
+    onClick: () => needConfirm ? setConfirmWeak(true) : doFuse(goldMode)
+  }, fuseBusy ? "…" : needConfirm ? I18N.t("FG_FUSE_CONFIRM") : goldMode ? I18N.t("FG_FUSE_BTN_GOLD") : /*#__PURE__*/React.createElement(FaText, {
     text: I18N.t("FG_FUSE_BTN", cost)
   })))), btn.showInsufficient && canFuse && /*#__PURE__*/React.createElement("div", {
     className: "mono",
@@ -987,11 +999,19 @@ function ForgeFusion() {
       fontSize: 12,
       marginBottom: 10
     }
-  }, I18N.t("INSUFFICIENT", g.liquid + g.locked, cost)), /*#__PURE__*/React.createElement("div", {
+  }, I18N.t("INSUFFICIENT", g.liquid + g.locked, cost)), keepWarn && /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      color: "var(--alert)",
+      fontSize: 12,
+      marginBottom: 10
+    }
+  }, I18N.t("FG_FUSE_WARN", keepWarn.gapPct == null ? "" : "+" + keepWarn.gapPct + " %")), /*#__PURE__*/React.createElement("div", {
     className: "grid-cards"
   }, sorted.map(b => {
     const role = sel[0] === b.id ? "kept" : sel[1] === b.id ? "sacrificed" : null;
-    const roleColor = role === "kept" ? "var(--success)" : "var(--alert)";
+    const roleStrong = role === "sacrificed" && !!keepWarn;
+    const roleColor = role === "kept" ? "var(--success)" : roleStrong ? "var(--gold)" : "var(--alert)";
     const roleBadge = role && /*#__PURE__*/React.createElement("div", {
       className: "pill",
       style: {
@@ -1004,7 +1024,7 @@ function ForgeFusion() {
         color: roleColor,
         border: `1px solid ${roleColor}`
       }
-    }, role === "kept" ? I18N.t("FG_KEPT") : I18N.t("FG_SACRIFICED"));
+    }, role === "kept" ? I18N.t("FG_KEPT") : roleStrong ? I18N.t("FG_SACRIFICED_STRONG") : I18N.t("FG_SACRIFICED"));
     return /*#__PURE__*/React.createElement("div", {
       key: b.id,
       style: {
@@ -1280,7 +1300,7 @@ function ForgeSummon() {
     }
     const reveal = () => {
       setLast(r.beast);
-      toast(I18N.t("FG_SUMMON_OK", D.displayName(r.beast), I18N.t("FG_RANK") + " " + (r.beast.rank || "C")), "good");
+      toast(I18N.t(r.beast.summon_roll_max ? "FG_SUMMON_OK_MAX" : "FG_SUMMON_OK", D.displayName(r.beast), I18N.t("FG_RANK") + " " + (r.beast.rank || "C")), "good");
     };
     if (window.FA_FORGE_CINE) {
       window.FA_FORGE_CINE.play({
@@ -1379,7 +1399,15 @@ function ForgeSummon() {
     }
   }, I18N.t("MINT_TITLE")), /*#__PURE__*/React.createElement(CreatureCard, {
     beast: last
-  })) : /*#__PURE__*/React.createElement("div", {
+  }), last.summon_roll_max && /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      textAlign: "center",
+      marginTop: 10,
+      fontSize: 12,
+      color: "var(--gold)"
+    }
+  }, I18N.t("FG_SUMMON_ROLL_MAX"))) : /*#__PURE__*/React.createElement("div", {
     className: "mono",
     style: {
       color: "var(--text-faint)",

@@ -41,6 +41,35 @@
     return [S[1], S[0]];
   }
 
+  // Puissance d'une entité pour comparer deux candidates à une fusion : le TOTAL des 5 stats
+  // de base (le rang ET le tirage d'invocation sont déjà bakés dedans) × le facteur de niveau.
+  // Aucune table du moteur n'est recopiée ici : les deux entités d'une fusion ont la MÊME
+  // rareté (règle serveur), donc le poids de rareté s'annule dans la comparaison.
+  // Le reroll ne fausse pas la mesure : il redistribue le même total (rerollStats, serveur).
+  function entityPower(b) {
+    if (!b) return 0;
+    const D = window.FA_DATA;
+    const base = (b.base_hp || 0) + (b.base_atk || 0) + (b.base_def || 0) + (b.base_spd || 0) + (b.base_mag || 0);
+    const lm = D && D.levelMult ? D.levelMult(b.level || 1) : 1;
+    return base * lm;
+  }
+
+  // Garde de fusion : l'entité SACRIFIÉE est-elle plus forte que celle conservée ?
+  // Motif produit : le joueur qui ne lit pas le guide sacrifiait son meilleur tirage (rang
+  // supérieur, ou tirage au plafond) sans s'en rendre compte — rien à l'écran ne le disait.
+  // Renvoie null quand il n'y a rien à signaler (sélection incomplète, ou sacrifiée ≤ conservée) :
+  // l'appelant n'a donc qu'un cas à traiter.
+  function fusionKeepWarning(kept, sacrificed) {
+    if (!kept || !sacrificed) return null;
+    const pk = entityPower(kept), ps = entityPower(sacrificed);
+    if (!(ps > pk)) return null;
+    return {
+      keptPower: Math.round(pk),
+      sacrificedPower: Math.round(ps),
+      gapPct: pk > 0 ? Math.round((ps / pk - 1) * 100) : null,
+    };
+  }
+
   // État du bouton Fusionner. Mode Or : seul le ticket compte, le solde FA est ignoré
   // (la fusion premium coûte 0 FA côté serveur). Mode FA : solde requis.
   function fusionButtonState({ gold, cost, balance, ticketsGold, busy }) {
@@ -139,6 +168,6 @@
     return s === k ? I.t("FG_EQ_ERR_generic") : s;
   }
 
-  window.FA_FORGE_UI = { rerollDiff, toggleLock, withLockCost, fusionSwap, fusionButtonState, MAX_REROLL_LOCKS, REROLL_LOCK_MULT, LOCKABLE: KEYS,
+  window.FA_FORGE_UI = { rerollDiff, toggleLock, withLockCost, fusionSwap, fusionButtonState, entityPower, fusionKeepWarning, MAX_REROLL_LOCKS, REROLL_LOCK_MULT, LOCKABLE: KEYS,
     equipSelToggle, familyMatch, buybackFor, fuseCostFor, fuseState, relicFuseState, coreFuseState, disenchantState, equipForgeErrText };
 })();

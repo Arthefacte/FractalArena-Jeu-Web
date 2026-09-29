@@ -486,9 +486,14 @@ function ForgeFusion() {
   const [sel, setSel] = useState([]);
   const [fuseBusy, setFuseBusy] = useState(false);
   const [goldMode, setGoldMode] = useState(false);
+  // Garde anti-sacrifice : quand l'entité sacrifiée est plus forte que celle conservée,
+  // le premier clic ARME la confirmation, le second fusionne. Sinon le joueur qui ne lit
+  // pas le guide perdait son meilleur tirage sans qu'aucun écran ne l'ait dit.
+  const [confirmWeak, setConfirmWeak] = useState(false);
   const elig = g.roster.filter((b) => b.rarity !== "Legendary");
   const sorted = elig.slice().sort((a, b) => D.RARITY_ORDER[b.rarity] - D.RARITY_ORDER[a.rarity]);
   const first = sel[0] ? g.roster.find((b) => b.id === sel[0]) : null;
+  const second = sel[1] ? g.roster.find((b) => b.id === sel[1]) : null;
 
   function clickable(b) {
     if (!first) return true;
@@ -496,6 +501,7 @@ function ForgeFusion() {
     return b.rarity === first.rarity;
   }
   function toggle(b) {
+    setConfirmWeak(false);
     if (sel.includes(b.id)) setSel(sel.filter((x) => x !== b.id));
     else if (sel.length < 2 && clickable(b)) setSel([...sel, b.id]);
   }
@@ -528,6 +534,9 @@ function ForgeFusion() {
   const rate = first ? D.FORGE.FUSION_RATE[first.rarity] : 0;
   const canFuse = sel.length === 2;
   const btn = F.fusionButtonState({ gold: goldMode, cost, balance: g.liquid + g.locked, ticketsGold: g.ticketsGold, busy: fuseBusy });
+  // Comparaison des deux candidates : rien à signaler → null (cas normal).
+  const keepWarn = F.fusionKeepWarning(first, second);
+  const needConfirm = !!keepWarn && !confirmWeak;
 
   return (
     <div>
@@ -536,23 +545,29 @@ function ForgeFusion() {
         {canFuse && (
           <div className="flex gap12 center">
             <span className="pill" style={{ color: "var(--elec)" }}>{I18N.t("FG_SUCCESS_RATE")} {goldMode ? 100 : Math.round(rate * 100)}%</span>
-            <span className="pill" style={{ cursor: "pointer" }} onClick={() => setSel(F.fusionSwap(sel))}>⇄ {I18N.t("FG_SWAP")}</span>
+            <span className="pill" style={{ cursor: "pointer" }} onClick={() => { setSel(F.fusionSwap(sel)); setConfirmWeak(false); }}>⇄ {I18N.t("FG_SWAP")}</span>
             <span className="pill" style={{ color: "var(--gold)", cursor: "pointer", opacity: g.ticketsGold >= 1 ? 1 : 0.4, border: goldMode ? "1px solid var(--gold)" : undefined }}
               onClick={() => g.ticketsGold >= 1 && setGoldMode(!goldMode)}>
               🎟 {I18N.t("FG_GOLD")} {goldMode ? "✓" : ""}
             </span>
-            <button className={cx("btn", goldMode ? "btn-gold" : "btn-forge")} disabled={btn.disabled} onClick={() => doFuse(goldMode)}>{fuseBusy ? "…" : goldMode ? I18N.t("FG_FUSE_BTN_GOLD") : <FaText text={I18N.t("FG_FUSE_BTN", cost)} />}</button>
+            <button className={cx("btn", needConfirm ? "btn-alert" : goldMode ? "btn-gold" : "btn-forge")} disabled={btn.disabled} onClick={() => (needConfirm ? setConfirmWeak(true) : doFuse(goldMode))}>{fuseBusy ? "…" : needConfirm ? I18N.t("FG_FUSE_CONFIRM") : goldMode ? I18N.t("FG_FUSE_BTN_GOLD") : <FaText text={I18N.t("FG_FUSE_BTN", cost)} />}</button>
           </div>
         )}
       </div>
       {btn.showInsufficient && canFuse && <div className="mono" style={{ color: "var(--alert)", fontSize: 12, marginBottom: 10 }}>{I18N.t("INSUFFICIENT", g.liquid + g.locked, cost)}</div>}
+      {keepWarn && (
+        <div className="mono" style={{ color: "var(--alert)", fontSize: 12, marginBottom: 10 }}>
+          {I18N.t("FG_FUSE_WARN", keepWarn.gapPct == null ? "" : "+" + keepWarn.gapPct + " %")}
+        </div>
+      )}
       <div className="grid-cards">
         {sorted.map((b) => {
           const role = sel[0] === b.id ? "kept" : sel[1] === b.id ? "sacrificed" : null;
-          const roleColor = role === "kept" ? "var(--success)" : "var(--alert)";
+          const roleStrong = role === "sacrificed" && !!keepWarn;
+          const roleColor = role === "kept" ? "var(--success)" : roleStrong ? "var(--gold)" : "var(--alert)";
           const roleBadge = role && (
             <div className="pill" style={{ position: "absolute", bottom: 8, left: "50%", transform: "translateX(-50%)", whiteSpace: "nowrap", background: "var(--bg)", color: roleColor, border: `1px solid ${roleColor}` }}>
-              {role === "kept" ? I18N.t("FG_KEPT") : I18N.t("FG_SACRIFICED")}
+              {role === "kept" ? I18N.t("FG_KEPT") : roleStrong ? I18N.t("FG_SACRIFICED_STRONG") : I18N.t("FG_SACRIFICED")}
             </div>
           );
           return (
@@ -689,7 +704,7 @@ function ForgeSummon() {
     if (!r.ok) { toast(I18N.localizeServerError(r.reason), "bad"); return; }
     const reveal = () => {
       setLast(r.beast);
-      toast(I18N.t("FG_SUMMON_OK", D.displayName(r.beast), I18N.t("FG_RANK") + " " + (r.beast.rank || "C")), "good");
+      toast(I18N.t(r.beast.summon_roll_max ? "FG_SUMMON_OK_MAX" : "FG_SUMMON_OK", D.displayName(r.beast), I18N.t("FG_RANK") + " " + (r.beast.rank || "C")), "good");
     };
     if (window.FA_FORGE_CINE) {
       window.FA_FORGE_CINE.play({
@@ -724,6 +739,11 @@ function ForgeSummon() {
           <div style={{ width: "100%" }}>
             <div className="eyebrow" style={{ textAlign: "center", marginBottom: 10, color: D.RANK_COLORS[last.rank || "C"] }}>{I18N.t("MINT_TITLE")}</div>
             <CreatureCard beast={last} />
+            {/* L'invocation au plafond est l'événement rare (1 sur 15) : il doit se lire sur
+                l'écran d'invocation, pas seulement dans la collection plus tard. */}
+            {last.summon_roll_max && (
+              <div className="mono" style={{ textAlign: "center", marginTop: 10, fontSize: 12, color: "var(--gold)" }}>{I18N.t("FG_SUMMON_ROLL_MAX")}</div>
+            )}
           </div>
         ) : (
           <div className="mono" style={{ color: "var(--text-faint)", fontSize: 12, textAlign: "center" }}>⬡<br />{I18N.t("FG_SUMMON")}</div>
