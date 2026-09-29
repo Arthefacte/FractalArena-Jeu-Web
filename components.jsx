@@ -201,15 +201,18 @@ function CreatureCard({ beast, selected, onClick, selectable, showXp, badge }) {
         </div>
         <div className="cpreset" style={{ color: pc }}>
           {presetLabel(beast.preset)}
-          {/* Tirage d'invocation au plafond (1 sur 15) : marqueur de DONNÉE, donc dans le
-              corps de la carte — l'art ne porte que les états d'interaction (coche, rôle).
-              Le champ vient du serveur (summon_roll_max) et suit l'entité à vie : le reroll
+          {/* Qualité du tirage d'invocation, en % du maximum de SON RANG (champ serveur) :
+              marqueur de DONNÉE, donc dans le corps de la carte — l'art ne porte que les
+              états d'interaction (coche, rôle). Le % suit l'entité à vie : le reroll
               redistribue le même total de stats, il ne change pas le tirage. Absent = entité
-              antérieure au tirage discret, ou tirage normal : aucun marqueur, jamais un faux. */}
-          {beast.summon_roll_max && (
-            <span className="mono" title={I18N.t("CARD_ROLL_MAX_TIP")}
-              style={{ marginLeft: 6, color: "var(--gold)", border: "1px solid var(--gold)", borderRadius: 3, padding: "0 4px", fontSize: 9, letterSpacing: 0.5, whiteSpace: "nowrap" }}>
-              ✦ {I18N.t("CARD_ROLL_MAX")}
+              antérieure au tirage chiffré, ou entité née d'une fusion : aucun marqueur,
+              jamais un faux. */}
+          {typeof beast.summon_roll_pct === "number" && (
+            <span className="mono" title={I18N.t("CARD_ROLL_TIP")}
+              style={{ marginLeft: 6, fontSize: 9, letterSpacing: 0.5, whiteSpace: "nowrap", padding: "0 4px", borderRadius: 3,
+                color: beast.summon_roll_max ? "var(--gold)" : "var(--text-dim)",
+                border: "1px solid " + (beast.summon_roll_max ? "var(--gold)" : "var(--line)") }}>
+              {beast.summon_roll_max ? "✦ " : ""}{beast.summon_roll_pct} %
             </span>
           )}
         </div>

@@ -314,20 +314,20 @@ function CreatureCard({
     style: {
       color: pc
     }
-  }, presetLabel(beast.preset), beast.summon_roll_max && /*#__PURE__*/React.createElement("span", {
+  }, presetLabel(beast.preset), typeof beast.summon_roll_pct === "number" && /*#__PURE__*/React.createElement("span", {
     className: "mono",
-    title: I18N.t("CARD_ROLL_MAX_TIP"),
+    title: I18N.t("CARD_ROLL_TIP"),
     style: {
       marginLeft: 6,
-      color: "var(--gold)",
-      border: "1px solid var(--gold)",
-      borderRadius: 3,
-      padding: "0 4px",
       fontSize: 9,
       letterSpacing: 0.5,
-      whiteSpace: "nowrap"
+      whiteSpace: "nowrap",
+      padding: "0 4px",
+      borderRadius: 3,
+      color: beast.summon_roll_max ? "var(--gold)" : "var(--text-dim)",
+      border: "1px solid " + (beast.summon_roll_max ? "var(--gold)" : "var(--line)")
     }
-  }, "\u2726 ", I18N.t("CARD_ROLL_MAX"))), /*#__PURE__*/React.createElement(StatGrid, {
+  }, beast.summon_roll_max ? "✦ " : "", beast.summon_roll_pct, " %")), /*#__PURE__*/React.createElement(StatGrid, {
     beast: beast
   }), showXp && /*#__PURE__*/React.createElement("div", {
     style: {

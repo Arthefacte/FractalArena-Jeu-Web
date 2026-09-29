@@ -24,24 +24,26 @@ function fonction(src, nom) {
   return src.slice(i, fin > i ? fin : src.length);
 }
 
-test("le marqueur de tirage est une DONNÉE : il vit dans le corps de la carte, jamais sur l'art", () => {
+test("la qualité du tirage est une DONNÉE : elle vit dans le corps de la carte, jamais sur l'art", () => {
   // Doctrine du roster (test/card-badges.test.js) : l'art ne porte que les états
   // d'interaction (coche de sélection, badge de rôle) ; les données descendent dans le corps.
   const card = fonction(read("components.jsx"), "CreatureCard");
   assert.ok(card.length > 0, "CreatureCard introuvable dans components.jsx");
   const art = card.slice(card.indexOf('className="art"'), card.indexOf('className="body"'));
   const corps = card.slice(card.indexOf('className="body"'));
-  assert.ok(corps.includes("summon_roll_max"), "le corps de la carte doit porter le marqueur de tirage");
-  assert.ok(!art.includes("summon_roll_max"), "le marqueur de tirage ne doit PAS être posé sur l'art");
-  assert.match(card, /CARD_ROLL_MAX/, "le libellé du marqueur doit passer par l'i18n");
+  assert.ok(corps.includes("summon_roll_pct"), "le corps de la carte doit porter le % du tirage");
+  assert.ok(!art.includes("summon_roll_pct"), "le % du tirage ne doit PAS être posé sur l'art");
+  assert.match(card, /CARD_ROLL_TIP/, "l'explication du marqueur doit passer par l'i18n");
+  assert.match(card, /summon_roll_max/, "le plafond doit rester distingué (badge doré) dans le corps");
 });
 
-test("l'écran d'invocation annonce le plafond (toast + ligne sous la carte)", () => {
+test("l'écran d'invocation annonce la qualité du tirage (toast + ligne sous la carte)", () => {
   const src = read("screens.jsx");
   const summon = fonction(src, "ForgeSummon");
-  assert.ok(summon.includes("summon_roll_max"), "ForgeSummon doit lire le champ du serveur");
+  assert.ok(summon.includes("summon_roll_pct"), "ForgeSummon doit lire le % renvoyé par le serveur");
+  assert.match(summon, /FG_SUMMON_ROLL\b/, "toute invocation affiche son % (pas seulement le plafond)");
   assert.match(summon, /FG_SUMMON_OK_MAX/, "le toast d'invocation doit distinguer le plafond");
-  assert.match(summon, /FG_SUMMON_ROLL_MAX/, "le panneau de résultat doit l'afficher sous la carte");
+  assert.match(summon, /FG_SUMMON_ROLL_MAX/, "le panneau de résultat doit nommer le plafond");
 });
 
 test("la fusion arme une confirmation quand la sacrifiée est plus forte", () => {
@@ -57,7 +59,7 @@ test("la fusion arme une confirmation quand la sacrifiée est plus forte", () =>
 
 test("les clés i18n du tirage et de la garde existent en FR, EN et ZH", () => {
   const I18N = read("i18n.js");
-  for (const cle of ["CARD_ROLL_MAX", "CARD_ROLL_MAX_TIP", "FG_SUMMON_OK_MAX", "FG_SUMMON_ROLL_MAX", "FG_SACRIFICED_STRONG", "FG_FUSE_WARN", "FG_FUSE_CONFIRM"]) {
+  for (const cle of ["CARD_ROLL_TIP", "FG_SUMMON_ROLL", "FG_SUMMON_OK_MAX", "FG_SUMMON_ROLL_MAX", "FG_SACRIFICED_STRONG", "FG_FUSE_WARN", "FG_FUSE_CONFIRM"]) {
     const m = I18N.match(new RegExp("\\b" + cle + ":\\s*\\{([^}]*)\\}"));
     assert.ok(m, "clé absente : " + cle);
     for (const lang of ["FR:", "EN:", "ZH:"]) {

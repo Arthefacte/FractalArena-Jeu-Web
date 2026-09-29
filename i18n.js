@@ -544,9 +544,8 @@
     FG_SWAP: { FR: "Inverser", EN: "Swap", ZH: "交换" },
     FG_KEPT: { FR: "✓ Conservée", EN: "✓ Kept", ZH: "✓ 保留" },
     FG_SACRIFICED: { FR: "☠ Sacrifiée", EN: "☠ Sacrificed", ZH: "☠ 牺牲" },
-    // Tirage d'invocation au plafond (1 sur 15) : marqueur de carte + garde de fusion.
-    CARD_ROLL_MAX: { FR: "MAX", EN: "MAX", ZH: "满值" },
-    CARD_ROLL_MAX_TIP: { FR: "Tirage d'invocation au maximum de sa bande (1 sur 15) — ne pas sacrifier cette entité par erreur", EN: "Summon roll at the top of its band (1 in 15) — do not sacrifice this entity by mistake", ZH: "召唤抽取达到区间上限（15 分之一）— 请勿误将此实体牺牲" },
+    // Qualité du tirage d'invocation (en % du maximum de son rang) : marqueur de carte + garde de fusion.
+    CARD_ROLL_TIP: { FR: "Qualité du tirage d'invocation : pourcentage du maximum possible pour son rang. À 100 % (1 invocation sur 11) les 5 stats sont au plafond — ne pas sacrifier cette entité par erreur", EN: "Summon roll quality: percentage of the maximum possible for its rank. At 100% (1 summon in 11) all 5 stats are at the ceiling — do not sacrifice this entity by mistake", ZH: "召唤抽取品质：相对于该阶位上限的百分比。100%（11 分之一）时五项属性均达上限 — 请勿误将此实体牺牲" },
     FG_SACRIFICED_STRONG: { FR: "☠ Sacrifiée ★ la plus forte", EN: "☠ Sacrificed ★ the stronger one", ZH: "☠ 牺牲 ★ 更强的一方" },
     FG_FUSE_WARN: { FR: "⚠ Attention : l'entité que tu sacrifies est PLUS FORTE que celle que tu gardes (%s de puissance). Tu perdrais ton meilleur tirage.", EN: "⚠ Warning: the entity you sacrifice is STRONGER than the one you keep (%s power). You would lose your best roll.", ZH: "⚠ 注意：你牺牲的实体比保留的更强（战力 %s）。你会失去更好的抽取结果。" },
     FG_FUSE_CONFIRM: { FR: "Confirmer quand même", EN: "Confirm anyway", ZH: "仍然确认" },
@@ -560,6 +559,7 @@
     FG_REROLL_OK: { FR: "Stats redistribuées", EN: "Stats redistributed", ZH: "属性已重新分配" },
     FG_SUMMON_OK: { FR: "Invoqué : %s [%s]", EN: "Summoned: %s [%s]", ZH: "召唤：%s [%s]" },
     FG_SUMMON_OK_MAX: { FR: "✦ Invoqué au MAXIMUM : %s [%s]", EN: "✦ Summoned at MAXIMUM: %s [%s]", ZH: "✦ 满值召唤：%s [%s]" },
+    FG_SUMMON_ROLL: { FR: "Tirage : %d %% du maximum de son rang", EN: "Roll: %d%% of the maximum for its rank", ZH: "抽取：达到该阶位上限的 %d%%" },
     FG_SUMMON_ROLL_MAX: { FR: "✦ Tirage au maximum — les 5 stats sont au plafond de son rang", EN: "✦ Maximum roll — all 5 stats are at the ceiling for its rank", ZH: "✦ 满值抽取 — 五项属性均达到其阶位上限" },
     FG_NOT_FUSABLE: { FR: "Légendaire non fusable", EN: "Legendary not fusable", ZH: "传说无法融合" },
     REROLL_PREVIEW_TITLE: { FR: "Nouvelle répartition", EN: "New distribution", ZH: "新的分配" },
