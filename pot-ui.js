@@ -3,6 +3,12 @@
 // La RÈGLE n'est pas ici : elle vit dans buyback.js (potEligibilityFor) et redescend par
 // l'API. Ce module ne fait que la rendre lisible et REFUSE de fabriquer un chiffre absent —
 // un joueur qui lit « 0/150 » alors qu'il a 40 combats croirait à un bug.
+//
+// Répartition en vigueur (fondateur 30/09/2026) : le 1 FB du tirage n'est PLUS divisé à parts
+// égales, il est réparti AU PRORATA DU NOMBRE DE JOURS où le joueur a rempli sa tâche
+// (≥150 combats de Fosse payants sur un jour UTC = 1 jour validé = 1 part), comptés du début
+// du remplissage de la cagnotte jusqu'au jour où elle atteint son seuil. D'où les deux chiffres
+// servis par le serveur : `days_qualified` (mes parts) et `cycle_days` (la fenêtre).
 (function () {
   "use strict";
 
@@ -12,7 +18,8 @@
   }
 
   // Progression de la cagnotte elle-même : seuil (200 000 FA), part par tirage (1 FB),
-  // compte à rebours quand le seuil est armé, dernier tirage avec son nombre de gagnants.
+  // compte à rebours quand le seuil est armé, dernier tirage (part unique ou fourchette),
+  // et la fenêtre sur laquelle les jours de tâche sont comptés.
   function resumePot(p) {
     if (!p) return null;
     const total = entier(p.total) || 0;
@@ -28,6 +35,11 @@
       tirages: entier(p.pot_payout_count) || 0,
       total_paye_sats: entier(p.pot_total_paid_sats) || 0,
       dernier: p.last_draw || null,
+      // Fenêtre de comptage des jours : `fin` reste null tant que le seuil n'est pas atteint,
+      // et `debut` null tant que personne n'a versé un FA dans cette cagnotte.
+      debut: p.cycle_started_at || null,
+      fin: p.cycle_ended_at || null,
+      regle: p.split_rule || null,
     };
   }
 
@@ -48,14 +60,23 @@
       lie: !!e.wallet_linked,
       eligible: !!e.eligible,
       destination: e.destination || null,
+      // Le POIDS de la part : jours de tâche validés sur le cycle, et la longueur de la
+      // fenêtre. `jours` null = serveur d'avant la pondération : les surfaces retombent alors
+      // sur le compteur du jour, jamais sur un total inventé.
+      jours: entier(e.days_qualified),
+      jours_fenetre: entier(e.cycle_days) || 0,
+      tache_du_jour: e.task_done_today != null ? !!e.task_done_today : faits >= requis,
+      regle: e.split_rule || null,
       pot: resumePot(payload.pot),
     };
   }
 
   // Ce qui bloque, dans l'ordre où ça coince vraiment :
-  //  1. la vérification on-chain — sans elle, 150 combats ne paient RIEN (le tirage
+  //  1. la vérification on-chain — sans elle, les jours validés ne paient RIEN (le tirage
   //     filtre `ps.onchain_verified = TRUE`, même quand un wallet est déjà lié) ;
-  //  2. le compteur du jour.
+  //  2. le premier jour de tâche — tant qu'aucun jour n'est validé, il n'y a aucune part à
+  //     recevoir. C'est la SEULE situation où le compteur du jour est un blocage : une fois
+  //     un jour validé, ne rien faire aujourd'hui coûte une part, pas la totalité.
   // null = rien ne bloque.
   function blocage(r) {
     if (!r) return null;
@@ -66,13 +87,26 @@
 
   // Ce que la ligne doit dire, sous forme de clé i18n + arguments : la formulation reste
   // dans i18n.js (3 langues), la logique reste ici (testable sans DOM).
+  // Être éligible ne veut plus dire « j'ai fait mes 150 aujourd'hui » mais « j'ai des jours
+  // validés » : la ligne dit donc le POIDS (mes jours sur la fenêtre), et n'affiche le
+  // compteur du jour que quand il est le vrai obstacle (aucun jour encore validé).
   function ligne(r) {
     const bl = blocage(r);
     if (bl === "wallet") return { cle: "POT_LINE_WALLET", args: [], couleur: "var(--alert)" };
+    // Serveur sans pondération (déploiement décalé) : on n'invente pas un nombre de jours,
+    // on retombe sur la formulation d'avant.
+    if (r.jours == null) {
+      return r.tache_du_jour
+        ? { cle: "POT_LINE_OK", args: [], couleur: "var(--success)" }
+        : { cle: "POT_LINE_COMBATS", args: [r.faits, r.requis], couleur: r.faits > 0 ? "var(--gold)" : "var(--text-dim)" };
+    }
     if (bl === "combats") {
       return { cle: "POT_LINE_COMBATS", args: [r.faits, r.requis], couleur: r.faits > 0 ? "var(--gold)" : "var(--text-dim)" };
     }
-    return { cle: "POT_LINE_OK", args: [], couleur: "var(--success)" };
+    if (!r.tache_du_jour) {
+      return { cle: "POT_LINE_DAYS_TODAY", args: [r.jours, r.jours_fenetre], couleur: "var(--gold)" };
+    }
+    return { cle: "POT_LINE_OK", args: [r.jours, r.jours_fenetre], couleur: "var(--success)" };
   }
 
   // Satoshis → FB lisible (8 décimales natives). Mêmes règles que le chip du header :
@@ -81,6 +115,21 @@
     const v = (Number(sats) || 0) / 1e8;
     if (v === 0) return "0";
     return v >= 0.01 ? v.toFixed(4) : v.toFixed(6);
+  }
+
+  // Part d'un tirage : une valeur unique quand toutes les parts étaient égales, sinon la
+  // fourchette (les jours validés diffèrent d'un compte à l'autre — c'est le cas normal depuis
+  // la pondération). null si le serveur n'a rien dit : la surface n'affiche alors aucun montant
+  // plutôt qu'un « 0 FB » faux. La date reste à la charge de la surface (dernier argument).
+  function partAffichage(d) {
+    if (!d) return null;
+    if (d.share_sats != null) {
+      return { cle: "POT_LAST_DRAW", args: [fbTexte(d.share_sats), entier(d.recipients) || 0] };
+    }
+    const mini = d.share_min_sats != null ? fbTexte(d.share_min_sats) : null;
+    const maxi = d.share_max_sats != null ? fbTexte(d.share_max_sats) : null;
+    if (mini === null || maxi === null) return null;
+    return { cle: "POT_LAST_DRAW_RANGE", args: [mini, maxi, entier(d.recipients) || 0] };
   }
 
   // Durée restante avant le tirage, en texte court : « 18 h 04 », « 47 min », « 2 j 03 h ».
@@ -103,7 +152,7 @@
     return fin - (Number(maintenant) || Date.now());
   }
 
-  const api = { resume, resumePot, blocage, ligne, fbTexte, dureeTexte, restantMs };
+  const api = { resume, resumePot, blocage, ligne, partAffichage, fbTexte, dureeTexte, restantMs };
   if (typeof window !== "undefined") window.FA_POT = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })();
