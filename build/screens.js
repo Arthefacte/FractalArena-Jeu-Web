@@ -2790,11 +2790,19 @@ function Wallet() {
   // confiance sans pouvoir vérifier.
   const dest = window.FA_ACCOUNT.withdrawDestination(g);
   const peutRetirer = !!window.FA_ACCOUNT.withdrawSigner(g);
-  // Cagnotte : éligibilité du joueur (150 combats de Fosse payants le jour du tirage,
-  // wallet vérifié on-chain). Même état que la Fosse et le bandeau — une seule requête.
+  // Cagnotte : où en est le joueur (jours de tâche validés sur la fenêtre du pool, wallet
+  // vérifié on-chain) et la règle exacte de répartition. Même état que la Fosse et le
+  // bandeau — une seule requête.
   const pot = usePotEligibility(g.wallet, g.authToken);
   const potR = pot && window.FA_POT ? window.FA_POT.resume(pot) : null;
   const potArme = potR && potR.pot ? window.FA_POT.dureeTexte(window.FA_POT.restantMs(potR.pot)) : null;
+  // Part du dernier tirage : une valeur unique, ou une fourchette dès que les jours validés
+  // diffèrent (c'est le cas normal depuis la pondération). null = rien à afficher, jamais un
+  // « 0 FB » inventé.
+  const potPart = potR && potR.pot ? window.FA_POT.partAffichage(potR.pot.dernier) : null;
+  // Fenêtre de comptage des jours de tâche. `fin` est EXCLUSIVE (minuit UTC du lendemain du
+  // jour du seuil) : on affiche le dernier jour compté, pas le lendemain.
+  const potFenetre = potR && potR.pot && potR.pot.debut ? potR.pot.fin ? I18N.t("POT_WINDOW", new Date(potR.pot.debut).toLocaleDateString(), new Date(Date.parse(potR.pot.fin) - 86400000).toLocaleDateString()) : I18N.t("POT_WINDOW_OPEN", new Date(potR.pot.debut).toLocaleDateString()) : null;
   return /*#__PURE__*/React.createElement("div", {
     className: "container"
   }, /*#__PURE__*/React.createElement(SectionHead, {
@@ -2956,7 +2964,14 @@ function Wallet() {
       marginTop: 8,
       lineHeight: 1.5
     }
-  }, I18N.t("POT_RULE")), potR.pot && /*#__PURE__*/React.createElement("div", {
+  }, I18N.t("POT_RULE")), potFenetre && /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      fontSize: 11,
+      marginTop: 8,
+      color: "var(--text-dim)"
+    }
+  }, potFenetre), potR.pot && /*#__PURE__*/React.createElement("div", {
     className: "mono",
     style: {
       fontSize: 12,
@@ -2970,14 +2985,14 @@ function Wallet() {
     style: {
       color: potArme ? "var(--gold)" : "var(--success)"
     }
-  }, " · ", potArme ? I18N.t("POT_ARMED", potArme) : I18N.t("POT_ARMED_NOW"))), potR.pot && (potR.pot.dernier ? /*#__PURE__*/React.createElement("div", {
+  }, " · ", potArme ? I18N.t("POT_ARMED", potArme) : I18N.t("POT_ARMED_NOW"))), potR.pot && (potR.pot.dernier ? potPart ? /*#__PURE__*/React.createElement("div", {
     className: "mono",
     style: {
       fontSize: 12,
       marginTop: 6,
       color: "var(--text-dim)"
     }
-  }, I18N.t("POT_LAST_DRAW", window.FA_POT.fbTexte(potR.pot.dernier.share_sats), potR.pot.dernier.recipients, new Date(potR.pot.dernier.at).toLocaleDateString())) : /*#__PURE__*/React.createElement("div", {
+  }, I18N.t(potPart.cle, ...potPart.args, new Date(potR.pot.dernier.at).toLocaleDateString())) : null : /*#__PURE__*/React.createElement("div", {
     className: "mono",
     style: {
       fontSize: 12,

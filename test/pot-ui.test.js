@@ -16,8 +16,9 @@ const LANGS = ["FR", "EN", "ZH"];
 
 const lire = (f) => fs.readFileSync(path.join(__dirname, "..", f), "utf8");
 
-// Payload serveur réaliste (/wallet/fb-earned après l'ajout des blocs eligibility + pot).
-function payload({ fights = 12, verified = true, linked = false, eligible = false, pot = true } = {}) {
+// Payload serveur réaliste (/wallet/fb-earned après la pondération par jours de tâche).
+// `jours` = days_qualified (les parts du joueur sur la fenêtre), `fenetre` = cycle_days.
+function payload({ fights = 12, verified = true, linked = false, eligible = false, jours = 0, fenetre = 11, pot = true, taskDone = null } = {}) {
   return {
     status: "ok",
     fb_earned_sats: "0",
@@ -29,11 +30,17 @@ function payload({ fights = 12, verified = true, linked = false, eligible = fals
       wallet_linked: linked,
       eligible: eligible,
       destination: verified ? "bc1qdestination" : null,
+      days_qualified: jours,
+      cycle_days: fenetre,
+      task_done_today: taskDone == null ? fights >= 150 : taskDone,
+      split_rule: "days_qualified_until_threshold",
     },
     pot: pot ? {
       total: 137000, threshold: 200000, fb_per_draw_sats: 100000000,
       pot_payout_count: 0, pot_total_paid_sats: 0, threshold_reached: false,
       countdown_ends_at: null, ready_to_draw: false, last_draw: null,
+      cycle_started_at: "2026-09-20T17:43:01.185Z", cycle_ended_at: null,
+      split_rule: "days_qualified_until_threshold",
     } : null,
   };
 }
@@ -98,9 +105,67 @@ test("ligne : une clé i18n et une couleur par état", () => {
   const rien = FA_POT.ligne(FA_POT.resume(payload({ fights: 0 })));
   assert.strictEqual(rien.couleur, "var(--text-dim)", "rien commencé : gris, pas d'alarme");
 
-  const ok = FA_POT.ligne(FA_POT.resume(payload({ fights: 150, eligible: true })));
+  const ok = FA_POT.ligne(FA_POT.resume(payload({ fights: 150, eligible: true, jours: 3 })));
   assert.strictEqual(ok.cle, "POT_LINE_OK");
+  assert.deepStrictEqual(ok.args, [3, 11], "la ligne dit le POIDS : 3 jours validés sur la fenêtre");
   assert.strictEqual(ok.couleur, "var(--success)");
+});
+
+test("ligne : des jours validés sans combat aujourd'hui → encouragement, pas blocage", () => {
+  // Le cœur du changement : la tâche du jour n'est plus une condition d'entrée. Un joueur qui
+  // a validé 5 jours reste éligible même sans combat aujourd'hui — il perd une part, pas tout.
+  const r = FA_POT.resume(payload({ fights: 0, eligible: true, jours: 5, fenetre: 11 }));
+  assert.strictEqual(FA_POT.blocage(r), null, "5 jours validés : rien ne bloque");
+  const l = FA_POT.ligne(r);
+  assert.strictEqual(l.cle, "POT_LINE_DAYS_TODAY");
+  assert.deepStrictEqual(l.args, [5, 11]);
+  assert.strictEqual(l.couleur, "var(--gold)");
+
+  // Et aujourd'hui fait : même clé que le cas complet, avec le poids mis à jour.
+  const fait = FA_POT.resume(payload({ fights: 150, eligible: true, jours: 6, fenetre: 11 }));
+  assert.strictEqual(FA_POT.ligne(fait).cle, "POT_LINE_OK");
+  assert.deepStrictEqual(FA_POT.ligne(fait).args, [6, 11]);
+});
+
+test("ligne : serveur d'avant la pondération (days_qualified absent) → repli, jamais un jour inventé", () => {
+  const p = payload({ fights: 150, eligible: true });
+  delete p.eligibility.days_qualified;
+  delete p.eligibility.task_done_today;
+  const r = FA_POT.resume(p);
+  assert.strictEqual(r.jours, null, "aucun nombre de jours fabriqué côté client");
+  assert.strictEqual(FA_POT.ligne(r).cle, "POT_LINE_OK", "repli : éligible aujourd'hui");
+  assert.deepStrictEqual(FA_POT.ligne(r).args, []);
+
+  const p2 = payload({ fights: 12 });
+  delete p2.eligibility.days_qualified;
+  const r2 = FA_POT.resume(p2);
+  assert.strictEqual(FA_POT.ligne(r2).cle, "POT_LINE_COMBATS", "repli : compteur du jour");
+});
+
+test("partAffichage : part unique quand les parts sont égales, fourchette sinon", () => {
+  // Depuis la pondération, les parts d'un même tirage diffèrent : afficher `share_sats`
+  // (la part d'un seul gagnant) ferait croire à un partage égal.
+  const unique = FA_POT.partAffichage({ share_sats: 50000000, recipients: 2, at: "2026-09-26T10:00:00.000Z" });
+  assert.strictEqual(unique.cle, "POT_LAST_DRAW");
+  assert.deepStrictEqual(unique.args, ["0.5000", 2]);
+
+  const fourchette = FA_POT.partAffichage({
+    share_sats: null, share_min_sats: 10526315, share_max_sats: 28947368, total_sats: 100000000,
+    recipients: 6, at: "2026-09-26T10:00:00.000Z",
+  });
+  assert.strictEqual(fourchette.cle, "POT_LAST_DRAW_RANGE");
+  assert.deepStrictEqual(fourchette.args, ["0.1053", "0.2895", 6],
+    "fbTexte : 4 décimales dès 0,01 FB — la fourchette suit la même mise en forme");
+
+  assert.strictEqual(FA_POT.partAffichage(null), null, "aucun tirage : rien à afficher");
+  assert.strictEqual(FA_POT.partAffichage({ recipients: 2 }), null, "part inconnue : on n'invente pas 0 FB");
+});
+
+test("resumePot : la fenêtre de comptage et la règle remontent au client", () => {
+  const r = FA_POT.resumePot(payload().pot);
+  assert.strictEqual(r.debut, "2026-09-20T17:43:01.185Z");
+  assert.strictEqual(r.fin, null, "cagnotte en cours de remplissage : fenêtre ouverte");
+  assert.strictEqual(r.regle, "days_qualified_until_threshold");
 });
 
 test("fbTexte : sats → FB, 8 décimales natives, jamais « 0.00000000 »", () => {
@@ -148,15 +213,16 @@ test("restantMs : seuil armé → temps restant, sinon rien", () => {
 
 test("les clés de la cagnotte existent dans les 3 langues, non vides", () => {
   const cles = [
-    "POT_RULE", "POT_LINE_COMBATS", "POT_LINE_WALLET", "POT_LINE_OK",
-    "POT_ARMED", "POT_ARMED_NOW", "POT_PROGRESS", "POT_LAST_DRAW", "POT_NONE_YET", "POT_WL_DEST",
+    "POT_RULE", "POT_LINE_COMBATS", "POT_LINE_WALLET", "POT_LINE_OK", "POT_LINE_DAYS_TODAY",
+    "POT_ARMED", "POT_ARMED_NOW", "POT_PROGRESS", "POT_LAST_DRAW", "POT_LAST_DRAW_RANGE",
+    "POT_WINDOW", "POT_WINDOW_OPEN", "POT_NONE_YET", "POT_WL_DEST",
   ];
   for (const k of cles) {
     assert.ok(T[k], "clé manquante : " + k);
     for (const lg of LANGS) assert.ok(T[k][lg] && T[k][lg].trim().length > 0, `${k}.${lg} vide`);
   }
   // Les états de ligne() sont couverts : aucune clé calculée ne peut manquer.
-  for (const etat of [{ fights: 12 }, { fights: 12, verified: false }, { fights: 150, eligible: true }]) {
+  for (const etat of [{ fights: 12 }, { fights: 12, verified: false }, { fights: 150, eligible: true, jours: 3 }, { fights: 0, eligible: true, jours: 5 }]) {
     const l = FA_POT.ligne(FA_POT.resume(payload(etat)));
     assert.ok(T[l.cle], "état sans libellé : " + l.cle);
   }
@@ -166,7 +232,12 @@ test("les libellés se substituent (%d/%s) dans les 3 langues", () => {
   assert.strictEqual(t("POT_LINE_COMBATS", 12, 150), "12/150 combats payants aujourd'hui");
   const en = T.POT_LINE_COMBATS.EN.replace("%d", "12").replace("%d", "150");
   assert.ok(en.includes("12/150") && /today/i.test(en));
-  assert.strictEqual(t("POT_LINE_OK"), T.POT_LINE_OK.FR);
+  assert.ok(t("POT_LINE_OK", 5, 12).includes("5") && t("POT_LINE_OK", 5, 12).includes("12"),
+    "le poids (jours validés sur la fenêtre) se substitue");
+  assert.ok(t("POT_LINE_DAYS_TODAY", 5, 12).includes("5"), "l'encouragement du jour se substitue");
+  const range = T.POT_LAST_DRAW_RANGE.EN.replace("%s", "0.105263").replace("%s", "0.289474").replace("%d", "6");
+  assert.ok(range.includes("0.105263") && range.includes("0.289474") && range.includes("6"),
+    "les deux bornes de la fourchette se substituent");
   assert.ok(t("POT_ARMED", "18 h 04").includes("18 h 04"));
 });
 
@@ -198,6 +269,19 @@ test("Fosse, bandeau et Wallet affichent tous la ligne (aucune surface oubliée)
     assert.match(src, /usePotEligibility\(g\.wallet, g\.authToken\)/, f + " : état partagé");
     assert.match(src, /<PotLigne/, f + " : ligne affichée");
   }
+});
+
+test("Wallet : tirage et fenêtre passent par les helpers (plus jamais une part unique imposée)", () => {
+  const src = lire("screens.jsx");
+  assert.match(src, /window\.FA_POT\.partAffichage\(potR\.pot\.dernier\)/,
+    "la part du dernier tirage vient du helper : valeur unique, ou fourchette si les parts diffèrent");
+  assert.doesNotMatch(src, /I18N\.t\("POT_LAST_DRAW", window\.FA_POT\.fbTexte\(potR\.pot\.dernier\.share_sats\)/,
+    "l'ancien affichage d'une part unique ne doit pas revenir (les parts sont pondérées)");
+  assert.match(src, /I18N\.t\(potPart\.cle, \.\.\.potPart\.args, new Date\(potR\.pot\.dernier\.at\)\.toLocaleDateString\(\)\)/,
+    "la clé et les arguments viennent du helper");
+  assert.match(src, /I18N\.t\("POT_WINDOW_OPEN"/, "la fenêtre de comptage est dite au joueur");
+  assert.match(src, /Date\.parse\(potR\.pot\.fin\) - 86400000/,
+    "la borne haute du serveur est EXCLUSIVE : la surface affiche le dernier jour compté, pas le lendemain");
 });
 
 test("la ligne ne promet rien quand rien n'est chargé (rendu null)", () => {

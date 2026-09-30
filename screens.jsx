@@ -1395,11 +1395,24 @@ function Wallet() {
   // confiance sans pouvoir vérifier.
   const dest = window.FA_ACCOUNT.withdrawDestination(g);
   const peutRetirer = !!window.FA_ACCOUNT.withdrawSigner(g);
-  // Cagnotte : éligibilité du joueur (150 combats de Fosse payants le jour du tirage,
-  // wallet vérifié on-chain). Même état que la Fosse et le bandeau — une seule requête.
+  // Cagnotte : où en est le joueur (jours de tâche validés sur la fenêtre du pool, wallet
+  // vérifié on-chain) et la règle exacte de répartition. Même état que la Fosse et le
+  // bandeau — une seule requête.
   const pot = usePotEligibility(g.wallet, g.authToken);
   const potR = pot && window.FA_POT ? window.FA_POT.resume(pot) : null;
   const potArme = potR && potR.pot ? window.FA_POT.dureeTexte(window.FA_POT.restantMs(potR.pot)) : null;
+  // Part du dernier tirage : une valeur unique, ou une fourchette dès que les jours validés
+  // diffèrent (c'est le cas normal depuis la pondération). null = rien à afficher, jamais un
+  // « 0 FB » inventé.
+  const potPart = potR && potR.pot ? window.FA_POT.partAffichage(potR.pot.dernier) : null;
+  // Fenêtre de comptage des jours de tâche. `fin` est EXCLUSIVE (minuit UTC du lendemain du
+  // jour du seuil) : on affiche le dernier jour compté, pas le lendemain.
+  const potFenetre = potR && potR.pot && potR.pot.debut
+    ? (potR.pot.fin
+        ? I18N.t("POT_WINDOW", new Date(potR.pot.debut).toLocaleDateString(),
+            new Date(Date.parse(potR.pot.fin) - 86400000).toLocaleDateString())
+        : I18N.t("POT_WINDOW_OPEN", new Date(potR.pot.debut).toLocaleDateString()))
+    : null;
   return (
     <div className="container">
       <SectionHead eyebrow="FRACTALARENA" title={I18N.t("WL_TITLE")} />
@@ -1439,14 +1452,17 @@ function Wallet() {
       </div>
 
       {/* Cagnotte : la règle exacte et où le joueur en est. Le compteur vient du serveur
-          (150 combats de Fosse payants le jour du tirage, wallet vérifié on-chain). Le
-          panneau disparaît s'il ne répond pas : jamais un compteur inventé, jamais une
-          promesse de gain que le jeu ne tiendra pas. */}
+          (jours de tâche validés, wallet vérifié on-chain). Le panneau disparaît s'il ne
+          répond pas : jamais un compteur inventé, jamais une promesse de gain que le jeu
+          ne tiendra pas. */}
       {potR && (
         <div className="panel oct" style={{ border: "1px solid var(--line)", padding: "14px 16px", marginTop: 16 }}>
           <div className="eyebrow" style={{ color: "var(--elec)" }}>{I18N.t("BB_POOL_KIND_POT")}</div>
           <div style={{ marginTop: 6 }}><PotLigne etat={pot} s={14} /></div>
           <div className="muted mono" style={{ fontSize: 11, marginTop: 8, lineHeight: 1.5 }}>{I18N.t("POT_RULE")}</div>
+          {potFenetre && (
+            <div className="mono" style={{ fontSize: 11, marginTop: 8, color: "var(--text-dim)" }}>{potFenetre}</div>
+          )}
           {potR.pot && (
             <div className="mono" style={{ fontSize: 12, marginTop: 10, color: "var(--text-dim)" }}>
               <FaText text={I18N.t("POT_PROGRESS", fmt(potR.pot.total), fmt(potR.pot.seuil))} s={12} />
@@ -1458,10 +1474,11 @@ function Wallet() {
             </div>
           )}
           {potR.pot && (potR.pot.dernier
-            ? <div className="mono" style={{ fontSize: 12, marginTop: 6, color: "var(--text-dim)" }}>
-                {I18N.t("POT_LAST_DRAW", window.FA_POT.fbTexte(potR.pot.dernier.share_sats),
-                  potR.pot.dernier.recipients, new Date(potR.pot.dernier.at).toLocaleDateString())}
-              </div>
+            ? (potPart
+                ? <div className="mono" style={{ fontSize: 12, marginTop: 6, color: "var(--text-dim)" }}>
+                    {I18N.t(potPart.cle, ...potPart.args, new Date(potR.pot.dernier.at).toLocaleDateString())}
+                  </div>
+                : null)
             : <div className="mono" style={{ fontSize: 12, marginTop: 6, color: "var(--text-dim)" }}>
                 {I18N.t("POT_NONE_YET", fmt(potR.pot.seuil))}
               </div>)}

@@ -128,14 +128,18 @@
     // « aujourd'hui », sinon le joueur croit à un cumul qui ne se perd jamais. Et la
     // vérification on-chain est obligatoire MÊME avec un wallet lié (sinon 150 combats ne
     // paient rien) — c'est la première chose qu'un joueur bloqué doit lire.
-    POT_RULE: { FR: "150 combats de Fosse payants le jour du tirage, wallet vérifié on-chain. Le compteur repart à zéro chaque minuit UTC : hier ne compte plus.", EN: "150 paid Pit fights on the draw day, wallet verified on-chain. The counter resets every UTC midnight: yesterday no longer counts.", ZH: "抽奖当天完成 150 场付费深坑战斗，且钱包已通过链上验证。计数每 UTC 午夜归零：昨天的不算。" },
+    POT_RULE: { FR: "1 FB par tirage, réparti au prorata du nombre de jours où tu as rempli ta tâche : 150 combats de Fosse payants sur un jour UTC (wallet vérifié on-chain) = 1 jour validé = 1 part. Les jours se comptent du début du remplissage de la cagnotte jusqu'au jour où elle atteint son seuil — les jours suivants, dont les 24 h avant le tirage, n'ajoutent plus rien.", EN: "1 FB per draw, split in proportion to how many days you completed your task: 150 paid Pit fights in one UTC day (wallet verified on-chain) = 1 completed day = 1 share. Days are counted from the moment the jackpot started filling up to the day it reaches its threshold — the days after that, including the 24 h before the draw, add nothing.", ZH: "每次抽奖 1 FB，按你完成任务的天数比例分配：一个 UTC 自然日内完成 150 场付费深坑战斗（钱包已链上验证）= 1 天 = 1 份。天数从彩池开始累积之日起算，到达到阈值当天为止——之后的天数（含抽奖前 24 小时）不再增加。" },
     POT_LINE_COMBATS: { FR: "%d/%d combats payants aujourd'hui", EN: "%d/%d paid fights today", ZH: "今日付费战斗 %d/%d" },
     POT_LINE_WALLET: { FR: "wallet non vérifié", EN: "wallet not verified", ZH: "钱包未验证" },
-    POT_LINE_OK: { FR: "éligible aujourd'hui ✓", EN: "eligible today ✓", ZH: "今日已具备资格 ✓" },
+    POT_LINE_OK: { FR: "éligible : %d jour(s) validé(s) sur %d, aujourd'hui inclus ✓", EN: "eligible: %d day(s) completed out of %d, today included ✓", ZH: "已具备资格：%d/%d 天已完成，含今日 ✓" },
+    POT_LINE_DAYS_TODAY: { FR: "%d jour(s) validé(s) sur %d — aujourd'hui pas encore, chaque jour validé = une part de plus", EN: "%d day(s) completed out of %d — today not yet, each completed day adds a share", ZH: "已完成 %d/%d 天——今日尚未完成，每多完成一天多一份" },
     POT_ARMED: { FR: "seuil atteint — tirage dans %s", EN: "threshold reached — draw in %s", ZH: "已达阈值 — %s 后抽奖" },
     POT_ARMED_NOW: { FR: "seuil atteint — tirage dû maintenant", EN: "threshold reached — draw due now", ZH: "已达阈值 — 抽奖时间已到" },
     POT_PROGRESS: { FR: "cagnotte : %d / %d FA — 1 FB par tirage", EN: "jackpot: %d / %d FA — 1 FB per draw", ZH: "彩池：%d / %d FA — 每次抽取 1 FB" },
     POT_LAST_DRAW: { FR: "dernier tirage : %s FB pour %d gagnant(s), le %s", EN: "last draw: %s FB for %d winner(s), on %s", ZH: "上次抽奖：%s FB，%d 位获奖者，%s" },
+    POT_LAST_DRAW_RANGE: { FR: "dernier tirage : %s à %s FB par gagnant (parts pondérées par les jours validés), %d gagnant(s), le %s", EN: "last draw: %s to %s FB per winner (shares weighted by completed days), %d winner(s), on %s", ZH: "上次抽奖：每位获奖者 %s 至 %s FB（按完成天数加权），%d 位获奖者，%s" },
+    POT_WINDOW: { FR: "jours comptés du %s au %s (le jour du seuil compte, les suivants non)", EN: "days counted from %s to %s (the threshold day counts, the ones after do not)", ZH: "计天区间：%s 至 %s（达到阈值当天计入，之后不计）" },
+    POT_WINDOW_OPEN: { FR: "jours comptés depuis le %s : la cagnotte se remplit encore", EN: "days counted since %s: the jackpot is still filling up", ZH: "自 %s 起计天：彩池仍在累积" },
     POT_NONE_YET: { FR: "aucun tirage pour l'instant : la cagnotte attend ses %d FA", EN: "no draw yet: the jackpot is waiting for its %d FA", ZH: "尚无抽奖：彩池等待达到 %d FA" },
     POT_WL_DEST: { FR: "éligibilité liée à", EN: "eligibility tied to", ZH: "资格关联至" },
 
@@ -491,7 +495,7 @@
     TAPE_RACHAT:   { FR: "RACHAT %s · %s FA", EN: "BUYBACK %s · %s FA", ZH: "回购 %s · %s FA" },
     TAPE_RACHAT_K: { FR: "RACHAT · %s FA", EN: "BUYBACK · %s FA", ZH: "回购 · %s FA" },
     TAPE_BURN_K:   { FR: "BRÛLAGE · %s FA", EN: "BURN · %s FA", ZH: "销毁 · %s FA" },
-    TAPE_POT_K:    { FR: "CAGNOTTE TIRÉE · 1 FB divisé", EN: "JACKPOT DRAWN · 1 FB split", ZH: "彩池开奖 · 1 FB 均分" },
+    TAPE_POT_K:    { FR: "CAGNOTTE TIRÉE · 1 FB réparti au prorata des jours", EN: "JACKPOT DRAWN · 1 FB split by completed days", ZH: "彩池开奖 · 1 FB 按完成天数分配" },
     TAPE_ENTREE:   { FR: "+%s FA → POOL %s", EN: "+%s FA → POOL %s", ZH: "+%s FA → 池 %s" },
     TAPE_ENTREE_K: { FR: "+%s FA → %s", EN: "+%s FA → %s", ZH: "+%s FA → %s" },
     TAPE_POOL:     { FR: "POOL %s · %s %", EN: "POOL %s · %s %", ZH: "池 %s · %s %" },
