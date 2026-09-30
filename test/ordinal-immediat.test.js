@@ -41,9 +41,24 @@ test("aucun chemin de clic ne se contente de l'état local", () => {
 
 test("l'écriture immédiate poste bien le nom au serveur", () => {
   const f = bloc(APP, "async saveOrdinalName(name)");
-  assert.match(f, /\/save\//, "l'écriture doit viser POST /save/:wallet");
+  assert.match(f, /\/vanity\/ordinal-name/, "l'écriture doit viser la route dédiée");
   assert.match(f, /method: "POST"/);
-  assert.match(f, /ordinalName: name/, "le corps doit porter le nom choisi");
+  assert.match(f, /JSON\.stringify\(\{ name \}\)/, "le corps ne porte que le nom choisi");
+});
+
+test("l'autosave ne peut plus écrire (ni vider) le nom ordinal", () => {
+  // C'est le vecteur de l'effacement du 30/09/2026 : au chargement, l'état local repart
+  // sans nom ; un autosave parti avant la lecture de la sauvegarde écrivait "" en base.
+  const i = APP.indexOf("function stateToServer");
+  assert.ok(i > 0, "stateToServer introuvable");
+  const blocState = APP.slice(i, APP.indexOf("\n}", i));
+  assert.ok(!/^\s*ordinal_name\s*:/m.test(blocState), "stateToServer ne doit plus transporter ordinal_name");
+  const f = bloc(APP, "async saveOrdinalName(name)");
+  // La PREMIÈRE requête du geste doit viser la route dédiée : le nom ne repasse plus par
+  // POST /save (l'autosave, qui repartait d'un état local vide au chargement de la page).
+  const url = f.match(/fetch\(`\$\{API_URL\}([^`]*)`/);
+  assert.ok(url, "aucune requête dans saveOrdinalName");
+  assert.strictEqual(url[1], "/vanity/ordinal-name", "le geste doit écrire sur la route dédiée");
 });
 
 test("les deux boutons de l'écran Options passent par le même chemin", () => {
