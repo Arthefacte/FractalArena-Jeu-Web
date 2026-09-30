@@ -700,6 +700,7 @@
     OP_ORDINAL_SELECTED: { FR: "Nom ordinal sélectionné", EN: "Ordinal name selected", ZH: "已选择 Ordinal 名称" },
     OP_ORDINAL_INSCR: { FR: "Inscription", EN: "Inscription", ZH: "铭文" },
     OP_ORDINAL_CLEARED: { FR: "Affichage : adresse du wallet", EN: "Display: wallet address", ZH: "显示：钱包地址" },
+    OP_ORDINAL_SAVE_FAIL: { FR: "Nom non enregistré — réessaie", EN: "Name not saved — try again", ZH: "名称未保存，请重试" },
     OP_WALLET_ADDR: { FR: "Adresse du wallet", EN: "Wallet address", ZH: "钱包地址" },
     OP_LANG: { FR: "Langue", EN: "Language", ZH: "语言" },
     OP_SOUND: { FR: "Effets sonores", EN: "Sound effects", ZH: "音效" },

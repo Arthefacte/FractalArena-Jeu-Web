@@ -3843,13 +3843,16 @@ function Options() {
       setScanState("done");
     });
   }
-  function selectName(name) {
-    actions.setOrdinalName(name);
-    toast(I18N.t("OP_ORDINAL_SELECTED"), "good");
-  }
-  function useAddress() {
-    actions.setOrdinalName("");
-    toast(I18N.t("OP_ORDINAL_CLEARED"), "info");
+  // Choix du nom ordinal : écrit en base TOUT DE SUITE (l'écriture attendue par
+  // l'autosave ne part qu'à +1,5 s). Sans elle, le joueur voyait son nom dans cet
+  // écran mais restait son adresse tronquée ailleurs (chat, classements, logs PvP) —
+  // ces surfaces composent le nom côté serveur depuis ordinal_name — jusqu'au
+  // rechargement de la page.
+  function choisirNom(name) {
+    actions.saveOrdinalName(name).then(r => {
+      if (!r || !r.ok) return toast(I18N.t("OP_ORDINAL_SAVE_FAIL"), "bad");
+      toast(I18N.t(name ? "OP_ORDINAL_SELECTED" : "OP_ORDINAL_CLEARED"), name ? "good" : "info");
+    });
   }
   const q = query.trim().toLowerCase();
   const filtered = q ? found.filter(ins => ins.name.toLowerCase().includes(q)) : found;
@@ -3895,7 +3898,11 @@ function Options() {
     tier: g.lpTier,
     fa: g.lpFa,
     size: 18
-  }), g.lpTier ? " " : "", prestigeAffiche ? prestigeAffiche + " " : "", g.playerName || g.ordinalName ? (g.playerTitle ? g.playerTitle + " " : "") + (g.playerName || g.ordinalName) : "—")), /*#__PURE__*/React.createElement("div", {
+  }), g.lpTier ? " " : "", prestigeAffiche ? prestigeAffiche + " " : "", (() => {
+    const nom = g.playerName || g.ordinalName || "—";
+    const prefixe = prestigeAffiche && !nom.toLowerCase().startsWith(prestigeAffiche.trim().toLowerCase()) ? prestigeAffiche + " " : "";
+    return prefixe + nom;
+  })())), /*#__PURE__*/React.createElement("div", {
     className: "mono",
     style: {
       fontSize: 10.5,
@@ -3977,7 +3984,7 @@ function Options() {
     const sel = g.ordinalName === ins.name;
     return /*#__PURE__*/React.createElement("button", {
       key: ins.name,
-      onClick: () => selectName(ins.name),
+      onClick: () => choisirNom(ins.name),
       className: "oct-sm",
       style: {
         display: "flex",
@@ -4029,7 +4036,7 @@ function Options() {
       }
     }, sel ? "✓" : ""));
   })), /*#__PURE__*/React.createElement("button", {
-    onClick: useAddress,
+    onClick: () => choisirNom(""),
     className: "oct-sm",
     style: {
       display: "flex",

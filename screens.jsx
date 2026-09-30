@@ -1937,13 +1937,16 @@ function Options() {
       .then((data) => { setFound(data.names || []); setScanState("done"); })
       .catch(() => { setFound([]); setScanState("done"); });
   }
-  function selectName(name) {
-    actions.setOrdinalName(name);
-    toast(I18N.t("OP_ORDINAL_SELECTED"), "good");
-  }
-  function useAddress() {
-    actions.setOrdinalName("");
-    toast(I18N.t("OP_ORDINAL_CLEARED"), "info");
+  // Choix du nom ordinal : écrit en base TOUT DE SUITE (l'écriture attendue par
+  // l'autosave ne part qu'à +1,5 s). Sans elle, le joueur voyait son nom dans cet
+  // écran mais restait son adresse tronquée ailleurs (chat, classements, logs PvP) —
+  // ces surfaces composent le nom côté serveur depuis ordinal_name — jusqu'au
+  // rechargement de la page.
+  function choisirNom(name) {
+    actions.saveOrdinalName(name).then((r) => {
+      if (!r || !r.ok) return toast(I18N.t("OP_ORDINAL_SAVE_FAIL"), "bad");
+      toast(I18N.t(name ? "OP_ORDINAL_SELECTED" : "OP_ORDINAL_CLEARED"), name ? "good" : "info");
+    });
   }
 
   const q = query.trim().toLowerCase();
@@ -1964,9 +1967,17 @@ function Options() {
                 fabriquée par le serveur et n'appartient pas au joueur. */}
             <LpBadge tier={g.lpTier} fa={g.lpFa} size={18} />{g.lpTier ? " " : ""}
             {(prestigeAffiche ? prestigeAffiche + " " : "")}
-            {(g.playerName || g.ordinalName)
-              ? ((g.playerTitle ? g.playerTitle + " " : "") + (g.playerName || g.ordinalName))
-              : "—"}
+            {/* display_name (serveur) contient DÉJÀ le titre payant — « Le Grand
+                Arthefacte.fb ». Le préfixer encore affichait « Le Grand Le Grand
+                Arthefacte.fb » (régression v297). Nom et badge LP viennent du serveur :
+                on n'ajoute que ce qu'il ne peut pas connaître — le titre de quiz, choisi
+                en local, et seulement s'il n'est pas déjà en tête du nom. */}
+            {(() => {
+              const nom = g.playerName || g.ordinalName || "—";
+              const prefixe = prestigeAffiche && !nom.toLowerCase().startsWith(prestigeAffiche.trim().toLowerCase())
+                ? prestigeAffiche + " " : "";
+              return prefixe + nom;
+            })()}
           </span>
         </div>
         <div className="mono" style={{ fontSize: 10.5, color: "var(--text-faint)", marginBottom: 14 }}>{I18N.t("OP_ORDINAL_HINT")}</div>
@@ -2002,7 +2013,7 @@ function Options() {
               {filtered.map((ins) => {
                 const sel = g.ordinalName === ins.name;
                 return (
-                  <button key={ins.name} onClick={() => selectName(ins.name)} className="oct-sm" style={{
+                  <button key={ins.name} onClick={() => choisirNom(ins.name)} className="oct-sm" style={{
                     display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
                     textAlign: "left", padding: "11px 14px", cursor: "pointer", flex: "none",
                     background: sel ? "color-mix(in srgb, var(--elec) 14%, var(--bg-panel))" : "rgba(255,255,255,0.022)",
@@ -2019,7 +2030,7 @@ function Options() {
               })}
             </div>
 
-            <button onClick={useAddress} className="oct-sm" style={{
+            <button onClick={() => choisirNom("")} className="oct-sm" style={{
               display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, width: "100%",
               textAlign: "left", padding: "11px 14px", cursor: "pointer", marginTop: 8,
               background: !g.ordinalName ? "color-mix(in srgb, var(--text-dim) 14%, var(--bg-panel))" : "rgba(255,255,255,0.022)",

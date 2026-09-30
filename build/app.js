@@ -4227,14 +4227,45 @@ function App() {
         ok: true
       };
     },
-    setOrdinalName(name) {
-      setG(s => ({
-        ...s,
+    // Écriture IMMÉDIATE du nom ordinal (POST /save), sans attendre le debounce de 1,5 s
+    // de l'autosave. Partout ailleurs qu'à l'écran Options (chat, classements, logs PvP,
+    // cartes adverses) le nom est COMPOSÉ PAR LE SERVEUR depuis la colonne ordinal_name :
+    // tant qu'elle n'est pas écrite, le joueur ne se voit avec son nom qu'après un
+    // rechargement de page. Corps identique à l'autosave (mêmes champs) — un envoi
+    // partiel ferait diverger l'état serveur. En cas d'échec l'autosave reprend la main
+    // à +1,5 s avec le même état : rien n'est perdu.
+    async saveOrdinalName(name) {
+      const s = gRef.current;
+      setG(st => ({
+        ...st,
         ordinalName: name
       }));
-      return {
-        ok: true
+      if (!s.wallet || !s.authToken) return {
+        ok: false,
+        reason: "auth"
       };
+      try {
+        const r = await fetch(`${API_URL}/save/${s.wallet}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${s.authToken}`
+          },
+          body: JSON.stringify(stateToServer({
+            ...s,
+            ordinalName: name
+          }))
+        });
+        return {
+          ok: r.ok,
+          reason: r.ok ? null : "server"
+        };
+      } catch (e) {
+        return {
+          ok: false,
+          reason: "reseau"
+        };
+      }
     },
     withdraw(n) {
       const s = gRef.current;
