@@ -17,7 +17,9 @@ const LANGS = ["FR", "EN", "ZH"];
 const lire = (f) => fs.readFileSync(path.join(__dirname, "..", f), "utf8");
 
 // Payload serveur réaliste (/wallet/fb-earned après la pondération par jours de tâche).
-// `jours` = days_qualified (les parts du joueur sur la fenêtre), `fenetre` = cycle_days.
+// `jours` = days_qualified (les parts du joueur). `fenetre` = cycle_days : le serveur le
+// publie toujours, mais la ligne ne l'affiche plus (un « sur N » se lisait comme un objectif
+// de N jours pour remplir la cagnotte — la fenêtre se dit par ses dates).
 function payload({ fights = 12, verified = true, linked = false, eligible = false, jours = 0, fenetre = 11, pot = true, taskDone = null } = {}) {
   return {
     status: "ok",
@@ -107,7 +109,7 @@ test("ligne : une clé i18n et une couleur par état", () => {
 
   const ok = FA_POT.ligne(FA_POT.resume(payload({ fights: 150, eligible: true, jours: 3 })));
   assert.strictEqual(ok.cle, "POT_LINE_OK");
-  assert.deepStrictEqual(ok.args, [3, 11], "la ligne dit le POIDS : 3 jours validés sur la fenêtre");
+  assert.deepStrictEqual(ok.args, [3], "la ligne dit le POIDS : 3 jours validés, sans « sur N » de fenêtre");
   assert.strictEqual(ok.couleur, "var(--success)");
 });
 
@@ -118,13 +120,13 @@ test("ligne : des jours validés sans combat aujourd'hui → encouragement, pas 
   assert.strictEqual(FA_POT.blocage(r), null, "5 jours validés : rien ne bloque");
   const l = FA_POT.ligne(r);
   assert.strictEqual(l.cle, "POT_LINE_DAYS_TODAY");
-  assert.deepStrictEqual(l.args, [5, 11]);
+  assert.deepStrictEqual(l.args, [5]);
   assert.strictEqual(l.couleur, "var(--gold)");
 
   // Et aujourd'hui fait : même clé que le cas complet, avec le poids mis à jour.
   const fait = FA_POT.resume(payload({ fights: 150, eligible: true, jours: 6, fenetre: 11 }));
   assert.strictEqual(FA_POT.ligne(fait).cle, "POT_LINE_OK");
-  assert.deepStrictEqual(FA_POT.ligne(fait).args, [6, 11]);
+  assert.deepStrictEqual(FA_POT.ligne(fait).args, [6]);
 });
 
 test("ligne : serveur d'avant la pondération (days_qualified absent) → repli, jamais un jour inventé", () => {
@@ -228,13 +230,31 @@ test("les clés de la cagnotte existent dans les 3 langues, non vides", () => {
   }
 });
 
+test("la ligne des jours validés ne porte plus de dénominateur de fenêtre (« sur N » lu comme un objectif)", () => {
+  // « 5 jours validés sur 11 » se lisait comme « il faut 11 jours pour que la cagnotte
+  // atteigne son seuil ». Le seuil monte par ce qui est dépensé en jeu, pas par le
+  // calendrier : la ligne ne dit que des jours validés, jamais un total de fenêtre.
+  for (const lg of LANGS) {
+    for (const k of ["POT_LINE_OK", "POT_LINE_DAYS_TODAY"]) {
+      const s = T[k][lg];
+      assert.strictEqual((s.match(/%d/g) || []).length, 1,
+        `${k}.${lg} : un seul %d (les jours validés), pas de « sur N » : ${s}`);
+    }
+  }
+  // Et la règle le dit noir sur blanc, dans les 3 langues.
+  assert.match(T.POT_RULE.FR, /dépensé ou perdu en jeu/);
+  assert.match(T.POT_RULE.EN, /no deadline/);
+  assert.match(T.POT_RULE.ZH, /没有期限/);
+});
+
 test("les libellés se substituent (%d/%s) dans les 3 langues", () => {
   assert.strictEqual(t("POT_LINE_COMBATS", 12, 150), "12/150 combats payants aujourd'hui");
   const en = T.POT_LINE_COMBATS.EN.replace("%d", "12").replace("%d", "150");
   assert.ok(en.includes("12/150") && /today/i.test(en));
-  assert.ok(t("POT_LINE_OK", 5, 12).includes("5") && t("POT_LINE_OK", 5, 12).includes("12"),
-    "le poids (jours validés sur la fenêtre) se substitue");
-  assert.ok(t("POT_LINE_DAYS_TODAY", 5, 12).includes("5"), "l'encouragement du jour se substitue");
+  const okFr = t("POT_LINE_OK", 5);
+  assert.ok(okFr.includes("5"), "les jours validés se substituent");
+  assert.ok(!/sur|out of/.test(okFr), "plus de dénominateur de fenêtre dans la ligne : " + okFr);
+  assert.ok(t("POT_LINE_DAYS_TODAY", 5).includes("5"), "l'encouragement du jour se substitue");
   const range = T.POT_LAST_DRAW_RANGE.EN.replace("%s", "0.105263").replace("%s", "0.289474").replace("%d", "6");
   assert.ok(range.includes("0.105263") && range.includes("0.289474") && range.includes("6"),
     "les deux bornes de la fourchette se substituent");
