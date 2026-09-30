@@ -60,11 +60,11 @@
       lie: !!e.wallet_linked,
       eligible: !!e.eligible,
       destination: e.destination || null,
-      // Le POIDS de la part : jours de tâche validés sur le cycle, et la longueur de la
-      // fenêtre. `jours` null = serveur d'avant la pondération : les surfaces retombent alors
-      // sur le compteur du jour, jamais sur un total inventé.
+      // Le POIDS de la part : les jours de tâche validés. `jours` null = serveur d'avant la
+      // pondération : les surfaces retombent alors sur le compteur du jour, jamais sur un
+      // total inventé. La longueur de la fenêtre (`cycle_days`) n'est pas mappée : la ligne
+      // ne s'en sert plus (cf. ligne()), la fenêtre se dit par ses dates.
       jours: entier(e.days_qualified),
-      jours_fenetre: entier(e.cycle_days) || 0,
       tache_du_jour: e.task_done_today != null ? !!e.task_done_today : faits >= requis,
       regle: e.split_rule || null,
       pot: resumePot(payload.pot),
@@ -88,8 +88,12 @@
   // Ce que la ligne doit dire, sous forme de clé i18n + arguments : la formulation reste
   // dans i18n.js (3 langues), la logique reste ici (testable sans DOM).
   // Être éligible ne veut plus dire « j'ai fait mes 150 aujourd'hui » mais « j'ai des jours
-  // validés » : la ligne dit donc le POIDS (mes jours sur la fenêtre), et n'affiche le
-  // compteur du jour que quand il est le vrai obstacle (aucun jour encore validé).
+  // validés » : la ligne dit donc le POIDS (mes jours validés), et n'affiche le compteur du
+  // jour que quand il est le vrai obstacle (aucun jour encore validé).
+  // Elle ne dit PAS la longueur de la fenêtre : « 5 jours validés sur 11 » se lisait comme
+  // « il faut 11 jours pour que la cagnotte atteigne son seuil », alors que le seuil monte
+  // par ce qui est dépensé en jeu, pas par le calendrier. La fenêtre se dit par ses dates
+  // (POT_WINDOW / POT_WINDOW_OPEN), la ligne ne dit que des jours validés.
   function ligne(r) {
     const bl = blocage(r);
     if (bl === "wallet") return { cle: "POT_LINE_WALLET", args: [], couleur: "var(--alert)" };
@@ -104,9 +108,9 @@
       return { cle: "POT_LINE_COMBATS", args: [r.faits, r.requis], couleur: r.faits > 0 ? "var(--gold)" : "var(--text-dim)" };
     }
     if (!r.tache_du_jour) {
-      return { cle: "POT_LINE_DAYS_TODAY", args: [r.jours, r.jours_fenetre], couleur: "var(--gold)" };
+      return { cle: "POT_LINE_DAYS_TODAY", args: [r.jours], couleur: "var(--gold)" };
     }
-    return { cle: "POT_LINE_OK", args: [r.jours, r.jours_fenetre], couleur: "var(--success)" };
+    return { cle: "POT_LINE_OK", args: [r.jours], couleur: "var(--success)" };
   }
 
   // Satoshis → FB lisible (8 décimales natives). Mêmes règles que le chip du header :
