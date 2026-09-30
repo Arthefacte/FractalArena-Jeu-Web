@@ -304,8 +304,7 @@ function serverToState(save, addr, s) {
 }
 function stateToServer(g) {
   // E6 (audit D10, finding M3) — la charge envoyée est réduite à ce que le serveur écrit
-  // VRAIMENT : ses compteurs de session (il les persiste depuis la charge) et
-  // `ordinal_name` (l'aller-retour du nom BRUT, sinon le premier autosave l'effacerait).
+  // VRAIMENT : ses compteurs de session (il les persiste depuis la charge).
   //
   // Retirés : `creatures` et les 11 champs SERVER-OWNED (arte_liquid, arte_locked,
   // free_fights_remaining, free_fights_reset_timestamp, total_combat_count,
@@ -324,7 +323,13 @@ function stateToServer(g) {
     // player_name n'est plus envoyé : c'est le serveur qui décide du nom affiché
     // (`display_name`). Le renvoyer figeait en base un nom fabriqué par le client, qui
     // reprenait ensuite le dessus — pour un compte sans portefeuille, son adresse serveur.
-    ordinal_name: g.ordinalName,
+    //
+    // `ordinal_name` suit le même chemin depuis le 30/09/2026 : il ne pouvait rester ici
+    // que pour se protéger de l'effacement (au chargement, l'état local repart sans nom ;
+    // un autosave qui partait avant la lecture de la sauvegarde écrivait "" en base et
+    // EFFAÇAIT le nom du joueur). Il est désormais SERVEUR-OWNED, écrit par le seul
+    // geste explicite de l'écran Options (POST /vanity/ordinal-name) : un autosave ne
+    // peut plus le toucher, ni le vider.
     lang: g.lang
   };
 }
@@ -4227,13 +4232,20 @@ function App() {
         ok: true
       };
     },
-    // Écriture IMMÉDIATE du nom ordinal (POST /save), sans attendre le debounce de 1,5 s
-    // de l'autosave. Partout ailleurs qu'à l'écran Options (chat, classements, logs PvP,
-    // cartes adverses) le nom est COMPOSÉ PAR LE SERVEUR depuis la colonne ordinal_name :
-    // tant qu'elle n'est pas écrite, le joueur ne se voit avec son nom qu'après un
-    // rechargement de page. Corps identique à l'autosave (mêmes champs) — un envoi
-    // partiel ferait diverger l'état serveur. En cas d'échec l'autosave reprend la main
-    // à +1,5 s avec le même état : rien n'est perdu.
+    // Écriture du nom ordinal : route DÉDIÉE, tout de suite (POST /vanity/ordinal-name).
+    //
+    // 1. Le nom est SERVEUR-OWNED. Il partait avant dans l'autosave (POST /save), qui
+    //    recopiait l'état local : au chargement d'une page cet état repart sans nom, donc
+    //    un autosave parti avant la lecture de la sauvegarde écrivait "" en base et
+    //    EFFAÇAIT le nom (constaté en production le 30/09/2026). L'autosave ne porte plus
+    //    `ordinal_name` du tout : le seul chemin d'écriture est ce geste explicite.
+    // 2. Tout de suite, parce que partout ailleurs qu'ici (chat, classements, logs PvP,
+    //    cartes adverses) le nom est COMPOSÉ PAR LE SERVEUR depuis la colonne
+    //    `ordinal_name` : tant qu'elle n'est pas écrite, le joueur ne se voyait avec son
+    //    nom qu'après un rechargement de page.
+    //
+    // On adopte le nom RENVOYÉ par le serveur (il normalise : chevrons, longueur,
+    // suffixe .fb) au lieu de garder celui qu'on croyait avoir posé.
     async saveOrdinalName(name) {
       const s = gRef.current;
       setG(st => ({
@@ -4245,20 +4257,29 @@ function App() {
         reason: "auth"
       };
       try {
-        const r = await fetch(`${API_URL}/save/${s.wallet}`, {
+        const r = await fetch(`${API_URL}/vanity/ordinal-name`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${s.authToken}`
           },
-          body: JSON.stringify(stateToServer({
-            ...s,
-            ordinalName: name
-          }))
+          body: JSON.stringify({
+            name
+          })
         });
+        if (!r.ok) return {
+          ok: false,
+          reason: "server"
+        };
+        const d = await r.json().catch(() => null);
+        if (d && typeof d.ordinal_name === "string") {
+          setG(st => ({
+            ...st,
+            ordinalName: d.ordinal_name
+          }));
+        }
         return {
-          ok: r.ok,
-          reason: r.ok ? null : "server"
+          ok: true
         };
       } catch (e) {
         return {
