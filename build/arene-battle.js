@@ -141,6 +141,7 @@ function AreneBattle({
   p2Team,
   won,
   delta,
+  elo,
   onClose,
   opponentName,
   p1Posture,
@@ -293,7 +294,17 @@ function AreneBattle({
       fontSize: 18,
       color: won ? "var(--success)" : "var(--alert)"
     }
-  }, won ? I18N.t("AR2_WON") : I18N.t("AR2_LOST"), typeof delta === "number" ? /*#__PURE__*/React.createElement("span", {
+  }, won ? I18N.t("AR2_WON") : I18N.t("AR2_LOST"), elo === false
+  /* Le classement n'était pas en jeu (adversaire sans défense enregistrée, donc non
+     classé — règle d'audit B2/#130). L'écran affichait « +0 ELO », illisible : le
+     joueur ne pouvait pas distinguer « rien échangé » de « combat hors classement ».
+     L'API envoie désormais `elo` ; on le NOMME. */ ? /*#__PURE__*/React.createElement("span", {
+    style: {
+      marginLeft: 8,
+      fontSize: 13,
+      color: "var(--text-dim)"
+    }
+  }, I18N.t("AR2_NO_ELO_UNRANKED")) : typeof delta === "number" ? /*#__PURE__*/React.createElement("span", {
     style: {
       marginLeft: 8,
       fontSize: 13,

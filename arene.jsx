@@ -376,6 +376,7 @@ function Arene() {
         p2Team={result.p2Team || []}
         won={result.won}
         delta={result.delta}
+        elo={result.elo}
         opponentName={result.opponent_name}
         p1Posture={result.p1Posture}
         p2Posture={result.p2Posture}
