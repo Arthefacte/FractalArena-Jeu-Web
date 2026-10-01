@@ -413,6 +413,7 @@
     AR2_POWER: { FR: "puissance %d", EN: "power %d", ZH: "战力 %d" },
     AR2_UNRANKED: { FR: "non classé", EN: "unranked", ZH: "未排名" },
     AR2_GAP_FAR_WEAKER: { FR: "bien plus faible", EN: "far weaker", ZH: "远弱于你" },
+    AR2_NO_ELO_UNRANKED: { FR: "aucun ELO — adversaire non classé", EN: "no rating change — unranked opponent", ZH: "不改变积分 — 对手未排名" },
     AR2_GAP_FAR_STRONGER: { FR: "bien plus fort", EN: "far stronger", ZH: "远强于你" },
     AR2_GROUP_MINE: { FR: "Ma ligue", EN: "My league", ZH: "我的段位" },
     AR2_GROUP_OTHER: { FR: "Ligues voisines", EN: "Neighbouring leagues", ZH: "邻近段位" },
