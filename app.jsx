@@ -2635,9 +2635,23 @@ function App() {
           free_remaining: cad.free_remaining, fa_cost: cad.fa_cost, revanches: cad.revanches || [],
           season: season && season.ok ? season : undefined,
           opponents: opp.opponents || [], power: opp.power || 0, ladder: ladder.ladder || [],
+          refresh_free: opp.refresh_free_remaining, refresh_cost: opp.refresh_cost,
           attacks: atk.attacks || [], attacksUnseen: atk.unseen || 0,
         } }));
       } catch (e) { /* silencieux */ }
+    },
+    // Rafraîchit la liste d'adversaires (rotation côté serveur). Un tour gratuit par fenêtre de
+    // 24 h, puis payant : le solde liquide est débité par le serveur, on l'applique à l'écran
+    // (même logique optimiste que l'attaque payante — pas de double comptage, pvpRefresh ne
+    // recharge pas le solde).
+    async pvpRefreshList() {
+      if (!gRef.current.authToken) return { ok: false, error: "auth" };
+      const r = await fetch(`${API_URL}/pvp/refresh`, { method: "POST", headers: { "Authorization": "Bearer " + gRef.current.authToken } });
+      if (r.status === 401) return { ok: false, error: "session_expiree" };
+      if (r.status === 429) return { ok: false, error: "rate_limited" };
+      const j = await r.json().catch(() => ({}));
+      if (j && j.ok && j.charged > 0) setG((s) => ({ ...s, liquid: Math.max(0, (s.liquid || 0) - j.charged) }));
+      return j;
     },
     async pvpPrizes() {
       if (!gRef.current.authToken) return;

@@ -399,7 +399,11 @@
     AR2_FREE: { FR: "Gratuit", EN: "Free", ZH: "免费" },
     AR2_FA: { FR: "%d FA", EN: "%d FA", ZH: "%d FA" },
     AR2_TICKET: { FR: "🎟 Ticket Argent", EN: "🎟 Silver ticket", ZH: "🎟 白银券" },
-    AR2_NO_DEFENSE: { FR: "Définis ta défense (3 entités via l'onglet Équipe) pour entrer dans l'Arène.", EN: "Set your defense (pick 3 entities in the Team tab) to enter the Arena.", ZH: "先在「队伍」选择 3 个实体设定防守，方可进入竞技场。" },
+    AR2_NO_DEFENSE: { FR: "Choisis 3 entités pour poser ta défense.", EN: "Pick 3 entities to post your defense.", ZH: "请选择 3 个实体来设置防守。" },
+    // Le bandeau annonçait une condition à remplir pour jouer : c'est faux, le serveur laisse
+    // jouer sans défense. Ce texte dit la règle réelle (on combat avec ses 3 meilleures) et
+    // l'enjeu (classement + prix) — c'est l'enjeu, pas l'interdiction, qui fait poser les défenses.
+    AR2_DEFENSE_HINT: { FR: "Choisis 3 entités (onglet Équipe) pour POSER ta défense : c'est elle qui te classe et t'ouvre les prix de saison. Sans défense, tu combats avec tes 3 meilleures entités et tu n'apparais pas au classement.", EN: "Pick 3 entities (Team tab) to POST your defense: it's what ranks you and opens the season prizes. Without one, you fight with your 3 strongest entities and stay unranked.", ZH: "在「队伍」中选择 3 个实体来设置防守：设置防守才会进入排名并获得赛季奖励。未设置防守时，你会用最强的 3 个实体出战，但不计入排名。" },
     AR2_SEASON: { FR: "Saison %d", EN: "Season %d", ZH: "第 %d 赛季" },
     AR2_ENDS_IN: { FR: "finit dans %s", EN: "ends in %s", ZH: "%s 后结束" },
     AR2_PRIZE: { FR: "Prize pool %d FA", EN: "Prize pool %d FA", ZH: "奖池 %d FA" },
@@ -421,11 +425,15 @@
     AR2_GROUP_UNRANKED_HINT: { FR: "Ces comptes n'ont jamais posé de défense : ils ne sont pas classés, leur ligue est estimée sur leur puissance.", EN: "These accounts never saved a defense: they are unranked, and their league is estimated from their power.", ZH: "这些账号从未设置防守：没有排名，其段位按战力估算。" },
     AR2_RANK: { FR: "Rang", EN: "Rank", ZH: "排名" },
     AR2_REFRESH: { FR: "Rafraîchir", EN: "Refresh", ZH: "刷新" },
+    AR2_REFRESH_FREE: { FR: "gratuit", EN: "free", ZH: "免费" },
+    AR2_REFRESH_OK: { FR: "Liste rafraîchie — d'autres adversaires.", EN: "List refreshed — different opponents.", ZH: "列表已刷新 — 换了对手。" },
+    AR2_REFRESH_PAID: { FR: "Liste rafraîchie — %d FA", EN: "List refreshed — %d FA", ZH: "列表已刷新 — %d FA" },
     AR2_BATTLE: { FR: "Combat", EN: "Battle", ZH: "战斗" },
     AR2_WON:    { FR: "Victoire !", EN: "Victory!", ZH: "胜利！" },
     AR2_LOST:   { FR: "Défaite", EN: "Defeat", ZH: "失败" },
     AR2_CLOSE:  { FR: "Fermer", EN: "Close", ZH: "关闭" },
     AR2_ATTACKS_TITLE: { FR: "Attaques subies récemment", EN: "Recent attacks on you", ZH: "最近受到的攻击" },
+    AR2_ATTACKS_NO_DEFENSE: { FR: "Ces joueurs t'ont attaqué alors que tu n'as pas posé de défense : tu n'apparais pas au classement, et les prix de saison ne te sont pas ouverts. Choisis 3 entités (onglet Équipe) puis pose ta défense pour rendre les coups.", EN: "These players attacked you while you had no defense posted: you don't appear in the ranking, and the season prizes aren't open to you. Pick 3 entities (Team tab) then post your defense to hit back.", ZH: "这些玩家攻击了你，但你还没有设置防守：你不会出现在排名中，也无法获得赛季奖励。在「队伍」中选择 3 个实体并设置防守，就能反击。" },
     AR2_ATTACKS_NONE:  { FR: "Personne ne t'a attaqué récemment.", EN: "No recent attacks.", ZH: "最近无人攻击你。" },
     AR2_ATTACKS_BEAT:  { FR: "a battu ta défense", EN: "beat your defense", ZH: "击败了你的防御" },
     AR2_ATTACKS_REPELLED: { FR: "repoussé", EN: "repelled", ZH: "被击退" },

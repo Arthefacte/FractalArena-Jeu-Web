@@ -80,6 +80,10 @@ function Arene() {
   const [pick, setPick] = useState(null); // { target, revanche, ids:[id,id,id], oppTeam, posture, oppPosture } ou null
   const [nowTs, setNowTs] = useState(Date.now());
   const [defPosture, setDefPosture] = useState("equilibre");
+  // Ai-je une défense POSÉE ? (le serveur renvoie `implicit: true` quand il sert le fantôme
+  // top-3 à ma place). C'est ce qui décide si je suis classé et éligible aux prix — et donc le
+  // message à me montrer quand on m'attaque.
+  const [myDefensePosted, setMyDefensePosted] = useState(true);
   const seasonFlipTried = useRef(false); // anti-rafale : une seule tentative + backoff
 
   // E4 : mon propre identifiant opaque quand il est là — la route accepte les deux formes
@@ -87,7 +91,10 @@ function Arene() {
   useEffect(() => {
     if (g.wallet) {
       actions.pvpRefresh().then(() => actions.pvpAttacksSeen());
-      actions.pvpDefenseOf(g.publicId || g.wallet).then(r => setDefPosture(r && r.posture || "equilibre"));
+      actions.pvpDefenseOf(g.publicId || g.wallet).then(r => {
+        setDefPosture(r && r.posture || "equilibre");
+        setMyDefensePosted(!!(r && r.team && r.team.length === 3) && !r.implicit);
+      });
     }
   }, [g.wallet, g.publicId]);
   useEffect(() => {
@@ -107,6 +114,24 @@ function Arene() {
   }, [nowTs]);
   const defenseReady = g.selected.length === 3;
   const sc = AU.seasonCountdown(pvp.season, nowTs);
+
+  // Rafraîchit la liste d'adversaires : le serveur fait tourner le vivier (un tour gratuit par
+  // fenêtre de 24 h, puis payant) et on relit la tranche suivante.
+  async function onRefreshList() {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const r = await actions.pvpRefreshList();
+      if (!r || !r.ok) {
+        toast(I18N.localizeServerError(r && r.error || null), "bad");
+        return;
+      }
+      await actions.pvpRefresh();
+      toast(r.charged > 0 ? I18N.t("AR2_REFRESH_PAID", r.charged) : I18N.t("AR2_REFRESH_OK"), "good");
+    } finally {
+      setBusy(false);
+    }
+  }
   async function onSetDefense() {
     if (!defenseReady) {
       toast(I18N.t("AR2_NO_DEFENSE"), "bad");
@@ -186,8 +211,10 @@ function Arene() {
     }
   }, I18N.t("AR2_SEASON", pvp.season.season), " \xB7 ", I18N.t("AR2_ENDS_IN", AU.fmtCountdown(seasonMs))), /*#__PURE__*/React.createElement("button", {
     className: "btn sm",
-    onClick: () => actions.pvpRefresh()
-  }, I18N.t("AR2_REFRESH")))), /*#__PURE__*/React.createElement("div", {
+    "data-guide": "arene-refresh",
+    disabled: busy,
+    onClick: onRefreshList
+  }, I18N.t("AR2_REFRESH"), " \xB7 ", (pvp.refresh_free || 0) > 0 ? I18N.t("AR2_REFRESH_FREE") : `${pvp.refresh_cost || 100} FA`))), /*#__PURE__*/React.createElement("div", {
     className: "panel oct",
     style: {
       border: "1px solid var(--line)",
@@ -227,7 +254,7 @@ function Arene() {
       color: "var(--alert)",
       marginTop: 8
     }
-  }, I18N.t("AR2_NO_DEFENSE")), defenseReady && (() => {
+  }, I18N.t("AR2_DEFENSE_HINT")), defenseReady && (() => {
     const selTeam = g.selected.map(id => g.roster.find(b => b.id === id)).filter(Boolean);
     const syns = AU.computeSynergiesLabels(selTeam);
     return /*#__PURE__*/React.createElement("div", {
@@ -573,7 +600,14 @@ function Arene() {
     style: {
       margin: "0 0 8px"
     }
-  }, I18N.t("AR2_ATTACKS_TITLE")), !pvp.attacks || pvp.attacks.length === 0 ? /*#__PURE__*/React.createElement("div", {
+  }, I18N.t("AR2_ATTACKS_TITLE")), !myDefensePosted && (pvp.attacks || []).length > 0 && /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      fontSize: 11,
+      color: "var(--gold)",
+      marginBottom: 8
+    }
+  }, I18N.t("AR2_ATTACKS_NO_DEFENSE")), !pvp.attacks || pvp.attacks.length === 0 ? /*#__PURE__*/React.createElement("div", {
     style: {
       color: "var(--text-dim)",
       fontSize: 12

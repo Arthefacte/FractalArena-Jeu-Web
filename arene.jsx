@@ -40,11 +40,15 @@ function Arene() {
   const [pick, setPick] = useState(null); // { target, revanche, ids:[id,id,id], oppTeam, posture, oppPosture } ou null
   const [nowTs, setNowTs] = useState(Date.now());
   const [defPosture, setDefPosture] = useState("equilibre");
+  // Ai-je une défense POSÉE ? (le serveur renvoie `implicit: true` quand il sert le fantôme
+  // top-3 à ma place). C'est ce qui décide si je suis classé et éligible aux prix — et donc le
+  // message à me montrer quand on m'attaque.
+  const [myDefensePosted, setMyDefensePosted] = useState(true);
   const seasonFlipTried = useRef(false); // anti-rafale : une seule tentative + backoff
 
   // E4 : mon propre identifiant opaque quand il est là — la route accepte les deux formes
   // (adresse ou identifiant), et l'identifiant n'apprend rien sur moi si la requête traînait.
-  useEffect(() => { if (g.wallet) { actions.pvpRefresh().then(() => actions.pvpAttacksSeen()); actions.pvpDefenseOf(g.publicId || g.wallet).then((r) => setDefPosture((r && r.posture) || "equilibre")); } }, [g.wallet, g.publicId]);
+  useEffect(() => { if (g.wallet) { actions.pvpRefresh().then(() => actions.pvpAttacksSeen()); actions.pvpDefenseOf(g.publicId || g.wallet).then((r) => { setDefPosture((r && r.posture) || "equilibre"); setMyDefensePosted(!!(r && r.team && r.team.length === 3) && !r.implicit); }); } }, [g.wallet, g.publicId]);
   useEffect(() => {
     const id = setInterval(() => setNowTs(Date.now()), 1000);
     return () => clearInterval(id);
@@ -64,6 +68,20 @@ function Arene() {
   const defenseReady = g.selected.length === 3;
   const sc = AU.seasonCountdown(pvp.season, nowTs);
 
+  // Rafraîchit la liste d'adversaires : le serveur fait tourner le vivier (un tour gratuit par
+  // fenêtre de 24 h, puis payant) et on relit la tranche suivante.
+  async function onRefreshList() {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const r = await actions.pvpRefreshList();
+      if (!r || !r.ok) { toast(I18N.localizeServerError((r && r.error) || null), "bad"); return; }
+      await actions.pvpRefresh();
+      toast(r.charged > 0 ? I18N.t("AR2_REFRESH_PAID", r.charged) : I18N.t("AR2_REFRESH_OK"), "good");
+    } finally {
+      setBusy(false);
+    }
+  }
   async function onSetDefense() {
     if (!defenseReady) { toast(I18N.t("AR2_NO_DEFENSE"), "bad"); return; }
     setBusy(true);
@@ -107,7 +125,12 @@ function Arene() {
           <span className="pill" style={{ color: "var(--elec)" }}>ELO {pvp.rating != null ? pvp.rating : "—"}</span>
           <span className="pill" style={{ color: "var(--success)" }}>⚡ {pvp.free_remaining != null ? pvp.free_remaining : 0}</span>
           {pvp.season && <span className="pill" style={{ color: "var(--gold)" }}>{I18N.t("AR2_SEASON", pvp.season.season)} · {I18N.t("AR2_ENDS_IN", AU.fmtCountdown(seasonMs))}</span>}
-          <button className="btn sm" onClick={() => actions.pvpRefresh()}>{I18N.t("AR2_REFRESH")}</button>
+          {/* Rafraîchir = ROTATION de la liste : le serveur sert une autre tranche du vivier. Le
+              bouton existait déjà mais ne relançait que la même requête — la liste ne changeait
+              donc jamais. Un tour gratuit par fenêtre de 24 h, puis payant. */}
+          <button className="btn sm" data-guide="arene-refresh" disabled={busy} onClick={onRefreshList}>
+            {I18N.t("AR2_REFRESH")} · {(pvp.refresh_free || 0) > 0 ? I18N.t("AR2_REFRESH_FREE") : `${pvp.refresh_cost || 100} FA`}
+          </button>
         </div>
       </div>
 
@@ -123,7 +146,11 @@ function Arene() {
         <div style={{ marginTop: 10 }}>
           <PostureSelect value={defPosture} onChange={setDefPosture} disabled={busy} />
         </div>
-        {!defenseReady && <div className="mono" style={{ fontSize: 11, color: "var(--alert)", marginTop: 8 }}>{I18N.t("AR2_NO_DEFENSE")}</div>}
+        {/* Le bandeau annonçait une condition à remplir pour jouer : c'est faux — le serveur laisse
+            jouer sans défense (on combat alors avec ses 3 meilleures entités et on reste non
+            classé). Il dit maintenant la RÈGLE et l'ENJEU, qui sont le vrai levier pour faire
+            poser les défenses. */}
+        {!defenseReady && <div className="mono" style={{ fontSize: 11, color: "var(--alert)", marginTop: 8 }}>{I18N.t("AR2_DEFENSE_HINT")}</div>}
         {/* Formation (Avant/Milieu/Arrière) + synergies actives */}
         {defenseReady && (() => {
           const selTeam = g.selected.map((id) => g.roster.find((b) => b.id === id)).filter(Boolean);
@@ -272,6 +299,14 @@ function Arene() {
 
       <div className="card" style={{ marginTop: 14 }}>
           <h3 style={{ margin: "0 0 8px" }}>{I18N.t("AR2_ATTACKS_TITLE")}</h3>
+          {/* Le levier « faire poser les défenses » : c'est ici qu'il se voit. Un compte sans
+              défense subit des attaques (impossible à manquer) mais n'est ni classé ni éligible
+              aux prix de saison — et c'est le seul endroit du jeu où il l'apprend. */}
+          {!myDefensePosted && (pvp.attacks || []).length > 0 && (
+            <div className="mono" style={{ fontSize: 11, color: "var(--gold)", marginBottom: 8 }}>
+              {I18N.t("AR2_ATTACKS_NO_DEFENSE")}
+            </div>
+          )}
           {(!pvp.attacks || pvp.attacks.length === 0)
             ? <div style={{ color: "var(--text-dim)", fontSize: 12 }}>{I18N.t("AR2_ATTACKS_NONE")}</div>
             : pvp.attacks.map((a, i) => (
