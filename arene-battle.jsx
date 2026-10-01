@@ -46,7 +46,7 @@ function AB_PostureBadge({ posture }) {
   return <span className="pill mono" style={{ fontSize: 9, padding: "1px 6px" }}>{I18N.t("POSTURE_" + key.toUpperCase())}</span>;
 }
 
-function AreneBattle({ events, p1Team, p2Team, won, delta, onClose, opponentName, p1Posture, p2Posture }) {
+function AreneBattle({ events, p1Team, p2Team, won, delta, elo, onClose, opponentName, p1Posture, p2Posture }) {
   const evs = Array.isArray(events) ? events : [];
   const [p1Live, setP1Live] = useState(evs[0]?.state?.p1 || null);
   const [p2Live, setP2Live] = useState(evs[0]?.state?.p2 || null);
@@ -108,7 +108,13 @@ function AreneBattle({ events, p1Team, p2Team, won, delta, onClose, opponentName
           <div style={{ textAlign: "center" }}>
             <div style={{ fontWeight: 800, fontSize: 18, color: won ? "var(--success)" : "var(--alert)" }}>
               {won ? I18N.t("AR2_WON") : I18N.t("AR2_LOST")}
-              {typeof delta === "number" ? <span style={{ marginLeft: 8, fontSize: 13, color: "var(--text-dim)" }}>{delta >= 0 ? "+" : ""}{delta} ELO</span> : null}
+              {elo === false
+                /* Le classement n'était pas en jeu (adversaire sans défense enregistrée, donc non
+                   classé — règle d'audit B2/#130). L'écran affichait « +0 ELO », illisible : le
+                   joueur ne pouvait pas distinguer « rien échangé » de « combat hors classement ».
+                   L'API envoie désormais `elo` ; on le NOMME. */
+                ? <span style={{ marginLeft: 8, fontSize: 13, color: "var(--text-dim)" }}>{I18N.t("AR2_NO_ELO_UNRANKED")}</span>
+                : typeof delta === "number" ? <span style={{ marginLeft: 8, fontSize: 13, color: "var(--text-dim)" }}>{delta >= 0 ? "+" : ""}{delta} ELO</span> : null}
             </div>
             <button className="btn ghost sm" style={{ marginTop: 10 }} onClick={onClose}>{I18N.t("AR2_CLOSE")}</button>
           </div>
