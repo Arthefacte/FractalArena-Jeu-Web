@@ -113,6 +113,17 @@
     if (a <= 25) return "edge";
     return "hard";
   }
+  // Au-delà de ±50 % — la bande LARGE d'élargissement du serveur — le pourcentage ne dit plus
+  // rien : un compte à 1,37 M face à 6 076 lit « −100 % » sur TOUTES ses cartes (mesuré en
+  // prod le 01/10/2026), et un chiffre saturé se lit comme un bug. On NOMME l'écart.
+  // Rend une clé i18n, ou null quand le chiffre reste lisible.
+  function powerGapLabel(pct) {
+    const n = Number(pct);
+    if (!Number.isFinite(n)) return null;
+    if (n <= -50) return "AR2_GAP_FAR_WEAKER";
+    if (n >= 50) return "AR2_GAP_FAR_STRONGER";
+    return null;
+  }
 
-  window.FA_ARENE_UI = { leagueLabel, leagueColor, fmtCountdown, fmtCountdownSec, eventLogLines, entryModes, seasonCountdown, computeSynergiesLabels, affinityIndicator, powerGapPct, powerGapTone };
+  window.FA_ARENE_UI = { leagueLabel, leagueColor, fmtCountdown, fmtCountdownSec, eventLogLines, entryModes, seasonCountdown, computeSynergiesLabels, affinityIndicator, powerGapPct, powerGapTone, powerGapLabel };
 })();

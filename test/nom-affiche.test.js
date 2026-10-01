@@ -102,8 +102,10 @@ test("le classement d'Arène ne tronque pas « Joueur 48213 » ni les noms .fb",
 // Décision user 2026-08-22 : l'écran Arène ne montrait que la puissance des
 // adversaires — le serveur compose désormais `name` dans /pvp/opponents.
 test("matchmaking : la carte adversaire affiche le nom composé serveur", () => {
-  const i = ARENE.indexOf("(pvp.opponents || []).map");
-  assert.ok(i > 0, "bloc des adversaires introuvable dans arene.jsx");
-  const bloc = ARENE.slice(i, i + 2400); // 2400 : E3 a ajoute l'identifiant opaque et son commentaire avant le nom
+  // Depuis la refonte de lisibilité (01/10/2026), la carte est la fonction `carte(o)` du
+  // groupe d'adversaires (la liste est rendue par groupes, plus par un map direct).
+  const i = ARENE.indexOf("const carte = (o) =>");
+  assert.ok(i > 0, "carte adversaire introuvable dans arene.jsx");
+  const bloc = ARENE.slice(i, i + 2600); // 2600 : la carte porte le commentaire E3, l'écart, puis le nom
   assert.match(bloc, /o\.name/, "la carte ne montre que la puissance — le nom manque");
 });

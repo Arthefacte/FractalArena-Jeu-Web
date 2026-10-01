@@ -174,8 +174,17 @@ function Arene() {
             </div>
           </div>
           {(!pvp.opponents || pvp.opponents.length === 0) && <div className="mono" style={{ color: "var(--text-dim)", fontSize: 13 }}>{I18N.t("AR2_NO_OPPONENTS")}</div>}
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {(pvp.opponents || []).map((o) => {
+          {(() => {
+            /* Lisibilité de la liste d'adversaires (01/10/2026). Elle mélangeait trois
+               populations sous un même badge de ligue : ma ligue (classée), les ligues voisines
+               (classées, l'élargissement du matchmaking quand le vivier est mince) et les
+               comptes SANS défense enregistrée — dont la « ligue » n'est qu'une estimation
+               calculée sur la puissance de leurs 3 entités. C'est ce badge-là qui faisait lire
+               « adversaire d'une autre ligue » là où il n'y avait qu'un compte non classé.
+               Relevé des autres jeux (skill serveur references/matchmaking-industrie.md) :
+               aucun n'affiche de rang sur un compte non classé — le badge dit une position
+               GAGNÉE. On groupe donc, et le badge disparaît là où il ne dit rien. */
+            const carte = (o) => {
               // E3 (D10/M4, emplacements 2 et 3) : l'identifiant opaque de l'adversaire devient la
               // CLÉ de cette liste. La liste de revanches de l'appareil contient encore des adresses
               // (elles y étaient écrites avant cette phase) : on accepte donc les deux formes, pour
@@ -192,6 +201,9 @@ function Arene() {
               const gap = AU.powerGapPct(pvp.power, o.power);
               const tone = AU.powerGapTone(gap);
               const gapColor = tone === "even" ? "var(--success)" : tone === "edge" ? "var(--gold)" : "var(--alert)";
+              // Au-delà de ±50 %, le pourcentage sature (« −100 % » sur toutes les cartes) : on
+              // nomme l'écart au lieu de le chiffrer.
+              const ecart = AU.powerGapLabel(gap);
               return (
                 <div key={oId} className="oct-sm" style={{ border: "1px solid var(--line-soft)", padding: 10, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
                   <div style={{ minWidth: 0 }}>
@@ -201,12 +213,15 @@ function Arene() {
                       {o.name || oId}
                     </div>
                     <div className="flex gap8 center">
-                      <span className="mono" style={{ fontSize: 12, color: AU.leagueColor(o.league) }}>{AU.leagueLabel(o.league)}</span>
+                      {/* Le badge de ligue ne s'affiche que s'il désigne une position GAGNÉE : un
+                          compte sans défense n'est pas classé, sa « ligue » est une estimation
+                          tirée de sa puissance — l'afficher faisait lire une liste inter-ligues. */}
+                      {!o.implicit && <span className="mono" style={{ fontSize: 12, color: AU.leagueColor(o.league) }}>{AU.leagueLabel(o.league)}</span>}
                       {o.implicit
                         ? <span className="mono" style={{ fontSize: 12, color: "var(--text-dim)" }}>{I18N.t("AR2_UNRANKED")}</span>
                         : <span className="mono" style={{ fontSize: 12, color: "var(--elec)" }}>ELO {o.rating}</span>}
                       <span className="mono" style={{ fontSize: 12, color: gapColor }}>
-                        {I18N.t("AR2_POWER", o.power || 0)}{gap !== 0 && ` (${gap > 0 ? "+" : "−"}${Math.abs(gap)} %)`}
+                        {I18N.t("AR2_POWER", o.power || 0)}{ecart ? ` · ${I18N.t(ecart)}` : (gap !== 0 && ` (${gap > 0 ? "+" : "−"}${Math.abs(gap)} %)`)}
                       </span>
                       {canRevanche && <span className="mono" style={{ fontSize: 11, color: "var(--success)" }}>🔥 {I18N.t("AR2_REVANCHE")}</span>}
                     </div>
@@ -217,8 +232,22 @@ function Arene() {
                     : <button className="btn btn-elec sm" data-guide="arene-attack" disabled={busy} onClick={async () => { const ref = oId; const r = await actions.pvpDefenseOf(ref); setPick({ target: ref, revanche: false, ids: [...g.selected], oppTeam: o.team, posture: "equilibre", oppPosture: (r && r.posture) || null }); }}>{I18N.t("AR2_ATTACK")}</button>}
                 </div>
               );
-            })}
-          </div>
+            };
+            const groupes = [
+              { cle: "mine", titre: "AR2_GROUP_MINE", liste: (pvp.opponents || []).filter((o) => !o.implicit && o.league === pvp.league) },
+              { cle: "voisines", titre: "AR2_GROUP_OTHER", liste: (pvp.opponents || []).filter((o) => !o.implicit && o.league && o.league !== pvp.league) },
+              { cle: "sansdefense", titre: "AR2_GROUP_UNRANKED", hint: "AR2_GROUP_UNRANKED_HINT", liste: (pvp.opponents || []).filter((o) => o.implicit) },
+            ].filter((gr) => gr.liste.length);
+            return groupes.map((gr) => (
+              <div key={gr.cle} style={{ marginTop: 12 }}>
+                <div className="mono" style={{ fontSize: 11, letterSpacing: 1, textTransform: "uppercase", color: "var(--text-dim)", marginBottom: 4 }}>
+                  {I18N.t(gr.titre)} · {gr.liste.length}
+                </div>
+                {gr.hint && <div className="mono" style={{ fontSize: 11, color: "var(--text-dim)", marginTop: -2, marginBottom: 6 }}>{I18N.t(gr.hint)}</div>}
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>{gr.liste.map(carte)}</div>
+              </div>
+            ));
+          })()}
         </div>
 
         {/* Classement */}
