@@ -180,6 +180,10 @@ function Arene() {
               // CLÉ de cette liste. La liste de revanches de l'appareil contient encore des adresses
               // (elles y étaient écrites avant cette phase) : on accepte donc les deux formes, pour
               // qu'aucune revanche déjà gagnée ne disparaisse du jour au lendemain.
+              // C'est AUSSI la cible envoyée à l'attaque : `/pvp/opponents` publie `opponent_id`,
+              // jamais `player_id` (ce nom-là est celui du CLASSEMENT, /pvp/ladder). Lire
+              // `player_id` ici envoyait `target: undefined` ; le serveur répondait alors
+              // `cible_invalide` (« 对手无效 ») à CHAQUE attaque d'Arène (panne du 01/10/2026).
               const oId = o.opponent_id || o.wallet;
               const canRevanche = Array.isArray(pvp.revanches) &&
                 (pvp.revanches.includes(oId) || (o.opponent_id && pvp.revanches.includes(o.wallet)));
@@ -209,8 +213,8 @@ function Arene() {
                     <div style={{ marginTop: 6 }}><TeamPreview team={o.team} /></div>
                   </div>
                   {canRevanche
-                    ? <button className="btn btn-success sm" disabled={busy} onClick={async () => { const ref = o.player_id || o.wallet; const r = await actions.pvpDefenseOf(ref); setPick({ target: ref, revanche: true, ids: [...g.selected], oppTeam: o.team, posture: "equilibre", oppPosture: (r && r.posture) || null }); }}>{I18N.t("AR2_REVANCHE")}</button>
-                    : <button className="btn btn-elec sm" data-guide="arene-attack" disabled={busy} onClick={async () => { const ref = o.player_id || o.wallet; const r = await actions.pvpDefenseOf(ref); setPick({ target: ref, revanche: false, ids: [...g.selected], oppTeam: o.team, posture: "equilibre", oppPosture: (r && r.posture) || null }); }}>{I18N.t("AR2_ATTACK")}</button>}
+                    ? <button className="btn btn-success sm" disabled={busy} onClick={async () => { const ref = oId; const r = await actions.pvpDefenseOf(ref); setPick({ target: ref, revanche: true, ids: [...g.selected], oppTeam: o.team, posture: "equilibre", oppPosture: (r && r.posture) || null }); }}>{I18N.t("AR2_REVANCHE")}</button>
+                    : <button className="btn btn-elec sm" data-guide="arene-attack" disabled={busy} onClick={async () => { const ref = oId; const r = await actions.pvpDefenseOf(ref); setPick({ target: ref, revanche: false, ids: [...g.selected], oppTeam: o.team, posture: "equilibre", oppPosture: (r && r.posture) || null }); }}>{I18N.t("AR2_ATTACK")}</button>}
                 </div>
               );
             })}
