@@ -4251,10 +4251,6 @@ function App() {
     // suffixe .fb) au lieu de garder celui qu'on croyait avoir posé.
     async saveOrdinalName(name) {
       const s = gRef.current;
-      setG(st => ({
-        ...st,
-        ordinalName: name
-      }));
       if (!s.wallet || !s.authToken) return {
         ok: false,
         reason: "auth"
@@ -4275,20 +4271,38 @@ function App() {
           reason: "server"
         };
         const d = await r.json().catch(() => null);
-        if (d && typeof d.ordinal_name === "string") {
-          // Le serveur rend le nom normalisé ET le titre payant : poser un nom ordinal EFFACE le
-          // titre (un seul nom affiché, sans remboursement — l'écran a prévenu avant le clic).
-          // On adopte les DEUX, sinon l'écran continuerait d'afficher « Le Grand » que la base
-          // ne porte plus, et le joueur croirait son titre intact.
-          setG(st => ({
+        if (!d || typeof d.ordinal_name !== "string") return {
+          ok: false,
+          reason: "server"
+        };
+        // Les vues donnent priorité à playerName (display_name), pas ordinalName.
+        // Relire le nom composé par le serveur : ne pas dupliquer ici ses règles
+        // de vérification et de repli des comptes générés. Ne reprendre QUE
+        // l'identité, jamais les soldes/entités d'une sauvegarde potentiellement en retard.
+        const sv = await fetch(`${API_URL}/save/${s.wallet}`, svOpts());
+        if (!sv.ok) return {
+          ok: false,
+          reason: "server"
+        };
+        const {
+          save
+        } = await sv.json();
+        if (!save || typeof save.display_name !== "string") return {
+          ok: false,
+          reason: "server"
+        };
+        setG(st => {
+          if (st.wallet !== s.wallet || st.authToken !== s.authToken) return st;
+          return {
             ...st,
-            ordinalName: d.ordinal_name,
-            playerTitle: typeof d.player_title === "string" ? d.player_title : st.playerTitle
-          }));
-        }
+            playerName: save.display_name,
+            ordinalName: typeof save.ordinal_name === "string" ? save.ordinal_name : d.ordinal_name,
+            playerTitle: typeof save.player_title === "string" ? save.player_title : d.player_title
+          };
+        });
         return {
           ok: true,
-          titleCleared: !!(d && d.title_cleared)
+          titleCleared: !!d.title_cleared
         };
       } catch (e) {
         return {
