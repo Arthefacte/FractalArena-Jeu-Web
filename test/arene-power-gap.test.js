@@ -27,3 +27,22 @@ test("powerGapTone : à ma taille / au-dessus / hors de portée", () => {
   assert.strictEqual(U.powerGapTone(-18), "edge");
   assert.strictEqual(U.powerGapTone(40), "hard");
 });
+
+/* Mesuré en prod le 01/10/2026 : une défense à 1 369 381 face à des candidats de 629 à 6 076
+   affichait « (−100 %) » sur TOUTES ses cartes — le pourcentage sature et se lit comme un bug.
+   Au-delà de ±50 % (la bande large du serveur), on nomme l'écart. */
+test("powerGapLabel : un écart saturé est nommé, pas chiffré", () => {
+  assert.strictEqual(U.powerGapLabel(-100), "AR2_GAP_FAR_WEAKER");
+  assert.strictEqual(U.powerGapLabel(-99), "AR2_GAP_FAR_WEAKER");
+  assert.strictEqual(U.powerGapLabel(-50), "AR2_GAP_FAR_WEAKER");
+  assert.strictEqual(U.powerGapLabel(124), "AR2_GAP_FAR_STRONGER");
+  assert.strictEqual(U.powerGapLabel(50), "AR2_GAP_FAR_STRONGER");
+});
+
+test("powerGapLabel : dans la bande, le chiffre reste affiché (null)", () => {
+  assert.strictEqual(U.powerGapLabel(0), null);
+  assert.strictEqual(U.powerGapLabel(-25), null);
+  assert.strictEqual(U.powerGapLabel(49), null);
+  assert.strictEqual(U.powerGapLabel(-49), null);
+  assert.strictEqual(U.powerGapLabel(NaN), null);
+});

@@ -342,124 +342,175 @@ function Arene() {
       color: "var(--text-dim)",
       fontSize: 13
     }
-  }, I18N.t("AR2_NO_OPPONENTS")), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      flexDirection: "column",
-      gap: 10
-    }
-  }, (pvp.opponents || []).map(o => {
-    // E3 (D10/M4, emplacements 2 et 3) : l'identifiant opaque de l'adversaire devient la
-    // CLÉ de cette liste. La liste de revanches de l'appareil contient encore des adresses
-    // (elles y étaient écrites avant cette phase) : on accepte donc les deux formes, pour
-    // qu'aucune revanche déjà gagnée ne disparaisse du jour au lendemain.
-    // C'est AUSSI la cible envoyée à l'attaque : `/pvp/opponents` publie `opponent_id`,
-    // jamais `player_id` (ce nom-là est celui du CLASSEMENT, /pvp/ladder). Lire
-    // `player_id` ici envoyait `target: undefined` ; le serveur répondait alors
-    // `cible_invalide` (« 对手无效 ») à CHAQUE attaque d'Arène (panne du 01/10/2026).
-    const oId = o.opponent_id || o.wallet;
-    const canRevanche = Array.isArray(pvp.revanches) && (pvp.revanches.includes(oId) || o.opponent_id && pvp.revanches.includes(o.wallet));
-    // L'appariement se fait sur la puissance : c'est l'écart qui dit si le
-    // combat est jouable, pas l'ELO (tout le monde y démarre à 1000).
-    const gap = AU.powerGapPct(pvp.power, o.power);
-    const tone = AU.powerGapTone(gap);
-    const gapColor = tone === "even" ? "var(--success)" : tone === "edge" ? "var(--gold)" : "var(--alert)";
-    return /*#__PURE__*/React.createElement("div", {
-      key: oId,
-      className: "oct-sm",
+  }, I18N.t("AR2_NO_OPPONENTS")), (() => {
+    /* Lisibilité de la liste d'adversaires (01/10/2026). Elle mélangeait trois
+       populations sous un même badge de ligue : ma ligue (classée), les ligues voisines
+       (classées, l'élargissement du matchmaking quand le vivier est mince) et les
+       comptes SANS défense enregistrée — dont la « ligue » n'est qu'une estimation
+       calculée sur la puissance de leurs 3 entités. C'est ce badge-là qui faisait lire
+       « adversaire d'une autre ligue » là où il n'y avait qu'un compte non classé.
+       Relevé des autres jeux (skill serveur references/matchmaking-industrie.md) :
+       aucun n'affiche de rang sur un compte non classé — le badge dit une position
+       GAGNÉE. On groupe donc, et le badge disparaît là où il ne dit rien. */
+    const carte = o => {
+      // E3 (D10/M4, emplacements 2 et 3) : l'identifiant opaque de l'adversaire devient la
+      // CLÉ de cette liste. La liste de revanches de l'appareil contient encore des adresses
+      // (elles y étaient écrites avant cette phase) : on accepte donc les deux formes, pour
+      // qu'aucune revanche déjà gagnée ne disparaisse du jour au lendemain.
+      // C'est AUSSI la cible envoyée à l'attaque : `/pvp/opponents` publie `opponent_id`,
+      // jamais `player_id` (ce nom-là est celui du CLASSEMENT, /pvp/ladder). Lire
+      // `player_id` ici envoyait `target: undefined` ; le serveur répondait alors
+      // `cible_invalide` (« 对手无效 ») à CHAQUE attaque d'Arène (panne du 01/10/2026).
+      const oId = o.opponent_id || o.wallet;
+      const canRevanche = Array.isArray(pvp.revanches) && (pvp.revanches.includes(oId) || o.opponent_id && pvp.revanches.includes(o.wallet));
+      // L'appariement se fait sur la puissance : c'est l'écart qui dit si le
+      // combat est jouable, pas l'ELO (tout le monde y démarre à 1000).
+      const gap = AU.powerGapPct(pvp.power, o.power);
+      const tone = AU.powerGapTone(gap);
+      const gapColor = tone === "even" ? "var(--success)" : tone === "edge" ? "var(--gold)" : "var(--alert)";
+      // Au-delà de ±50 %, le pourcentage sature (« −100 % » sur toutes les cartes) : on
+      // nomme l'écart au lieu de le chiffrer.
+      const ecart = AU.powerGapLabel(gap);
+      return /*#__PURE__*/React.createElement("div", {
+        key: oId,
+        className: "oct-sm",
+        style: {
+          border: "1px solid var(--line-soft)",
+          padding: 10,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: 10
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          minWidth: 0
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        className: "mono",
+        style: {
+          fontWeight: 700,
+          fontSize: 13,
+          marginBottom: 4,
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis"
+        }
+      }, o.name || oId), /*#__PURE__*/React.createElement("div", {
+        className: "flex gap8 center"
+      }, !o.implicit && /*#__PURE__*/React.createElement("span", {
+        className: "mono",
+        style: {
+          fontSize: 12,
+          color: AU.leagueColor(o.league)
+        }
+      }, AU.leagueLabel(o.league)), o.implicit ? /*#__PURE__*/React.createElement("span", {
+        className: "mono",
+        style: {
+          fontSize: 12,
+          color: "var(--text-dim)"
+        }
+      }, I18N.t("AR2_UNRANKED")) : /*#__PURE__*/React.createElement("span", {
+        className: "mono",
+        style: {
+          fontSize: 12,
+          color: "var(--elec)"
+        }
+      }, "ELO ", o.rating), /*#__PURE__*/React.createElement("span", {
+        className: "mono",
+        style: {
+          fontSize: 12,
+          color: gapColor
+        }
+      }, I18N.t("AR2_POWER", o.power || 0), ecart ? ` · ${I18N.t(ecart)}` : gap !== 0 && ` (${gap > 0 ? "+" : "−"}${Math.abs(gap)} %)`), canRevanche && /*#__PURE__*/React.createElement("span", {
+        className: "mono",
+        style: {
+          fontSize: 11,
+          color: "var(--success)"
+        }
+      }, "\uD83D\uDD25 ", I18N.t("AR2_REVANCHE"))), /*#__PURE__*/React.createElement("div", {
+        style: {
+          marginTop: 6
+        }
+      }, /*#__PURE__*/React.createElement(TeamPreview, {
+        team: o.team
+      }))), canRevanche ? /*#__PURE__*/React.createElement("button", {
+        className: "btn btn-success sm",
+        disabled: busy,
+        onClick: async () => {
+          const ref = oId;
+          const r = await actions.pvpDefenseOf(ref);
+          setPick({
+            target: ref,
+            revanche: true,
+            ids: [...g.selected],
+            oppTeam: o.team,
+            posture: "equilibre",
+            oppPosture: r && r.posture || null
+          });
+        }
+      }, I18N.t("AR2_REVANCHE")) : /*#__PURE__*/React.createElement("button", {
+        className: "btn btn-elec sm",
+        "data-guide": "arene-attack",
+        disabled: busy,
+        onClick: async () => {
+          const ref = oId;
+          const r = await actions.pvpDefenseOf(ref);
+          setPick({
+            target: ref,
+            revanche: false,
+            ids: [...g.selected],
+            oppTeam: o.team,
+            posture: "equilibre",
+            oppPosture: r && r.posture || null
+          });
+        }
+      }, I18N.t("AR2_ATTACK")));
+    };
+    const groupes = [{
+      cle: "mine",
+      titre: "AR2_GROUP_MINE",
+      liste: (pvp.opponents || []).filter(o => !o.implicit && o.league === pvp.league)
+    }, {
+      cle: "voisines",
+      titre: "AR2_GROUP_OTHER",
+      liste: (pvp.opponents || []).filter(o => !o.implicit && o.league && o.league !== pvp.league)
+    }, {
+      cle: "sansdefense",
+      titre: "AR2_GROUP_UNRANKED",
+      hint: "AR2_GROUP_UNRANKED_HINT",
+      liste: (pvp.opponents || []).filter(o => o.implicit)
+    }].filter(gr => gr.liste.length);
+    return groupes.map(gr => /*#__PURE__*/React.createElement("div", {
+      key: gr.cle,
       style: {
-        border: "1px solid var(--line-soft)",
-        padding: 10,
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        gap: 10
+        marginTop: 12
       }
     }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        minWidth: 0
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "mono",
-      style: {
-        fontWeight: 700,
-        fontSize: 13,
-        marginBottom: 4,
-        whiteSpace: "nowrap",
-        overflow: "hidden",
-        textOverflow: "ellipsis"
-      }
-    }, o.name || oId), /*#__PURE__*/React.createElement("div", {
-      className: "flex gap8 center"
-    }, /*#__PURE__*/React.createElement("span", {
-      className: "mono",
-      style: {
-        fontSize: 12,
-        color: AU.leagueColor(o.league)
-      }
-    }, AU.leagueLabel(o.league)), o.implicit ? /*#__PURE__*/React.createElement("span", {
-      className: "mono",
-      style: {
-        fontSize: 12,
-        color: "var(--text-dim)"
-      }
-    }, I18N.t("AR2_UNRANKED")) : /*#__PURE__*/React.createElement("span", {
-      className: "mono",
-      style: {
-        fontSize: 12,
-        color: "var(--elec)"
-      }
-    }, "ELO ", o.rating), /*#__PURE__*/React.createElement("span", {
-      className: "mono",
-      style: {
-        fontSize: 12,
-        color: gapColor
-      }
-    }, I18N.t("AR2_POWER", o.power || 0), gap !== 0 && ` (${gap > 0 ? "+" : "−"}${Math.abs(gap)} %)`), canRevanche && /*#__PURE__*/React.createElement("span", {
       className: "mono",
       style: {
         fontSize: 11,
-        color: "var(--success)"
+        letterSpacing: 1,
+        textTransform: "uppercase",
+        color: "var(--text-dim)",
+        marginBottom: 4
       }
-    }, "\uD83D\uDD25 ", I18N.t("AR2_REVANCHE"))), /*#__PURE__*/React.createElement("div", {
+    }, I18N.t(gr.titre), " \xB7 ", gr.liste.length), gr.hint && /*#__PURE__*/React.createElement("div", {
+      className: "mono",
       style: {
-        marginTop: 6
+        fontSize: 11,
+        color: "var(--text-dim)",
+        marginTop: -2,
+        marginBottom: 6
       }
-    }, /*#__PURE__*/React.createElement(TeamPreview, {
-      team: o.team
-    }))), canRevanche ? /*#__PURE__*/React.createElement("button", {
-      className: "btn btn-success sm",
-      disabled: busy,
-      onClick: async () => {
-        const ref = oId;
-        const r = await actions.pvpDefenseOf(ref);
-        setPick({
-          target: ref,
-          revanche: true,
-          ids: [...g.selected],
-          oppTeam: o.team,
-          posture: "equilibre",
-          oppPosture: r && r.posture || null
-        });
+    }, I18N.t(gr.hint)), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        flexDirection: "column",
+        gap: 10
       }
-    }, I18N.t("AR2_REVANCHE")) : /*#__PURE__*/React.createElement("button", {
-      className: "btn btn-elec sm",
-      "data-guide": "arene-attack",
-      disabled: busy,
-      onClick: async () => {
-        const ref = oId;
-        const r = await actions.pvpDefenseOf(ref);
-        setPick({
-          target: ref,
-          revanche: false,
-          ids: [...g.selected],
-          oppTeam: o.team,
-          posture: "equilibre",
-          oppPosture: r && r.posture || null
-        });
-      }
-    }, I18N.t("AR2_ATTACK")));
-  }))), /*#__PURE__*/React.createElement("div", {
+    }, gr.liste.map(carte))));
+  })()), /*#__PURE__*/React.createElement("div", {
     className: "panel oct",
     style: {
       border: "1px solid var(--line)",
