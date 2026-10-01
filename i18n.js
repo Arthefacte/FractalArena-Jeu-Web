@@ -694,6 +694,16 @@
     PE_TITLE_BTN: { FR: "Confirmer — %d FA", EN: "Confirm — %d FA", ZH: "确认 — %d FA" },
     PE_RENAMED: { FR: "Entité renommée", EN: "Entity renamed", ZH: "实体已重命名" },
     PE_TITLE_SET: { FR: "Titre mis à jour", EN: "Title updated", ZH: "称号已更新" },
+    // Un seul nom affiché : payer un titre retire le nom .fb (le serveur le fait). Rien de payant
+    // ne se perd dans ce sens-là — on prévient quand même, le nom quitte les classements.
+    PE_TITLE_REPLACE_ORDINAL_TITLE: { FR: "Retirer ton nom ordinal ?", EN: "Remove your ordinal name?", ZH: "要移除你的 Ordinal 名称吗？" },
+    PE_TITLE_REPLACE_ORDINAL_BODY: {
+      FR: "Ton nom ordinal « %s » sera retiré : un seul nom s'affiche. Il est gratuit et re-sélectionnable dans Options.",
+      EN: "Your ordinal name “%s” will be removed: only one name shows at a time. It is free and can be re-selected in Options.",
+      ZH: "你的 Ordinal 名称「%s」将被移除：同一时间只显示一个名称。它是免费的，可在设置中重新选择。",
+    },
+    PE_TITLE_REPLACE_ORDINAL_BTN: { FR: "Payer %d FA et retirer le nom", EN: "Pay %d FA and remove the name", ZH: "支付 %d FA 并移除名称" },
+    PE_TITLE_ORDINAL_REMOVED: { FR: "Nom ordinal « %s » retiré", EN: "Ordinal name “%s” removed", ZH: "Ordinal 名称「%s」已移除" },
     PE_BADGE: { FR: "Badge fidélité", EN: "Loyalty badge", ZH: "忠诚徽章" },
     PE_BADGE_DESC: { FR: "%d / 360 jours ≥ 1 000 000 FA on-chain", EN: "%d / 360 days ≥ 1,000,000 FA on-chain", ZH: "%d / 360 天 ≥ 1,000,000 链上 FA" },
     PE_BADGE_HINT: { FR: "Seuls les FA détenus directement dans ton wallet comptent — ceux fournis en liquidité ou listés à la vente sur le DEX ne sont pas pris en compte.", EN: "Only FA held directly in your wallet count — those provided as DEX liquidity or listed for sale don't count.", ZH: "仅钱包中直接持有的 FA 计入 — 提供给 DEX 流动性或挂单出售的 FA 不计入。" },
@@ -716,6 +726,17 @@
     OP_ORDINAL_INSCR: { FR: "Inscription", EN: "Inscription", ZH: "铭文" },
     OP_ORDINAL_CLEARED: { FR: "Affichage : adresse du wallet", EN: "Display: wallet address", ZH: "显示：钱包地址" },
     OP_ORDINAL_SAVE_FAIL: { FR: "Nom non enregistré — réessaie", EN: "Name not saved — try again", ZH: "名称未保存，请重试" },
+    // UN SEUL NOM S'AFFICHE (01/10/2026) : poser un nom ordinal efface le titre payant, sans
+    // remboursement. Le joueur est prévenu AVANT le clic — le serveur, lui, ne rembourse pas.
+    OP_ORDINAL_REPLACE_TITLE: { FR: "Remplacer ton nom ?", EN: "Replace your name?", ZH: "要替换你的名称吗？" },
+    OP_ORDINAL_REPLACE_BODY: {
+      FR: "Ton nom payant « %s » sera REMPLACÉ par « %s ». Aucun remboursement : le titre (1 000 FA) est perdu.",
+      EN: "Your paid name “%s” will be REPLACED by “%s”. No refund: the title (1,000 FA) is lost.",
+      ZH: "你的付费称号「%s」将被「%s」替换。不予退款：称号（1 000 FA）将永久失去。",
+    },
+    OP_ORDINAL_REPLACE_BTN: { FR: "Remplacer — sans remboursement", EN: "Replace — no refund", ZH: "替换 — 不予退款" },
+    OP_ORDINAL_REPLACE_CANCEL: { FR: "Annuler", EN: "Cancel", ZH: "取消" },
+    OP_ORDINAL_TITLE_REPLACED: { FR: "Nom payant « %s » remplacé — sans remboursement", EN: "Paid name “%s” replaced — no refund", ZH: "付费称号「%s」已被替换 — 不予退款" },
     OP_WALLET_ADDR: { FR: "Adresse du wallet", EN: "Wallet address", ZH: "钱包地址" },
     OP_LANG: { FR: "Langue", EN: "Language", ZH: "语言" },
     OP_SOUND: { FR: "Effets sonores", EN: "Sound effects", ZH: "音效" },

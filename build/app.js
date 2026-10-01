@@ -4206,6 +4206,8 @@ function App() {
           ok: false,
           reason: data.error || "Erreur serveur"
         };
+        // Le serveur retire le nom .fb quand un titre payant est posé (un seul nom affiché) et
+        // dit lequel : le rechargement de la sauvegarde juste après remet l'état d'aplomb.
         const sv = await fetch(`${API_URL}/save/${s.wallet}`, svOpts());
         if (sv.ok) {
           const {
@@ -4214,7 +4216,8 @@ function App() {
           applySave(save, s.wallet, s.authToken);
         }
         return {
-          ok: true
+          ok: true,
+          ordinalReplaced: typeof data.ordinal_replaced === "string" ? data.ordinal_replaced : ""
         };
       } catch (e) {
         return {
@@ -4273,13 +4276,19 @@ function App() {
         };
         const d = await r.json().catch(() => null);
         if (d && typeof d.ordinal_name === "string") {
+          // Le serveur rend le nom normalisé ET le titre payant : poser un nom ordinal EFFACE le
+          // titre (un seul nom affiché, sans remboursement — l'écran a prévenu avant le clic).
+          // On adopte les DEUX, sinon l'écran continuerait d'afficher « Le Grand » que la base
+          // ne porte plus, et le joueur croirait son titre intact.
           setG(st => ({
             ...st,
-            ordinalName: d.ordinal_name
+            ordinalName: d.ordinal_name,
+            playerTitle: typeof d.player_title === "string" ? d.player_title : st.playerTitle
           }));
         }
         return {
-          ok: true
+          ok: true,
+          titleCleared: !!(d && d.title_cleared)
         };
       } catch (e) {
         return {

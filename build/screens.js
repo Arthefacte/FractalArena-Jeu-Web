@@ -3433,6 +3433,9 @@ function Perso() {
   const [title, setTitle] = useState(g.playerTitle || "");
   const [busy, setBusy] = useState(false);
   const [lpBusy, setLpBusy] = useState(false);
+  // Payer un titre alors qu'un nom ordinal .fb est affiché : confirmation avant le débit
+  // (un seul nom s'affiche — le nom ordinal est retiré par le serveur).
+  const [confirmTitre, setConfirmTitre] = useState(false);
 
   // Re-vérification LP à la demande : le serveur seul décide du palier (il
   // monte ET descend) — ici on ne fait que déclencher et raconter le résultat.
@@ -3459,8 +3462,15 @@ function Perso() {
     toast(I18N.t("PE_RENAMED"), "good");
     setName("");
   }
-  async function doTitle() {
+  async function doTitle(sansAvertissement) {
     if (!title.trim() || busy) return;
+    // Le titre payant REMPLACE le nom ordinal (un seul nom affiché) : on le dit AVANT de
+    // débiter 1 000 FA. Rien n'est perdu dans ce sens-là (le .fb est gratuit et
+    // re-sélectionnable), mais le joueur doit savoir que son nom quitte les classements.
+    if (g.ordinalName && !sansAvertissement) {
+      setConfirmTitre(true);
+      return;
+    }
     setBusy(true);
     const r = await actions.setTitle(title.trim().slice(0, 32));
     setBusy(false);
@@ -3468,6 +3478,7 @@ function Perso() {
       toast(I18N.localizeServerError(r.reason), "bad");
       return;
     }
+    if (r.ordinalReplaced) return toast(I18N.t("PE_TITLE_ORDINAL_REMOVED", r.ordinalReplaced), "info");
     toast(I18N.t("PE_TITLE_SET"), "good");
   }
   return /*#__PURE__*/React.createElement("div", {
@@ -3552,7 +3563,7 @@ function Perso() {
       marginTop: 16
     },
     disabled: !title.trim() || busy,
-    onClick: doTitle
+    onClick: () => doTitle()
   }, busy ? "…" : /*#__PURE__*/React.createElement(FaText, {
     text: I18N.t("PE_TITLE_BTN", D.ECON.VANITY_TITLE)
   }))), /*#__PURE__*/React.createElement("div", {
@@ -3668,7 +3679,39 @@ function Perso() {
       fontSize: 11,
       marginTop: 6
     }
-  }, I18N.t("CHAMP_POINTS_DESC"))), /*#__PURE__*/React.createElement(QuizPrestige, null)));
+  }, I18N.t("CHAMP_POINTS_DESC"))), /*#__PURE__*/React.createElement(QuizPrestige, null)), confirmTitre && /*#__PURE__*/React.createElement(Modal, {
+    onClose: () => setConfirmTitre(false),
+    accent: "var(--fire)"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "h1",
+    style: {
+      fontSize: 20,
+      color: "var(--fire)",
+      marginBottom: 12
+    }
+  }, I18N.t("PE_TITLE_REPLACE_ORDINAL_TITLE")), /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      fontSize: 13,
+      lineHeight: 1.6,
+      color: "var(--text-dim)",
+      marginBottom: 20
+    }
+  }, I18N.t("PE_TITLE_REPLACE_ORDINAL_BODY", g.ordinalName)), /*#__PURE__*/React.createElement("div", {
+    className: "flex gap8",
+    style: {
+      flexWrap: "wrap"
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "btn btn-fire",
+    onClick: () => {
+      setConfirmTitre(false);
+      doTitle(true);
+    }
+  }, I18N.t("PE_TITLE_REPLACE_ORDINAL_BTN", D.ECON.VANITY_TITLE)), /*#__PURE__*/React.createElement("button", {
+    className: "btn ghost",
+    onClick: () => setConfirmTitre(false)
+  }, I18N.t("OP_ORDINAL_REPLACE_CANCEL")))));
 }
 
 /* ---------------- OPTIONS ---------------- */
@@ -3814,6 +3857,9 @@ function Options() {
   // code de recuperation est une perte de compte definitive. Un compte UniSat, lui, peut
   // re-signer a tout moment -> aucune confirmation necessaire (comportement inchange).
   const [confirmDisconnect, setConfirmDisconnect] = useState(false);
+  // Nom ordinal choisi alors qu'un titre PAYANT est en place : on demande confirmation avant
+  // de l'effacer (règle « un seul nom », sans remboursement).
+  const [confirmNom, setConfirmNom] = useState(null);
   const isGenerated = g.accountKind === window.FA_ACCOUNT.KIND_GENERATED;
   const langs = [["FR", "Français"], ["EN", "English"], ["ZH", "中文"]];
   // Titre de prestige que le joueur a choisi de porter (choix local, cf. QuizPrestige).
@@ -3848,9 +3894,19 @@ function Options() {
   // écran mais restait son adresse tronquée ailleurs (chat, classements, logs PvP) —
   // ces surfaces composent le nom côté serveur depuis ordinal_name — jusqu'au
   // rechargement de la page.
-  function choisirNom(name) {
+  //
+  // UN SEUL NOM S'AFFICHE (règle du 01/10/2026) : poser un nom ordinal EFFACE le titre
+  // payant, sans remboursement. Le serveur applique la règle (vanity.js) ; ici on la dit
+  // AVANT le clic — un joueur ne doit jamais découvrir après coup qu'il a perdu 1 000 FA.
+  function choisirNom(name, sansAvertissement) {
+    if (name && g.playerTitle && !sansAvertissement) {
+      setConfirmNom(name);
+      return;
+    }
+    const titreAvant = g.playerTitle || "";
     actions.saveOrdinalName(name).then(r => {
       if (!r || !r.ok) return toast(I18N.t("OP_ORDINAL_SAVE_FAIL"), "bad");
+      if (r.titleCleared) return toast(I18N.t("OP_ORDINAL_TITLE_REPLACED", titreAvant), "info");
       toast(I18N.t(name ? "OP_ORDINAL_SELECTED" : "OP_ORDINAL_CLEARED"), name ? "good" : "info");
     });
   }
@@ -4181,7 +4237,40 @@ function Options() {
   }, I18N.t("ACC_DISCONNECT_CONFIRM_BTN")), /*#__PURE__*/React.createElement("button", {
     className: "btn ghost",
     onClick: () => setConfirmDisconnect(false)
-  }, I18N.t("ACC_DISCONNECT_CANCEL")))));
+  }, I18N.t("ACC_DISCONNECT_CANCEL")))), confirmNom && /*#__PURE__*/React.createElement(Modal, {
+    onClose: () => setConfirmNom(null),
+    accent: "var(--fire)"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "h1",
+    style: {
+      fontSize: 20,
+      color: "var(--fire)",
+      marginBottom: 12
+    }
+  }, I18N.t("OP_ORDINAL_REPLACE_TITLE")), /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      fontSize: 13,
+      lineHeight: 1.6,
+      color: "var(--text-dim)",
+      marginBottom: 20
+    }
+  }, I18N.t("OP_ORDINAL_REPLACE_BODY", g.playerTitle, confirmNom)), /*#__PURE__*/React.createElement("div", {
+    className: "flex gap8",
+    style: {
+      flexWrap: "wrap"
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "btn btn-fire",
+    onClick: () => {
+      const n = confirmNom;
+      setConfirmNom(null);
+      choisirNom(n, true);
+    }
+  }, I18N.t("OP_ORDINAL_REPLACE_BTN")), /*#__PURE__*/React.createElement("button", {
+    className: "btn ghost",
+    onClick: () => setConfirmNom(null)
+  }, I18N.t("OP_ORDINAL_REPLACE_CANCEL")))));
 }
 function Row({
   label,
