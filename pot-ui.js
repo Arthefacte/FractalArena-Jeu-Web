@@ -43,6 +43,19 @@
     };
   }
 
+  // Fenêtre de comptage DU JOUEUR : la fenêtre du cycle, bornée par sa vérification on-chain
+  // quand elle est plus tardive. Le serveur calcule cette borne (`days_counted_from`, la plus
+  // tardive du début de cycle et de la preuve) — le client ne la recalcule pas, il l'affiche.
+  // Sans le champ (serveur d'avant), la fenêtre du cycle reste la réponse : on n'invente rien.
+  function potBorne(p, joursDepuis) {
+    const pot = resumePot(p);
+    if (!pot || !joursDepuis) return pot;
+    const borne = Date.parse(joursDepuis);
+    if (!Number.isFinite(borne)) return pot;
+    if (!pot.debut || borne > Date.parse(pot.debut)) pot.debut = joursDepuis;
+    return pot;
+  }
+
   // État d'affichage du joueur. null tant que le serveur n'a rien dit : les surfaces
   // masquent la ligne plutôt que d'afficher un compteur inventé.
   function resume(payload) {
@@ -67,7 +80,7 @@
       jours: entier(e.days_qualified),
       tache_du_jour: e.task_done_today != null ? !!e.task_done_today : faits >= requis,
       regle: e.split_rule || null,
-      pot: resumePot(payload.pot),
+      pot: potBorne(payload.pot, e.days_counted_from),
     };
   }
 
