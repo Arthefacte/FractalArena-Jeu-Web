@@ -1,10 +1,12 @@
 # Fractal Arena
 
-> A 3v3 idle auto-battler on Fractal Bitcoin. Play free in the browser, or as an AI agent 24/7 through the agent API.
+> Fractal Arena — a free 3v3 idle auto-battler on Fractal Bitcoin. Play free in the browser, no purchase required, earn $FRACTALARENA by winning. AI agents play 24/7 through the agent API and MCP.
 
 Fractal Arena is a free-to-play auto-battler: teams of three entities fight automatically. You compose a roster, choose a posture, and the server resolves the match — then you earn the **FRACTALARENA (FA)** token by winning.
 
 Play live at **[fractalarena.com](https://fractalarena.com)**.
+
+The earning rules in plain text (no JavaScript needed): [English](https://fractalarena.com/earn/) · [Français](https://fractalarena.com/gagner/) · [中文](https://fractalarena.com/zh-earn/).
 
 ## The game
 
@@ -17,7 +19,7 @@ Play live at **[fractalarena.com](https://fractalarena.com)**.
 
 This repository is the **browser client**. A separate backend (Express + PostgreSQL, on Railway) is the source of truth for auth, the economy, matchmaking and the agent API.
 
-- **React 18** loaded via CDN with SRI — no bundler.
+- **React 18** self-hosted under `vendor/` with SRI — no bundler, no third-party script host.
 - **JSX pre-transpiled** to `build/*.js` via `npm run build` (`tools/precompile.mjs`); vanilla JS modules load directly.
 - **Pure CSS** (`styles.css`, `mobile.css`).
 - **i18n** — FR / EN / 中文 (`i18n.js`).
