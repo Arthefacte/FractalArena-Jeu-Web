@@ -140,6 +140,52 @@
       <text x="50" y="57" font-family="monospace" font-size="20" font-weight="700" fill="#EAF1FF" text-anchor="middle">FA</text>
     </svg>
   </template>
+  <!-- VERSION TEXTE (chantier découvrabilité 02/10/2026). Le jeu est une SPA : sans
+       JavaScript, le HTML servi ne portait que 8 mots de texte visible, donc un moteur
+       ou un crawler d'IA ne pouvait indexer Fractal Arena que par son NOM, jamais par
+       sa CATÉGORIE (« jeu crypto gratuit », « gagner sans investir »). Ce bloc <noscript>
+       n'est jamais rendu par un navigateur normal (le joueur ne le voit pas) ; il donne
+       aux crawlers qui n'exécutent pas JS de quoi lire le jeu, ses modes, sa boucle
+       gratuite et l'API agent, dans les trois langues de la communauté.
+       Contenu VÉRIFIÉ contre le code serveur (origin/main, 02/10/2026) : starter
+       = WELCOME_LOCKED 1000 FA verrouillés + 5 tickets argent + roster (server.js,
+       /claim-airdrop) ; FREE_FIGHTS_PER_DAY = 5 et FREE_BASE_BET = 10 × PAYOUT_MULT 1.7
+       = 17 FA par victoire gratuite (fight.js) ; retrait 500-20 000 FA, cooldown 24 h.
+       Ne JAMAIS y écrire « crypto gratuite » / « free money » : le jeu n'a pas de
+       robinet — la formule est « joue gratuitement, gagne en jouant ». -->
+  <noscript>
+    <div style="max-width:760px;margin:0 auto;padding:28px 20px;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;line-height:1.6;color:#e8eefc;background:#05070f">
+      <h1>Fractal Arena — a free 3v3 idle auto-battler on Fractal Bitcoin</h1>
+      <p>Fractal Arena is a free 3v3 idle auto-battler on Fractal Bitcoin. Teams of three entities fight automatically: you compose the roster and choose a posture, and the server resolves the match. You earn the FRACTALARENA (FA) token by winning fights.</p>
+      <p><strong>Play free, with no purchase.</strong> Open fractalarena.com in a browser, connect a Unisat wallet (or create an account without one), and you start with 1,000 FA of in-game credit, five silver tickets and a three-entity roster. Five fights a day are free in the Fosse and each free win pays 17 FA. The PvE campaign (6 worlds × 10 floors), the infinite Tower and the ranked PvP arena are all playable without spending anything.</p>
+      <p>FA you win lands in your game balance and becomes withdrawable once your wallet's on-chain activity is verified — a Unisat wallet, a linked wallet, or a first deposit is enough. Withdrawals run from 500 to 20,000 FA, with a 24-hour cooldown per wallet.</p>
+      <p>Depth is optional and funded by what you win: staked Fosse fights (5, 12 or 25 FA staked, ×1.7 payout), forging relics and cores, talents, the weekly tournament, and liquidity provision on the FA/FB pair. No faucet, no purchase to start.</p>
+      <p>AI agents play the same game 24/7 through the agent API (REST + MCP): register, link a wallet, deposit FA, build a team, challenge the ladder, fight the Fosse. The OpenAPI spec and the agent skill are served publicly.</p>
+      <p>Earning guide, step by step: <a href="/earn/" style="color:#00F0FF">how to earn FA without investing (English)</a>.</p>
+
+      <hr style="border:0;border-top:1px solid #1b2237;margin:28px 0">
+
+      <h2 lang="fr">Fractal Arena — jeu de combat 3v3 gratuit sur Fractal Bitcoin</h2>
+      <div lang="fr">
+        <p>Fractal Arena est un auto-combattant 3v3 gratuit sur Fractal Bitcoin. Trois entités s'affrontent automatiquement : tu composes l'équipe, tu choisis une posture, et le serveur résout le combat. Tu gagnes le jeton FRACTALARENA (FA) en remportant des combats.</p>
+        <p><strong>Jouer ne coûte rien.</strong> Ouvre fractalarena.com dans un navigateur, connecte un portefeuille Unisat (ou crée un compte sans portefeuille) : tu démarres avec 1 000 FA de crédit de jeu, cinq tickets argent et une équipe de trois entités. Cinq combats par jour sont gratuits dans La Fosse et chaque victoire gratuite rapporte 17 FA. La campagne PvE (6 mondes × 10 étages), la Tour infinie et l'Arène PvP classée se jouent sans dépenser quoi que ce soit.</p>
+        <p>Les FA gagnés arrivent sur ton solde de jeu et deviennent retirables dès que l'activité on-chain de ton portefeuille est vérifiée — un portefeuille Unisat, un portefeuille lié, ou un premier dépôt suffit. Les retraits vont de 500 à 20 000 FA, avec un délai de 24 h par portefeuille.</p>
+        <p>Le reste est facultatif et se finance avec ce que tu gagnes : combats à mise dans La Fosse (5, 12 ou 25 FA misés, gain ×1,7), forge de reliques et de cœurs, talents, tournoi hebdomadaire, apport de liquidité sur la paire FA/FB. Aucun robinet, aucun achat pour commencer.</p>
+        <p>Guide complet : <a href="/gagner/" style="color:#00F0FF">comment gagner des FA sans investir (français)</a>.</p>
+      </div>
+
+      <hr style="border:0;border-top:1px solid #1b2237;margin:28px 0">
+
+      <h2 lang="zh-CN">Fractal Arena — Fractal Bitcoin 上的免费 3v3 自动战斗游戏</h2>
+      <div lang="zh-CN">
+        <p>Fractal Arena 是运行在 Fractal Bitcoin 上的免费 3v3 自动战斗游戏。三只实体自动对战：你负责组建队伍、选择姿态，服务器完成结算。赢得战斗即可获得 FRACTALARENA（FA）代币。</p>
+        <p><strong>免费游玩，无需任何购买。</strong>用浏览器打开 fractalarena.com，连接 Unisat 钱包（也可以不绑钱包直接开号），即可获得 1000 FA 游戏额度、5 张银票和三只实体的初始队伍。Fosse（赌注场）每天有 5 场免费战斗，每场免费胜利可获得 17 FA。PvE 战役（6 个世界 × 10 层）、无限之塔和排位 PvP 竞技场都无需付费即可游玩。</p>
+        <p>赢得的 FA 会进入你的游戏余额；当你的钱包链上活动通过验证后（Unisat 钱包、已绑定钱包或完成首次充值均可），FA 即可提取到自己的钱包。提取范围为 500 至 20 000 FA，每个钱包 24 小时冷却。</p>
+        <p>更深的玩法是可选的，用你赢得的 FA 来支撑：Fosse 赌注战（下注 5 / 12 / 25 FA，胜出 ×1.7）、遗物与核心的锻造、天赋、每周锦标赛，以及 FA/FB 交易对的流动性提供。没有免费水龙头，开局不需要任何充值。</p>
+        <p>分步指南：<a href="/zh-earn/" style="color:#00F0FF">零投入赚取 FA 的方法（中文）</a>。</p>
+      </div>
+    </div>
+  </noscript>
   <div id="boot">
     <div class="boot-in">
       <div class="emb-wrap">

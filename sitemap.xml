@@ -1,15 +1,50 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Fractal Arena — https://fractalarena.com
-     Single-page application: one canonical URL. The agent API (REST + MCP) and the
-     machine-readable plaque live on the application host, not on this domain:
+     The game itself is a single-page application (one canonical URL at the root).
+     The three /earn/ pages are plain, JavaScript-free HTML documents written to be
+     read by crawlers that do not execute JS (most LLM crawlers) and by humans who
+     want the earning rules in text form — English, French and Simplified Chinese.
+     The agent API (REST + MCP) and the machine-readable plaque live on the
+     application host, not on this domain:
        - https://fractal-arena-server-production.up.railway.app/agents/openapi.yaml
        - https://fractal-arena-server-production.up.railway.app/agents/skill
      See https://fractalarena.com/llms.txt for the full picture. -->
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>https://fractalarena.com/</loc>
-    <lastmod>2026-09-16</lastmod>
+    <lastmod>2026-10-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://fractalarena.com/earn/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://fractalarena.com/gagner/" />
+    <xhtml:link rel="alternate" hreflang="zh-Hans" href="https://fractalarena.com/zh-earn/" />
+  </url>
+  <url>
+    <loc>https://fractalarena.com/earn/</loc>
+    <lastmod>2026-10-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://fractalarena.com/earn/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://fractalarena.com/gagner/" />
+    <xhtml:link rel="alternate" hreflang="zh-Hans" href="https://fractalarena.com/zh-earn/" />
+  </url>
+  <url>
+    <loc>https://fractalarena.com/gagner/</loc>
+    <lastmod>2026-10-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://fractalarena.com/earn/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://fractalarena.com/gagner/" />
+    <xhtml:link rel="alternate" hreflang="zh-Hans" href="https://fractalarena.com/zh-earn/" />
+  </url>
+  <url>
+    <loc>https://fractalarena.com/zh-earn/</loc>
+    <lastmod>2026-10-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://fractalarena.com/earn/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://fractalarena.com/gagner/" />
+    <xhtml:link rel="alternate" hreflang="zh-Hans" href="https://fractalarena.com/zh-earn/" />
   </url>
 </urlset>
