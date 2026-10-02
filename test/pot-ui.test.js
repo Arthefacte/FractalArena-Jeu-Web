@@ -20,7 +20,7 @@ const lire = (f) => fs.readFileSync(path.join(__dirname, "..", f), "utf8");
 // `jours` = days_qualified (les parts du joueur). `fenetre` = cycle_days : le serveur le
 // publie toujours, mais la ligne ne l'affiche plus (un « sur N » se lisait comme un objectif
 // de N jours pour remplir la cagnotte — la fenêtre se dit par ses dates).
-function payload({ fights = 12, verified = true, linked = false, eligible = false, jours = 0, fenetre = 11, pot = true, taskDone = null } = {}) {
+function payload({ fights = 12, verified = true, linked = false, eligible = false, jours = 0, fenetre = 11, pot = true, taskDone = null, joursDepuis = null } = {}) {
   return {
     status: "ok",
     fb_earned_sats: "0",
@@ -36,6 +36,9 @@ function payload({ fights = 12, verified = true, linked = false, eligible = fals
       cycle_days: fenetre,
       task_done_today: taskDone == null ? fights >= 150 : taskDone,
       split_rule: "days_qualified_until_threshold",
+      // Borne de comptage calculée par le SERVEUR (vérification on-chain du joueur) : le
+      // client ne la recalcule pas, il la date.
+      days_counted_from: joursDepuis,
     },
     pot: pot ? {
       total: 137000, threshold: 200000, fb_per_draw_sats: 100000000,
@@ -54,6 +57,23 @@ test("resume : rien tant que le serveur n'a rien dit (aucun compteur inventé)",
   assert.strictEqual(FA_POT.resume({}), null);
   assert.strictEqual(FA_POT.resume({ eligibility: null }), null);
   assert.strictEqual(FA_POT.resume({ status: "ok", fb_earned_sats: "0" }), null);
+});
+
+test("resume : la fenêtre se date avec la borne du TIRAGE (la vérification on-chain)", () => {
+  // Vérification PLUS TARDIVE que le début du cycle : la ligne doit dater le comptage du jour
+  // de la preuve. Datée du début du remplissage, elle promettrait des jours que le tirage
+  // ignore (ils ont été joués avant la vérification, dans sink_unverified).
+  const tard = FA_POT.resume(payload({ jours: 1, joursDepuis: "2026-10-01T09:00:00.000Z" }));
+  assert.strictEqual(tard.pot.debut, "2026-10-01T09:00:00.000Z");
+  // Preuve ANTÉRIEURE au cycle : la fenêtre du cycle reste la borne (rien ne recule).
+  const tot = FA_POT.resume(payload({ jours: 1, joursDepuis: "2026-09-01T09:00:00.000Z" }));
+  assert.strictEqual(tot.pot.debut, "2026-09-20T17:43:01.185Z");
+  // Serveur d'avant le champ : on garde la fenêtre du cycle, on n'invente ni date ni borne.
+  const sans = FA_POT.resume(payload({ jours: 1 }));
+  assert.strictEqual(sans.pot.debut, "2026-09-20T17:43:01.185Z");
+  // Champ illisible : jamais une date fabriquée à partir de NaN.
+  const ko = FA_POT.resume(payload({ jours: 1, joursDepuis: "pas une date" }));
+  assert.strictEqual(ko.pot.debut, "2026-09-20T17:43:01.185Z");
 });
 
 test("resume : compteur du jour, progression et état du wallet", () => {
