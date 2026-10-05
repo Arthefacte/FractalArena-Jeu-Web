@@ -493,7 +493,7 @@ function Expeditions() {
     const coreFragRanks = Object.keys(XU.CORE_FRAGMENT_COSTS).filter((rk) => (coreFrags[rk] || 0) > 0);
     const failed = loot.success === false;
     const crew = (loot.beastIds || []).map(beastById).filter(Boolean);
-    const fa = loot.fa_week || g.expFaWeek || { granted: 0, cap: 5000 };
+    const fa = loot.fa_week || g.expFaWeek || { granted: 0, cap: 15000 };
     return (
       <div className="exq-col">
         <div>
