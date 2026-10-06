@@ -371,7 +371,8 @@ function CampaignCombat({
   worldIndex,
   floorIndex,
   onBack,
-  onCleared
+  onCleared,
+  onPrepare
 }) {
   const {
     g,
@@ -381,10 +382,11 @@ function CampaignCombat({
   // Champion de soutien : avec un champion loué, 2 entités propres suffisent —
   // le serveur insère le snapshot du prêteur au slot 2 (champion-ui.js).
   const CU = window.FA_CHAMPION_UI;
-  const champ = g.championBorrow;
-  const ownNeeded = CU.requiredOwnCount(!!champ);
-  const selectedBeasts = g.selected.map(id => g.roster.find(b => b.id === id)).filter(Boolean).slice(0, ownNeeded);
-  const ready = selectedBeasts.length === ownNeeded;
+  const team = window.FA_CAMPAIGN_TEAM.snapshot(g, CU);
+  const champ = team.champion;
+  const ownNeeded = team.ownNeeded;
+  const selectedBeasts = team.own;
+  const ready = team.ready;
   const isBoss = floorIndex === D.BOSS_FLOOR;
   const bossName = I18N.t("CAMP_W" + (worldIndex + 1) + "_BOSS");
   const [playing, setPlaying] = useState(false);
@@ -433,7 +435,7 @@ function CampaignCombat({
       setP1Meta(metas);
       setP1Live(lives);
     }
-  }, [g.selected.join(","), playing, champ && champ.owner_wallet]);
+  }, [g.selected.join(","), g.roster, playing, champ]);
 
   // Même règle que la Fosse : pas de bulle de quiz pendant la résolution d'un
   // combat (quiz.jsx lit le drapeau `fa-busy` sur <body>).
@@ -694,7 +696,11 @@ function CampaignCombat({
     size: 12
   }))), /*#__PURE__*/React.createElement("div", {
     className: "flex gap8 wrap"
-  }, /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "btn ghost",
+    onClick: onPrepare,
+    disabled: playing
+  }, I18N.t("CAMP_PREP_TITLE")), /*#__PURE__*/React.createElement("span", {
     className: "pill",
     style: {
       color: "var(--elec)"
@@ -895,10 +901,10 @@ function CampaignCombat({
       color: "var(--alert)",
       textAlign: "center"
     }
-  }, I18N.t(champ ? "CHAMP_NEED2" : "CAMP_NEED3")), /*#__PURE__*/React.createElement("button", {
+  }, I18N.t(team.busy ? "EXP_ERR_bete_en_expedition" : team.duplicateChampion ? "CAMP_PREP_DUPLICATE" : champ ? "CHAMP_NEED2" : "CAMP_NEED3")), /*#__PURE__*/React.createElement("button", {
     className: "btn btn-elec block lg",
-    onClick: () => actions.setView("team")
-  }, I18N.t("CAMP_GOTO_TEAM"))) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    onClick: onPrepare
+  }, I18N.t("CAMP_PREP_TITLE"))) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     className: "mono",
     style: {
       fontSize: 11,
@@ -1228,7 +1234,8 @@ function FloorSelect({
 
 /* ---------------- SÉLECTEUR DE MONDE ---------------- */
 function WorldSelect({
-  onPickWorld
+  onPickWorld,
+  onPrepare
 }) {
   const {
     g
@@ -1241,6 +1248,15 @@ function WorldSelect({
     title: I18N.t("CAMP_TITLE"),
     sub: I18N.t("CAMP_SUB")
   }), /*#__PURE__*/React.createElement("div", {
+    className: "panel camp-prep-entry"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", {
+    className: "h2"
+  }, I18N.t("CAMP_PREP_TITLE")), /*#__PURE__*/React.createElement("p", {
+    className: "muted"
+  }, I18N.t("CAMP_PREP_INTRO"))), /*#__PURE__*/React.createElement("button", {
+    className: "btn btn-elec",
+    onClick: onPrepare
+  }, I18N.t("CAMP_PREP_OPEN"))), /*#__PURE__*/React.createElement("div", {
     className: "flex between center wrap",
     style: {
       marginBottom: 16,
@@ -1404,6 +1420,104 @@ function CampaignTitles() {
 }
 
 /* ---------------- RACINE CAMPAGNE ---------------- */
+function CampaignPreparation({
+  onBack
+}) {
+  const {
+    g,
+    actions
+  } = useFA();
+  const heading = useRef(null);
+  const team = window.FA_CAMPAIGN_TEAM.snapshot(g, window.FA_CHAMPION_UI);
+  useEffect(() => {
+    heading.current?.focus({
+      preventScroll: true
+    });
+    window.scrollTo(0, 0);
+  }, []);
+  const status = team.busy ? "EXP_ERR_bete_en_expedition" : team.duplicateChampion ? "CAMP_PREP_DUPLICATE" : team.ready ? "CAMP_PREP_READY" : team.champion ? "CHAMP_NEED2" : "CAMP_NEED3";
+  return /*#__PURE__*/React.createElement("section", {
+    className: "container camp-preparation"
+  }, /*#__PURE__*/React.createElement("header", {
+    className: "camp-prep-header"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
+    className: "eyebrow"
+  }, I18N.t("NAV_CAMPAIGN")), /*#__PURE__*/React.createElement("h1", {
+    className: "h1",
+    ref: heading,
+    tabIndex: -1
+  }, I18N.t("CAMP_PREP_TITLE")), /*#__PURE__*/React.createElement("p", {
+    className: "muted"
+  }, I18N.t("CAMP_PREP_INTRO"))), /*#__PURE__*/React.createElement("button", {
+    className: "btn ghost",
+    onClick: onBack
+  }, I18N.t("CAMP_PREP_BACK"))), /*#__PURE__*/React.createElement("div", {
+    className: "panel camp-prep-summary"
+  }, /*#__PURE__*/React.createElement("h2", {
+    className: "h2"
+  }, I18N.t("CAMP_PREP_FORMATION")), /*#__PURE__*/React.createElement("ol", {
+    className: "camp-prep-slots"
+  }, Array.from({
+    length: window.FA_CHAMPION_UI.requiredOwnCount(false)
+  }, (_, i) => {
+    const borrowed = team.champion && i === window.FA_CHAMPION_UI.CHAMPION_SLOT;
+    const b = borrowed ? team.champion.beast : g.roster.find(b => b.id === team.ids[i]);
+    return /*#__PURE__*/React.createElement("li", {
+      key: i
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "mono"
+    }, I18N.t("CAMP_PREP_SLOT", i + 1)), /*#__PURE__*/React.createElement("strong", null, b ? D.displayName(b) : "—"), borrowed && /*#__PURE__*/React.createElement("small", null, I18N.t("CHAMP_BORROWED_TAG", team.champion.name)));
+  })), /*#__PURE__*/React.createElement("p", {
+    className: cx("mono", !team.ready && "camp-prep-warning"),
+    role: "status"
+  }, I18N.t(status)), team.champion && /*#__PURE__*/React.createElement("button", {
+    className: "btn ghost sm",
+    onClick: () => actions.championClearBorrow()
+  }, I18N.t("CHAMP_CLEAR"))), /*#__PURE__*/React.createElement("p", {
+    className: "muted camp-prep-note"
+  }, I18N.t("CAMP_PREP_STATS_NOTE")), /*#__PURE__*/React.createElement("div", {
+    className: "camp-prep-grid"
+  }, g.roster.map(b => {
+    const selected = g.selected.includes(b.id);
+    const borrowed = team.champion?.beast.id === b.id;
+    const busy = team.busyIds.has(b.id);
+    const disabled = !selected && (busy || borrowed || g.selected.length >= team.ownNeeded);
+    return /*#__PURE__*/React.createElement("article", {
+      className: "camp-prep-entity",
+      key: b.id
+    }, /*#__PURE__*/React.createElement(window.CreatureCard, {
+      beast: b,
+      selected: selected,
+      showXp: true
+    }), busy && /*#__PURE__*/React.createElement("p", {
+      className: "camp-prep-warning"
+    }, I18N.t("EXP_IN_EXPEDITION")), borrowed && /*#__PURE__*/React.createElement("p", {
+      className: "muted"
+    }, I18N.t("CAMP_PREP_BORROWED")), /*#__PURE__*/React.createElement("button", {
+      className: "btn block",
+      "aria-pressed": selected,
+      disabled: disabled,
+      "aria-label": I18N.t(selected ? "CAMP_PREP_REMOVE_NAME" : "CAMP_PREP_SELECT_NAME", D.displayName(b)),
+      onClick: () => actions.toggleSelect(b.id, team.ownNeeded)
+    }, I18N.t(selected ? "CAMP_PREP_REMOVE" : "CAMP_PREP_SELECT")));
+  })), !g.roster.length && /*#__PURE__*/React.createElement("p", {
+    className: "panel camp-prep-summary"
+  }, I18N.t("CAMP_PREP_EMPTY")), /*#__PURE__*/React.createElement("div", {
+    className: "panel camp-prep-entry"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", {
+    className: "h2"
+  }, I18N.t("CAMP_PREP_PROGRESS")), /*#__PURE__*/React.createElement("p", {
+    className: "muted"
+  }, I18N.t("CAMP_PREP_FOSSE_DESC"))), /*#__PURE__*/React.createElement("div", {
+    className: "camp-prep-actions"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "btn btn-fire",
+    onClick: () => actions.setView("fosse")
+  }, I18N.t("CAMP_PREP_FOSSE")), /*#__PURE__*/React.createElement("button", {
+    className: "btn ghost",
+    onClick: () => actions.setView("team")
+  }, I18N.t("CAMP_GOTO_TEAM")))));
+}
 function Campaign() {
   // nav interne : { screen: "worlds" | "floors" | "combat", world, floor }
   const [nav, setNav] = useState({
@@ -1411,11 +1525,19 @@ function Campaign() {
     world: 0,
     floor: 0
   });
+  if (nav.screen === "prepare") return /*#__PURE__*/React.createElement(CampaignPreparation, {
+    onBack: () => setNav(nav.returnTo)
+  });
+  const prepare = () => setNav({
+    screen: "prepare",
+    returnTo: nav
+  });
   if (nav.screen === "combat") {
     return /*#__PURE__*/React.createElement(CampaignCombat, {
       key: nav.world + "-" + nav.floor,
       worldIndex: nav.world,
       floorIndex: nav.floor,
+      onPrepare: prepare,
       onBack: () => setNav({
         screen: "floors",
         world: nav.world,
@@ -1444,6 +1566,7 @@ function Campaign() {
     });
   }
   return /*#__PURE__*/React.createElement(WorldSelect, {
+    onPrepare: prepare,
     onPickWorld: w => setNav({
       screen: "floors",
       world: w,
