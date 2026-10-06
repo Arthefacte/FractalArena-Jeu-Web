@@ -6,6 +6,24 @@
   "use strict";
 
   const T = {
+    CAMP_PREP_TITLE: { FR: "Préparer l’équipe", EN: "Prepare your team", ZH: "准备队伍" },
+    CAMP_PREP_INTRO: { FR: "Retrouve tes entités et leur progression avant de poursuivre la campagne.", EN: "Review your entities and their progress before continuing the campaign.", ZH: "继续战役前，查看你的实体及其成长进度。" },
+    CAMP_PREP_OPEN: { FR: "Voir mon équipe", EN: "View my team", ZH: "查看我的队伍" },
+    CAMP_PREP_BACK: { FR: "← Reprendre la campagne", EN: "← Back to campaign", ZH: "← 返回战役" },
+    CAMP_PREP_FORMATION: { FR: "Formation de campagne", EN: "Campaign formation", ZH: "战役阵容" },
+    CAMP_PREP_SLOT: { FR: "Position %d", EN: "Position %d", ZH: "位置 %d" },
+    CAMP_PREP_READY: { FR: "Ton équipe est prête. Reprends la campagne pour choisir ton combat.", EN: "Your team is ready. Return to the campaign to choose your battle.", ZH: "队伍已就绪。返回战役选择战斗。" },
+    CAMP_PREP_DUPLICATE: { FR: "Retire de ta sélection l’entité qui occupe déjà la place du champion.", EN: "Remove the entity already occupying the champion slot from your selection.", ZH: "请从已选实体中移除占据冠军位置的实体。" },
+    CAMP_PREP_STATS_NOTE: { FR: "Niveaux, raretés et XP de tes entités. Les statistiques affichées sont hors bonus d’équipement, de talents et de combat.", EN: "Your entities’ levels, rarities and XP. Stats shown exclude equipment, talent and battle bonuses.", ZH: "展示实体的等级、稀有度和经验值。所示属性不含装备、天赋和战斗加成。" },
+    CAMP_PREP_SELECT: { FR: "Ajouter à l’équipe", EN: "Add to team", ZH: "加入队伍" },
+    CAMP_PREP_REMOVE: { FR: "Retirer de l’équipe", EN: "Remove from team", ZH: "移出队伍" },
+    CAMP_PREP_SELECT_NAME: { FR: "Ajouter %s à l’équipe", EN: "Add %s to the team", ZH: "将%s加入队伍" },
+    CAMP_PREP_REMOVE_NAME: { FR: "Retirer %s de l’équipe", EN: "Remove %s from the team", ZH: "将%s移出队伍" },
+    CAMP_PREP_BORROWED: { FR: "Occupe la place du champion de soutien.", EN: "Occupies the support champion slot.", ZH: "已占据支援冠军位置。" },
+    CAMP_PREP_EMPTY: { FR: "Aucune entité disponible dans ton équipe.", EN: "No entities available in your roster.", ZH: "你的名单中暂无实体。" },
+    CAMP_PREP_PROGRESS: { FR: "Progresser dans la Fosse", EN: "Progress in the Pit", ZH: "在深坑中成长" },
+    CAMP_PREP_FOSSE_DESC: { FR: "Combats dans la Fosse pour gagner de l’XP et, en cas de victoire, des FA. Reviens ensuite en campagne avec tes entités améliorées.", EN: "Fight in the Pit to earn XP and, on victory, FA. Then return to the campaign with your stronger entities.", ZH: "在深坑战斗获取经验，获胜还可获得FA。随后带着成长后的实体返回战役。" },
+    CAMP_PREP_FOSSE: { FR: "Aller à la Fosse", EN: "Go to the Pit", ZH: "前往深坑" },
     // nav
     NAV_TEAM: { FR: "Équipe", EN: "Team", ZH: "队伍" },
     NAV_FOSSE: { FR: "La Fosse", EN: "The Pit", ZH: "深坑" },

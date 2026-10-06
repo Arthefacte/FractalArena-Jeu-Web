@@ -333,3 +333,10 @@
   .hdr-title { font-size: 15px; letter-spacing: 3px; }
   .hdr-sub { display: block; font-size: 8.5px; letter-spacing: 2px; }
 }
+@media (max-width:600px) {
+  .camp-prep-header, .camp-prep-entry { flex-direction:column; align-items:stretch; gap:14px; }
+  .camp-prep-slots { grid-template-columns:1fr; }
+  .camp-prep-summary, .camp-prep-entry { padding:16px; }
+  .camp-prep-grid { grid-template-columns:1fr; }
+  .camp-prep-actions .btn, .camp-prep-header .btn { white-space:normal; min-height:44px; }
+}

@@ -194,15 +194,16 @@ function CampCombatCard({ meta, live, side, cref, borrowTag, oppTypes }) {
 }
 
 /* ---------------- ÉCRAN COMBAT PvE ---------------- */
-function CampaignCombat({ worldIndex, floorIndex, onBack, onCleared }) {
+function CampaignCombat({ worldIndex, floorIndex, onBack, onCleared, onPrepare }) {
   const { g, actions, toast } = useFA();
   // Champion de soutien : avec un champion loué, 2 entités propres suffisent —
   // le serveur insère le snapshot du prêteur au slot 2 (champion-ui.js).
   const CU = window.FA_CHAMPION_UI;
-  const champ = g.championBorrow;
-  const ownNeeded = CU.requiredOwnCount(!!champ);
-  const selectedBeasts = g.selected.map((id) => g.roster.find((b) => b.id === id)).filter(Boolean).slice(0, ownNeeded);
-  const ready = selectedBeasts.length === ownNeeded;
+  const team = window.FA_CAMPAIGN_TEAM.snapshot(g, CU);
+  const champ = team.champion;
+  const ownNeeded = team.ownNeeded;
+  const selectedBeasts = team.own;
+  const ready = team.ready;
   const isBoss = floorIndex === D.BOSS_FLOOR;
   const bossName = I18N.t("CAMP_W" + (worldIndex + 1) + "_BOSS");
 
@@ -244,7 +245,7 @@ function CampaignCombat({ worldIndex, floorIndex, onBack, onCleared }) {
       setP1Meta(metas);
       setP1Live(lives);
     }
-  }, [g.selected.join(","), playing, champ && champ.owner_wallet]);
+  }, [g.selected.join(","), g.roster, playing, champ]);
 
   // Même règle que la Fosse : pas de bulle de quiz pendant la résolution d'un
   // combat (quiz.jsx lit le drapeau `fa-busy` sur <body>).
@@ -415,6 +416,7 @@ function CampaignCombat({ worldIndex, floorIndex, onBack, onCleared }) {
           {constraint && <div style={{ marginTop: 8 }}><ConstraintChip c={constraint} size={12} /></div>}
         </div>
         <div className="flex gap8 wrap">
+          <button className="btn ghost" onClick={onPrepare} disabled={playing}>{I18N.t("CAMP_PREP_TITLE")}</button>
           <span className="pill" style={{ color: "var(--elec)" }}>{I18N.t("CAMP_TICKETS", g.ticketsSilver, g.ticketsGold)}</span>
         </div>
       </div>
@@ -479,8 +481,8 @@ function CampaignCombat({ worldIndex, floorIndex, onBack, onCleared }) {
         <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 18, display: "flex", flexDirection: "column", gap: 14, justifyContent: "center" }}>
           {!ready ? (
             <>
-              <div className="mono" style={{ fontSize: 12, color: "var(--alert)", textAlign: "center" }}>{I18N.t(champ ? "CHAMP_NEED2" : "CAMP_NEED3")}</div>
-              <button className="btn btn-elec block lg" onClick={() => actions.setView("team")}>{I18N.t("CAMP_GOTO_TEAM")}</button>
+              <div className="mono" style={{ fontSize: 12, color: "var(--alert)", textAlign: "center" }}>{I18N.t(team.busy ? "EXP_ERR_bete_en_expedition" : team.duplicateChampion ? "CAMP_PREP_DUPLICATE" : champ ? "CHAMP_NEED2" : "CAMP_NEED3")}</div>
+              <button className="btn btn-elec block lg" onClick={onPrepare}>{I18N.t("CAMP_PREP_TITLE")}</button>
             </>
           ) : (
             <>
@@ -631,13 +633,18 @@ function FloorSelect({ worldIndex, onBack, onPickFloor }) {
 }
 
 /* ---------------- SÉLECTEUR DE MONDE ---------------- */
-function WorldSelect({ onPickWorld }) {
+function WorldSelect({ onPickWorld, onPrepare }) {
   const { g } = useFA();
   const allStars = totalStarsAll(g);
 
   return (
     <div className="container">
       <SectionHead eyebrow="📜 PVE" title={I18N.t("CAMP_TITLE")} sub={I18N.t("CAMP_SUB")} />
+
+      <div className="panel camp-prep-entry">
+        <div><h2 className="h2">{I18N.t("CAMP_PREP_TITLE")}</h2><p className="muted">{I18N.t("CAMP_PREP_INTRO")}</p></div>
+        <button className="btn btn-elec" onClick={onPrepare}>{I18N.t("CAMP_PREP_OPEN")}</button>
+      </div>
 
       <div className="flex between center wrap" style={{ marginBottom: 16, gap: 10 }}>
         <span className="pill" style={{ color: "var(--gold)" }}>{I18N.t("CAMP_TOTAL_STARS", allStars)}</span>
@@ -709,15 +716,63 @@ function CampaignTitles() {
 }
 
 /* ---------------- RACINE CAMPAGNE ---------------- */
+function CampaignPreparation({ onBack }) {
+  const { g, actions } = useFA();
+  const heading = useRef(null);
+  const team = window.FA_CAMPAIGN_TEAM.snapshot(g, window.FA_CHAMPION_UI);
+  useEffect(() => { heading.current?.focus({ preventScroll: true }); window.scrollTo(0, 0); }, []);
+  const status = team.busy ? "EXP_ERR_bete_en_expedition" : team.duplicateChampion ? "CAMP_PREP_DUPLICATE" : team.ready ? "CAMP_PREP_READY" : team.champion ? "CHAMP_NEED2" : "CAMP_NEED3";
+  return <section className="container camp-preparation">
+    <header className="camp-prep-header">
+      <div><p className="eyebrow">{I18N.t("NAV_CAMPAIGN")}</p><h1 className="h1" ref={heading} tabIndex={-1}>{I18N.t("CAMP_PREP_TITLE")}</h1><p className="muted">{I18N.t("CAMP_PREP_INTRO")}</p></div>
+      <button className="btn ghost" onClick={onBack}>{I18N.t("CAMP_PREP_BACK")}</button>
+    </header>
+    <div className="panel camp-prep-summary">
+      <h2 className="h2">{I18N.t("CAMP_PREP_FORMATION")}</h2>
+      <ol className="camp-prep-slots">{Array.from({ length: window.FA_CHAMPION_UI.requiredOwnCount(false) }, (_, i) => {
+        const borrowed = team.champion && i === window.FA_CHAMPION_UI.CHAMPION_SLOT;
+        const b = borrowed ? team.champion.beast : g.roster.find(b => b.id === team.ids[i]);
+        return <li key={i}><span className="mono">{I18N.t("CAMP_PREP_SLOT", i + 1)}</span><strong>{b ? D.displayName(b) : "—"}</strong>{borrowed && <small>{I18N.t("CHAMP_BORROWED_TAG", team.champion.name)}</small>}</li>;
+      })}</ol>
+      <p className={cx("mono", !team.ready && "camp-prep-warning")} role="status">{I18N.t(status)}</p>
+      {team.champion && <button className="btn ghost sm" onClick={() => actions.championClearBorrow()}>{I18N.t("CHAMP_CLEAR")}</button>}
+    </div>
+    <p className="muted camp-prep-note">{I18N.t("CAMP_PREP_STATS_NOTE")}</p>
+    <div className="camp-prep-grid">{g.roster.map(b => {
+      const selected = g.selected.includes(b.id);
+      const borrowed = team.champion?.beast.id === b.id;
+      const busy = team.busyIds.has(b.id);
+      const disabled = !selected && (busy || borrowed || g.selected.length >= team.ownNeeded);
+      return <article className="camp-prep-entity" key={b.id}>
+        <window.CreatureCard beast={b} selected={selected} showXp />
+        {busy && <p className="camp-prep-warning">{I18N.t("EXP_IN_EXPEDITION")}</p>}
+        {borrowed && <p className="muted">{I18N.t("CAMP_PREP_BORROWED")}</p>}
+        <button className="btn block" aria-pressed={selected} disabled={disabled}
+          aria-label={I18N.t(selected ? "CAMP_PREP_REMOVE_NAME" : "CAMP_PREP_SELECT_NAME", D.displayName(b))}
+          onClick={() => actions.toggleSelect(b.id, team.ownNeeded)}>{I18N.t(selected ? "CAMP_PREP_REMOVE" : "CAMP_PREP_SELECT")}</button>
+      </article>;
+    })}</div>
+    {!g.roster.length && <p className="panel camp-prep-summary">{I18N.t("CAMP_PREP_EMPTY")}</p>}
+    <div className="panel camp-prep-entry">
+      <div><h2 className="h2">{I18N.t("CAMP_PREP_PROGRESS")}</h2><p className="muted">{I18N.t("CAMP_PREP_FOSSE_DESC")}</p></div>
+      <div className="camp-prep-actions"><button className="btn btn-fire" onClick={() => actions.setView("fosse")}>{I18N.t("CAMP_PREP_FOSSE")}</button><button className="btn ghost" onClick={() => actions.setView("team")}>{I18N.t("CAMP_GOTO_TEAM")}</button></div>
+    </div>
+  </section>;
+}
+
 function Campaign() {
   // nav interne : { screen: "worlds" | "floors" | "combat", world, floor }
   const [nav, setNav] = useState({ screen: "worlds", world: 0, floor: 0 });
+
+  if (nav.screen === "prepare") return <CampaignPreparation onBack={() => setNav(nav.returnTo)} />;
+  const prepare = () => setNav({ screen: "prepare", returnTo: nav });
 
   if (nav.screen === "combat") {
     return (
       <CampaignCombat
         key={nav.world + "-" + nav.floor}
         worldIndex={nav.world} floorIndex={nav.floor}
+        onPrepare={prepare}
         onBack={() => setNav({ screen: "floors", world: nav.world, floor: 0 })}
         onCleared={(nextFloor) => setNav({ screen: "combat", world: nav.world, floor: nextFloor })}
       />
@@ -731,7 +786,7 @@ function Campaign() {
       />
     );
   }
-  return <WorldSelect onPickWorld={(w) => setNav({ screen: "floors", world: w, floor: 0 })} />;
+  return <WorldSelect onPrepare={prepare} onPickWorld={(w) => setNav({ screen: "floors", world: w, floor: 0 })} />;
 }
 
 Object.assign(window, { Campaign });
