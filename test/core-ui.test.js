@@ -57,3 +57,19 @@ test("rétro-compat : l'onglet vente du Marché ne propose que des reliques", ()
   assert.match(c, /isRelicItem/,
     "sans ce tri, un core planterait la liste « Choisis une relique »");
 });
+
+test("description d'un core : passe par core-ui.js (valeur de SA rareté)", () => {
+  // Le gabarit nu porte les valeurs d'une Commune : c'est ce qui faisait passer
+  // une Rare pour une Commune à l'écran (signalé le 08/10/2026).
+  assert.ok(!/I18N\.t\("CORE_" *\+[^)]*_D"\)/.test(SCREENS),
+    "aucun appel nu à CORE_<ID>_D : les valeurs viennent de core-ui.js");
+  assert.strictEqual((SCREENS.match(/window\.FA_CORE_UI\.coreDesc\(/g) || []).length, 3,
+    "les trois surfaces (slot d'équipement, résultat d'invocation, grille de forge) délèguent");
+  // core-ui.js lit FA_DATA au chargement : après data.js, et avant les composants.
+  const html = read("index.html");
+  assert.ok(html.includes("core-ui.js?v="), "index.html charge core-ui.js");
+  assert.ok(html.indexOf("core-ui.js") > html.indexOf("data.js?v="),
+    "core-ui.js s'exécute après data.js");
+  assert.ok(html.indexOf("core-ui.js") < html.indexOf("build/screens.js"),
+    "core-ui.js s'exécute avant les composants");
+});

@@ -605,7 +605,9 @@ function CoreSlot({
     if (!r || !r.ok) toast(I18N.localizeServerError(r && r.reason), "bad");
   }
   const coreLabel = inst => I18N.t("CORE_" + inst.core_id.toUpperCase());
-  const coreDesc = inst => I18N.t("CORE_" + inst.core_id.toUpperCase() + "_D");
+  // Le texte suit LA RARETÉ de l'instance (core-ui.js) : le chiffre du catalogue
+  // affiché tel quel faisait passer une Rare pour une Commune.
+  const coreDesc = inst => window.FA_CORE_UI.coreDesc(inst, I18N.t);
   return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     className: "relic-slot mono",
     onClick: () => setOpen(true),
@@ -1948,7 +1950,7 @@ function CoreResultBox({
       fontSize: 13,
       marginTop: 8
     }
-  }, I18N.t("CORE_" + String(core.core_id || "").toUpperCase() + "_D"))) : /*#__PURE__*/React.createElement("div", {
+  }, window.FA_CORE_UI.coreDesc(core, I18N.t))) : /*#__PURE__*/React.createElement("div", {
     className: "mono",
     style: {
       color: "var(--text-faint)",
@@ -2108,7 +2110,7 @@ function ForgeCoreEquipement({
   });
   const selRarity = sel.length ? sel[0].rarity : null;
   const coreName = c => I18N.t("CORE_" + String(c.core_id || "").toUpperCase());
-  const coreDesc = c => I18N.t("CORE_" + String(c.core_id || "").toUpperCase() + "_D");
+  const coreDesc = c => window.FA_CORE_UI.coreDesc(c, I18N.t);
   function clic(inst) {
     if (busy) return;
     // null = refusé : une relique (autre famille) ou 3 cores déjà sélectionnés.

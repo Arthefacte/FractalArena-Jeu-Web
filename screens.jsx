@@ -335,7 +335,9 @@ function CoreSlot({ beast }) {
     if (!r || !r.ok) toast(I18N.localizeServerError(r && r.reason), "bad");
   }
   const coreLabel = (inst) => I18N.t("CORE_" + inst.core_id.toUpperCase());
-  const coreDesc = (inst) => I18N.t("CORE_" + inst.core_id.toUpperCase() + "_D");
+  // Le texte suit LA RARETÉ de l'instance (core-ui.js) : le chiffre du catalogue
+  // affiché tel quel faisait passer une Rare pour une Commune.
+  const coreDesc = (inst) => window.FA_CORE_UI.coreDesc(inst, I18N.t);
   return (
     <>
       <div className="relic-slot mono" onClick={() => setOpen(true)}
@@ -1000,7 +1002,7 @@ function CoreResultBox({ core }) {
           </div>
           <div style={{ fontWeight: 700, fontSize: 16 }}>{I18N.t("CORE_" + String(core.core_id || "").toUpperCase())}</div>
           <div style={{ color: D.RARITY_COLORS[core.rarity] || "var(--text)", fontWeight: 600, marginTop: 4 }}>{rarityLabel(core.rarity || "Common")}</div>
-          <div className="mono muted" style={{ fontSize: 13, marginTop: 8 }}>{I18N.t("CORE_" + String(core.core_id || "").toUpperCase() + "_D")}</div>
+          <div className="mono muted" style={{ fontSize: 13, marginTop: 8 }}>{window.FA_CORE_UI.coreDesc(core, I18N.t)}</div>
         </div>
       ) : (
         <div className="mono" style={{ color: "var(--text-faint)", fontSize: 12, textAlign: "center" }}>⬡<br />{I18N.t("CORE_SUMMON_TITLE")}</div>
@@ -1082,7 +1084,7 @@ function ForgeCoreEquipement({ onForged }) {
   const dis = FUI.disenchantState({ sel, balance, busy });
   const selRarity = sel.length ? sel[0].rarity : null;
   const coreName = (c) => I18N.t("CORE_" + String(c.core_id || "").toUpperCase());
-  const coreDesc = (c) => I18N.t("CORE_" + String(c.core_id || "").toUpperCase() + "_D");
+  const coreDesc = (c) => window.FA_CORE_UI.coreDesc(c, I18N.t);
 
   function clic(inst) {
     if (busy) return;
