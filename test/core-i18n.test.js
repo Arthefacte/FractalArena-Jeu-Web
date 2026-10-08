@@ -28,16 +28,46 @@ test("i18n : toutes les clés CORE_* existent en FR/EN/ZH", () => {
   }
 });
 
-test("i18n : les descriptions portent les chiffres du design v1", () => {
-  const src = fs.readFileSync(path.join(__dirname, "..", "i18n.js"), "utf8");
-  const bloc = (k) => {
-    const idx = src.indexOf(k + ":");
-    return src.slice(idx, src.indexOf("}", idx) + 1);
-  };
-  assert.match(bloc("CORE_FURY_CORE_D"), /15/, "fury : +15% ATK par kill");
-  assert.match(bloc("CORE_GUARDIAN_CORE_D"), /20/, "guardian : bouclier 20% PV max");
-  assert.match(bloc("CORE_REGEN_CORE_D"), /8/, "regen : 8% PV max");
-  assert.match(bloc("CORE_FEEDBACK_CORE_D"), /15/, "feedback : renvoie 15%");
-  assert.match(bloc("CORE_LAST_STAND_CORE_D"), /25/, "last stand : +25% ATK");
-  assert.match(bloc("CORE_OVERCLOCK_CORE_D"), /SPD|速度/, "overclock : condition SPD");
+test("i18n : nombre de %s des descriptions == descArgs, dans les 3 langues", () => {
+  globalThis.window = globalThis.window || {};
+  require("../data.js");
+  require("../core-ui.js");
+  require("../i18n.js");
+  const CU = window.FA_CORE_UI;
+  const { T } = window.FA_I18N;
+  for (const id of [
+    "fury_core", "guardian_core", "overclock_core",
+    "regen_core", "feedback_core", "last_stand_core",
+  ]) {
+    const key = "CORE_" + id.toUpperCase() + "_D";
+    const nArgs = CU.descArgs(id, "Common").length;
+    assert.ok(T[key], `clé manquante : ${key}`);
+    for (const l of ["FR", "EN", "ZH"]) {
+      const tpl = T[key][l];
+      const n = (tpl.match(/%[sd]/g) || []).length;
+      assert.strictEqual(n, nArgs, `${key}.${l} : ${n} placeholders, ${nArgs} args`);
+      // PIÈGE fmt : t() ne remplace %% que si args.length > 0 — interdit dans les
+      // templates sans arg (l'Overclock n'en a aucun).
+      if (nArgs === 0) assert.ok(!tpl.includes("%"), `${key}.${l} sans arg ne doit pas contenir %`);
+    }
+  }
+});
+
+test("i18n : rendu bout-en-bout — une Rare n'affiche PAS le chiffre d'une Commune", () => {
+  window.FA_I18N.setLang("FR");
+  const { t } = window.FA_I18N;
+  const CU = window.FA_CORE_UI;
+  assert.strictEqual(CU.coreDesc({ core_id: "fury_core", rarity: "Common" }, t),
+    "+15% ATK à chaque kill allié (cumulable)");
+  assert.strictEqual(CU.coreDesc({ core_id: "fury_core", rarity: "Rare" }, t),
+    "+18.75% ATK à chaque kill allié (cumulable)");
+  assert.strictEqual(CU.coreDesc({ core_id: "fury_core", rarity: "Legendary" }, t),
+    "+30% ATK à chaque kill allié (cumulable)");
+  // Le seuil (30 % PV du Last Stand) et la durée (1 tour) restent fixes, hors %s.
+  assert.strictEqual(CU.coreDesc({ core_id: "last_stand_core", rarity: "Epic" }, t),
+    "+37.5% ATK et +22.5% DEF sous 30% PV");
+  window.FA_I18N.setLang("EN");
+  assert.strictEqual(CU.coreDesc({ core_id: "guardian_core", rarity: "Rare" }, t),
+    "25% Max HP shield on first hit taken (1 turn)");
+  window.FA_I18N.setLang("FR");
 });
