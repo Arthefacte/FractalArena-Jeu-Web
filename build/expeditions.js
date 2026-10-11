@@ -931,7 +931,7 @@ function Expeditions() {
     const crew = (loot.beastIds || []).map(beastById).filter(Boolean);
     const fa = loot.fa_week || g.expFaWeek || {
       granted: 0,
-      cap: 15000
+      cap: 20000
     };
     return /*#__PURE__*/React.createElement("div", {
       className: "exq-col"
