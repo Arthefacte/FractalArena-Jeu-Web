@@ -375,6 +375,10 @@ function Cinematique(props) {
   // sur la sequence bakee plutot que de laisser un trou noir a la place de
   // l'embleme. Meme regle que tout window.FA_* : un echec doit avoir un repli.
   const [troisDKo, setTroisDKo] = useState(false);
+  const [modelReady, setModelReady] = useState(!CINE_3D);
+  const [backgroundReady, setBackgroundReady] = useState(false);
+  const prepared = modelReady && backgroundReady;
+  const bgRef = useRef(null);
 
   const tRef = useRef(0);
   const rafRef = useRef(0);
@@ -386,12 +390,14 @@ function Cinematique(props) {
   const enterT2 = useRef(0);
   const onEnterRef = useRef(props.onEnter);
   onEnterRef.current = props.onEnter;
+  const cineStartedRef = useRef(false);
   const audioStartedRef = useRef(false);
   const audioMutedRef = useRef(false);
   audioMutedRef.current = audioMuted;
 
   // ——— boucle timeline ———
   const start = useCallback(() => {
+    cineStartedRef.current = true;
     cancelAnimationFrame(rafRef.current);
     tRef.current = 0;
     setT(0); setEnded(false); setLeaving(false); setLoading(false);
@@ -437,7 +443,7 @@ function Cinematique(props) {
   // ——— audio (démarre au premier geste, fondu entrée/sortie) ———
   const startAudio = useCallback(() => {
     const a = audioRef.current;
-    if (!a) return;
+    if (!a || !cineStartedRef.current) return;
     if (audioStartedRef.current) return; // déjà démarré
     a.loop = false;
     a.muted = audioMutedRef.current;
@@ -454,10 +460,50 @@ function Cinematique(props) {
     if (!m && !audioStartedRef.current) startAudio(); // on réactive → (re)tente le démarrage
   }, [startAudio]);
 
-  // démarrage timeline + listeners audio
+  // Préparer le fond avant de lancer les premières images. Un échec réseau
+  // ne doit jamais enfermer le joueur dans le chargement.
   useEffect(() => {
-    start();
-    startAudio(); // tentative d'autoplay au montage ; bloquée sans geste par le navigateur → fallback sur le 1er clic
+    const image = bgRef.current;
+    let cancelled = false;
+    const ready = () => { if (!cancelled) setBackgroundReady(true); };
+    const timer = setTimeout(ready, 8000);
+    if (image && image.decode) image.decode().then(ready, ready);
+    else if (!image || image.complete) ready();
+    else { image.addEventListener('load', ready); image.addEventListener('error', ready); }
+    return () => {
+      cancelled = true; clearTimeout(timer);
+      if (image) { image.removeEventListener('load', ready); image.removeEventListener('error', ready); }
+    };
+  }, []);
+
+  // Le splash attend data-cine-ready ; la timeline attend son RETRAIT.
+  // Ainsi le chargement et la première compilation GPU restent avant t=0,
+  // et les premières secondes du lore ne se jouent plus derrière le splash.
+  useEffect(() => {
+    if (!prepared) return;
+    let observer = null, firstFrame = 0, secondFrame = 0, scheduled = false;
+    const begin = () => {
+      if (scheduled || document.getElementById('boot')) return;
+      scheduled = true;
+      if (observer) observer.disconnect();
+      firstFrame = requestAnimationFrame(() => {
+        secondFrame = requestAnimationFrame(() => { start(); startAudio(); });
+      });
+    };
+    if (document.getElementById('boot')) {
+      observer = new MutationObserver(begin);
+      observer.observe(document.body, { childList: true });
+    }
+    begin();
+    return () => {
+      if (observer) observer.disconnect();
+      cancelAnimationFrame(firstFrame); cancelAnimationFrame(secondFrame);
+      cancelAnimationFrame(rafRef.current);
+    };
+  }, [prepared, start, startAudio]);
+
+  // Listeners audio (autoplay tenté au vrai démarrage, sinon premier geste).
+  useEffect(() => {
     const onGesture = () => startAudio();
     window.addEventListener('pointerdown', onGesture);
     window.addEventListener('keydown', onGesture);
@@ -487,7 +533,11 @@ function Cinematique(props) {
     const canvas = canvasRef.current;
     if (!canvas) return;
     let disposed = false;
+    let loaded = false, environmentReady = false, warmed = false;
     let raf = 0, renderer = null, group = null, rim = null, scene = null, pmrem = null, envTex = null;
+    const prepareTimer = setTimeout(() => {
+      if (!disposed) { setTroisDKo(true); setModelReady(true); }
+    }, 8000);
     (async () => {
       try {
         // import() natif, résolu par l'<importmap> d'index.html. Il passait autrefois
@@ -529,7 +579,7 @@ function Cinematique(props) {
 
         const loader = new GLTFLoader();
         loader.load(EMBLEM_GLB, (gltf) => {
-          if (disposed) return;
+          if (disposed) { disposeThreeScene({ scene: gltf.scene }); return; }
           // Le jeton porte déjà ses deux faces (FA/FB) : centrage et échelle suffisent.
           const m1 = gltf.scene;
           const box = new THREE.Box3().setFromObject(m1);
@@ -539,11 +589,12 @@ function Cinematique(props) {
           m1.position.sub(center);
           group.add(m1);
           group.scale.setScalar(2.9 / maxDim);
+          loaded = true;
           window.FA_DIAG && window.FA_DIAG.marque('emblème-charge');
         }, undefined, (err) => {
           console.warn('GLB load error', err);
           // Sans modele il n'y aura jamais rien a montrer : repli sur le bake.
-          if (!disposed) { cancelAnimationFrame(raf); setTroisDKo(true); }
+          if (!disposed) { cancelAnimationFrame(raf); clearTimeout(prepareTimer); setTroisDKo(true); setModelReady(true); }
         });
 
         const clock = new THREE.Clock();
@@ -558,6 +609,14 @@ function Cinematique(props) {
           if (group) group.rotation.y = -clock.getElapsedTime() * (Math.PI * 2 / 11);
           if (accent === 'prisme' && rim) { const tri = Math.abs(((clock.getElapsedTime() / 5) % 1) * 2 - 1); rim.color.setHSL(0.092 + (0.511 - 0.092) * tri, 1, 0.62); }
           renderer.render(scene, camera);
+          // Le GLB chargé n'est pas encore un rendu : son premier draw compile
+          // les matériaux et transfère les textures. Acquitter APRÈS ce draw.
+          if (loaded && environmentReady && !warmed) {
+            warmed = true;
+            clearTimeout(prepareTimer);
+            window.FA_DIAG && window.FA_DIAG.marque('cine-3d-prete');
+            setModelReady(true);
+          }
         };
         render();
 
@@ -570,19 +629,21 @@ function Cinematique(props) {
         pmrem = new THREE.PMREMGenerator(renderer);
         envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
         scene.environment = envTex;
+        environmentReady = true;
         window.FA_DIAG && window.FA_DIAG.marque('pmrem-pret');
       } catch (e) {
         console.warn('three init failed', e);
         // Contexte WebGL refuse, import three en echec… : repli sur le bake.
-        if (!disposed) { cancelAnimationFrame(raf); setTroisDKo(true); }
+        if (!disposed) { cancelAnimationFrame(raf); clearTimeout(prepareTimer); setTroisDKo(true); setModelReady(true); }
       }
     })();
     return () => {
       disposed = true;
+      clearTimeout(prepareTimer);
       cancelAnimationFrame(raf);
       disposeThreeScene({ scene, envTex, pmrem, renderer });
     };
-  }, [accent]);
+  }, [accent, troisDKo]);
 
   const v = useMemo(() => cineVals(t, {
     accent, loreAnim, titleText, ctaText, tagline, loreLine1, loreLine2, ended, leaving, loading,
@@ -615,11 +676,12 @@ function Cinematique(props) {
   return (
     <div
       data-screen-label="cinematique-ouverture"
+      data-cine-ready={prepared ? 'true' : 'false'}
       onContextMenu={(e) => e.preventDefault()}
       onDragStart={(e) => e.preventDefault()}
       style={{ position: 'fixed', inset: 0, overflow: 'hidden', background: '#05070f', fontFamily: "'Chakra Petch',sans-serif", color: '#EAF1FF', zIndex: 1000, userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}
     >
-      <img src="assets/BACKGROUND.webp" alt="" draggable={false} style={v.bgStyle} />
+      <img ref={bgRef} src="assets/BACKGROUND.webp" alt="" draggable={false} style={v.bgStyle} />
       {/* `deco` : ne laisse que le fond et le canvas. Test symetrique de
           `sans=3d` — au lieu de retirer la 3D, on retire tout le reste. Si le
           canvas tourne rond seul, le gel vient d'une combinaison et non de lui. */}
