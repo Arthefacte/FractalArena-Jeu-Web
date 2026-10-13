@@ -112,6 +112,24 @@ function scramble(text, p) {
   return out;
 }
 
+// Mémoire de 60 ms pour les textes brouillés. `cineVals` est une fonction PURE
+// appelée à chaque rendu : chaque `scramble` y parcourt la chaîne et tire un
+// caractère aléatoire pour chacun des caractères non résolus. À 60 rendus par
+// seconde sur cinq textes, cela faisait jusqu'à 300 recalculs et autant de
+// réécritures du DOM par seconde (mise en page + repeint), sur le fil qui porte
+// déjà le rendu 3D de la cinématique. Le cache garde l'effet : le brouillage
+// scintille toujours et les caractères se résolvent avec 60 ms de retard au
+// pire, invisible. Pas de `useRef` ici — ce n'est pas un composant.
+const BROUILLE_CACHE = {};
+function brouille(cle, texte, p) {
+  const maintenant = performance.now();
+  const c = BROUILLE_CACHE[cle];
+  if (c && maintenant - c.t < 60) return c.v;
+  const v = scramble(texte, p);
+  BROUILLE_CACHE[cle] = { t: maintenant, v };
+  return v;
+}
+
 // Calcule toutes les valeurs/styles animés pour un instant t donné (port de renderVals()).
 function cineVals(t, opts) {
   const { accent, loreAnim, titleText, ctaText, tagline, loreLine1, loreLine2,
@@ -226,12 +244,12 @@ function cineVals(t, opts) {
   const lore2Style = mkLore(S(1.0, 2.1), eO(S(1.0, 3.3)));
 
   const isDecrypt = loreAnim === 'decrypt';
-  const lore1Text = isDecrypt ? scramble(loreLine1, S(0.7, 3.0)) : loreLine1;
-  const lore2Text = isDecrypt ? scramble(loreLine2, S(1.0, 3.3)) : loreLine2;
+  const lore1Text = isDecrypt ? brouille('lore1', loreLine1, S(0.7, 3.0)) : loreLine1;
+  const lore2Text = isDecrypt ? brouille('lore2', loreLine2, S(1.0, 3.3)) : loreLine2;
 
-  const titleTextOut = isDecrypt ? scramble(titleText, S(11.3, 15.8)) : titleText;
-  const ctaTextOut = isDecrypt ? scramble(ctaText, S(14.8, 18.8)) : ctaText;
-  const taglineTextOut = isDecrypt ? scramble(tagline, S(13.4, 17.4)) : tagline;
+  const titleTextOut = isDecrypt ? brouille('titre', titleText, S(11.3, 15.8)) : titleText;
+  const ctaTextOut = isDecrypt ? brouille('cta', ctaText, S(14.8, 18.8)) : ctaText;
+  const taglineTextOut = isDecrypt ? brouille('tagline', tagline, S(13.4, 17.4)) : tagline;
 
   const tP = S(11.4, 13.6);
   const titleStyle = { position: 'absolute', left: '50%', top: '63%', transform: `translate(-50%, calc(-50% + ${L(12, 0, eO(tP))}px))`, margin: 0, fontFamily: "'Chakra Petch',sans-serif", fontWeight: 700, fontSize: 'clamp(32px,8.2vmin,92px)', textTransform: 'uppercase', letterSpacing: L(0.5, 0.16, eO(tP)) + 'em', backgroundImage: titleGradient, backgroundSize: isPrism ? '220% 100%' : '100% 100%', WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent', whiteSpace: 'nowrap', opacity: tP, clipPath: isDecrypt ? 'none' : `inset(0 ${L(50, 0, eO(tP))}% 0 ${L(50, 0, eO(tP))}%)`, filter: `drop-shadow(0 2px 20px ${rgba(0.35)})`, pointerEvents: 'none' };
@@ -382,6 +400,7 @@ function Cinematique(props) {
 
   const tRef = useRef(0);
   const rafRef = useRef(0);
+  const dernierRendu = useRef(0); // dernier instant où React a été mis à jour (plafonné à 30 Hz)
   const lastRef = useRef(0);
   const audioFadeRef = useRef(0);
   const canvasRef = useRef(null);
@@ -416,7 +435,14 @@ function Cinematique(props) {
         window.FA_DIAG && window.FA_DIAG.marque('cine-fin');
         return;
       }
-      tRef.current = nt; setT(nt);
+      tRef.current = nt;
+      // Le rendu React ne suit pas les 60 Hz du rAF. Recalculer 60 fois par
+      // seconde tout l'arbre de la cinématique (styles de scène + cinq textes)
+      // saturait le fil principal du téléphone : mesuré 2,2 à 2,7 s de tâches
+      // longues par tranche de 2,5 s pendant TOUTE la cinématique, et des gels
+      // de 3 s signalés par le fondateur. 30 Hz suffisent — les parties en CSS
+      // (keyframes) continuent, elles, d'être animées à 60 Hz par le compositeur.
+      if (now - dernierRendu.current >= 33) { dernierRendu.current = now; setT(nt); }
       rafRef.current = requestAnimationFrame(loop);
     };
     rafRef.current = requestAnimationFrame(loop);
