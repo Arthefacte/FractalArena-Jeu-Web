@@ -1,7 +1,7 @@
 /* Hash de minage de l'écran de démarrage.
    Externalisé d'index.html pour que la CSP puisse refuser les scripts en ligne
    ('unsafe-inline' retiré de script-src). Chargé sans `defer` ni `async` pour
-   garder son effet d'origine : démarrer immédiatement, avant boot-anim.js. */
+   garder son effet d'origine : démarrer immédiatement, avant l'assemblage de l'emblème. */
 (function () {
   var hx = document.getElementById("boot-hx"); if (!hx) return;
   var H = "0123456789abcdef", solved = 0;
