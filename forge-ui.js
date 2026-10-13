@@ -70,13 +70,120 @@
     };
   }
 
-  // État du bouton Fusionner. Mode Or : seul le ticket compte, le solde FA est ignoré
-  // (la fusion premium coûte 0 FA côté serveur). Mode FA : solde requis.
-  function fusionButtonState({ gold, cost, balance, ticketsGold, busy }) {
+  // État du bouton Fusionner. Trois vitesses, trois ressources (décision fondateur
+  // 13/10/2026) :
+  //  - ticket Or (gratuit) : seul le ticket compte, le solde FA est ignoré (0 FA côté serveur) ;
+  //  - tickets Argent : prix progressif par palier (5/15/50) ; même garantie de 100 %, donc
+  //    là encore le solde FA ne compte pas — mais le ticket manquant doit se DIRE, sinon le
+  //    bouton resterait bloqué sans que le joueur sache pourquoi ;
+  //  - FA : solde requis, 75 % de réussite (le seul mode où l'on peut échouer).
+  function fusionButtonState({ gold, silver, cost, balance, ticketsGold, ticketsSilver, silverCost, busy }) {
     if (busy) return { disabled: true, showInsufficient: false };
     if (gold) return { disabled: (ticketsGold || 0) < 1, showInsufficient: false };
+    if (silver) {
+      const lack = (ticketsSilver || 0) < (silverCost || 0);
+      return { disabled: lack, showInsufficient: false, showSilverMissing: lack };
+    }
     const insufficient = (balance || 0) < cost;
     return { disabled: insufficient, showInsufficient: insufficient };
+  }
+
+  // ---- Fusion de RANG (3 entités de même rang ET de même rareté → 1 entité NEUVE
+  //      du rang au-dessus, niveau 1, 100 %) — décision fondateur 13/10/2026 ----
+  // Barèmes et paliers lus sur window.FA_DATA À L'APPEL (D.FORGE.RANK_FUSE_COST,
+  // D.RANK_LIST) : aucune table recopiée ici, sinon elle dériverait du serveur en silence.
+
+  function rankNext(rank) {
+    const D = window.FA_DATA;
+    const L = D && D.RANK_LIST ? D.RANK_LIST : [];
+    const i = L.indexOf(rank);
+    return i >= 0 ? (L[i + 1] || null) : null;
+  }
+
+  // Prix du palier d'entrée. null pour un rang S (sommet) : la fusion est refusée, pas gratuite.
+  function rankFuseCost(rank) {
+    const D = window.FA_DATA;
+    const T = D && D.FORGE ? D.FORGE.RANK_FUSE_COST : null;
+    return (T && Object.hasOwn(T, rank)) ? T[rank] : null;
+  }
+
+  // Sélection de 3 entités éligibles. Refus (null) : une 4ᵉ, ou une entité d'un autre rang
+  // ou d'une autre rareté que la première choisie. Re-cliquer une entité la retire.
+  // On garde les ENTITÉS (pas les ids) : la modale d'avertissement doit nommer leur niveau,
+  // leur XP, leurs talents et leur équipement — un id seul ne dit rien au joueur.
+  function rankSelToggle(sel, beast) {
+    const S = Array.isArray(sel) ? sel : [];
+    if (!beast) return null;
+    if (S.some((b) => b.id === beast.id)) return S.filter((b) => b.id !== beast.id);
+    if (S.length >= 3) return null;
+    if (S.length && (S[0].rank !== beast.rank || S[0].rarity !== beast.rarity)) return null;
+    return [...S, beast];
+  }
+
+  function rankFuseState({ sel, balance, busy }) {
+    const S = Array.isArray(sel) ? sel : [];
+    const rank = S.length ? (S[0].rank || "C") : null;
+    const nextRank = rank ? rankNext(rank) : null;
+    const cost = rank ? rankFuseCost(rank) : null;
+    const maxRank = rank != null && nextRank == null;   // S : sommet, rien au-dessus
+    const ready = S.length === 3 && cost != null;
+    const insufficient = ready && (balance || 0) < cost;
+    return {
+      rank, nextRank, cost, maxRank,
+      disabled: !!busy || !ready || insufficient,
+      showInsufficient: insufficient,
+      missing: 3 - S.length,
+    };
+  }
+
+  // Types proposables pour l'entité produite : les TYPE des trois entités sacrifiées, un
+  // par template distinct (c'est ce que le serveur accepte en `template_id` — il refuse
+  // tout template absent des trois, sinon la fusion fabriquerait n'importe quel type).
+  function rankFuseTemplates(beasts) {
+    const D = window.FA_DATA;
+    const out = [];
+    for (const b of (Array.isArray(beasts) ? beasts : [])) {
+      if (!b || !b.template_name) continue;
+      if (out.some((t) => t.template_name === b.template_name)) continue;
+      out.push({
+        template_name: b.template_name,
+        type: b.type,
+        label: (D && D.TYPE_LABEL && D.TYPE_LABEL[b.type]) || b.type || b.template_name,
+      });
+    }
+    return out;
+  }
+
+  function countTalents(b) {
+    if (!b || !b.talents || typeof b.talents !== "object") return 0;
+    return Object.keys(b.talents).filter((k) => b.talents[k]).length;
+  }
+
+  // Ce que la modale d'avertissement DOIT nommer (exigence explicite du fondateur) : les
+  // trois entités qui partent AVEC leur niveau, leur XP, leurs talents et leur équipement.
+  // Renvoie null tant que la sélection n'est pas complète : l'appelant n'a qu'un cas à traiter.
+  function rankFuseWarning(sel) {
+    const D = window.FA_DATA;
+    const S = Array.isArray(sel) ? sel : [];
+    if (S.length !== 3) return null;
+    const lines = S.map((b) => ({
+      id: b.id,
+      name: (D && D.displayName) ? D.displayName(b) : (b.name || b.id),
+      rarity: b.rarity,
+      rank: b.rank || "C",
+      level: b.level || 1,
+      xp: b.xp || 0,
+      talents: countTalents(b),
+      equipment: (b.relic_id ? 1 : 0) + (b.core_id ? 1 : 0),
+    }));
+    return {
+      lines,
+      levels: lines.map((l) => l.level),
+      totalXp: lines.reduce((s, l) => s + l.xp, 0),
+      totalTalents: lines.reduce((s, l) => s + l.talents, 0),
+      totalEquipment: lines.reduce((s, l) => s + l.equipment, 0),
+      maxLevel: Math.max(...lines.map((l) => l.level)),
+    };
   }
 
   // ---- Forge d'équipement (fusion de reliques + désenchantement) ----
@@ -169,5 +276,6 @@
   }
 
   window.FA_FORGE_UI = { rerollDiff, toggleLock, withLockCost, fusionSwap, fusionButtonState, entityPower, fusionKeepWarning, MAX_REROLL_LOCKS, REROLL_LOCK_MULT, LOCKABLE: KEYS,
+    rankNext, rankFuseCost, rankSelToggle, rankFuseState, rankFuseTemplates, rankFuseWarning, countTalents,
     equipSelToggle, familyMatch, buybackFor, fuseCostFor, fuseState, relicFuseState, coreFuseState, disenchantState, equipForgeErrText };
 })();

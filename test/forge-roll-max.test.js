@@ -52,7 +52,7 @@ test("la fusion arme une confirmation quand la sacrifiée est plus forte", () =>
   assert.ok(fusion.includes("fusionKeepWarning"), "la garde doit être appelée avec les deux entités sélectionnées");
   assert.match(fusion, /FG_FUSE_WARN/, "l'avertissement doit être affiché");
   assert.match(fusion, /FG_FUSE_CONFIRM/, "le bouton doit demander une confirmation explicite");
-  assert.match(fusion, /needConfirm \? setConfirmWeak\(true\) : doFuse\(goldMode\)/,
+  assert.match(fusion, /needConfirm \? setConfirmWeak\(true\) : doFuse\(pay\)/,
     "le premier clic ARME la confirmation, le second seulement fusionne — l'ordre inverse annulerait la garde");
   assert.match(fusion, /setConfirmWeak\(false\)/, "changer de sélection doit désarmer la confirmation (sinon elle survit au mauvais couple)");
 });

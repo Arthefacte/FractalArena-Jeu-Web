@@ -22,9 +22,15 @@ function bloc(marker, len) {
   return APP.slice(i, i + (len || 1600));
 }
 
+// Fenêtre élargie pour les actions qui ont grandi (la borne est un simple repère de
+// lecture, pas la propriété testée : ce qui est vérifié reste « identité capturée à
+// l'entrée » et « applySave », tous deux présents quel que soit l'écart). `fuse` a
+// reçu la troisième vitesse de paiement (tickets Argent, 13/10/2026).
+const FENETRES = { "async fuse(": 3400, "async rankFuse(": 2000 };
+
 // Les actions qui relisent /save apres une mutation (ou a la connexion).
 const RESYNCS = [
-  "async buyBoost(", "async fuse(", "async reroll(", "async rerollConfirm(", "async rerollDiscard(",
+  "async buyBoost(", "async fuse(", "async rankFuse(", "async reroll(", "async rerollConfirm(", "async rerollDiscard(",
   "async summon(", "async relicSummon(", "async coreSummon(", "async relicFuse(", "async equipDisenchant(",
   "async expeditionsClaim(", "async expeditionsCraftRelic(", "async expeditionsCraftCore(",
   "async chooseTalent(", "async refreshLp(", "async rename(", "async setTitle(", "async marketResync(",
@@ -41,7 +47,7 @@ test("applySave existe et compare wallet + jeton captures a l'envoi, dans l'upda
 
 test("chaque resync /save passe par applySave avec le wallet et le jeton lus AVANT l'await", () => {
   for (const name of RESYNCS) {
-    const b = bloc(name, 2600);
+    const b = bloc(name, FENETRES[name] || 2600);
     assert.match(b, /const s = gRef\.current;/, name + " : l'identite doit etre capturee a l'entree de l'action");
     assert.match(b, /applySave\(save, s\.wallet, s\.authToken[,)]/, name + " : la reponse /save doit passer par applySave(save, s.wallet, s.authToken)");
   }

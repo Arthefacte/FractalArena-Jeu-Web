@@ -26,7 +26,7 @@ window.FA_API_URL = (typeof location !== "undefined" &&
 // l'installation alors que la prod servait le nouveau depuis une heure.
 // Ne sert plus que de REPLI : un asset absent du manifeste doit rester cache-busté
 // plutôt que servi indéfiniment par le CDN.
-window.FA_ASSET_V = "338";
+window.FA_ASSET_V = "339";
 
 // L'URL porte l'empreinte du CONTENU du fichier (asset-hashes.js, généré au build),
 // et non la version du jeu. Versionner par la version du jeu — ce que faisait la
@@ -238,7 +238,16 @@ window.FA_ASSET_URL = function (chemin) {
 
   const FORGE = {
     FUSION_COST: { Common: 3000, Rare: 8000, Epic: 25000 },
-    FUSION_RATE: { Common: 0.6, Rare: 0.45, Epic: 0.3 },
+    // Taux UNIQUE de 75 % aux trois paliers (décision fondateur 13/10/2026 : 60/45/30
+    // avant). Le même chiffre partout est VOULU : un barème dégressif se lisait comme
+    // une punition des petits paliers, et le joueur ne pouvait pas savoir lequel il payait.
+    FUSION_RATE: { Common: 0.75, Rare: 0.75, Epic: 0.75 },
+    // Deuxième vitesse du 100 % : tickets Argent, prix PROGRESSIF par palier (miroir
+    // forge.js FUSION_SILVER_TICKETS). Le ticket remplace le coût en FA : aucun FA débité.
+    FUSION_SILVER_TICKETS: { Common: 5, Rare: 15, Epic: 50 },
+    // Fusion de RANG 3 → 1 (miroir forge.js RANK_FUSE_COSTS) : prix du palier d'ENTRÉE.
+    // S = sommet, absent de la table — on ne fusionne pas un rang S.
+    RANK_FUSE_COST: { C: 5000, B: 15000, A: 50000 },
     REROLL_BASE: { Common: 1000, Rare: 3000, Epic: 8000, Legendary: 25000 },
   };
 
