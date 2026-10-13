@@ -1006,6 +1006,7 @@ function Cinematique(props) {
           group.add(m1);
           group.scale.setScalar(2.9 / maxDim);
           loaded = true;
+          window.FA_PREP && window.FA_PREP.etape("glb");
           window.FA_DIAG && window.FA_DIAG.marque('emblème-charge');
         }, undefined, err => {
           console.warn('GLB load error', err);
@@ -1040,6 +1041,69 @@ function Cinematique(props) {
             warmed = true;
             clearTimeout(prepareTimer);
             window.FA_DIAG && window.FA_DIAG.marque('cine-3d-prete');
+            // Décision du fondateur (13/10) : tout préparer AVANT de montrer la
+            // séquence, quitte à faire attendre le joueur. compiler() compile
+            // d'un coup tous les programmes de shaders de la scène ; sans lui,
+            // chaque matériau compile à sa PREMIÈRE apparition, pendant
+            // l'affichage — c'est la cause des gels de plusieurs secondes et des
+            // zones restées noires. Le rendu qui suit force l'envoi des textures
+            // au processeur graphique.
+            try {
+              renderer.compile(scene, camera);
+            } catch (e) {/* API absente, on continue */}
+            window.FA_PREP && window.FA_PREP.etape("shaders");
+            try {
+              renderer.render(scene, camera);
+            } catch (e) {/* rien */}
+            window.FA_PREP && window.FA_PREP.etape("textures");
+            // Puis tout ce qui viendra PLUS TARD dans la séquence : la séquence
+            // bakée de l'emblème (repli, ou scène suivante), le son et les
+            // polices. Décodé plus tard, chacun se paie en gel visible.
+            (function preparerLaSuite() {
+              var marquer = function (nom) {
+                window.FA_PREP && window.FA_PREP.etape(nom);
+              };
+              try {
+                var img = new Image();
+                if (img.decode) {
+                  img.src = EMBLEM_SPIN;
+                  img.decode().then(function () {
+                    marquer("images");
+                  }, function () {
+                    marquer("images");
+                  });
+                } else {
+                  img.onload = function () {
+                    marquer("images");
+                  };
+                  img.onerror = function () {
+                    marquer("images");
+                  };
+                  img.src = EMBLEM_SPIN;
+                }
+              } catch (e) {
+                marquer("images");
+              }
+              var a = audioRef.current;
+              if (a) {
+                try {
+                  a.load();
+                } catch (e) {/* réseau refusé : le son n'empêche pas de jouer */}
+                if (a.readyState >= 3) marquer("audio");else {
+                  a.addEventListener("canplaythrough", function () {
+                    marquer("audio");
+                  }, {
+                    once: true
+                  });
+                  setTimeout(function () {
+                    marquer("audio");
+                  }, 6000); // jamais bloquant
+                }
+              } else marquer("audio");
+              if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () {
+                marquer("polices");
+              });else marquer("polices");
+            })();
             setModelReady(true);
           }
         };
@@ -1055,6 +1119,7 @@ function Cinematique(props) {
         envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
         scene.environment = envTex;
         environmentReady = true;
+        window.FA_PREP && window.FA_PREP.etape("environnement");
         window.FA_DIAG && window.FA_DIAG.marque('pmrem-pret');
       } catch (e) {
         console.warn('three init failed', e);
