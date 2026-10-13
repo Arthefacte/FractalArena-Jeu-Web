@@ -151,11 +151,11 @@ test("account.jsx est charge apres components.jsx et avant app.jsx", () => {
 test("cache-bust homogene : aucune balise ne reste sur l'ancienne version", () => {
   const versions = [...HTML.matchAll(/\?v=(\d+)/g)].map((m) => m[1]).filter((v) => v !== "1");
   const uniques = [...new Set(versions)];
-  // La version attendue vient de data.js (FA_ASSET_V), source unique : un chiffre
-  // écrit ici en dur obligeait à le corriger à chaque bump, et un oubli faisait
-  // rougir la CI pour la mauvaise raison.
-  const attendue = /FA_ASSET_V\s*=\s*"(\d+)"/.exec(read("data.js"))[1];
-  assert.deepStrictEqual(uniques, [attendue],
+  // Numéro EN DUR, et c'est volontaire : test/nom-unique-avertissement.test.js
+  // exige que ce fichier porte la version courante, ce qui fait échouer la CI
+  // quand un bump l'oublie. Source unique pour l'égalité des balises : data.js
+  // FA_ASSET_V (test/asset-cache-bust.test.js).
+  assert.deepStrictEqual(uniques, ["337"],
     `versions heterogenes trouvees : ${uniques.join(", ")} — une seule balise oubliee sert du code perime`);
 });
 
@@ -171,12 +171,12 @@ test("les icones du manifeste portent la version courante", () => {
   assert.deepStrictEqual(sansVersion, [],
     `icones sans cache-buster : ${sansVersion.join(", ")} — elles seront servies depuis le cache du navigateur`);
   const vs = [...new Set(srcs.map((s) => s.split("?v=")[1]))];
-  // Comparaison à la version courante (data.js FA_ASSET_V) plutôt qu'à un
-  // chiffre figé : c'est l'intention du test — les icônes suivent la version —
-  // et il ne peut plus passer sur une version périmée.
-  const attendue = /FA_ASSET_V\s*=\s*"(\d+)"/.exec(read("data.js"))[1];
-  assert.deepStrictEqual(vs, [attendue],
-    `versions heterogenes dans le manifeste : ${vs.join(", ")} — les icônes doivent porter la version courante (${attendue})`);
+  // Littéral également : les icônes étaient restées sur ?v=335 depuis v335 alors
+  // que le jeu servait déjà v336 — un numéro figé ici ne l'aurait pas vu. La
+  // comparaison à la version courante est faite par le test ci-dessus, qui lit
+  // index.html ET ce fichier.
+  assert.deepStrictEqual(vs, ["337"],
+    `versions heterogenes dans le manifeste : ${vs.join(", ")} — les icônes doivent porter la version courante`);
 });
 
 // --- Liaison d'un portefeuille UniSat (decision du user, 2026-07-27) ---
