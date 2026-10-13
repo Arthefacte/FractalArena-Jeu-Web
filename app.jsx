@@ -1506,37 +1506,92 @@ function App() {
       } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
     },
 
-    async fuse(id1, id2, useGold) {
+    // Fusion de rareté — TROIS vitesses (décision fondateur 13/10/2026) :
+    //   « fa »     : coût en FA (barème D.FORGE.FUSION_COST), 75 % de réussite ;
+    //   « or »     : 1 ticket Or, gratuit, 100 % garanti (comme avant) ;
+    //   « argent » : tickets Argent, prix progressif par palier, 100 % garanti aussi —
+    //                le ticket REMPLACE le coût en FA, aucun FA n'est débité.
+    // `true` reste accepté (mode Or) : c'est la signature des appels hérités.
+    // Taux, prix et RNG vivent CÔTÉ SERVEUR : le client affiche et demande, il ne tire rien.
+    async fuse(id1, id2, payment) {
       const s = gRef.current;
+      const mode = (payment === true || payment === "or") ? "or" : (payment === "argent" ? "argent" : "fa");
       const a = s.roster.find((b) => b.id === id1), b = s.roster.find((b) => b.id === id2);
       if (!a || !b) return { ok: false, reason: I18N.t("FG_PICK2") };
       if (a.rarity === "Legendary") return { ok: false, reason: I18N.t("FG_NOT_FUSABLE") };
       if (a.rarity !== b.rarity) return { ok: false, reason: I18N.t("FG_PICK2") };
       const cost = D.FORGE.FUSION_COST[a.rarity];
-      const premium = !!useGold;
-      // Fusion premium : 1 ticket Or = 100% réussite, sans coût FA — gérée SERVEUR
-      // (consommation du ticket + upgrade préservant les stats). Plus de mint local.
-      if (premium) {
-        if (s.ticketsGold < 1) return { ok: false, reason: "Pas de ticket Or" };
+      if (mode === "or") {
+        if (s.ticketsGold < 1) return { ok: false, reason: I18N.t("FG_ERR_no_gold_ticket") };
+      } else if (mode === "argent") {
+        const need = D.FORGE.FUSION_SILVER_TICKETS[a.rarity];
+        if (!need) return { ok: false, reason: I18N.t("FG_ERR_no_silver_ticket") };
+        if ((s.ticketsSilver || 0) < need) return { ok: false, reason: I18N.t("FG_SILVER_SHORT", need, s.ticketsSilver || 0) };
       } else {
         if (s.liquid + s.locked < cost) return { ok: false, reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, cost) };
       }
       if (!s.wallet) return { ok: false, reason: "Wallet requis" };
       try {
+        const body = { wallet: s.wallet, primary_id: id1, secondary_id: id2 };
+        // `ticket` est la forme employée par le reste du jeu (expéditions) ; le serveur
+        // accepte encore `use_gold` pour un client resté en cache.
+        if (mode !== "fa") body.ticket = mode;
         const resp = await fetch(`${API_URL}/forge/fusion`, {
           method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
-          body: JSON.stringify({ wallet: s.wallet, primary_id: id1, secondary_id: id2, use_gold: premium }),
+          body: JSON.stringify(body),
         });
         const data = await resp.json();
         if (data.status === "insufficient_balance") return { ok: false, reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, cost) };
-        if (data.status === "error" && data.reason === "no_gold_ticket") return { ok: false, reason: "Pas de ticket Or" };
-        if (data.status !== "success" && data.status !== "fail") return { ok: false, reason: data.error || "Erreur serveur" };
+        if (data.status === "error") {
+          // Le refus de ticket Argent porte le BESOIN et la RÉSERVE : plus utile au joueur
+          // que la phrase générique du code (le prix dépend du palier).
+          if (data.reason === "no_silver_ticket") return { ok: false, reason: I18N.t("FG_SILVER_SHORT", data.need || 0, data.have || 0) };
+          return { ok: false, reason: I18N.localizeServerError(data.reason || data.error) };
+        }
+        if (data.status !== "success" && data.status !== "fail") return { ok: false, reason: I18N.localizeServerError(data.error) };
+        // Tickets Argent consommés : le NOMBRE vient du serveur (silver_spent), jamais d'un
+        // recalcul de barème ici. Le ticket Or est repris du /save juste après.
+        if (data.silver_spent) setG((st) => ({ ...st, ticketsSilver: Math.max(0, (st.ticketsSilver || 0) - data.silver_spent) }));
         const sv = await fetch(`${API_URL}/save/${s.wallet}`, svOpts());
         if (sv.ok) {
           const { save } = await sv.json();
           applySave(save, s.wallet, s.authToken, (n, st) => { n.selected = st.selected.filter((x) => n.roster.some((r) => r.id === x)); return n; });
         }
-        return { ok: true, success: data.status === "success", result: { rarity: data.new_rarity || a.rarity, premium } };
+        return { ok: true, success: data.status === "success", result: { rarity: data.new_rarity || a.rarity, premium: mode === "or", payment: data.payment || mode, silverSpent: data.silver_spent || 0 } };
+      } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
+    },
+
+    // Fusion de RANG — 3 entités de MÊME rang et de MÊME rareté → 1 entité NEUVE du rang
+    // au-dessus, niveau 1, 100 % de réussite (POST /forge/rank-fuse, décision 13/10/2026).
+    // Les trois entités sont CONSOMMÉES (niveau, XP, talents compris) ; la relique et le core
+    // qu'elles portaient retombent dans l'inventaire. L'avertissement obligatoire est porté
+    // par l'ÉCRAN : cette action n'est appelée que depuis la confirmation explicite.
+    // `templateId` = template (donc TYPE) de l'entité produite, l'un des trois sacrifiés.
+    async rankFuse(beastIds, templateId) {
+      const s = gRef.current;
+      if (!Array.isArray(beastIds) || beastIds.length !== 3 || new Set(beastIds).size !== 3) return { ok: false, reason: I18N.t("FG_RANK_REQ3") };
+      const picked = beastIds.map((id) => s.roster.find((b) => b.id === id));
+      if (picked.some((b) => !b)) return { ok: false, reason: I18N.t("FG_ERR_entite_introuvable") };
+      if (picked.some((b) => b.rank !== picked[0].rank || b.rarity !== picked[0].rarity)) return { ok: false, reason: I18N.t("FG_RANK_MISMATCH") };
+      const cost = D.FORGE.RANK_FUSE_COST[picked[0].rank];
+      if (!cost) return { ok: false, reason: I18N.t("FG_RANK_MAX") };
+      if (!s.wallet) return { ok: false, reason: "Wallet requis" };
+      if (s.liquid + s.locked < cost) return { ok: false, reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, cost) };
+      try {
+        const resp = await fetch(`${API_URL}/forge/rank-fuse`, {
+          method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
+          body: JSON.stringify({ wallet: s.wallet, beast_ids: beastIds, template_id: templateId || undefined }),
+        });
+        const data = await resp.json();
+        if (data.status === "insufficient_balance") return { ok: false, reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, cost) };
+        if (data.status === "error") return { ok: false, reason: I18N.localizeServerError(data.reason) };
+        if (data.status !== "ok") return { ok: false, reason: I18N.localizeServerError(data.error) };
+        const sv = await fetch(`${API_URL}/save/${s.wallet}`, svOpts());
+        if (sv.ok) {
+          const { save } = await sv.json();
+          applySave(save, s.wallet, s.authToken, (n, st) => { n.selected = st.selected.filter((x) => n.roster.some((r) => r.id === x)); return n; });
+        }
+        return { ok: true, beast: data.beast, newRank: data.new_rank || null, cost: data.cost || cost };
       } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
     },
 

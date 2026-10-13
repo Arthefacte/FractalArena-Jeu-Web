@@ -575,6 +575,52 @@
     FG_FUSE_FAIL: { FR: "FUSION ÉCHEC — entité sacrifiée perdue", EN: "FUSION FAILED — sacrifice lost", ZH: "融合失败 — 牺牲品丢失" },
     FG_GOLD: { FR: "Or premium", EN: "Gold premium", ZH: "黄金溢价" },
     FG_FUSE_PREMIUM: { FR: "✨ FUSION PREMIUM → %s (100% !)", EN: "✨ PREMIUM FUSION → %s (100%!)", ZH: "✨ 高级融合 → %s（100%！）" },
+    // Deuxième vitesse du 100 % : tickets Argent (décision fondateur 13/10/2026). Le prix est
+    // progressif et affiché dans la pastille — le joueur choisit sa vitesse, il ne devine pas.
+    FG_SILVER: { FR: "Argent", EN: "Silver", ZH: "白银" },
+    FG_SILVER_PRICE: { FR: "🎟 %d Argent", EN: "🎟 %d Silver", ZH: "🎟 %d 白银券" },
+    FG_FUSE_BTN_SILVER: { FR: "Fusionner  🎟 −%d Argent", EN: "Fuse  🎟 −%d Silver", ZH: "融合  🎟 −%d 白银券" },
+    FG_SILVER_SHORT: { FR: "Tickets Argent insuffisants : %d requis, %d en réserve.", EN: "Not enough Silver tickets: %d required, %d in reserve.", ZH: "白银券不足：需要 %d 张，现有 %d 张。" },
+    FG_FUSE_SILVER_OK: { FR: "✨ FUSION GARANTIE → %s (100 %)", EN: "✨ GUARANTEED FUSION → %s (100%)", ZH: "✨ 保证融合 → %s（100%）" },
+    // ---- Fusion de RANG : 3 entités de même rang ET de même rareté → 1 entité neuve ----
+    // Onglet SÉPARÉ de la fusion de rareté : mêmes barres, mêmes cartes, mais un autre axe —
+    // empilés, le joueur déclenchait la mauvaise opération (leçon des forges de fragments).
+    FG_RANGS: { FR: "Fusion de rang", EN: "Rank fusion", ZH: "阶位融合" },
+    FG_RANK_HINT: { FR: "Sélectionne 3 entités de MÊME rang et de MÊME rareté : le rang monte d'un cran (C→B→A→S), la rareté ne bouge pas. Les trois sont consommées.", EN: "Select 3 entities of the SAME rank and the SAME rarity: the rank goes up one step (C→B→A→S), the rarity does not move. All three are consumed.", ZH: "选择 3 个相同阶位且相同稀有度的实体：阶位上升一级（C→B→A→S），稀有度不变。三个都会被消耗。" },
+    FG_RANK_NONE: { FR: "Sélectionne 3 entités de même rang et de même rareté", EN: "Select 3 entities of the same rank and rarity", ZH: "选择 3 个相同阶位且相同稀有度的实体" },
+    FG_RANK_MISSING: { FR: "Encore %d entité(s) de rang %s (même rareté)", EN: "Still %d entity(ies) of rank %s (same rarity)", ZH: "还需 %d 个阶位 %s 的实体（相同稀有度）" },
+    FG_RANK_MISMATCH: { FR: "Même rang ET même rareté requis.", EN: "Same rank AND same rarity required.", ZH: "必须阶位与稀有度都相同。" },
+    FG_RANK_SEL_MAX: { FR: "3 entités maximum", EN: "3 entities maximum", ZH: "最多 3 个实体" },
+    FG_RANK_SUCCESS: { FR: "Réussite garantie", EN: "Guaranteed success", ZH: "保证成功" },
+    FG_RANK_TARGET: { FR: "Rang visé : %s", EN: "Target rank: %s", ZH: "目标阶位：%s" },
+    FG_RANK_MAX: { FR: "Rang S : sommet atteint, il n'y a rien au-dessus.", EN: "Rank S: already at the top, there is nothing above.", ZH: "S 阶已是顶点，无法再提升。" },
+    FG_RANK_REQ3: { FR: "Sélectionne 3 entités de même rang et de même rareté.", EN: "Select 3 entities of the same rank and rarity.", ZH: "请选择 3 个相同阶位且相同稀有度的实体。" },
+    FG_RANK_BTN: { FR: "Fusionner  −%d FA", EN: "Fuse  −%d FA", ZH: "融合  −%d FA" },
+    FG_RANK_TYPE: { FR: "Type de l'entité produite", EN: "Type of the produced entity", ZH: "产出实体的类型" },
+    FG_RANK_TYPE_HINT: { FR: "Il doit être l'un des trois types sacrifiés — il compte pour les affinités.", EN: "It must be one of the three sacrificed types — it counts for affinities.", ZH: "必须是三个被消耗实体之一的类型——它影响亲和。" },
+    FG_RANK_OK: { FR: "FUSION DE RANG RÉUSSIE → %s [%s]", EN: "RANK FUSION SUCCESS → %s [%s]", ZH: "阶位融合成功 → %s [%s]" },
+    // Avertissement obligatoire AVANT validation (exigence explicite du fondateur 13/10/2026) :
+    // la modale nomme ce qui part et ce qui arrive, et exige une confirmation qui n'est PAS
+    // le bouton d'action.
+    FG_RANK_ALERT_TITLE: { FR: "⚠ AVERTISSEMENT — fusion de rang", EN: "⚠ WARNING — rank fusion", ZH: "⚠ 警告 — 阶位融合" },
+    FG_RANK_ALERT_BODY: { FR: "La fusion de rang CONSOMME les trois entités. Voici ce qui part définitivement :", EN: "Rank fusion CONSUMES all three entities. Here is what is permanently lost:", ZH: "阶位融合会消耗这三个实体。以下内容将永久失去：" },
+    FG_RANK_ALERT_LINE: { FR: "%s — rang %s · niveau %d · %d XP · talents : %d · équipements : %d", EN: "%s — rank %s · level %d · %d XP · talents: %d · equipment: %d", ZH: "%s — 阶位 %s · 等级 %d · %d XP · 天赋: %d · 装备: %d" },
+    FG_RANK_ALERT_TOTALS: { FR: "Total perdu : %d XP et %d talents.", EN: "Total lost: %d XP and %d talents.", ZH: "总计失去：%d XP 与 %d 个天赋。" },
+    FG_RANK_ALERT_NEW: { FR: "Ce qui arrive : 1 entité NEUVE de rang %s, niveau 1, 0 XP, sans talent ni équipement.", EN: "What you get: 1 NEW entity of rank %s, level 1, 0 XP, no talent and no equipment.", ZH: "你将获得：1 个全新的 %s 阶实体，等级 1，0 XP，无天赋无装备。" },
+    FG_RANK_ALERT_EQUIP: { FR: "Les reliques et cores équipés ne sont pas détruits : ils retombent dans ton inventaire.", EN: "Equipped relics and cores are not destroyed: they return to your inventory.", ZH: "已装备的圣物与核心不会被销毁：它们会回到你的库存。" },
+    FG_RANK_ALERT_COST: { FR: "Coût : %s FA (100 % reversés au rachat).", EN: "Cost: %s FA (100% goes to the buyback pool).", ZH: "花费：%s FA（100% 进入回购池）。" },
+    FG_RANK_ALERT_CONFIRM: { FR: "Je confirme la fusion", EN: "I confirm the fusion", ZH: "我确认融合" },
+    FG_RANK_ALERT_BACK: { FR: "← Retour", EN: "← Back", ZH: "← 返回" },
+    // Refus serveur de la fusion (codes mappés dans SERVER_ERROR_KEYS : un code snake_case
+    // ne doit JAMAIS s'afficher au joueur).
+    FG_ERR_max_rarity: { FR: "Rareté maximale : une Légendaire ne fusionne pas.", EN: "Max rarity: a Legendary cannot be fused.", ZH: "已是最高稀有度：传说实体无法融合。" },
+    FG_ERR_rarity_mismatch: { FR: "Les deux entités doivent être de la même rareté.", EN: "Both entities must share the same rarity.", ZH: "两个实体必须为同一稀有度。" },
+    FG_ERR_no_gold_ticket: { FR: "Aucun ticket Or : gagne-en via les jalons de La Fosse.", EN: "No Gold ticket: earn them from The Pit milestones.", ZH: "没有黄金券：可通过深坑里程碑获取。" },
+    FG_ERR_no_silver_ticket: { FR: "Tickets Argent insuffisants pour ce palier.", EN: "Not enough Silver tickets for this tier.", ZH: "该档位所需白银券不足。" },
+    FG_ERR_ticket_invalide: { FR: "Paiement invalide : une seule ressource par fusion.", EN: "Invalid payment: one resource per fusion.", ZH: "支付方式无效：一次融合只能用一种资源。" },
+    FG_ERR_rank_mismatch: { FR: "Les trois entités doivent être du même rang.", EN: "All three entities must share the same rank.", ZH: "三个实体必须为同一阶位。" },
+    FG_ERR_beast_ids_invalide: { FR: "Sélection invalide : 3 entités distinctes requises.", EN: "Invalid selection: 3 distinct entities required.", ZH: "选择无效：需要 3 个不同的实体。" },
+    FG_ERR_entite_introuvable: { FR: "Entité introuvable dans ta collection.", EN: "Entity not found in your collection.", ZH: "在你的收藏中找不到该实体。" },
     FG_REROLL_OK: { FR: "Stats redistribuées", EN: "Stats redistributed", ZH: "属性已重新分配" },
     FG_SUMMON_OK: { FR: "Invoqué : %s [%s]", EN: "Summoned: %s [%s]", ZH: "召唤：%s [%s]" },
     FG_SUMMON_OK_MAX: { FR: "✦ Invoqué au MAXIMUM : %s [%s]", EN: "✦ Summoned at MAXIMUM: %s [%s]", ZH: "✦ 满值召唤：%s [%s]" },
@@ -1598,7 +1644,7 @@
     HINT_TAB_TOUR:        { FR: "Tour infinie : grimpe avec tout ton roster, les PV persistent entre les étages. 1 run gratuit par semaine, puis 100 FA. Paliers de FA à chaque étage clé, top 10 hebdo doté.", EN: "Infinite Tower: climb with your whole roster, HP persists between floors. 1 free run a week, then 100 FA. FA tiers at key floors, weekly top 10 rewarded.", ZH: "无尽之塔：带全部阵容攀登，层间不回血。每周 1 次免费，之后 100 FA。关键层有 FA 奖励，每周前 10 名有奖。" },
     HINT_TAB_EXPEDITIONS: { FR: "Expéditions : envoie 3 entités explorer 1 à 12 h. Elles reviennent avec FA, XP et fragments de reliques. Pendant ce temps elles ne peuvent pas combattre.", EN: "Expeditions: send 3 entities exploring for 1 to 12 h. They come back with FA, XP and relic fragments. Meanwhile they can't fight.", ZH: "远征：派 3 个实体探索 1 至 12 小时。它们带回 FA、XP 和遗物碎片。期间无法参战。" },
     HINT_TAB_QUESTS:      { FR: "Quêtes : « Tes premiers pas » (6 étapes, 675 FA), quêtes du jour et de la semaine. Tout se réclame ici, en FA verrouillés.", EN: "Quests: “First steps” (6 steps, 675 FA), daily and weekly quests. Everything is claimed here, in locked FA.", ZH: "任务：「新手之路」（6 步，675 FA）、每日与每周任务。奖励都在这里领取，为锁定 FA。" },
-    HINT_TAB_FORGE:       { FR: "Forge : fusion (2 entités de même rareté → rareté supérieure), reroll des stats, invocation d'une entité (10 000 FA) ou d'une relique (8 000). Tout ce qui est dépensé alimente les pools.", EN: "Forge: fusion (2 same-rarity entities → higher rarity), stat reroll, summon an entity (10,000 FA) or a relic (8,000). Everything spent feeds the pools.", ZH: "熔炉：融合（2 个同稀有度实体 → 更高稀有度）、重掷属性、召唤实体（10,000 FA）或遗物（8,000）。所有花费都进入资金池。" },
+    HINT_TAB_FORGE:       { FR: "Forge : fusion (2 entités de même rareté → rareté supérieure, 75 % en FA, 100 % avec un ticket Or ou des tickets Argent), fusion de rang (3 entités de même rang → 1 entité du rang au-dessus), reroll des stats, invocation d'une entité (10 000 FA) ou d'une relique (8 000). Tout ce qui est dépensé alimente les pools.", EN: "Forge: fusion (2 same-rarity entities → higher rarity, 75% with FA, 100% with a Gold ticket or Silver tickets), rank fusion (3 same-rank entities → 1 entity one rank up), stat reroll, summon an entity (10,000 FA) or a relic (8,000). Everything spent feeds the pools.", ZH: "熔炉：融合（2 个同稀有度实体 → 更高稀有度，FA 75%，金券或银券 100%）、阶位融合（3 个同阶实体 → 高一级实体）、重掷属性、召唤实体（10,000 FA）或遗物（8,000）。所有花费都进入资金池。" },
     HINT_TAB_MARKET:      { FR: "Marché : achète et vends des reliques et des cores entre joueurs, en FA liquide.", EN: "Market: buy and sell relics and cores between players, in liquid FA.", ZH: "市场：玩家之间用可用 FA 买卖遗物和核心。" },
     HINT_TAB_WALLET:      { FR: "Wallet : Liquide = misable et retirable on-chain ; Verrouillé = misable seulement. Pour retirer, lie un portefeuille UniSat et vérifie-le.", EN: "Wallet: Liquid = playable and withdrawable on-chain; Locked = playable only. To withdraw, link a UniSat wallet and verify it.", ZH: "钱包：可用 = 可下注且可链上提现；锁定 = 仅可下注。提现需绑定并验证 UniSat 钱包。" },
     HINT_TAB_BOOSTS:      { FR: "Boosts : packs de 50 charges (XP ×2, Lucky Strike, Momentum). Un boost n'agit que s'il est activé, et se consomme une charge par victoire.", EN: "Boosts: packs of 50 charges (XP ×2, Lucky Strike, Momentum). A boost only works when armed, and burns one charge per win.", ZH: "强化：50 次充能的礼包（XP ×2、幸运一击、动能）。只有激活后才生效，每次胜利消耗一次。" },
@@ -1662,6 +1708,19 @@
   // Fractal indisponible). Tous les codes que le serveur renvoie réellement sont
   // désormais mappés ici ; un code inconnu garde le fallback générique.
   const SERVER_ERROR_KEYS = {
+    // Forge — fusion de rareté (FA / ticket Or / tickets Argent) et fusion de RANG
+    // (décision fondateur 13/10/2026). Sans ce mapping, chaque refus s'affichait
+    // « Une erreur est survenue » alors qu'il dit au joueur quoi corriger (règle de la
+    // maison : tout nouveau code serveur entre dans la table dans le même lot).
+    max_rarity: "FG_ERR_max_rarity",
+    rarity_mismatch: "FG_ERR_rarity_mismatch",
+    no_gold_ticket: "FG_ERR_no_gold_ticket",
+    no_silver_ticket: "FG_ERR_no_silver_ticket",
+    ticket_invalide: "FG_ERR_ticket_invalide",
+    rank_mismatch: "FG_ERR_rank_mismatch",
+    rank_max: "FG_RANK_MAX",
+    beast_ids_invalide: "FG_ERR_beast_ids_invalide",
+    entite_introuvable: "FG_ERR_entite_introuvable",
     // Expéditions
     bete_en_expedition: "EXP_ERR_bete_en_expedition",
     expedition_en_cours: "EXP_ERR_expedition_en_cours",

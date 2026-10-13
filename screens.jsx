@@ -463,7 +463,10 @@ function Forge() {
   // forges de fragments (rangs C/B/A/S, coûts 100/250/600/1000, barres cyan, même
   // bouton « Forger ») étaient indiscernables — un clic sur la mauvaise ligne
   // forgeait un core au lieu d'une relique (vécu 20/09 puis 25/09).
-  const tabs = [{ k: "fusion", c: "var(--forge)" }, { k: "reroll", c: "var(--elec)" }, { k: "summon", c: "var(--fire)" }, { k: "reliques", c: "var(--gold)" }, { k: "cores", c: "var(--elec)" }];
+  // Un onglet par FAMILLE d'opération. La fusion de RANG a le sien (« rangs ») : elle a
+  // les mêmes cartes, les mêmes coûts à trois zéros et un bouton « Fusionner » — empilée
+  // sous la fusion de rareté (2 → 1), le joueur déclenchait la mauvaise opération.
+  const tabs = [{ k: "fusion", c: "var(--forge)" }, { k: "rangs", c: "var(--success)" }, { k: "reroll", c: "var(--elec)" }, { k: "summon", c: "var(--fire)" }, { k: "reliques", c: "var(--gold)" }, { k: "cores", c: "var(--elec)" }];
   return (
     <div className="container">
       <SectionHead eyebrow={I18N.t("FG_SUB")} title={I18N.t("FG_TITLE")} />
@@ -475,6 +478,7 @@ function Forge() {
         ))}
       </div>
       {tab === "fusion" && <ForgeFusion />}
+      {tab === "rangs" && <ForgeRangs />}
       {tab === "reroll" && <ForgeReroll />}
       {tab === "summon" && <ForgeSummon />}
       {tab === "reliques" && <ForgeReliques />}
@@ -487,7 +491,10 @@ function ForgeFusion() {
   const { g, actions, toast } = useFA();
   const [sel, setSel] = useState([]);
   const [fuseBusy, setFuseBusy] = useState(false);
-  const [goldMode, setGoldMode] = useState(false);
+  // Vitesse de paiement : « fa » (75 % de réussite), « or » (1 ticket Or gratuit, 100 %) ou
+  // « argent » (tickets Argent, prix progressif, 100 % aussi). Une seule à la fois : le
+  // serveur refuse deux prix pour un même acte.
+  const [pay, setPay] = useState("fa");
   // Garde anti-sacrifice : quand l'entité sacrifiée est plus forte que celle conservée,
   // le premier clic ARME la confirmation, le second fusionne. Sinon le joueur qui ne lit
   // pas le guide perdait son meilleur tirage sans qu'aucun écran ne l'ait dit.
@@ -507,16 +514,19 @@ function ForgeFusion() {
     if (sel.includes(b.id)) setSel(sel.filter((x) => x !== b.id));
     else if (sel.length < 2 && clickable(b)) setSel([...sel, b.id]);
   }
-  async function doFuse(gold) {
+  async function doFuse(mode) {
     if (fuseBusy) return;
     setFuseBusy(true);
-    const r = await actions.fuse(sel[0], sel[1], gold);
+    const r = await actions.fuse(sel[0], sel[1], mode);
     setFuseBusy(false);
     // bete_en_expedition : garde serveur des Expéditions — code traduit, pas brut.
     if (!r.ok) { toast(I18N.localizeServerError(r.reason), "bad"); return; }
     const showFuseResult = () => {
       if (r.success) {
-        if (r.result?.premium) toast(I18N.t("FG_FUSE_PREMIUM", rarityLabel(r.result?.rarity)), "good");
+        // La vitesse payée vient de la RÉPONSE serveur (payment) : un succès garanti par un
+        // ticket ne se raconte pas comme un succès au hasard.
+        if (r.result?.payment === "gold") toast(I18N.t("FG_FUSE_PREMIUM", rarityLabel(r.result?.rarity)), "good");
+        else if (r.result?.payment === "silver") toast(I18N.t("FG_FUSE_SILVER_OK", rarityLabel(r.result?.rarity)), "good");
         else toast(I18N.t("FG_FUSE_OK", rarityLabel(r.result?.rarity)), "good");
       }
       else toast(I18N.t("FG_FUSE_FAIL"), "bad");
@@ -529,13 +539,16 @@ function ForgeFusion() {
       });
     } else showFuseResult();
     setSel([]);
-    setGoldMode(false);
+    setPay("fa");
   }
   const F = window.FA_FORGE_UI;
   const cost = first ? D.FORGE.FUSION_COST[first.rarity] : 0;
   const rate = first ? D.FORGE.FUSION_RATE[first.rarity] : 0;
+  // Prix de la seconde vitesse du 100 % (tickets Argent) pour CE palier : lu dans le
+  // miroir D.FORGE, jamais recopié dans le composant.
+  const silverCost = first ? (D.FORGE.FUSION_SILVER_TICKETS[first.rarity] || 0) : 0;
   const canFuse = sel.length === 2;
-  const btn = F.fusionButtonState({ gold: goldMode, cost, balance: g.liquid + g.locked, ticketsGold: g.ticketsGold, busy: fuseBusy });
+  const btn = F.fusionButtonState({ gold: pay === "or", silver: pay === "argent", cost, balance: g.liquid + g.locked, ticketsGold: g.ticketsGold, ticketsSilver: g.ticketsSilver, silverCost, busy: fuseBusy });
   // Comparaison des deux candidates : rien à signaler → null (cas normal).
   const keepWarn = F.fusionKeepWarning(first, second);
   const needConfirm = !!keepWarn && !confirmWeak;
@@ -546,17 +559,25 @@ function ForgeFusion() {
         <div className="mono muted" style={{ fontSize: 13 }}>{first ? I18N.t("FG_PICK_SAME", rarityLabel(first.rarity)) : I18N.t("FG_FUSION_HINT")}</div>
         {canFuse && (
           <div className="flex gap12 center">
-            <span className="pill" style={{ color: "var(--elec)" }}>{I18N.t("FG_SUCCESS_RATE")} {goldMode ? 100 : Math.round(rate * 100)}%</span>
+            <span className="pill" style={{ color: "var(--elec)" }}>{I18N.t("FG_SUCCESS_RATE")} {pay === "fa" ? Math.round(rate * 100) : 100}%</span>
             <span className="pill" style={{ cursor: "pointer" }} onClick={() => { setSel(F.fusionSwap(sel)); setConfirmWeak(false); }}>⇄ {I18N.t("FG_SWAP")}</span>
-            <span className="pill" style={{ color: "var(--gold)", cursor: "pointer", opacity: g.ticketsGold >= 1 ? 1 : 0.4, border: goldMode ? "1px solid var(--gold)" : undefined }}
-              onClick={() => g.ticketsGold >= 1 && setGoldMode(!goldMode)}>
-              🎟 {I18N.t("FG_GOLD")} {goldMode ? "✓" : ""}
+            {/* Les DEUX vitesses du 100 % sont affichées avec leur prix : le ticket Or reste
+                gratuit (inchangé), les tickets Argent suivent le palier. Un joueur qui ne voit
+                que la moins chère ne peut pas arbitrer. */}
+            <span className="pill" style={{ color: "var(--gold)", cursor: "pointer", opacity: g.ticketsGold >= 1 ? 1 : 0.4, border: pay === "or" ? "1px solid var(--gold)" : undefined }}
+              onClick={() => g.ticketsGold >= 1 && setPay(pay === "or" ? "fa" : "or")}>
+              🎟 {I18N.t("FG_GOLD")} {pay === "or" ? "✓" : ""}
             </span>
-            <button className={cx("btn", needConfirm ? "btn-alert" : goldMode ? "btn-gold" : "btn-forge")} disabled={btn.disabled} onClick={() => (needConfirm ? setConfirmWeak(true) : doFuse(goldMode))}>{fuseBusy ? "…" : needConfirm ? I18N.t("FG_FUSE_CONFIRM") : goldMode ? I18N.t("FG_FUSE_BTN_GOLD") : <FaText text={I18N.t("FG_FUSE_BTN", cost)} />}</button>
+            <span className="pill" style={{ color: "var(--elec)", cursor: "pointer", opacity: (g.ticketsSilver || 0) >= silverCost ? 1 : 0.6, border: pay === "argent" ? "1px solid var(--elec)" : undefined }}
+              onClick={() => setPay(pay === "argent" ? "fa" : "argent")}>
+              {I18N.t("FG_SILVER_PRICE", silverCost)} {pay === "argent" ? "✓" : ""}
+            </span>
+            <button className={cx("btn", needConfirm ? "btn-alert" : pay === "or" ? "btn-gold" : "btn-forge")} disabled={btn.disabled} onClick={() => (needConfirm ? setConfirmWeak(true) : doFuse(pay))}>{fuseBusy ? "…" : needConfirm ? I18N.t("FG_FUSE_CONFIRM") : pay === "or" ? I18N.t("FG_FUSE_BTN_GOLD") : pay === "argent" ? <FaText text={I18N.t("FG_FUSE_BTN_SILVER", silverCost)} /> : <FaText text={I18N.t("FG_FUSE_BTN", cost)} />}</button>
           </div>
         )}
       </div>
       {btn.showInsufficient && canFuse && <div className="mono" style={{ color: "var(--alert)", fontSize: 12, marginBottom: 10 }}>{I18N.t("INSUFFICIENT", g.liquid + g.locked, cost)}</div>}
+      {btn.showSilverMissing && canFuse && <div className="mono" style={{ color: "var(--alert)", fontSize: 12, marginBottom: 10 }}>{I18N.t("FG_SILVER_SHORT", silverCost, g.ticketsSilver || 0)}</div>}
       {keepWarn && (
         <div className="mono" style={{ color: "var(--alert)", fontSize: 12, marginBottom: 10 }}>
           {I18N.t("FG_FUSE_WARN", keepWarn.gapPct == null ? "" : "+" + keepWarn.gapPct + " %")}
@@ -579,6 +600,159 @@ function ForgeFusion() {
           );
         })}
       </div>
+    </div>
+  );
+}
+
+/* ---------------- FUSION DE RANG (3 → 1) ----------------
+   Axe DISTINCT de la fusion de rareté : ici la rareté NE BOUGE PAS, le RANG monte d'un cran
+   (C→B→A→S), la réussite est garantie à 100 %, et les TROIS entités partent — niveau, XP et
+   talents compris (décision fondateur 13/10/2026). Onglet séparé, jamais empilé sous la
+   fusion de rareté : mêmes cartes, mêmes coûts à trois zéros, même bouton « Fusionner » ;
+   dans un écran unique le joueur déclenche la mauvaise opération (vécu sur les forges de
+   fragments les 20 et 25/09). */
+
+// AVERTISSEMENT OBLIGATOIRE avant validation (exigence explicite du fondateur) : la modale
+// nomme ce qui PART (les trois entités, leur niveau, leur XP, leurs talents, leur équipement)
+// et ce qui ARRIVE (1 entité neuve, niveau 1). Le bouton de l'onglet ne fusionne jamais : il
+// ouvre cette modale, et seul le bouton de confirmation qu'elle porte déclenche l'opération.
+function RankFuseWarningModal({ warn, state, template, busy, onBack, onConfirm }) {
+  const { Modal } = window;
+  return (
+    <Modal onClose={onBack} accent="var(--alert)" wide>
+      <div className="h1" style={{ fontSize: 22, color: "var(--alert)", marginBottom: 8 }}>{I18N.t("FG_RANK_ALERT_TITLE")}</div>
+      <div className="mono muted" style={{ fontSize: 12, marginBottom: 12 }}>{I18N.t("FG_RANK_ALERT_BODY")}</div>
+      <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 14, marginBottom: 10 }}>
+        {(warn ? warn.lines : []).map((l) => (
+          <div key={l.id} className="mono" style={{ fontSize: 12, color: "var(--alert)", marginBottom: 4 }}>
+            {I18N.t("FG_RANK_ALERT_LINE", l.name, l.rank, l.level, l.xp, l.talents, l.equipment)}
+          </div>
+        ))}
+        {warn && <div className="mono muted" style={{ fontSize: 12, marginTop: 6 }}>{I18N.t("FG_RANK_ALERT_TOTALS", warn.totalXp, warn.totalTalents)}</div>}
+      </div>
+      <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 14, marginBottom: 12 }}>
+        <div className="mono" style={{ fontSize: 13, color: "var(--success)" }}>{I18N.t("FG_RANK_ALERT_NEW", state.nextRank || "")}</div>
+        <div className="mono muted" style={{ fontSize: 12, marginTop: 6 }}>{I18N.t("FG_RANK_ALERT_EQUIP")}</div>
+        <div className="mono muted" style={{ fontSize: 12, marginTop: 6 }}>{I18N.t("FG_RANK_ALERT_COST", fmt(state.cost || 0))}</div>
+        {template && <div className="mono muted" style={{ fontSize: 12, marginTop: 6 }}>{I18N.t("FG_RANK_TYPE")} : {template.label}</div>}
+      </div>
+      <div className="flex gap8 wrap">
+        <button className="btn" disabled={busy} onClick={onBack}>{I18N.t("FG_RANK_ALERT_BACK")}</button>
+        <button className="btn" disabled={busy} style={{ background: "var(--alert)", borderColor: "#ff8ba4", color: "#14030a", fontWeight: 700 }} onClick={onConfirm}>
+          {busy ? "…" : I18N.t("FG_RANK_ALERT_CONFIRM")}
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
+function ForgeRangs() {
+  const { g, actions, toast } = useFA();
+  // La sélection garde les ENTITÉS (pas les ids) : la modale doit pouvoir nommer leur niveau,
+  // leur XP, leurs talents et leur équipement.
+  const [sel, setSel] = useState([]);
+  const [templateId, setTemplateId] = useState(null);
+  const [confirm, setConfirm] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const F = window.FA_FORGE_UI;
+  const st = F.rankFuseState({ sel, balance: g.liquid + g.locked, busy });
+  const templates = F.rankFuseTemplates(sel);
+  const chosen = templates.find((t) => t.template_name === templateId) || templates[0] || null;
+  const warn = F.rankFuseWarning(sel);
+  const sorted = g.roster.slice().sort((a, b) =>
+    (D.RARITY_ORDER[b.rarity] - D.RARITY_ORDER[a.rarity]) ||
+    (D.RANK_LIST.indexOf(b.rank) - D.RANK_LIST.indexOf(a.rank)));
+
+  function clickable(b) {
+    if (!sel.length) return true;
+    if (sel.some((x) => x.id === b.id)) return true;
+    return b.rank === sel[0].rank && b.rarity === sel[0].rarity;
+  }
+  function toggle(b) {
+    const next = F.rankSelToggle(sel, b);
+    if (next === null) {
+      // Un clic refusé doit se DIRE : une carte qui ne réagit pas se lit comme un bug.
+      toast(I18N.t(sel.length >= 3 ? "FG_RANK_SEL_MAX" : "FG_RANK_MISMATCH"), "bad");
+      return;
+    }
+    setSel(next);
+    setTemplateId(null); // les types proposables dépendent des trois entités choisies
+  }
+  async function doRankFuse() {
+    if (busy) return;
+    setBusy(true);
+    const r = await actions.rankFuse(sel.map((b) => b.id), chosen && chosen.template_name);
+    setBusy(false);
+    if (!r.ok) { toast(I18N.localizeServerError(r.reason), "bad"); return; }
+    setConfirm(false);
+    setSel([]);
+    setTemplateId(null);
+    toast(I18N.t("FG_RANK_OK", r.newRank || "?", r.beast ? D.displayName(r.beast) : ""), "good");
+  }
+
+  return (
+    <div>
+      <div className="flex between center wrap" style={{ marginBottom: 16, gap: 10 }}>
+        <div className="mono muted" style={{ fontSize: 13 }}>{I18N.t("FG_RANK_HINT")}</div>
+        {st.rank && (
+          <div className="flex gap12 center">
+            <span className="pill" style={{ color: "var(--success)" }}>{I18N.t("FG_RANK_SUCCESS")} 100%</span>
+            <span className="pill" style={{ color: D.RANK_COLORS[st.rank] || "var(--text)" }}>{I18N.t("FG_RANK")} {st.rank}</span>
+            {st.nextRank && <span className="pill" style={{ color: D.RANK_COLORS[st.nextRank] || "var(--text)" }}>{I18N.t("FG_RANK_TARGET", st.nextRank)}</span>}
+            <button className="btn btn-forge" disabled={st.disabled} onClick={() => setConfirm(true)}>
+              {busy ? "…" : <FaText text={I18N.t("FG_RANK_BTN", fmt(st.cost || 0))} />}
+            </button>
+          </div>
+        )}
+      </div>
+      {st.maxRank && (
+        <div className="mono" style={{ color: "var(--alert)", fontSize: 12, marginBottom: 10 }}>{I18N.t("FG_RANK_MAX")}</div>
+      )}
+      {!st.maxRank && sel.length === 0 && (
+        <div className="mono muted" style={{ fontSize: 12, marginBottom: 10 }}>{I18N.t("FG_RANK_NONE")}</div>
+      )}
+      {!st.maxRank && sel.length > 0 && sel.length < 3 && (
+        <div className="mono muted" style={{ fontSize: 12, marginBottom: 10 }}>{I18N.t("FG_RANK_MISSING", 3 - sel.length, st.rank)}</div>
+      )}
+      {st.showInsufficient && (
+        <div className="mono" style={{ color: "var(--alert)", fontSize: 12, marginBottom: 10 }}>{I18N.t("INSUFFICIENT", g.liquid + g.locked, st.cost || 0)}</div>
+      )}
+      {sel.length === 3 && templates.length > 0 && (
+        <div className="flex wrap center" style={{ gap: 6, marginBottom: 10 }}>
+          <span className="mono muted" style={{ fontSize: 11 }}>{I18N.t("FG_RANK_TYPE")} · {I18N.t("FG_RANK_TYPE_HINT")}</span>
+          {templates.map((t) => {
+            const src = sel.find((b) => b.template_name === t.template_name);
+            const on = chosen && chosen.template_name === t.template_name;
+            return (
+              <span key={t.template_name} className="pill" style={{ cursor: "pointer", userSelect: "none", border: on ? "1px solid var(--success)" : undefined, color: on ? "var(--success)" : undefined }}
+                title={t.template_name}
+                onClick={() => setTemplateId(t.template_name)}>
+                {on ? "✓ " : ""}{t.label}{src ? " · " + D.displayName(src) : ""}
+              </span>
+            );
+          })}
+        </div>
+      )}
+      <div className="grid-cards">
+        {sorted.map((b) => {
+          const role = sel.some((x) => x.id === b.id);
+          const badge = (
+            <div className="pill" style={{ position: "absolute", bottom: 8, left: "50%", transform: "translateX(-50%)", whiteSpace: "nowrap", background: "var(--bg)",
+              color: role ? "var(--alert)" : (D.RANK_COLORS[b.rank] || "var(--text)"), border: `1px solid ${role ? "var(--alert)" : (D.RANK_COLORS[b.rank] || "var(--line)")}` }}>
+              {role ? I18N.t("FG_SACRIFICED") : I18N.t("FG_RANK") + " " + (b.rank || "C")}
+            </div>
+          );
+          return (
+            <div key={b.id} style={{ opacity: clickable(b) ? 1 : 0.32, pointerEvents: clickable(b) ? "auto" : "none", transition: "opacity .2s" }}>
+              <CreatureCard beast={b} selectable selected={role} onClick={() => toggle(b)} badge={badge} />
+            </div>
+          );
+        })}
+      </div>
+      {confirm && warn && (
+        <RankFuseWarningModal warn={warn} state={st} template={chosen} busy={busy}
+          onBack={() => setConfirm(false)} onConfirm={doRankFuse} />
+      )}
     </div>
   );
 }
