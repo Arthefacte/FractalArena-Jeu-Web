@@ -26,7 +26,7 @@
       if (faites[nom]) return;
       faites[nom] = true;
       var n = ETAPES.filter(function (e) { return faites[e]; }).length;
-      var tag = document.querySelector("#boot .bhash .tag");
+      var tag = document.querySelector ? document.querySelector("#boot .bhash .tag") : null;
       if (tag) tag.textContent = "PRÉPARATION " + Math.round((100 * n) / ETAPES.length) + " %";
       if (n === ETAPES.length) {
         if (tag) tag.textContent = "MINING GENESIS";
