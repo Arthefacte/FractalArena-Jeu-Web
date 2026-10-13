@@ -135,7 +135,22 @@ test("aucun .glb ne dépasse le budget de fichier ni de VRAM", () => {
 // un TOUR COMPLET (l'ancien demi-tour bouclable reposait sur la symétrie des
 // deux copies identiques) : 132 images au lieu de 88, et la pierre gravée
 // compresse moins bien que l'ancien emblème lisse (427 Ko même à q4).
-const IMAGE_EXCEPTIONS = { "assets/emblem-spin.webp": 600 * 1024 };
+const IMAGE_EXCEPTIONS = {
+  "assets/emblem-spin.webp": 600 * 1024,
+  // boot-strip.webp (v337) : les 32 images de l'assemblage de l'emblème, mises
+  // bout à bout en une bande verticale (220x7040) que le CSS parcourt par
+  // `steps()`. Ce n'est PAS une image de plus : ce sont les pixels de
+  // l'ancienne animation (`assets/boot-anim.js`, 32 images de 220x220, 333 Ko
+  // de base64), qui se décodaient à chaque image pendant que le jeu se
+  // préparait — l'emblème se figeait alors jusqu'à 2,6 s d'affilée (mesuré).
+  // Mêmes pixels en mémoire (6,2 Mo décodés, exactement comme avant), mais un
+  // seul décodage, un seul fichier, et une animation confiée au compositeur.
+  // Quasi sans perte (q90) et non avec perte : mesuré, le WebP avec perte
+  // laissait 1,5 % des pixels à plus de 8/255 d'écart (bandes visibles sur les
+  // dégradés) pour seulement 400 Ko de moins. Plafonné : toute régression
+  // au-delà refait échouer ce test.
+  "assets/boot-strip.webp": 700 * 1024,
+};
 
 test("aucune image servie ne dépasse le budget de poids", () => {
   const dep = [];

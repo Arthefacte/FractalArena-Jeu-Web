@@ -1,0 +1,14 @@
+{
+  "images": 32,
+  "cellule": 220,
+  "largeur": 220,
+  "hauteur": 7040,
+  "octets": 675934,
+  "sha256": "ced4b38eb4756688905993b96e73a6bda4280877713609b3274dd8e6ef2e55b8",
+  "perteMax": 2,
+  "centile999": 2,
+  "partAuDessus8": 0,
+  "pixelsVus": 482034,
+  "encodage": "webp quasi sans perte q90",
+  "source": "_bake/boot-frames.js (32 images d'origine, non redessinées)"
+}

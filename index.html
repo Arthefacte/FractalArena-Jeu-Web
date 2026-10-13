@@ -27,7 +27,7 @@
        IGNORENT cette directive quand elle vient d'un <meta>, et GitHub Pages ne permet pas
        d'ajouter un en-tete HTTP : la protection est donc ce script, charge avant tout
        affichage. -->
-  <script src="frame-guard.js?v=336"></script>
+  <script src="frame-guard.js?v=337"></script>
   <title>Fractal Arena</title>
   <meta name="description" content="Free 3v3 idle auto-battler on Fractal Bitcoin. Build a team of three entities, fight automatically, and earn FRACTALARENA. AI agents can also play 24/7 through the agent API." />
   <script type="application/ld+json">
@@ -63,20 +63,21 @@
     ]
   }
   </script>
-  <link rel="icon" type="image/png" href="assets/favicon.png?v=336" />
+  <link rel="icon" type="image/png" href="assets/favicon.png?v=337" />
+  <link rel="preload" as="image" href="assets/boot-strip.webp?v=337" />
   <!-- PWA : le manifeste rend le jeu installable (écran d'accueil, plein écran).
        iOS ignore le manifeste pour l'icône et le mode plein écran, d'où les trois
        balises apple-* qui doublent l'information. Icônes fabriquées depuis
        l'emblème réel par _bake/gen-pwa-icons.mjs (dont une « maskable » réduite
        à 72 %, qu'Android insère dans son propre gabarit sans couper les pointes). -->
-  <link rel="manifest" href="manifest.webmanifest?v=336" />
+  <link rel="manifest" href="manifest.webmanifest?v=337" />
   <link rel="apple-touch-icon" href="assets/pwa/apple-touch-icon-180.png" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Fractal Arena" />
-  <link rel="stylesheet" href="styles.css?v=336" />
-  <link rel="stylesheet" href="mobile.css?v=336" />
+  <link rel="stylesheet" href="styles.css?v=337" />
+  <link rel="stylesheet" href="mobile.css?v=337" />
   <!-- Three.js AUTO-HÉBERGÉ (0.160.0) : cœur + clôture transitive des addons vendorisés sous
        vendor/three-0.160.0/. Élimine la dépendance CDN tierce non protégeable par SRI (les
        importmaps ne supportent pas l'intégrité). Le dossier versionné sert de cache-bust. -->
@@ -103,30 +104,47 @@
     @keyframes obFloat { 0%,100% { transform: translateY(-6px); } 50% { transform: translateY(6px); } }
     @keyframes obHalo { 0%,100% { transform: scale(0.92); } 50% { transform: scale(1.06); } }
     @keyframes obSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-    /* Boot #5 — chargement de marque : l'emblème s'assemble en 3D (frames dans assets/boot-anim.js) */
+    /* Boot #5 — chargement de marque : l'emblème s'assemble en 3D.
+       Assemblement = une bande d'images parcourue par le compositeur (voir plus
+       bas) : il ne dépend plus du fil principal, que le chargement du jeu bloque. */
     #boot { position: fixed; inset: 0; display: grid; place-items: center; z-index: 999;
       background:
         radial-gradient(900px 620px at 50% 42%, rgba(0,240,255,.05), transparent 60%),
         radial-gradient(700px 560px at 50% 108%, rgba(247,147,26,.06), transparent 55%),
         #05070f; }
     #boot .boot-in { display: flex; flex-direction: column; align-items: center; gap: 22px; }
-    #boot .emb-wrap { position: relative; width: 200px; height: 200px; }
+    #boot .emb-wrap { position: relative; width: 200px; height: 200px;
+      animation: bootFloat 4.1s linear infinite; }
     #boot .halo { position: absolute; inset: -24%; border-radius: 50%;
       background: radial-gradient(circle at 50% 48%, rgba(0,240,255,.28), rgba(247,147,26,.10) 44%, transparent 66%);
-      filter: blur(10px); opacity: 0; transition: opacity .5s; }
-    #boot #boot-emblem { position: absolute; inset: 0; width: 100%; height: 100%; }
+      opacity: 0; animation: bootHalo 4.1s linear infinite; }
+    #boot .emb-strip { position: absolute; inset: 0; overflow: hidden; }
+    #boot #boot-emblem { position: absolute; top: 0; left: 0; width: 100%; height: auto;
+      will-change: transform; animation: bootAssemble 4.1s steps(31, end) infinite; }
     #boot .flash { position: absolute; inset: -40%; pointer-events: none; opacity: 0;
       background: radial-gradient(circle, rgba(180,250,255,.9), rgba(0,240,255,.22) 34%, transparent 62%); }
     #boot .bword { font-family: 'Chakra Petch', sans-serif; font-weight: 700; letter-spacing: .42em; font-size: 20px; padding-left: .42em;
       background: linear-gradient(90deg, #F7931A, #fff 52%, #00F0FF); -webkit-background-clip: text; background-clip: text; color: transparent; }
     #boot .bhash { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; letter-spacing: .14em; color: #7F8DAD; height: 15px; display: flex; gap: 9px; }
     #boot .bhash .tag { color: #00F0FF; } #boot .bhash .hx { color: #9fb4d6; }
-    #boot.settled .halo { opacity: .7; }
-    #boot.settled .emb-wrap { animation: bootFloat 4.2s ease-in-out infinite; }
-    #boot.settled .flash { animation: bootFlash .5s ease-out; }
-    @keyframes bootFloat { 0%,100% { transform: translateY(-4px); } 50% { transform: translateY(4px); } }
-    @keyframes bootFlash { 0% { opacity: 0; } 40% { opacity: .85; } 100% { opacity: 0; } }
-    @media (prefers-reduced-motion: reduce) { #boot.settled .emb-wrap, #boot.settled .flash { animation: none; } }
+    /* Un cycle de 4,1 s, sans JS : 1,5 s d'assemblage (0 → 36,6 %) puis le repos
+       (halo, flottement, éclair). Les 32 images sont une bande verticale
+       (assets/boot-strip.webp) parcourue par `steps(31)`: 31 pas d'une hauteur
+       d'image, la 32e (l'emblème assemblé) tenue pendant tout le repos.
+       Transform et opacity seuls : animés par le compositeur, ils continuent
+       même quand un script bloque le fil principal — ce qui arrive exactement
+       ici (import de Three.js, GLB, première compilation GPU). */
+    @keyframes bootAssemble { 0% { transform: translateY(0); } 36.6% { transform: translateY(-96.875%); } 100% { transform: translateY(-96.875%); } }
+    @keyframes bootHalo { 0%, 36% { opacity: 0; } 48%, 96% { opacity: .7; } 100% { opacity: 0; } }
+    @keyframes bootFloat { 0%, 36.6% { transform: translateY(0); } 45% { transform: translateY(-4px); } 55% { transform: translateY(4px); } 66%, 100% { transform: translateY(0); } }
+    @keyframes bootFlash { 0%, 36.5% { opacity: 0; } 39% { opacity: .85; } 46%, 100% { opacity: 0; } }
+    /* Mouvement réduit : l'emblème assemblé, immobile (équivalent de l'ancien
+       repli JS qui posait la dernière image et n'animait rien). */
+    @media (prefers-reduced-motion: reduce) {
+      #boot .emb-wrap, #boot .halo, #boot .flash { animation: none; }
+      #boot #boot-emblem { animation: none; transform: translateY(-96.875%); }
+      #boot .halo { opacity: .7; }
+    }
   </style>
 </head>
 
@@ -190,15 +208,14 @@
     <div class="boot-in">
       <div class="emb-wrap">
         <div class="halo"></div>
-        <img id="boot-emblem" alt="Fractal Arena" />
+        <div class="emb-strip"><img id="boot-emblem" src="assets/boot-strip.webp?v=337" alt="Fractal Arena" decoding="async" /></div>
         <div class="flash"></div>
       </div>
       <div class="bword">FRACTAL ARENA</div>
       <div class="bhash"><span class="tag">MINING GENESIS</span><span class="hx" id="boot-hx">0x0000000000000000</span></div>
     </div>
   </div>
-  <script src="boot-hash.js?v=336"></script>
-  <script src="assets/boot-anim.js?v=336" async></script>
+  <script src="boot-hash.js?v=337"></script>
 
   <!-- React en build de PRODUCTION : 143 Ko au lieu de 1,19 Mo, et surtout plus de
        validations de développement refaites à chaque rendu sur le téléphone du joueur.
@@ -215,85 +232,85 @@
 
   <!-- plain JS data/logic -->
   <!-- Cache-busting : incrémenter ?v=X à chaque déploiement pour forcer le rechargement -->
-  <script src="diag.js?v=336"></script>
-  <script src="asset-hashes.js?v=336"></script>
-  <script src="data.js?v=336"></script>
-  <script src="i18n.js?v=336"></script>
-  <script src="account-ui.js?v=336"></script>
-  <script src="vendor/qrcode-generator/qrcode.js?v=336"></script>
-  <script src="device-link-ui.js?v=336"></script>
-  <script src="pwa-ui.js?v=336"></script>
+  <script src="diag.js?v=337"></script>
+  <script src="asset-hashes.js?v=337"></script>
+  <script src="data.js?v=337"></script>
+  <script src="i18n.js?v=337"></script>
+  <script src="account-ui.js?v=337"></script>
+  <script src="vendor/qrcode-generator/qrcode.js?v=337"></script>
+  <script src="device-link-ui.js?v=337"></script>
+  <script src="pwa-ui.js?v=337"></script>
   <!-- engine.js supprimé : moteur de combat client mort (FA_ENGINE jamais appelé), divergent
        du serveur qui fait autorité. -->
-  <script src="cosmetic.js?v=336"></script>
-  <script src="chain-bg-ui.js?v=336"></script>
-  <script src="chain-bg.js?v=336"></script>
-  <script src="sfx.js?v=336"></script>
-  <script src="finisher-ui.js?v=336"></script>
-  <script src="finisher.js?v=336"></script>
-  <script src="juice-ui.js?v=336"></script>
-  <script src="tape-ui.js?v=336"></script>
-  <script src="dex-ui.js?v=336"></script>
-  <script src="pot-ui.js?v=336"></script>
-  <script src="quiz-ui.js?v=336"></script>
-  <script src="juice.js?v=336"></script>
-  <script src="loop.js?v=336"></script>
-  <script src="arene-ui.js?v=336"></script>
-  <script src="market-ui.js?v=336"></script>
-  <script src="forge-ui.js?v=336"></script>
-  <script src="forge-cine-ui.js?v=336"></script>
-  <script src="forge-cine.js?v=336"></script>
-  <script src="talents-data.js?v=336"></script>
-  <script src="talents-ui.js?v=336"></script>
-  <script src="tour-ui.js?v=336"></script>
-  <script src="champion-ui.js?v=336"></script>
-  <script src="lb-live-ui.js?v=336"></script>
-  <script src="expeditions-ui.js?v=336"></script>
-  <script src="guide-ui.js?v=336"></script>
-  <script src="totem-ui.js?v=336"></script>
-  <script src="referral-ui.js?v=336"></script>
-  <script src="relic-assets.js?v=336"></script>
-  <script type="module" src="totem-cine.js?v=336"></script>
-  <script type="module" src="relic-viewer-boot.js?v=336"></script>
-  <script type="module" src="relic-models.js?v=336"></script>
-  <script type="module" src="relic-icons.js?v=336"></script>
-  <script src="core-assets.js?v=336"></script>
-  <script src="core-ui.js?v=336"></script>
-  <script type="module" src="core-models.js?v=336"></script>
-  <script type="module" src="core-icons.js?v=336"></script>
+  <script src="cosmetic.js?v=337"></script>
+  <script src="chain-bg-ui.js?v=337"></script>
+  <script src="chain-bg.js?v=337"></script>
+  <script src="sfx.js?v=337"></script>
+  <script src="finisher-ui.js?v=337"></script>
+  <script src="finisher.js?v=337"></script>
+  <script src="juice-ui.js?v=337"></script>
+  <script src="tape-ui.js?v=337"></script>
+  <script src="dex-ui.js?v=337"></script>
+  <script src="pot-ui.js?v=337"></script>
+  <script src="quiz-ui.js?v=337"></script>
+  <script src="juice.js?v=337"></script>
+  <script src="loop.js?v=337"></script>
+  <script src="arene-ui.js?v=337"></script>
+  <script src="market-ui.js?v=337"></script>
+  <script src="forge-ui.js?v=337"></script>
+  <script src="forge-cine-ui.js?v=337"></script>
+  <script src="forge-cine.js?v=337"></script>
+  <script src="talents-data.js?v=337"></script>
+  <script src="talents-ui.js?v=337"></script>
+  <script src="tour-ui.js?v=337"></script>
+  <script src="champion-ui.js?v=337"></script>
+  <script src="lb-live-ui.js?v=337"></script>
+  <script src="expeditions-ui.js?v=337"></script>
+  <script src="guide-ui.js?v=337"></script>
+  <script src="totem-ui.js?v=337"></script>
+  <script src="referral-ui.js?v=337"></script>
+  <script src="relic-assets.js?v=337"></script>
+  <script type="module" src="totem-cine.js?v=337"></script>
+  <script type="module" src="relic-viewer-boot.js?v=337"></script>
+  <script type="module" src="relic-models.js?v=337"></script>
+  <script type="module" src="relic-icons.js?v=337"></script>
+  <script src="core-assets.js?v=337"></script>
+  <script src="core-ui.js?v=337"></script>
+  <script type="module" src="core-models.js?v=337"></script>
+  <script type="module" src="core-icons.js?v=337"></script>
 
   <!-- React (Babel) — order matters: components → screens → chat/room → app -->
-  <script src="build/components.js?v=336"></script>
-  <script src="build/account.js?v=336"></script>
-  <script src="build/cinematique.js?v=336"></script>
-  <script src="build/fosse.js?v=336"></script>
-  <script src="build/arene-battle.js?v=336"></script>
-  <script src="build/arene.js?v=336"></script>
-  <script src="build/market.js?v=336"></script>
-  <script src="build/screens.js?v=336"></script>
-  <script src="build/chat.js?v=336"></script>
-  <script src="build/roomchat.js?v=336"></script>
-  <script src="build/leaderboard.js?v=336"></script>
-  <script src="build/quests.js?v=336"></script>
-  <script src="build/login.js?v=336"></script>
-  <script src="build/tutorial.js?v=336"></script>
-  <script src="build/guide.js?v=336"></script>
-  <script src="build/campaign.js?v=336"></script>
-  <script src="build/tour.js?v=336"></script>
-  <script src="build/champion.js?v=336"></script>
-  <script src="build/expeditions.js?v=336"></script>
-  <script src="build/relic-viewer.js?v=336"></script>
-  <script src="build/core-viewer.js?v=336"></script>
-  <script src="build/buyback.js?v=336"></script>
-  <script src="build/link.js?v=336"></script>
-  <script src="build/referral.js?v=336"></script>
-  <script src="build/quiz.js?v=336"></script>
-  <script src="build/pwa.js?v=336"></script>
-  <script src="build/app.js?v=336"></script>
+  <script src="build/components.js?v=337"></script>
+  <script src="build/account.js?v=337"></script>
+  <script src="build/cinematique.js?v=337"></script>
+  <script src="build/fosse.js?v=337"></script>
+  <script src="build/arene-battle.js?v=337"></script>
+  <script src="build/arene.js?v=337"></script>
+  <script src="build/market.js?v=337"></script>
+  <script src="build/screens.js?v=337"></script>
+  <script src="build/chat.js?v=337"></script>
+  <script src="build/roomchat.js?v=337"></script>
+  <script src="build/leaderboard.js?v=337"></script>
+  <script src="build/quests.js?v=337"></script>
+  <script src="build/login.js?v=337"></script>
+  <script src="build/tutorial.js?v=337"></script>
+  <script src="build/guide.js?v=337"></script>
+  <script src="build/campaign.js?v=337"></script>
+  <script src="build/tour.js?v=337"></script>
+  <script src="build/champion.js?v=337"></script>
+  <script src="build/expeditions.js?v=337"></script>
+  <script src="build/relic-viewer.js?v=337"></script>
+  <script src="build/core-viewer.js?v=337"></script>
+  <script src="build/buyback.js?v=337"></script>
+  <script src="build/link.js?v=337"></script>
+  <script src="build/referral.js?v=337"></script>
+  <script src="build/quiz.js?v=337"></script>
+  <script src="build/pwa.js?v=337"></script>
+  <script src="build/app.js?v=337"></script>
 
-  <script src="boot-splash.js?v=336"></script>
+  <script src="boot-splash.js?v=337"></script>
 
-  <script src="sw-register.js?v=336"></script>
+  <script src="sw-register.js?v=337"></script>
 </body>
 
 </html>
