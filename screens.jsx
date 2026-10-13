@@ -687,7 +687,15 @@ function ForgeRangs() {
     setConfirm(false);
     setSel([]);
     setTemplateId(null);
-    toast(I18N.t("FG_RANK_OK", r.newRank || "?", r.beast ? D.displayName(r.beast) : ""), "good");
+    // Le résultat (toast) passe par onDone : il est donc rendu dans TOUS les cas — fin,
+    // saut d'un clic, mouvement réduit, module absent. Jamais un silence après 50 000 FA.
+    const showResult = () => toast(I18N.t("FG_RANK_OK", r.newRank || "?", r.beast ? D.displayName(r.beast) : ""), "good");
+    if (window.FA_FORGE_CINE) {
+      window.FA_FORGE_CINE.play({
+        mode: "rank", success: true, tier: r.newRank || "C",
+        color: D.RANK_COLORS[r.newRank] || "#FACC15", onDone: showResult,
+      });
+    } else showResult();
   }
 
   return (

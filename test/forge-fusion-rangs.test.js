@@ -256,3 +256,21 @@ test("les phrases de l'onglet de rang et de la vitesse Argent existent en trois 
       `${cle} absente ou incomplète`);
   }
 });
+
+test("la fusion de rang joue la cinématique de la Forge (mode rank) — et parle même si elle est sautée", () => {
+  const debut = SCREENS.indexOf("async function doRankFuse");
+  assert.ok(debut > 0, "doRankFuse introuvable dans screens.jsx");
+  const bloc = SCREENS.slice(debut, SCREENS.indexOf("function RerollPreviewModal", debut));
+  assert.ok(bloc.length > 0 && bloc.length < 6000, "fenêtre de lecture de doRankFuse incohérente");
+  // Le mode « rank » est ce qui distingue la fusion de rang : trois cœurs qui convergent
+  // (forge-cine.js) au lieu du cœur unique de la fusion de rareté.
+  assert.match(bloc, /FA_FORGE_CINE\.play\(/, "la cinématique doit être jouée après une fusion réussie");
+  assert.match(bloc, /mode: "rank"/, "mode « rank » exigé");
+  assert.match(bloc, /tier: r\.newRank/, "le palier joué est le rang ATTEINT");
+  assert.match(bloc, /color: D\.RANK_COLORS\[r\.newRank\]/, "couleur du rang atteint, jamais d'une rareté");
+  // Le résultat passe par onDone : un saut d'un clic, `prefers-reduced-motion` ou un module
+  // absent rend le toast quand même — un silence après 50 000 FA serait le pire des cas.
+  assert.match(bloc, /onDone: showResult/, "le résultat doit être rendu par onDone");
+  assert.match(bloc, /else showResult\(\);/, "sans cinématique, le toast tombe quand même");
+  assert.match(bloc, /FG_RANK_OK/, "la phrase de résultat reste utilisée");
+});
