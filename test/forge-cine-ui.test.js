@@ -70,3 +70,33 @@ test("pureté + clamp de t", () => {
   assert.ok(Number.isFinite(U.forgeVals(1, o).flash));
   assert.ok(Number.isFinite(U.forgeVals(0, o).core));
 });
+
+test("fusion de RANG : trois cœurs convergent, durée majorée, phases dédiées", () => {
+  const o = { mode: "rank", tier: "B", color: "#FB923C" };
+  // Le 3 → 1 se paie en temps de jeu : le palier + le surplus, le temps de voir les trois entrer.
+  assert.strictEqual(U.duration(o), U.DUR.TIER[1] + U.DUR.RANK_BONUS);
+  assert.ok(U.duration(o) > U.duration({ mode: "fuse", success: true, tier: "B" }),
+    "une fusion de rang dure plus qu'une fusion de rareté du même palier");
+  assert.strictEqual(U.duration({ mode: "summon", tier: "B" }), U.DUR.TIER[1], "les autres modes ne bougent pas");
+  // Début : trois cœurs ÉCARTÉS et visibles (le joueur doit voir trois entités, pas deux).
+  const debut = U.forgeVals(0.2, o);
+  assert.ok(debut.tri > 0.5, "trois cœurs écartés au départ, tri = " + debut.tri);
+  assert.ok(debut.triA > 0, "et visibles");
+  assert.strictEqual(debut.phase, "appel");
+  // Milieu : convergés (tri = 0), éteints, et le cœur UNIQUE de la fusion prend le relais.
+  const milieu = U.forgeVals(0.62, o);
+  assert.strictEqual(milieu.tri, 0, "les trois ont convergé");
+  assert.strictEqual(milieu.triA, 0, "et se sont éteints dans le cœur unique");
+  assert.ok(milieu.core > 0, "le cœur fusionné est présent");
+  assert.strictEqual(milieu.phase, "cristallisation");
+  // Fin : éclat, et cette fusion ne peut pas échouer (le serveur garantit 100 %).
+  const fin = U.forgeVals(0.95, o);
+  assert.strictEqual(fin.phase, "eclat");
+  assert.strictEqual(fin.success, true);
+  assert.strictEqual(fin.premium, false, "aucun éclat doré : ce n'est pas un ticket Or");
+  // La couleur vient du RANG atteint (C/B/A/S) — aucune rareté n'est lue dans ce mode.
+  assert.strictEqual(U.forgeVals(0.5, o).color, "#FB923C");
+  assert.strictEqual(U.forgeVals(0.5, o).success, true);
+  // Les autres modes n'exposent toujours rien de la convergence.
+  assert.strictEqual(U.forgeVals(0.2, { mode: "summon", tier: "B" }).tri, undefined);
+});

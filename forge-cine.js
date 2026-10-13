@@ -1,5 +1,5 @@
 /* FRACTAL ARENA — Moment Forge : overlay canvas 2D plein écran.
-   window.FA_FORGE_CINE.play({ mode:'fuse'|'summon', success, tier, color, premium, onDone }).
+   window.FA_FORGE_CINE.play({ mode:'fuse'|'summon'|'rank', success, tier, color, premium, onDone }).
    L'état de chaque frame vient de FA_FORGE_CINE_UI.forgeVals (pur) ; ici on ne fait que
    dessiner. Le résultat (toast/carte) reste géré par l'appelant dans onDone — garanti 1x
    dans TOUS les cas : fin, skip, erreur, reduced-motion, module absent, double play. */
@@ -44,6 +44,22 @@
       const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, R * 0.6);
       g.addColorStop(0, rgba(tc, 0.10 * v.I)); g.addColorStop(1, "rgba(0,0,0,0)");
       ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+    }
+    if (v.tri > 0 && v.triA > 0) { // les TROIS entités qui convergent (fusion de rang)
+      ctx.save(); ctx.globalCompositeOperation = "lighter";
+      const gap = R * (0.30 * v.tri + 0.05);
+      for (let i = 0; i < 3; i++) {
+        // Rotation lente pendant la convergence : les trois cœurs ne tombent pas en ligne.
+        const a = -Math.PI / 2 + i * (2 * Math.PI / 3) - (1 - v.tri) * 0.9;
+        const x = cx + Math.cos(a) * gap, y = cy + Math.sin(a) * gap;
+        const cr = R * 0.05 * (0.7 + 0.3 * v.I) * (0.55 + 0.45 * v.tri);
+        const g = ctx.createRadialGradient(x, y, 0, x, y, cr * 3);
+        g.addColorStop(0, "rgba(255,244,230," + 0.9 * v.triA + ")");
+        g.addColorStop(0.35, rgba(tc, 0.75 * v.triA));
+        g.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, cr * 3, 0, 7); ctx.fill();
+      }
+      ctx.restore();
     }
     if (v.core > 0) { // cœur en fusion
       const cr = R * (0.04 + 0.07 * v.core * v.I);
