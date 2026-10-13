@@ -28,3 +28,4 @@ _bake/*.png
 _bake/*.gif
 _bake/*.webp
 _bake/frames/
+res-*.txt
