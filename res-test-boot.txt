@@ -1,0 +1,14 @@
+✔ la bande d'assemblage est un seul fichier, découpé par le CSS (1.2421ms)
+✔ les 32 images sont dans l'ordre, une par pas (6.4037ms)
+✔ l'animation ne touche que transform et opacity (0.9629ms)
+✔ plus aucun assemblage piloté par JS (0.591ms)
+✔ la bande est préchargée, et le repli mouvement réduit existe (0.5558ms)
+✔ le cycle garde le rythme d'origine (1,5 s d'assemblage puis repos) (1.2565ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 332.8769
