@@ -7,7 +7,10 @@
   var H = "0123456789abcdef", solved = 0;
   function line() { var s = "0x" + Array(solved + 1).join("0"); for (var i = 0; i < 16 - solved; i++) s += H[(Math.random() * 16) | 0]; return s; }
   if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    setInterval(function () { hx.textContent = line(); }, 60);
-    setInterval(function () { solved = (solved + 1) % 13; }, 700);
+    // Le hash cède la place à l'avancement réel de la préparation dès que
+    // boot-splash.js l'expose : deux écritures concurrentes dans la même ligne
+    // clignoteraient l'une sur l'autre.
+    var tHash = setInterval(function () { if (window.FA_PREP) { clearInterval(tHash); clearInterval(tSolved); return; } hx.textContent = line(); }, 60);
+    var tSolved = setInterval(function () { if (window.FA_PREP) return; solved = (solved + 1) % 13; }, 700);
   }
 })();
