@@ -729,13 +729,16 @@ function ForgeRangs() {
         <div className="flex wrap center" style={{ gap: 6, marginBottom: 10 }}>
           <span className="mono muted" style={{ fontSize: 11 }}>{I18N.t("FG_RANK_TYPE")} · {I18N.t("FG_RANK_TYPE_HINT")}</span>
           {templates.map((t) => {
-            const src = sel.find((b) => b.template_name === t.template_name);
+            // TOUTES les entités sources du template, pas seulement la première : deux
+            // entités identiques (même template) ne font qu'un seul type proposé, et le
+            // joueur doit lire les deux noms ICI — pas seulement dans la modale qui suit.
+            const names = (t.sources || []).map((s) => s.name).filter(Boolean).join(", ");
             const on = chosen && chosen.template_name === t.template_name;
             return (
               <span key={t.template_name} className="pill" style={{ cursor: "pointer", userSelect: "none", border: on ? "1px solid var(--success)" : undefined, color: on ? "var(--success)" : undefined }}
-                title={t.template_name}
+                title={names || t.template_name}
                 onClick={() => setTemplateId(t.template_name)}>
-                {on ? "✓ " : ""}{t.label}{src ? " · " + D.displayName(src) : ""}
+                {on ? "✓ " : ""}{t.label}{names ? " · " + names : ""}
               </span>
             );
           })}
