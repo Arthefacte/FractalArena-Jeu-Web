@@ -155,7 +155,7 @@ test("cache-bust homogene : aucune balise ne reste sur l'ancienne version", () =
   // exige que ce fichier porte la version courante, ce qui fait échouer la CI
   // quand un bump l'oublie. Source unique pour l'égalité des balises : data.js
   // FA_ASSET_V (test/asset-cache-bust.test.js).
-  assert.deepStrictEqual(uniques, ["342"],
+  assert.deepStrictEqual(uniques, ["343"],
     `versions heterogenes trouvees : ${uniques.join(", ")} — une seule balise oubliee sert du code perime`);
 });
 
@@ -175,7 +175,7 @@ test("les icones du manifeste portent la version courante", () => {
   // que le jeu servait déjà v336 — un numéro figé ici ne l'aurait pas vu. La
   // comparaison à la version courante est faite par le test ci-dessus, qui lit
   // index.html ET ce fichier.
-  assert.deepStrictEqual(vs, ["342"],
+  assert.deepStrictEqual(vs, ["343"],
     `versions heterogenes dans le manifeste : ${vs.join(", ")} — les icônes doivent porter la version courante`);
 });
 

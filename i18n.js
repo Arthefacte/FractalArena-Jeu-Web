@@ -597,7 +597,7 @@
     FG_RANK_REQ3: { FR: "Sélectionne 3 entités de même rang et de même rareté.", EN: "Select 3 entities of the same rank and rarity.", ZH: "请选择 3 个相同阶位且相同稀有度的实体。" },
     FG_RANK_BTN: { FR: "Fusionner  −%d FA", EN: "Fuse  −%d FA", ZH: "融合  −%d FA" },
     FG_RANK_TYPE: { FR: "Type de l'entité produite", EN: "Type of the produced entity", ZH: "产出实体的类型" },
-    FG_RANK_TYPE_HINT: { FR: "Il doit être l'un des trois types sacrifiés — il compte pour les affinités.", EN: "It must be one of the three sacrificed types — it counts for affinities.", ZH: "必须是三个被消耗实体之一的类型——它影响亲和。" },
+    FG_RANK_TYPE_HINT: { FR: "Il doit être l'un des types sacrifiés — il compte pour les affinités.", EN: "It must be one of the sacrificed types — it counts for affinities.", ZH: "必须是被消耗实体之一的类型——它影响亲和。" },
     FG_RANK_OK: { FR: "FUSION DE RANG RÉUSSIE → %s [%s]", EN: "RANK FUSION SUCCESS → %s [%s]", ZH: "阶位融合成功 → %s [%s]" },
     // Avertissement obligatoire AVANT validation (exigence explicite du fondateur 13/10/2026) :
     // la modale nomme ce qui part et ce qui arrive, et exige une confirmation qui n'est PAS

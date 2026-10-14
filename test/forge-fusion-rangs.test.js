@@ -111,12 +111,26 @@ test("rankFuseState : prêt à 3, bloqué par le solde, rang S signalé", () => 
 // ---- 3. L'avertissement nomme ce qui part ----
 
 test("rankFuseTemplates : un type par template DISTINCT des trois entités sacrifiées", () => {
-  const sel = [ent("a", "C", "Common", { template_name: "HashByte-1", type: "HASH" }),
-               ent("b", "C", "Common", { template_name: "Block-2", type: "BLOCK" }),
-               ent("c", "C", "Common", { template_name: "HashByte-1", type: "HASH" })];
+  const sel = [ent("a", "C", "Common", { template_name: "HashByte-1", type: "HASH", name: "Genesis #690" }),
+               ent("b", "C", "Common", { template_name: "Block-2", type: "BLOCK", name: "Miner #880" }),
+               ent("c", "C", "Common", { template_name: "HashByte-1", type: "HASH", name: "Genesis #298" })];
   const t = F.rankFuseTemplates(sel);
   assert.deepStrictEqual(t.map((x) => x.template_name), ["HashByte-1", "Block-2"], "pas de doublon");
   assert.deepStrictEqual(t.map((x) => x.label), ["HashByte", "Block"], "le libellé est le TYPE (affinités)");
+});
+
+test("rankFuseTemplates : chaque type nomme TOUTES ses entités sources (deux jumelles ne disparaissent pas)", () => {
+  const sel = [ent("a", "C", "Common", { template_name: "HashByte-1", type: "HASH", name: "Genesis #690" }),
+               ent("b", "C", "Common", { template_name: "Block-2", type: "BLOCK", name: "Miner #880" }),
+               ent("c", "C", "Common", { template_name: "HashByte-1", type: "HASH", name: "Genesis #298" })];
+  const t = F.rankFuseTemplates(sel);
+  assert.deepStrictEqual(t[0].sources.map((s) => s.name), ["Genesis #690", "Genesis #298"],
+    "deux entités du même template : les DEUX noms, dans l'ordre de sélection");
+  assert.deepStrictEqual(t[0].sources.map((s) => s.id), ["a", "c"]);
+  assert.deepStrictEqual(t[1].sources.map((s) => s.name), ["Miner #880"], "une seule entité : un seul nom");
+  // Le nom personnalisé prime (displayName) : c'est celui que le joueur lit sur sa carte.
+  const renomme = F.rankFuseTemplates([ent("a", "C", "Common", { template_name: "HashByte-1", type: "HASH", name: "Genesis #690", custom_name: "Alpha" })]);
+  assert.deepStrictEqual(renomme[0].sources.map((s) => s.name), ["Alpha"]);
 });
 
 test("rankFuseWarning : niveau, XP, talents et équipement des TROIS entités", () => {
@@ -194,6 +208,7 @@ test("l'avertissement de la fusion de rang est OBLIGATOIRE avant la validation",
 test("l'onglet de rang affiche le TYPE produit et le rang visé", () => {
   const b = fnBloc("ForgeRangs");
   assert.match(b, /F\.rankFuseTemplates/, "les types proposés viennent des trois entités");
+  assert.match(b, /t\.sources/, "le libellé du type doit nommer TOUTES les entités sources (deux jumelles)");
   assert.match(b, /FG_RANK_TYPE/, "le choix de type doit être libellé");
   assert.match(b, /FG_RANK_TARGET/, "le rang visé doit être affiché");
   assert.match(b, /FG_RANK_SUCCESS/, "la réussite à 100 % doit être dite");

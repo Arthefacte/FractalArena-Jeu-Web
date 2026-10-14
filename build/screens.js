@@ -1323,7 +1323,10 @@ function ForgeRangs() {
       fontSize: 11
     }
   }, I18N.t("FG_RANK_TYPE"), " \xB7 ", I18N.t("FG_RANK_TYPE_HINT")), templates.map(t => {
-    const src = sel.find(b => b.template_name === t.template_name);
+    // TOUTES les entités sources du template, pas seulement la première : deux
+    // entités identiques (même template) ne font qu'un seul type proposé, et le
+    // joueur doit lire les deux noms ICI — pas seulement dans la modale qui suit.
+    const names = (t.sources || []).map(s => s.name).filter(Boolean).join(", ");
     const on = chosen && chosen.template_name === t.template_name;
     return /*#__PURE__*/React.createElement("span", {
       key: t.template_name,
@@ -1334,9 +1337,9 @@ function ForgeRangs() {
         border: on ? "1px solid var(--success)" : undefined,
         color: on ? "var(--success)" : undefined
       },
-      title: t.template_name,
+      title: names || t.template_name,
       onClick: () => setTemplateId(t.template_name)
-    }, on ? "✓ " : "", t.label, src ? " · " + D.displayName(src) : "");
+    }, on ? "✓ " : "", t.label, names ? " · " + names : "");
   })), /*#__PURE__*/React.createElement("div", {
     className: "grid-cards"
   }, sorted.map(b => {

@@ -139,16 +139,22 @@
   // Types proposables pour l'entité produite : les TYPE des trois entités sacrifiées, un
   // par template distinct (c'est ce que le serveur accepte en `template_id` — il refuse
   // tout template absent des trois, sinon la fusion fabriquerait n'importe quel type).
+  // Chaque entrée nomme TOUTES ses entités sources (`sources`) : deux entités identiques ne
+  // font qu'un seul choix, et le joueur doit lire les deux noms tout de suite — sinon il
+  // croit que la seconde n'a pas été prise et ne la retrouve qu'à la validation (vécu 14/10).
   function rankFuseTemplates(beasts) {
     const D = window.FA_DATA;
     const out = [];
     for (const b of (Array.isArray(beasts) ? beasts : [])) {
       if (!b || !b.template_name) continue;
-      if (out.some((t) => t.template_name === b.template_name)) continue;
+      const name = (D && D.displayName) ? D.displayName(b) : (b.name || b.id);
+      const found = out.find((t) => t.template_name === b.template_name);
+      if (found) { found.sources.push({ id: b.id, name }); continue; }
       out.push({
         template_name: b.template_name,
         type: b.type,
         label: (D && D.TYPE_LABEL && D.TYPE_LABEL[b.type]) || b.type || b.template_name,
+        sources: [{ id: b.id, name }],
       });
     }
     return out;
