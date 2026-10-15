@@ -313,3 +313,24 @@ test("la sortie du parcours : une fenêtre « bien joué », ouverte une fois pa
     assert.ok(T[k], "clé i18n manquante : " + k);
   }
 });
+
+test("le passage d'office ne vole pas une étape en cours de réussite", () => {
+  // Vécu le 15/10/2026 : l'étape « atteins le niveau 5 » s'est validée d'office au
+  // niveau 3, parce que le joueur avait perdu trois combats EN ROUTE. Il perdait
+  // les 100 FA d'une étape qu'il était en train de réussir.
+  const niveau = GU.STEPS.find((s) => s.id === "d_level");
+  assert.equal(niveau.skip, false,
+    "une progression cumulative ne peut pas faire mur : elle ne se passe jamais d'office");
+  for (const s of GU.STEPS.filter((x) => x.id !== "d_level")) {
+    assert.notEqual(s.skip, false, "les étapes à premier succès gardent le filet de sécurité : " + s.id);
+  }
+  assert.ok(guideSrc.includes("r.step.skip === false"), "le composant respecte l'exemption");
+  assert.ok(guideSrc.includes("p > cell.p ? 1 : cell.n + 1"),
+    "une défaite ne compte que si la progression n'a pas bougé : gagner, perdre, gagner n'est pas trois échecs");
+  // La progression comparée est celle du SERVEUR, exposée par le verdict.
+  const disc = etatFor(["d_win", "d_paid"], ["d_win", "d_paid"]);
+  disc.steps = disc.steps.map((s) => (s.id === "d_level" ? { ...s, progress: 3 } : s));
+  const r = GU.computeGuide({ disc, g: { ...g0, selected: ["a", "b", "c"] }, view: "fosse" });
+  assert.equal(r.step.id, "d_level");
+  assert.equal(r.progress, 3, "le composant lit la progression du serveur, jamais un compteur local");
+});
