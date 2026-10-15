@@ -304,4 +304,12 @@ test("la sortie du parcours : une fenêtre « bien joué », ouverte une fois pa
   for (const k of ["GUIDE_FIN_EYEBROW", "GUIDE_FIN_T", "GUIDE_FIN_B", "GUIDE_FIN_ARENE", "GUIDE_FIN_OK"]) {
     assert.ok(T[k], "clé i18n manquante : " + k);
   }
+  // Ce qu'il reste du volet crypto (fondateur, 15/10/2026) : dit dans la fenêtre,
+  // et choisi par la règle de l'écran Quêtes — jamais re-dérivé ici.
+  assert.ok(guideSrc.includes("ACC.discoveryNextAction"), "la règle du volet crypto est appelée, pas réécrite");
+  assert.ok(guideSrc.includes("actions.discoveryState()"), "l'état vient du serveur");
+  assert.ok(guideSrc.includes("GUIDE_FIN_CRYPTO_"), "les trois cas ont leur texte");
+  for (const k of ["GUIDE_FIN_CRYPTO_LINK", "GUIDE_FIN_CRYPTO_DUST", "GUIDE_FIN_CRYPTO_TXID"]) {
+    assert.ok(T[k], "clé i18n manquante : " + k);
+  }
 });

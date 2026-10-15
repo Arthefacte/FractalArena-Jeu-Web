@@ -33,6 +33,13 @@ const { useState, useEffect, useRef } = React;
 const { useFA, Modal } = window;
 const I18N = window.FA_I18N;
 const GU = window.FA_GUIDE_UI;
+const ACC = window.FA_ACCOUNT;
+
+// La fenêtre de fin dit ce qu'il reste à faire du volet CRYPTO. La décision vit
+// dans account-ui.js (`discoveryNextAction`) : ici on ne fait que choisir le
+// texte correspondant — deux dérivations de la même règle finiraient par
+// diverger, et un écran décrirait une étape déjà franchie.
+const CRYPTO_KEY = { link: "GUIDE_FIN_CRYPTO_LINK", dust: "GUIDE_FIN_CRYPTO_DUST", txid: "GUIDE_FIN_CRYPTO_TXID" };
 
 // Repli local — plus la source. La vérité est sur le COMPTE (ui_state,
 // player-ui.js) : ces clés ne servent qu'à ne pas réafficher un guide déjà
@@ -70,6 +77,11 @@ function GuideBar() {
   // Fenêtre de FIN de parcours (« bien joué »), ouverte une fois par compte.
   const [fin, setFin] = useState(false);
   const annonce = useRef(false);
+  // État du volet crypto, pour dire à la fin du parcours ce qu'il reste à faire
+  // (lier le portefeuille, valider le txid). Chargé une fois par compte : c'est
+  // une lecture, et le montant de l'épreuve comme la destination viennent du
+  // serveur, jamais du client.
+  const [crypto, setCrypto] = useState(null);
   const alive = useRef(true);
   // Verdict courant, lisible depuis un écouteur d'événement : une fermeture
   // d'effet garde l'ancien `res`, le compteur d'échecs viserait l'étape d'avant.
@@ -251,6 +263,15 @@ function GuideBar() {
     actions.pushUiState({ guide_hidden: true });
   };
 
+  // Volet crypto : chargé avec le compte (une lecture, pas de sondage), pour que
+  // la fenêtre de fin sache s'il reste quelque chose à faire de ce côté.
+  useEffect(() => {
+    if (!g.wallet) return;
+    actions.discoveryState().then((r) => { if (alive.current && r.ok) setCrypto(r.data); }).catch(() => {});
+  }, [g.wallet]);
+  // La RÈGLE est appelée, jamais réécrite : « link », « dust », « txid » ou rien.
+  const resteCrypto = (ACC && crypto) ? ACC.discoveryNextAction(crypto, g.linkedWallet, g.accountKind === ACC.KIND_UNISAT) : null;
+
   // Parcours terminé : un dernier message, puis on s'efface pour de bon (et le
   // compte retient qu'il est terminé, pour les autres appareils). Tant que la
   // fenêtre de fin est ouverte, on ne s'efface pas : elle disparaîtrait avec la
@@ -310,6 +331,12 @@ function GuideBar() {
           <div className="tut-icon">🏆</div>
           <div className="h1" style={{ textAlign: "center" }}>{I18N.t("GUIDE_FIN_T")}</div>
           <div className="tut-body muted">{I18N.t("GUIDE_FIN_B")}</div>
+          {/* Ce qu'il reste du volet crypto, lu de la même règle que l'écran
+              Quêtes (account-ui.discoveryNextAction). Rien à dire si tout est
+              fait — un écran ne décrit jamais une étape déjà franchie. */}
+          {resteCrypto && CRYPTO_KEY[resteCrypto] && (
+            <div className="guide-fin-reste">{I18N.t(CRYPTO_KEY[resteCrypto])}</div>
+          )}
           <div className="guide-fin-arene">{I18N.t("GUIDE_FIN_ARENE")}</div>
           <button className="btn btn-fire block" style={{ marginTop: 16 }} onClick={fermerFin}>{I18N.t("GUIDE_FIN_OK")}</button>
         </Modal>

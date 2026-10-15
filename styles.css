@@ -1638,6 +1638,15 @@ body[data-fond="cite"] .app-bg {
   font-family: var(--font-mono); font-size: 13px; letter-spacing: 1px;
   color: var(--fire); text-shadow: 0 0 14px rgba(247,147,26,0.35);
 }
+/* Ce qui RESTE du volet crypto, dans la fenêtre de fin : une note discrète, pas
+   un avertissement — le jeu est appris, il reste une formalité de portefeuille. */
+.guide-fin-reste {
+  margin-top: 14px; padding: 9px 12px;
+  border-left: 2px solid var(--gold, var(--fire));
+  background: rgba(247,147,26,0.07);
+  border-radius: 0 8px 8px 0;
+  font-size: 12.5px; line-height: 1.6; color: var(--text-dim);
+}
 .guide-close {
   background: transparent; border: 1px solid var(--line); color: var(--text-dim);
   border-radius: 6px; width: 26px; height: 26px; cursor: pointer; font-size: 12px; line-height: 1;
