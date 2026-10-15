@@ -271,3 +271,22 @@ test("le parcours ne laisse plus une ligne « à faire » à vie dans Quêtes", 
   assert.ok(questsSrc.includes("s.claimed || s.skipped"), "une étape passée ferme sa ligne comme une étape réclamée");
   assert.ok(questsSrc.includes("DISC_SKIPPED"), "et elle se nomme « passée », elle ne ment pas sur son état");
 });
+
+test("le guide n'apprend un combat qu'à la FIN du rejeu (pas 2 s après le lancement)", () => {
+  // Vécu en Campagne le 15/10/2026 : le serveur tranche dès la requête, donc le
+  // guide validait l'étape et créditait la récompense PENDANT l'animation.
+  const lire = (f) => fs.readFileSync(path.join(ROOT, f), "utf8");
+  assert.ok(appSrc.includes("window.FA_COMBAT_VU = libereCombat"),
+    "les écrans doivent avoir un point où dire « le joueur a vu le combat »");
+  assert.ok(appSrc.includes("combatEnAttente = { url, won: true }"),
+    "pour les routes de combat, le verdict est mis en attente, pas diffusé à la requête");
+  assert.ok(appSrc.includes("setTimeout(libereCombat, 90000)"),
+    "filet de sécurité : un écran qui oublierait l'appel ne doit pas figer le parcours");
+  for (const [f, pourquoi] of [
+    ["arene-battle.jsx", "Arène et Tour (rejeu partagé AreneBattle)"],
+    ["campaign.jsx", "Campagne : à l'affichage du résultat, jamais à la requête"],
+    ["fosse.jsx", "la Fosse : à la fin de son rejeu"],
+  ]) {
+    assert.ok(lire(f).includes("FA_COMBAT_VU"), "appel manquant dans " + f + " — " + pourquoi);
+  }
+});

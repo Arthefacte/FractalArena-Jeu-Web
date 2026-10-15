@@ -159,6 +159,7 @@ function AreneBattle({
     function step() {
       if (iRef.current >= evs.length) {
         setDone(true);
+        if (window.FA_COMBAT_VU) window.FA_COMBAT_VU();
         return;
       }
       const ev = evs[iRef.current++];

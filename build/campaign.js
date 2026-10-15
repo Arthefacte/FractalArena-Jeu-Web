@@ -643,7 +643,13 @@ function CampaignCombat({
     };
     // Le finisher précède la modale, et joue le victory/defeat que la Campagne
     // n'avait jamais eu (elle tombait sur le son 'open' générique).
-    const showResult = () => setResult(summary);
+    // C'est ICI que le guide apprend le résultat : le rejeu est fini, le joueur a
+    // vu le combat. Apprendre le verdict à la requête (2 s après le lancement)
+    // annonçait « étape réussie, +125 verrouillés » en plein rejeu.
+    const showResult = () => {
+      if (window.FA_COMBAT_VU) window.FA_COMBAT_VU();
+      setResult(summary);
+    };
     if (window.FA_FINISHER) window.FA_FINISHER.play({
       win,
       onDone: showResult

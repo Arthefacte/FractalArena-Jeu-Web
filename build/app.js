@@ -92,32 +92,60 @@ window.FA_ECHECS_API_RAZ = () => {
   /* Un combat, pour le RAIL de la première session : sa réponse porte `won`, le
      seul signal d'échec dont le guide a besoin (trois défaites sur l'étape en
      cours et elle se valide d'office, sinon le verrou d'onglets ferait mur). Lu
-     ici, à la porte d'entrée : aucune action de jeu n'a à le déclarer. */
+     ici, à la porte d'entrée : aucune action de jeu n'a à le déclarer.
+     RIEN n'est émis à cet instant : le serveur a tranché, mais le joueur n'a pas
+     encore VU le combat (le rejeu dure une dizaine de secondes). On garde le
+     verdict en attente et on le libère à la fin du rejeu (FA_COMBAT_VU), sinon
+     le guide annonce « étape réussie, +125 verrouillés » deux secondes après le
+     lancement — vécu en Campagne le 15/10/2026. */
   const ROUTES_COMBAT = /\/(fight|tower\/fight|campaign\/fight|pvp\/attack)(\?|$)/;
+  let combatEnAttente = null;
+  let combatMinuteur = null;
+  const libereCombat = () => {
+    const attente = combatEnAttente || {
+      url: "rejeu",
+      won: true
+    };
+    combatEnAttente = null;
+    if (combatMinuteur) {
+      clearTimeout(combatMinuteur);
+      combatMinuteur = null;
+    }
+    try {
+      window.dispatchEvent(new CustomEvent("fa-guide-progress", {
+        detail: attente
+      }));
+    } catch (e) {/* ancien navigateur */}
+  };
+  /* Appelé par les écrans à la FIN de leur rejeu (AreneBattle pour l'Arène et la
+     Tour, la fosse et la Campagne sur leur propre boucle). Filet de sécurité :
+     au-delà de 90 s sans appel, on libère quand même — un écran qui oublierait
+     l'appel ne doit pas figer le parcours. */
+  window.FA_COMBAT_VU = libereCombat;
   const signaleProgres = (entree, init, rep) => {
     const url = String(entree && entree.url || entree || "");
     const methode = String(init && init.method || entree && entree.method || "GET").toUpperCase();
     if (methode !== "POST" || !rep || !rep.ok || !ROUTES_GUIDE.test(url)) return;
-    try {
-      window.dispatchEvent(new CustomEvent("fa-guide-progress", {
-        detail: {
-          url
-        }
-      }));
-    } catch (e) {/* ancien navigateur */}
-    if (!ROUTES_COMBAT.test(url)) return;
-    // `.clone()` parce que la réponse réelle continue vers son appelant : on lit
-    // une copie, et une réponse non-JSON (cas d'erreur) ne fait rien échouer.
-    rep.clone().json().then(d => {
-      if (!d || d.won !== false) return;
+    if (!ROUTES_COMBAT.test(url)) {
       try {
         window.dispatchEvent(new CustomEvent("fa-guide-progress", {
           detail: {
-            url,
-            won: false
+            url
           }
         }));
       } catch (e) {/* ancien navigateur */}
+      return;
+    }
+    // `.clone()` parce que la réponse réelle continue vers son appelant : on lit
+    // une copie, et une réponse non-JSON (cas d'erreur) ne fait rien échouer.
+    combatEnAttente = {
+      url,
+      won: true
+    };
+    if (combatMinuteur) clearTimeout(combatMinuteur);
+    combatMinuteur = setTimeout(libereCombat, 90000);
+    rep.clone().json().then(d => {
+      if (combatEnAttente && combatEnAttente.url === url) combatEnAttente.won = !(d && d.won === false);
     }).catch(() => {});
   };
   const note = evenement => {

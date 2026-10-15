@@ -235,6 +235,9 @@ function Fosse() {
       battleRef.current = null;
       const { battle, isLoopRun, free, effTier, bet } = ctx;
       actions.resolveFight({ win: battle.winner === "p1", free, betTier: effTier, betAmount: bet.betAmount, fromLocked: bet.fromLocked, isLoop: isLoopRun });
+      // Le joueur quitte l'écran en plein rejeu : le guide rattrape son retard
+      // tout de suite (sinon il attendrait le filet de sécurité de 90 s).
+      if (window.FA_COMBAT_VU) window.FA_COMBAT_VU();
     }
   }, []);
 
@@ -355,6 +358,9 @@ function Fosse() {
     log(win ? I18N.t("L_WIN") : I18N.t("L_LOSE"), win ? "lc-green" : "lc-red");
 
     const summary = actions.resolveFight({ win, free, betTier: effTier, betAmount: bet.betAmount, fromLocked: bet.fromLocked, isLoop: isLoopRun });
+    // Fin du rejeu : c'est maintenant que le guide peut lire le parcours (et
+    // encaisser une étape validée) — pas deux secondes après le lancement.
+    if (window.FA_COMBAT_VU) window.FA_COMBAT_VU();
     summary.levelUps.forEach((e) => log(I18N.t("L_LEVELUP", D.displayName(e.beast), e.beast.level), "lc-elec"));
     summary.rarityUps.forEach((e) => log(I18N.t("L_RARITYUP", D.displayName(e.beast), rarityLabel(e.beast.rarity)), "lc-purple"));
 
