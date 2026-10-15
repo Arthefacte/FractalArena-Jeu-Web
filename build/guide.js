@@ -267,13 +267,35 @@ function GuideBar() {
   // versée au passage — sinon il suffirait de perdre exprès pour encaisser les
   // 675 FA du parcours. Le serveur tranche quand même : il refuse de passer une
   // étape qui n'est pas la courante.
+  //
+  // Deux garde-fous, appris en production le 15/10/2026 (étape validée au niveau 3
+  // alors qu'elle demandait le niveau 5) :
+  // - une étape à progression CUMULATIVE ne se passe jamais d'office (`skip: false`,
+  //   guide-ui.js) : elle ne peut pas faire mur, seulement ralentir ;
+  // - ailleurs, une défaite ne compte que si la progression n'a PAS bougé depuis
+  //   la précédente. Gagner, perdre, gagner n'est pas « trois échecs » : tout
+  //   progrès remet le compteur à un.
   function compteEchec() {
     const r = resRef.current;
     if (!r || !r.step || !r.rewarded || r.mode !== "do") return;
+    if (r.step.skip === false) return;
     const id = r.step.id;
     const store = lsGet(TRIES_KEY(g.wallet), {});
-    const n = Number(store[id] || 0) + 1;
-    store[id] = n;
+    const brut = store[id];
+    // Forme historique (un simple compteur) lue sans la casser.
+    const cell = brut && typeof brut === "object" ? {
+      n: Number(brut.n) || 0,
+      p: Number(brut.p) || 0
+    } : {
+      n: Number(brut) || 0,
+      p: 0
+    };
+    const p = Number(r.progress || 0);
+    const n = p > cell.p ? 1 : cell.n + 1;
+    store[id] = {
+      n,
+      p
+    };
     lsSet(TRIES_KEY(g.wallet), store);
     if (n < GU.FAIL_SKIP || passees.current[id]) return;
     passees.current[id] = true;

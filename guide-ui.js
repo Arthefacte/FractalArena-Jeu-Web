@@ -45,7 +45,13 @@
   const STEPS = [
     { id: "d_win",   view: "fosse",    target: "fosse-fight",      reward: 50 },
     { id: "d_paid",  view: "fosse",    target: "fosse-bet-bronze", reward: 75 },
-    { id: "d_level", view: "fosse",    target: "fosse-fight",      reward: 100 },
+    // skip: false — le passage d'office après trois échecs ne s'applique PAS à une
+    // étape à progression CUMULATIVE. Le niveau monte à chaque victoire et ne
+    // redescend jamais : rien ne peut y faire mur, seulement ralentir. Vécu le
+    // 15/10/2026 : le joueur tenait l'étape jusqu'au niveau 5, a perdu trois
+    // combats en route, et l'étape s'est validée d'office au niveau 3 — il perdait
+    // les 100 FA d'une étape qu'il était en train de réussir.
+    { id: "d_level", view: "fosse",    target: "fosse-fight",      reward: 100, skip: false },
     { id: "d_camp",  view: "campaign", target: "camp-fight",       reward: 125 },
     { id: "d_tower", view: "tour",     target: "tour-start",       reward: 150 },
     { id: "d_pvp",   view: "arene",    target: "arene-attack",     reward: 175 },
@@ -110,7 +116,12 @@
       let target = st.target, v = st.view;
       if (st.view === "fosse" && sum.selected < 3) { v = "team"; target = "team-grid"; }
       else if (st.view === "fosse" && view === "team") { target = "team-enter"; v = "team"; }
-      return { mode: "do", step: st, index: i, total: STEPS.length, view: v, target, reward: st.reward, rewarded };
+      // `progress` : la progression SERVEUR de cette étape au moment du verdict.
+      // guide.jsx s'en sert pour compter les échecs UTILES — une défaite ne compte
+      // que si la progression n'a pas bougé depuis la précédente (tout progrès
+      // remet le compteur à un). Sans ça, un joueur qui avance par à-coups
+      // (victoire, défaite, victoire) verrait son étape validée d'office en route.
+      return { mode: "do", step: st, index: i, total: STEPS.length, view: v, target, reward: st.reward, rewarded, progress: srv.progress || 0 };
     }
     return { mode: "done", step: null, index: STEPS.length, total: STEPS.length, view: null, target: null, reward: 0, rewarded };
   }
