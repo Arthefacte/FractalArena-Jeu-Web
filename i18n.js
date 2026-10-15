@@ -1649,6 +1649,13 @@
     // dans l'ordre, et une étape passée ne se repasse pas.
     GUIDE_ERR_non_courante: { FR: "On avance dans l'ordre : termine d'abord l'étape en cours.", EN: "One step at a time: finish the current step first.", ZH: "请按顺序进行：先完成当前步骤。" },
     GUIDE_ERR_deja_passee:  { FR: "Cette étape est déjà passée.", EN: "This step is already behind you.", ZH: "该步骤已经跳过。" },
+    // La sortie du parcours : la seule fenêtre qui dit « bien joué » (elle
+    // s'ouvre au moment où les onglets se déverrouillent, une fois par compte).
+    GUIDE_FIN_EYEBROW: { FR: "Parcours terminé", EN: "Journey complete", ZH: "新手之路完成" },
+    GUIDE_FIN_T:       { FR: "Bien joué !", EN: "Well played!", ZH: "干得漂亮！" },
+    GUIDE_FIN_B:       { FR: "Tu as terminé l'apprentissage du jeu. À partir de maintenant, on te laisse explorer par toi-même : tous les onglets sont ouverts — Forge, Marché, Expéditions, Classement… Le bouton ? du haut ré-affiche l'aide quand tu veux.", EN: "You've finished the game's learning path. From here on, you're free to explore on your own: every tab is open — Forge, Market, Expeditions, Ranking… The ? button at the top brings the help back whenever you want.", ZH: "你已经完成了游戏的学习阶段。从现在起，你可以自由探索：所有标签都已解锁——熔炉、市场、远征、排行榜……随时点击顶部的 ? 可再次查看帮助。" },
+    GUIDE_FIN_ARENE:   { FR: "À bientôt dans l'Arène.", EN: "See you in the Arena.", ZH: "竞技场见。" },
+    GUIDE_FIN_OK:      { FR: "J'y vais", EN: "Let's go", ZH: "出发" },
     GUIDE_DONE:        { FR: "Parcours terminé — tu connais tous les modes et tous les onglets sont ouverts. Le bouton ? du haut ré-affiche l'aide à tout moment.", EN: "Journey complete — you know every mode and every tab is open now. The ? button at the top brings help back anytime.", ZH: "新手之路完成——你已了解所有模式，所有标签均已解锁。顶部的 ? 按钮随时可再次显示帮助。" },
     // Une phrase par onglet, à sa première ouverture : à quoi ça sert, ce que ça coûte, ce que ça rapporte.
     HINT_TAB_TEAM:        { FR: "Équipe : ta collection. Sélectionne 3 entités ; elles gagnent de l'XP à chaque victoire. Le Capitaine (totem) est un bonus passif lié à ton wallet.", EN: "Team: your collection. Select 3 entities; they gain XP every win. The Captain (totem) is a passive bonus tied to your wallet.", ZH: "队伍：你的收藏。选择 3 个实体；每次胜利它们获得 XP。队长（图腾）是与钱包绑定的被动加成。" },

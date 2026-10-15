@@ -290,3 +290,18 @@ test("le guide n'apprend un combat qu'à la FIN du rejeu (pas 2 s après le lanc
     assert.ok(lire(f).includes("FA_COMBAT_VU"), "appel manquant dans " + f + " — " + pourquoi);
   }
 });
+
+test("la sortie du parcours : une fenêtre « bien joué », ouverte une fois par compte", () => {
+  // Le parcours se terminait en silence : la barre disait « parcours terminé »
+  // huit secondes puis s'effaçait, sans jamais dire au joueur qu'il avait fini
+  // d'apprendre le jeu ni que la porte s'ouvrait.
+  assert.ok(guideSrc.includes("GUIDE_FIN_T"), "la fenêtre de fin existe");
+  assert.ok(guideSrc.includes("fermerFin"), "et elle se ferme (bouton + clic hors fenêtre)");
+  assert.ok(guideSrc.includes('res.mode !== "done"'), "elle s'ouvre sur le verdict SERVEUR, jamais sur un compteur client");
+  assert.ok(guideSrc.includes("annonce.current"), "une seule fois par session (le ? ne la rouvre pas)");
+  assert.ok(guideSrc.includes("guide_hidden: true"), "le COMPTE retient qu'elle est passée — elle ne revient ni au rechargement ni sur un autre appareil");
+  assert.ok(guideSrc.includes("!hidden && !fin"), "tant qu'elle est ouverte, la barre ne s'efface pas sous elle");
+  for (const k of ["GUIDE_FIN_EYEBROW", "GUIDE_FIN_T", "GUIDE_FIN_B", "GUIDE_FIN_ARENE", "GUIDE_FIN_OK"]) {
+    assert.ok(T[k], "clé i18n manquante : " + k);
+  }
+});

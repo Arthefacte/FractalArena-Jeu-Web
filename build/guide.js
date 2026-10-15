@@ -37,7 +37,8 @@ const {
   useRef
 } = React;
 const {
-  useFA
+  useFA,
+  Modal
 } = window;
 const I18N = window.FA_I18N;
 const GU = window.FA_GUIDE_UI;
@@ -93,6 +94,9 @@ function GuideBar() {
   const [hidden, setHidden] = useState(() => lsGet(HIDDEN_KEY, false) === true);
   const [seenTabs, setSeenTabs] = useState(() => unionListe(lsGet(TABS_KEY(g.wallet), []), []));
   const [hintOpen, setHintOpen] = useState(false);
+  // Fenêtre de FIN de parcours (« bien joué »), ouverte une fois par compte.
+  const [fin, setFin] = useState(false);
+  const annonce = useRef(false);
   const alive = useRef(true);
   // Verdict courant, lisible depuis un écouteur d'événement : une fermeture
   // d'effet garde l'ancien `res`, le compteur d'échecs viserait l'étape d'avant.
@@ -300,10 +304,35 @@ function GuideBar() {
     };
   }, [target, g.view]);
 
-  // Parcours terminé : un dernier message, puis on s'efface pour de bon (et le
-  // compte retient qu'il est terminé, pour les autres appareils).
+  // Parcours terminé : le joueur a fini les six étapes. C'est LE moment où on lui
+  // dit « bien joué » et où les onglets se déverrouillent (allowedViews rend null
+  // sur `done`) : une fenêtre de sortie s'ouvre, une fois par compte.
+  //
+  // Un dispositif compte : `guide_hidden` est le drapeau DÉJÀ en place pour
+  // « parcours fini, on ne réaffiche plus la barre » (il suit le compte, pas le
+  // navigateur). La fermer le pose donc pour de bon — ni au rechargement, ni sur
+  // un autre appareil la fenêtre ne revient. `annonce` ne sert qu'à éviter de la
+  // rouvrir dans la même session si le joueur rappelle le guide par le bouton ?.
   useEffect(() => {
-    if (res.mode === "done" && disc && !hidden) {
+    if (hidden || !disc || !res.rewarded || res.mode !== "done" || annonce.current) return;
+    annonce.current = true;
+    setFin(true);
+  }, [hidden, disc, res.rewarded, res.mode]);
+  const fermerFin = () => {
+    setFin(false);
+    setHidden(true);
+    lsSet(HIDDEN_KEY, true);
+    actions.pushUiState({
+      guide_hidden: true
+    });
+  };
+
+  // Parcours terminé : un dernier message, puis on s'efface pour de bon (et le
+  // compte retient qu'il est terminé, pour les autres appareils). Tant que la
+  // fenêtre de fin est ouverte, on ne s'efface pas : elle disparaîtrait avec la
+  // barre (le composant rend `null` dès que `hidden` passe à vrai).
+  useEffect(() => {
+    if (res.mode === "done" && disc && !hidden && !fin) {
       const t = setTimeout(() => {
         setHidden(true);
         lsSet(HIDDEN_KEY, true);
@@ -314,7 +343,7 @@ function GuideBar() {
       return () => clearTimeout(t);
     }
     return undefined;
-  }, [res.mode, disc, hidden]);
+  }, [res.mode, disc, hidden, fin]);
   const hide = () => {
     setHidden(true);
     lsSet(HIDDEN_KEY, true);
@@ -357,7 +386,32 @@ function GuideBar() {
   }, /*#__PURE__*/React.createElement("span", null, "\uD83D\uDCA1 ", I18N.t(hintKey)), /*#__PURE__*/React.createElement("button", {
     className: "guide-hint-ok",
     onClick: closeHint
-  }, I18N.t("GUIDE_OK"))));
+  }, I18N.t("GUIDE_OK"))), fin && /*#__PURE__*/React.createElement(Modal, {
+    onClose: fermerFin,
+    accent: "var(--fire)"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "eyebrow",
+    style: {
+      textAlign: "center"
+    }
+  }, I18N.t("GUIDE_FIN_EYEBROW")), /*#__PURE__*/React.createElement("div", {
+    className: "tut-icon"
+  }, "\uD83C\uDFC6"), /*#__PURE__*/React.createElement("div", {
+    className: "h1",
+    style: {
+      textAlign: "center"
+    }
+  }, I18N.t("GUIDE_FIN_T")), /*#__PURE__*/React.createElement("div", {
+    className: "tut-body muted"
+  }, I18N.t("GUIDE_FIN_B")), /*#__PURE__*/React.createElement("div", {
+    className: "guide-fin-arene"
+  }, I18N.t("GUIDE_FIN_ARENE")), /*#__PURE__*/React.createElement("button", {
+    className: "btn btn-fire block",
+    style: {
+      marginTop: 16
+    },
+    onClick: fermerFin
+  }, I18N.t("GUIDE_FIN_OK"))));
 }
 Object.assign(window, {
   GuideBar
