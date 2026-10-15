@@ -42,12 +42,24 @@ window.FA_ECHECS_API_RAZ = () => {
   /* Guide de la première session (guide.jsx) : après chaque action de jeu
      réussie, il relit le parcours découverte. Un seul point d'émission — la
      porte d'entrée réseau — plutôt qu'un appel dans chaque action. */
-  const ROUTES_GUIDE = /\/(fight|tower\/fight|tower\/start|pvp\/attack|campaign\/fight|discovery\/claim|quests\/claim)(\?|$)/;
+  const ROUTES_GUIDE = /\/(fight|tower\/fight|tower\/start|pvp\/attack|campaign\/fight|discovery\/claim|guide\/skip|quests\/claim)(\?|$)/;
+  /* Un combat, pour le RAIL de la première session : sa réponse porte `won`, le
+     seul signal d'échec dont le guide a besoin (trois défaites sur l'étape en
+     cours et elle se valide d'office, sinon le verrou d'onglets ferait mur). Lu
+     ici, à la porte d'entrée : aucune action de jeu n'a à le déclarer. */
+  const ROUTES_COMBAT = /\/(fight|tower\/fight|campaign\/fight|pvp\/attack)(\?|$)/;
   const signaleProgres = (entree, init, rep) => {
     const url = String((entree && entree.url) || entree || "");
     const methode = String((init && init.method) || (entree && entree.method) || "GET").toUpperCase();
     if (methode !== "POST" || !rep || !rep.ok || !ROUTES_GUIDE.test(url)) return;
     try { window.dispatchEvent(new CustomEvent("fa-guide-progress", { detail: { url } })); } catch (e) { /* ancien navigateur */ }
+    if (!ROUTES_COMBAT.test(url)) return;
+    // `.clone()` parce que la réponse réelle continue vers son appelant : on lit
+    // une copie, et une réponse non-JSON (cas d'erreur) ne fait rien échouer.
+    rep.clone().json().then((d) => {
+      if (!d || d.won !== false) return;
+      try { window.dispatchEvent(new CustomEvent("fa-guide-progress", { detail: { url, won: false } })); } catch (e) { /* ancien navigateur */ }
+    }).catch(() => {});
   };
   const note = (evenement) => {
     const maj = window.FA_PWA && window.FA_PWA.majCompteurEchecs;
@@ -689,7 +701,20 @@ function App() {
     setLang(l) { I18N.setLang(l); setG((s) => ({ ...s, lang: l })); },
     setOption(k, v) { setG((s) => ({ ...s, options: { ...s.options, [k]: v } })); },
     setUseLocked(v) { setG((s) => ({ ...s, useLocked: v })); },
-    setView(v) { setG((s) => ({ ...s, view: v })); },
+    // Rail de la première session : pendant le parcours, un onglet qui n'appartient
+    // pas à l'étape en cours ne s'ouvre pas. La garde vit ICI, au seul endroit qui
+    // change d'écran — un bouton d'écran, un lien de chat ou un raccourci la
+    // contourneraient si elle n'était que dans la barre de navigation. Le verrou
+    // est publié par guide.jsx (`window.FA_GUIDE_LOCK`) et vaut `on: false` hors
+    // parcours : un vétéran ne voit aucune différence.
+    setView(v) {
+      const lock = window.FA_GUIDE_LOCK;
+      if (lock && lock.on && !(lock.views || []).includes(v)) {
+        toast(I18N.t("GUIDE_LOCKED_TOAST", lock.label || ""), "info");
+        return;
+      }
+      setG((s) => ({ ...s, view: v }));
+    },
 
     // Révélation d'un palier (après la cinématique). Écrit serveur, puis MAJ g.totem.
     async invokeTotem(tier) {
@@ -2362,6 +2387,26 @@ function App() {
         return { ok: false, reason: "network" };
       }
     },
+    // Étape passée d'office après trois échecs (rail de la première session).
+    // Le client ne dit jamais où il en est : le serveur vérifie que l'étape
+    // demandée est bien la COURANTE et refuse tout le reste. Aucune récompense —
+    // une étape passée n'est pas une étape réussie (sinon on encaisserait les
+    // 675 FA du parcours en perdant exprès).
+    async skipGuideStep(stepId) {
+      const s = gRef.current;
+      if (!s.authToken) return { ok: false, reason: "auth" };
+      try {
+        const r = await fetch(`${API_URL}/guide/skip`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
+          body: JSON.stringify({ step: stepId }),
+        });
+        if (!r.ok) return { ok: false, reason: r.status >= 500 ? "server" : "refuse" };
+        return { ok: true };
+      } catch (e) {
+        return { ok: false, reason: "network" };
+      }
+    },
     // Soumet le txid de la poussière reçue. Le serveur connaît la valeur attendue.
     async submitDustTxid(txid) {
       const s = gRef.current;
@@ -3332,12 +3377,32 @@ function Header({ liquidPop, lockedPop }) {
   );
 }
 
+// Verrou du rail de la première session, publié par guide.jsx (window.FA_GUIDE_LOCK
+// + événement « fa-guide-lock »). Un seul calcul, dans guide-ui.js : ici on ne fait
+// que peindre les onglets fermés — la garde réelle est dans actions.setView, pour
+// qu'aucun bouton d'écran ne puisse la contourner.
+function useGuideLock() {
+  const lire = () => window.FA_GUIDE_LOCK || { on: false, views: [], step: null, label: "" };
+  const [lock, setLock] = useState(lire);
+  useEffect(() => {
+    const maj = () => setLock(lire());
+    window.addEventListener("fa-guide-lock", maj);
+    maj();
+    return () => window.removeEventListener("fa-guide-lock", maj);
+  }, []);
+  return lock;
+}
+
 // Un logement de la nav mobile : socket hexagonal à ratio fixe, entièrement
 // dessiné en CSS (clip-path + dégradés) — aucun bitmap, rien qui puisse
 // s'étirer ou pixelliser.
-function MnavSlot({ active, icon, glyph, label, badge, onClick }) {
+function MnavSlot({ active, icon, glyph, label, badge, onClick, locked }) {
   return (
-    <button className={cx("fa-mnav-slot", active && "on")} onClick={onClick}>
+    <button
+      className={cx("fa-mnav-slot", active && "on", locked && "locked")}
+      aria-disabled={locked ? "true" : undefined}
+      onClick={onClick}
+    >
       <span className="fa-mnav-socket">
         {icon
           ? <img className="fa-mnav-ico" src={icon} alt="" aria-hidden="true" draggable="false" />
@@ -3359,6 +3424,10 @@ function Nav() {
   ];
   const MAIN = ["team", "fosse", "arene", "campaign"];
   const more = tabs.filter(([k]) => !MAIN.includes(k));
+  // Rail : les onglets hors de l'étape en cours sont peints comme fermés (et le
+  // sont vraiment — actions.setView refuse). Le calcul vit dans guide-ui.js.
+  const lock = useGuideLock();
+  const bloque = (k) => !!(lock.on && !lock.views.includes(k));
   const go = (k) => { if (window.FA_SFX) window.FA_SFX.play("tab"); actions.setView(k); setSheetOpen(false); };
   const areneBadge = g.pvp && g.pvp.attacksUnseen > 0 ? g.pvp.attacksUnseen : 0;
   // Pastille Expéditions : dérivée des ends_at connus (aucun poll réseau) — un
@@ -3380,7 +3449,7 @@ function Nav() {
     <>
       <nav className="nav">
         {tabs.map(([k, key]) => (
-          <button key={k} className={cx("nav-tab", g.view === k && "on")} onClick={() => go(k)}>
+          <button key={k} className={cx("nav-tab", g.view === k && "on", bloque(k) && "locked")} onClick={() => go(k)} aria-disabled={bloque(k) ? "true" : undefined} title={bloque(k) ? lock.label : undefined}>
             <img className="nav-icon" src={`assets/nav-icons/${k}.png?v=216`} alt="" aria-hidden="true" draggable="false" />
             <span className="nav-label">{I18N.t(key)}</span>
             {k === "arene" && areneBadge > 0 && (
@@ -3417,6 +3486,7 @@ function Nav() {
           label={I18N.t("NAV_MORE")}
           badge={expReady}
           onClick={() => { if (window.FA_SFX) window.FA_SFX.play("tab"); setSheetOpen(true); }}
+          locked={more.every(([k]) => bloque(k))}
         />
       </nav>
       {sheetOpen && (
@@ -3428,7 +3498,7 @@ function Nav() {
             </div>
             <div className="fa-sheet-grid">
               {more.map(([k, key]) => (
-                <button key={k} className={cx("fa-sheet-item", g.view === k && "on")} onClick={() => go(k)}>
+                <button key={k} className={cx("fa-sheet-item", g.view === k && "on", bloque(k) && "locked")} onClick={() => go(k)} aria-disabled={bloque(k) ? "true" : undefined}>
                   <img src={`assets/nav-icons/${k}.png?v=216`} alt="" aria-hidden="true" draggable="false" />
                   <span>{I18N.t(key)}</span>
                   {k === "expeditions" && expReady > 0 && <span className="fa-sheet-dot" aria-hidden="true" />}

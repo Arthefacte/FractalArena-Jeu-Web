@@ -340,6 +340,16 @@ body[data-fond="cite"] .app-bg {
 .nav-tab:hover { color: var(--text); }
 .nav-tab.on { color: var(--text); }
 .nav-tab.on::after { transform: scaleX(1); }
+/* Rail de la première session : un onglet hors de l'étape en cours est FERMÉ
+   (actions.setView refuse le clic). Il reste lisible — le joueur doit voir où il
+   ira bientôt — mais éteint, sans halo au survol ni barre d'onglet actif. */
+.nav-tab.locked { opacity: .34; cursor: not-allowed; }
+.nav-tab.locked:hover { color: inherit; }
+.nav-tab.locked:hover .nav-icon { --glow-hi: rgba(255,255,255,0.18); filter: grayscale(.75); }
+.nav-tab.locked:hover .nav-label { opacity: .6; }
+.nav-tab.locked::after { display: none; }
+.fa-mnav-slot.locked { opacity: .34; }
+.fa-sheet-item.locked { opacity: .34; }
 .nav-tab .badge {
   position: absolute; top: 8px; right: 4px; min-width: 16px; height: 16px;
   padding: 0 4px; border-radius: 8px; background: var(--alert); color: #fff;
