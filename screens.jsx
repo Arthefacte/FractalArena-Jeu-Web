@@ -747,12 +747,16 @@ function ForgeRangs() {
       <div className="grid-cards">
         {sorted.map((b) => {
           const role = sel.some((x) => x.id === b.id);
-          const badge = (
+          // La pastille ne dit QUE le sacrifice (demande fondateur du 14/10/2026) : chaque
+          // carte portait aussi son rang (« Rang C ») dans une pastille grise, sur toute la
+          // grille — du bruit. Le rang reste lisible par l'ART lui-même (data.js `artFor`
+          // charge <type>_<rang>.webp) et les cartes non éligibles sont baissées à 32 %.
+          const badge = role ? (
             <div className="pill" style={{ position: "absolute", bottom: 8, left: "50%", transform: "translateX(-50%)", whiteSpace: "nowrap", background: "var(--bg)",
-              color: role ? "var(--alert)" : (D.RANK_COLORS[b.rank] || "var(--text)"), border: `1px solid ${role ? "var(--alert)" : (D.RANK_COLORS[b.rank] || "var(--line)")}` }}>
-              {role ? I18N.t("FG_SACRIFICED") : I18N.t("FG_RANK") + " " + (b.rank || "C")}
+              color: "var(--alert)", border: "1px solid var(--alert)" }}>
+              {I18N.t("FG_SACRIFICED")}
             </div>
-          );
+          ) : null;
           return (
             <div key={b.id} style={{ opacity: clickable(b) ? 1 : 0.32, pointerEvents: clickable(b) ? "auto" : "none", transition: "opacity .2s" }}>
               <CreatureCard beast={b} selectable selected={role} onClick={() => toggle(b)} badge={badge} />

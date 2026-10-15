@@ -215,6 +215,18 @@ test("l'onglet de rang affiche le TYPE produit et le rang visé", () => {
   assert.match(b, /FG_RANK_MAX/, "le refus du rang S doit être affiché");
 });
 
+// Demande fondateur du 14/10/2026 (capture d'une carte de la grille, pastille grise
+// « Rang C ») : la grille ne badge QUE le sacrifice. Le rang reste lisible par l'art
+// lui-même (data.js artFor → <type>_<rang>.webp) et par la baisse à 32 % des cartes
+// qui ne partagent pas rang+rareté avec la sélection.
+test("la grille de rang ne badge QUE le sacrifice (plus de « Rang N » sur chaque carte)", () => {
+  const b = fnBloc("ForgeRangs");
+  assert.match(b, /FG_SACRIFICED/, "la carte sacrifiée doit rester marquée");
+  assert.ok(!/I18N\.t\("FG_RANK"\)\s*\+\s*" "/.test(b),
+    "plus de pastille de rang posée sur les cartes non sélectionnées");
+  assert.match(b, /badge = role \?/, "la pastille est conditionnée au rôle, jamais inconditionnelle");
+});
+
 // ---- 5. Réseau : la route de rang, le champ ticket, le miroir du serveur ----
 
 test("l'action rankFuse appelle POST /forge/rank-fuse avec les 3 ids et le template choisi", () => {

@@ -1344,7 +1344,11 @@ function ForgeRangs() {
     className: "grid-cards"
   }, sorted.map(b => {
     const role = sel.some(x => x.id === b.id);
-    const badge = /*#__PURE__*/React.createElement("div", {
+    // La pastille ne dit QUE le sacrifice (demande fondateur du 14/10/2026) : chaque
+    // carte portait aussi son rang (« Rang C ») dans une pastille grise, sur toute la
+    // grille — du bruit. Le rang reste lisible par l'ART lui-même (data.js `artFor`
+    // charge <type>_<rang>.webp) et les cartes non éligibles sont baissées à 32 %.
+    const badge = role ? /*#__PURE__*/React.createElement("div", {
       className: "pill",
       style: {
         position: "absolute",
@@ -1353,10 +1357,10 @@ function ForgeRangs() {
         transform: "translateX(-50%)",
         whiteSpace: "nowrap",
         background: "var(--bg)",
-        color: role ? "var(--alert)" : D.RANK_COLORS[b.rank] || "var(--text)",
-        border: `1px solid ${role ? "var(--alert)" : D.RANK_COLORS[b.rank] || "var(--line)"}`
+        color: "var(--alert)",
+        border: "1px solid var(--alert)"
       }
-    }, role ? I18N.t("FG_SACRIFICED") : I18N.t("FG_RANK") + " " + (b.rank || "C"));
+    }, I18N.t("FG_SACRIFICED")) : null;
     return /*#__PURE__*/React.createElement("div", {
       key: b.id,
       style: {
