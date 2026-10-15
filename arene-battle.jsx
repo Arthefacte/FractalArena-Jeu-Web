@@ -56,7 +56,7 @@ function AreneBattle({ events, p1Team, p2Team, won, delta, elo, onClose, opponen
 
   useEffect(() => {
     function step() {
-      if (iRef.current >= evs.length) { setDone(true); return; }
+      if (iRef.current >= evs.length) { setDone(true); if (window.FA_COMBAT_VU) window.FA_COMBAT_VU(); return; }
       const ev = evs[iRef.current++];
       let delay = 360;
       if (ev.t === "round") { setLines((L) => [...L, "── " + I18N.t("AR_ROUND", ev.round) + " ──"]); delay = 260; }
