@@ -15,15 +15,17 @@ const TUT_KEY = "fractal_arena_tutorial_v1";
 
 // Chaque icône doit illustrer le PROPOS du slide, pas un détail (retour user
 // 2026-08-22 : le homard d'« équipe » et la cible de « combats » perdaient tout
-// le monde). « 🔒◎ » montre les deux notions que le slide 4 oppose.
-// Trois diapositives, pas cinq (22/09/2026) : l'équipe, les mises et « va plus
-// loin » sont désormais montrés SUR l'écran par la barre de guidage (guide.jsx),
-// au moment où le joueur en a besoin. Ici ne reste que ce qu'il faut savoir
-// avant le premier clic : le cadeau, verrouillé contre disponible, et le guide.
+// le monde).
+// UNE diapositive (15/10/2026). Il en restait trois — le cadeau, le verrouillé
+// contre le disponible, le guide. Les deux dernières racontaient ce que le
+// RAIL fait maintenant à l'écran : la barre dit l'étape et surligne le bouton
+// (plus besoin de l'annoncer), et le verrou d'onglets rend « verrouillé contre
+// disponible » visible par le joueur lui-même. Ce qui reste ici est ce qu'aucun
+// écran ne peut montrer avant le premier clic : le cadeau de bienvenue, et le
+// fait qu'on l'accompagne de bout en bout. Le « Passer » a disparu avec les
+// diapositives qu'il servait à sauter : il ne reste qu'un seul bouton.
 const SLIDES = [
   { icon: "⚔️", t: "TUT_S1_T", b: "TUT_S1_B" },
-  { icon: "🔒◎", t: "TUT_S4_T", b: "TUT_S4_B" },
-  { icon: "🧭", t: "TUT_SG_T", b: "TUT_SG_B" },
 ];
 
 function tutSeen() {
@@ -88,14 +90,17 @@ function TutorialGate({ blocked }) {
       <div className="tut-icon">{slide.icon}</div>
       <div className="h1" style={{ textAlign: "center" }}>{I18N.t(slide.t)}</div>
       <div className="tut-body muted">{I18N.t(slide.b)}</div>
-      <div className="tut-dots">
-        {SLIDES.map((_, i) => (
-          <span key={i} className={cx("tut-dot", i === step && "on")} onClick={() => setStep(i)} />
-        ))}
-      </div>
+      {SLIDES.length > 1 && (
+        <div className="tut-dots">
+          {SLIDES.map((_, i) => (
+            <span key={i} className={cx("tut-dot", i === step && "on")} onClick={() => setStep(i)} />
+          ))}
+        </div>
+      )}
       <div className="flex between center" style={{ marginTop: 16, gap: 12 }}>
-        <button className="btn ghost" onClick={close}>{I18N.t("TUT_SKIP")}</button>
-        <button className="btn btn-fire" onClick={next}>{last ? I18N.t("TUT_START") : I18N.t("TUT_NEXT")}</button>
+        {/* Un seul bouton : une diapositive unique n'a rien à sauter. Le titre
+            porte la promesse (« on te tient la main »), le bouton l'engagement. */}
+        <button className="btn btn-fire" style={{ flex: 1 }} onClick={next}>{last ? I18N.t("TUT_START") : I18N.t("TUT_NEXT")}</button>
       </div>
     </Modal>
   );

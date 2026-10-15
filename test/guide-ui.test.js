@@ -181,3 +181,93 @@ test("les cibles du guide existent dans les écrans (data-guide posés)", () => 
   }
   assert.ok(src.includes('"quest-claim-" + s.id'), "les boutons Réclamer du parcours doivent porter quest-claim-<id>");
 });
+
+// ---- Rail de la première session (15/10/2026) ------------------------------
+// Le guide disait l'étape sans rien retenir : les 14 onglets restaient ouverts, le
+// ✕ masquait le guide pour de bon (drapeau du COMPTE), et la récompense obligeait à
+// sortir du rail pour aller la chercher dans Quêtes. Ces tests tiennent les quatre
+// décisions prises ensemble — un verrou sans issue serait pire que pas de verrou.
+
+const appSrc = fs.readFileSync(path.join(ROOT, "app.jsx"), "utf8");
+const questsSrc = fs.readFileSync(path.join(ROOT, "quests.jsx"), "utf8");
+
+test("hors parcours : aucun verrou (un vétéran ne voit aucune différence)", () => {
+  const r = GU.computeGuide({ disc: etatFor([], [], false), g: g0, view: "fosse" });
+  assert.equal(GU.allowedViews(r), null, "compte non récompensé : pas de rail");
+  const fini = GU.computeGuide({ disc: etatFor(IDS, IDS), g: g0, view: "team" });
+  assert.equal(fini.mode, "done");
+  assert.equal(GU.allowedViews(fini), null, "parcours terminé : les onglets se rouvrent");
+  assert.equal(GU.allowedViews(null), null);
+  assert.equal(GU.allowedViews({ mode: "do", rewarded: true, step: null }), null);
+});
+
+test("équipe incomplète : seule Équipe reste ouverte", () => {
+  const r = GU.computeGuide({ disc: etatFor(), g: { ...g0, selected: [] }, view: "team" });
+  assert.equal(r.target, "team-grid");
+  assert.deepEqual(GU.allowedViews(r), ["team"], "tant que l'équipe n'est pas posée, la Fosse n'a rien à y faire");
+});
+
+test("l'étape ouvre SON onglet plus Équipe, et rien d'autre", () => {
+  const g = { ...g0, selected: ["a", "b", "c"] };
+  assert.deepEqual(GU.allowedViews(GU.computeGuide({ disc: etatFor(), g, view: "fosse" })), ["fosse", "team"]);
+  const trois = ["d_win", "d_paid", "d_level"];
+  const camp = GU.computeGuide({ disc: etatFor(trois, trois), g, view: "campaign" });
+  assert.equal(camp.step.id, "d_camp");
+  assert.deepEqual(GU.allowedViews(camp), ["campaign", "team"]);
+  const quatre = trois.concat(["d_camp"]);
+  const tour = GU.computeGuide({ disc: etatFor(quatre, quatre), g, view: "tour" });
+  assert.equal(tour.step.id, "d_tower");
+  assert.deepEqual(GU.allowedViews(tour), ["tour", "team"]);
+  const cinq = quatre.concat(["d_tower"]);
+  const arene = GU.computeGuide({ disc: etatFor(cinq, cinq), g, view: "arene" });
+  assert.equal(arene.step.id, "d_pvp");
+  assert.deepEqual(GU.allowedViews(arene), ["arene", "team"]);
+});
+
+test("étape accomplie non réclamée : le rail n'ouvre PAS Quêtes (le guide encaisse)", () => {
+  const r = GU.computeGuide({ disc: etatFor(["d_win"]), g: { ...g0, selected: ["a", "b", "c"] }, view: "fosse" });
+  assert.equal(r.mode, "claim");
+  assert.deepEqual(GU.allowedViews(r), ["fosse", "team"]);
+});
+
+test("une étape passée d'office ne bloque plus le rail", () => {
+  const disc = etatFor([], []);
+  disc.steps = disc.steps.map((s) => (s.id === "d_win" ? { ...s, skipped: true } : s));
+  const r = GU.computeGuide({ disc, g: { ...g0, selected: ["a", "b", "c"] }, view: "fosse" });
+  assert.equal(r.mode, "do");
+  assert.equal(r.step.id, "d_paid", "passée n'est pas réclamée : on avance, sans rien encaisser");
+});
+
+test("le rail est branché dans le composant : verrou publié, récompense encaissée, ✕ retiré", () => {
+  assert.ok(guideSrc.includes("GU.allowedViews(res)"), "le composant lit la décision de guide-ui.js, il ne la refait pas");
+  assert.ok(guideSrc.includes("window.FA_GUIDE_LOCK = "), "le verrou est publié pour app.jsx");
+  assert.ok(guideSrc.includes("fa-guide-lock"), "et signalé par un événement à la barre de navigation");
+  assert.ok(guideSrc.includes("actions.claimDiscovery("), "la récompense est encaissée sur l'écran de l'étape");
+  assert.ok(guideSrc.includes("GUIDE_CLAIM_AUTO"), "plus d'ordre d'aller réclamer dans Quêtes");
+  assert.ok(guideSrc.includes("actions.skipGuideStep("), "trois échecs → passage d'office, tranché par le serveur");
+  assert.ok(guideSrc.includes("GU.FAIL_SKIP"), "le seuil vient de guide-ui.js, jamais recopié");
+  assert.ok(guideSrc.includes("e.detail.won === false"), "les défaites viennent de l'instrumentation fetch d'app.jsx");
+  assert.ok(guideSrc.includes('(!res.rewarded || res.mode === "done")'), "le ✕ n'existe plus pendant le parcours");
+  assert.ok(guideSrc.includes("guide_hidden: false"), "un parcours en cours ne reste pas masqué (✕ d'avant la livraison)");
+});
+
+test("app.jsx ferme vraiment la porte : la garde est dans setView, pas seulement dans la nav", () => {
+  assert.ok(appSrc.includes("function useGuideLock()"), "la barre de navigation lit le verrou publié");
+  const i = appSrc.indexOf("    setView(v) {");
+  assert.ok(i > 0, "setView existe toujours");
+  const bloc = appSrc.slice(i, i + 500);
+  assert.ok(bloc.includes("window.FA_GUIDE_LOCK"), "le verrou est lu au seul endroit qui change d'écran");
+  assert.ok(bloc.includes("lock.on && !(lock.views || []).includes(v)"), "un onglet hors rail ne s'ouvre pas");
+  assert.ok(bloc.includes("return;"), "le clic est refusé, pas seulement déconseillé");
+  assert.ok(bloc.includes("GUIDE_LOCKED_TOAST"), "le refus s'explique au joueur");
+  assert.ok(appSrc.includes("async skipGuideStep(stepId)"), "l'action réseau du passage d'office");
+  assert.ok(appSrc.includes("/guide/skip"), "elle poste sur la route serveur");
+  assert.ok(appSrc.includes("bloque(k)"), "les onglets fermés sont peints comme tels");
+  assert.ok(appSrc.includes("locked={more.every(([k]) => bloque(k))}"), "même verdict sur le tiroir « Plus » mobile");
+  assert.ok(appSrc.includes("ROUTES_COMBAT"), "les réponses de combat sont lues pour le signal de défaite");
+});
+
+test("le parcours ne laisse plus une ligne « à faire » à vie dans Quêtes", () => {
+  assert.ok(questsSrc.includes("s.claimed || s.skipped"), "une étape passée ferme sa ligne comme une étape réclamée");
+  assert.ok(questsSrc.includes("DISC_SKIPPED"), "et elle se nomme « passée », elle ne ment pas sur son état");
+});

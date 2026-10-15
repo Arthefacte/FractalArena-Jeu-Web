@@ -104,8 +104,11 @@ function Quests() {
   // un tutoriel terminé ne doit plus occuper l'écran, mais un parcours fini dont
   // le portefeuille n'est pas lié doit garder sa porte — sans elle, le joueur
   // n'avait plus que le bandeau fermable pour y accéder.
+  // Une étape PASSÉE d'office (rail de la première session : trois échecs) ferme sa
+  // ligne comme une étape réclamée — sans quoi le panneau resterait affiché à vie,
+  // avec une étape que le joueur ne pourrait jamais valider.
   const showDisc = !!(disc && disc.eligible && disc.steps.length > 0
-                      && (!disc.steps.every((s) => s.claimed) || etapeCrypto));
+                      && (!disc.steps.every((s) => s.claimed || s.skipped) || etapeCrypto));
 
   const d = st.data;
   return (
@@ -118,7 +121,7 @@ function Quests() {
             {disc.steps.map((s) => {
               const pct = s.target > 0 ? Math.min(100, Math.round((s.progress / s.target) * 100)) : 0;
               return (
-                <div key={s.id} className={cx("q-row", s.claimed && "done")}>
+                <div key={s.id} className={cx("q-row", (s.claimed || s.skipped) && "done")}>
                   <div className="q-info">
                     <span className="q-name">{I18N.t(D_LABEL[s.id])}</span>
                     <span className="q-reward">+<TokenIcon s={12} /> {s.reward} 🔒</span>
@@ -128,7 +131,9 @@ function Quests() {
                     <span className="q-prog">{s.progress}/{s.target}</span>
                     {s.claimed
                       ? <span className="q-claimed">{I18N.t("DISC_CLAIMED")}</span>
-                      : <button className="q-claim" data-guide={"quest-claim-" + s.id} disabled={!s.done || claimingDisc === s.id} onClick={() => onClaimDisc(s.id)}>{I18N.t("DISC_CLAIM")}</button>}
+                      : s.skipped
+                        ? <span className="q-claimed">{I18N.t("DISC_SKIPPED")}</span>
+                        : <button className="q-claim" data-guide={"quest-claim-" + s.id} disabled={!s.done || claimingDisc === s.id} onClick={() => onClaimDisc(s.id)}>{I18N.t("DISC_CLAIM")}</button>}
                   </div>
                 </div>
               );

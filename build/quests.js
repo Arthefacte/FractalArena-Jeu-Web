@@ -148,7 +148,10 @@ function Quests() {
   // un tutoriel terminé ne doit plus occuper l'écran, mais un parcours fini dont
   // le portefeuille n'est pas lié doit garder sa porte — sans elle, le joueur
   // n'avait plus que le bandeau fermable pour y accéder.
-  const showDisc = !!(disc && disc.eligible && disc.steps.length > 0 && (!disc.steps.every(s => s.claimed) || etapeCrypto));
+  // Une étape PASSÉE d'office (rail de la première session : trois échecs) ferme sa
+  // ligne comme une étape réclamée — sans quoi le panneau resterait affiché à vie,
+  // avec une étape que le joueur ne pourrait jamais valider.
+  const showDisc = !!(disc && disc.eligible && disc.steps.length > 0 && (!disc.steps.every(s => s.claimed || s.skipped) || etapeCrypto));
   const d = st.data;
   return /*#__PURE__*/React.createElement("div", {
     className: "container",
@@ -174,7 +177,7 @@ function Quests() {
     const pct = s.target > 0 ? Math.min(100, Math.round(s.progress / s.target * 100)) : 0;
     return /*#__PURE__*/React.createElement("div", {
       key: s.id,
-      className: cx("q-row", s.claimed && "done")
+      className: cx("q-row", (s.claimed || s.skipped) && "done")
     }, /*#__PURE__*/React.createElement("div", {
       className: "q-info"
     }, /*#__PURE__*/React.createElement("span", {
@@ -196,7 +199,9 @@ function Quests() {
       className: "q-prog"
     }, s.progress, "/", s.target), s.claimed ? /*#__PURE__*/React.createElement("span", {
       className: "q-claimed"
-    }, I18N.t("DISC_CLAIMED")) : /*#__PURE__*/React.createElement("button", {
+    }, I18N.t("DISC_CLAIMED")) : s.skipped ? /*#__PURE__*/React.createElement("span", {
+      className: "q-claimed"
+    }, I18N.t("DISC_SKIPPED")) : /*#__PURE__*/React.createElement("button", {
       className: "q-claim",
       "data-guide": "quest-claim-" + s.id,
       disabled: !s.done || claimingDisc === s.id,

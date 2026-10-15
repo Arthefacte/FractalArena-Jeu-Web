@@ -96,6 +96,7 @@
       const srv = steps.find((x) => x && x.id === st.id);
       if (!srv) continue;                  // étape inconnue du serveur : on ne la guide pas
       if (srv.claimed) continue;           // déjà réclamée
+      if (srv.skipped) continue;           // passée d'office après 3 échecs (rail, cf. allowedViews)
       if (srv.done) {
         // Accomplie côté serveur. Récompensée → on envoie réclamer ; sinon c'est
         // une étape d'orientation déjà passée, on passe à la suivante.
@@ -124,11 +125,44 @@
     return "GUIDE_" + res.step.id.toUpperCase(); // GUIDE_D_WIN, GUIDE_D_PAID…
   }
 
+  // ---- Rail de la première session (2026-10-15) --------------------------
+  // Le code disait l'étape ; il ne retenait RIEN : les 14 onglets restaient
+  // ouverts dès le premier écran, le ✕ de la barre masquait le guide pour de bon
+  // (sur le COMPTE), et un joueur pouvait passer sa première session dans la
+  // Forge sans jamais livrer un combat. `allowedViews` est la seule décision du
+  // rail : quels onglets restent cliquables pendant l'étape en cours.
+  //
+  // `null` = aucun verrou : hors parcours RÉCOMPENSÉ (un vétéran n'a pas
+  // d'étapes à suivre), ou parcours terminé.
+  //
+  // Équipe reste toujours ouverte : c'est le berceau du roster, pas un
+  // égarement. L'onglet de la consigne ET celui de l'étape sont ouverts, car la
+  // consigne peut vivre sur Équipe (« choisis 3 entités ») pendant que l'étape,
+  // elle, se joue dans la Fosse — n'en ouvrir qu'un enfermerait le joueur devant
+  // un bouton qui change d'onglet. Exception : tant que l'équipe est incomplète
+  // (target team-grid), seule Équipe est ouverte — la Fosse n'a rien à y faire.
+  function allowedViews(res) {
+    if (!res || !res.step || res.mode === "done" || !res.rewarded) return null;
+    // En mode « claim », l'écran de la consigne est Quêtes (le serveur le dit) — mais
+    // la récompense est encaissée par le guide (guide.jsx) : ouvrir Quêtes pour un
+    // aller-retour déjà fait rouvrirait la porte qu'on vient de fermer. C'est donc
+    // l'écran de l'ÉTAPE qui reste ouvert.
+    const out = [res.mode === "claim" ? res.step.view : res.view];
+    if (res.mode === "do" && res.target !== "team-grid" && res.step.view !== res.view) out.push(res.step.view);
+    if (!out.includes("team")) out.push("team");
+    return out;
+  }
+
+  // Trois échecs sur l'étape en cours et elle se valide d'office (rail
+  // verrouillé = jamais de mur). La constante vit ici pour que le composant et
+  // les tests en parlent d'une seule voix.
+  const FAIL_SKIP = 3;
+
   // Onglets qui méritent une phrase la première fois qu'on les ouvre.
   const TAB_HINTS = ["team", "fosse", "arene", "campaign", "tour", "expeditions", "quests", "forge", "market", "wallet", "boosts", "perso", "leaderboard"];
   function tabHintKey(view) {
     return TAB_HINTS.includes(view) ? "HINT_TAB_" + view.toUpperCase() : null;
   }
 
-  return { STEPS, TOTAL_REWARD, localSummary, computeGuide, instructionKey, TAB_HINTS, tabHintKey };
+  return { STEPS, TOTAL_REWARD, localSummary, computeGuide, instructionKey, TAB_HINTS, tabHintKey, allowedViews, FAIL_SKIP };
 });

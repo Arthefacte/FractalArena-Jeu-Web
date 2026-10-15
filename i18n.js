@@ -46,9 +46,9 @@
     TUT_HELP:  { FR: "Revoir le tutoriel", EN: "Replay tutorial", ZH: "重看教程" },
     TUT_S1_T: { FR: "Bienvenue dans Fractal Arena", EN: "Welcome to Fractal Arena", ZH: "欢迎来到 Fractal Arena" },
     TUT_S1_B: {
-      FR: "Fractal Arena est un auto-battler sur Fractal Bitcoin. Tu démarres avec un cadeau de bienvenue en FA verrouillés — de quoi te faire la main.",
-      EN: "Fractal Arena is an auto-battler on Fractal Bitcoin. You start with a welcome gift of locked FA — enough to get the hang of it.",
-      ZH: "Fractal Arena 是 Fractal Bitcoin 上的自动战斗游戏。你将获得锁定 FA 的欢迎礼物，足够你上手。",
+      FR: "Fractal Arena est un auto-battler sur Fractal Bitcoin. Tu démarres avec un cadeau de bienvenue en FA verrouillés — de quoi te faire la main. Je te tiens la main : une barre sous le menu te dit quoi faire, une étape à la fois, et les autres onglets s'ouvriront au fur et à mesure. Six étapes, 675 FA à la clé.",
+      EN: "Fractal Arena is an auto-battler on Fractal Bitcoin. You start with a welcome gift of locked FA — enough to get the hang of it. I'll walk you through it: a bar under the menu tells you what to do, one step at a time, and the other tabs open as you go. Six steps, 675 FA to earn.",
+      ZH: "Fractal Arena 是 Fractal Bitcoin 上的自动战斗游戏。你将获得锁定 FA 的欢迎礼物，足够你上手。我会带你走完：菜单下方的指引栏一次告诉你一步该做什么，其他标签会随进度解锁。共六步，共 675 FA。",
     },
     TUT_S2_T: { FR: "Compose ton équipe", EN: "Build your team", ZH: "组建队伍" },
     TUT_S2_B: {
@@ -281,6 +281,9 @@
 
     DISC_CLAIM: { FR: "Réclamer", EN: "Claim", ZH: "领取" },
     DISC_CLAIMED: { FR: "Réclamé ✓", EN: "Claimed ✓", ZH: "已领取 ✓" },
+    // Étape passée d'office par le rail de la première session (trois échecs de
+    // suite). Elle n'a pas été réussie : aucune récompense, et c'est écrit.
+    DISC_SKIPPED: { FR: "Passée — 3 échecs", EN: "Passed — 3 tries", ZH: "已跳过 — 三次失败" },
     DISC_CLAIM_FAIL: { FR: "Impossible de réclamer pour l'instant. Réessaie dans un moment.", EN: "Cannot claim right now. Try again shortly.", ZH: "暂时无法领取，请稍后再试。" },
 
     DISC_CRYPTO_TITLE: { FR: "Débloquer tes gains", EN: "Unlock your earnings", ZH: "解锁你的收益" },
@@ -1635,7 +1638,18 @@
     GUIDE_D_TOWER:     { FR: "Gagne un combat dans la Tour avec ton run gratuit de la semaine. Les PV ne se régénèrent pas entre les étages : chaque étage franchi paie un palier.", EN: "Win a fight in the Tower with your free weekly run. HP doesn't regenerate between floors: every floor cleared pays a tier.", ZH: "用本周的免费挑战在塔中赢一场。层与层之间不回血：每通过一层都有奖励。" },
     GUIDE_D_PVP:       { FR: "Attaque un joueur en Arène (5 attaques gratuites par jour). Tu affrontes sa défense enregistrée, sans risque pour tes entités.", EN: "Attack a player in the Arena (5 free attacks a day). You face their saved defense, with no risk to your entities.", ZH: "在竞技场攻击一名玩家（每天 5 次免费）。你对战的是对方保存的防守阵容，你的实体不会有损失。" },
     GUIDE_CLAIM:       { FR: "Étape réussie ! Va réclamer ta récompense dans Quêtes → Tes premiers pas.", EN: "Step done! Claim your reward in Quests → First steps.", ZH: "步骤完成！前往任务 → 新手之路领取奖励。" },
-    GUIDE_DONE:        { FR: "Parcours terminé — tu connais tous les modes. Le bouton ? du haut ré-affiche l'aide à tout moment.", EN: "Journey complete — you know every mode. The ? button at the top brings help back anytime.", ZH: "新手之路完成——你已了解所有模式。顶部的 ? 按钮随时可再次显示帮助。" },
+    // Rail de la première session (2026-10-15) : la récompense n'est plus à aller
+    // chercher dans Quêtes, le verrou d'onglets se nomme lui-même, et une étape
+    // qui résiste trois fois se passe d'office.
+    GUIDE_CLAIM_AUTO:  { FR: "Étape réussie · +%d 🔒 en cours d'encaissement…", EN: "Step done · +%d 🔒 being credited…", ZH: "步骤完成 · 正在发放 +%d 🔒……" },
+    GUIDE_PAID:        { FR: "Encaissé : +%d 🔒.", EN: "Credited: +%d 🔒.", ZH: "已发放：+%d 🔒。" },
+    GUIDE_SKIPPED:     { FR: "Étape passée après trois essais — tu peux la refaire plus tard, sans récompense.", EN: "Step passed after three tries — you can retry it later, without the reward.", ZH: "三次失败后已跳过该步骤——之后可以重做，但没有奖励。" },
+    GUIDE_LOCKED_TOAST: { FR: "Pas encore — suis le guide : %s", EN: "Not yet — follow the guide: %s", ZH: "还不行——请跟随指引：%s" },
+    // Refus serveur du passage d'office (SERVER_ERROR_KEYS) : le parcours avance
+    // dans l'ordre, et une étape passée ne se repasse pas.
+    GUIDE_ERR_non_courante: { FR: "On avance dans l'ordre : termine d'abord l'étape en cours.", EN: "One step at a time: finish the current step first.", ZH: "请按顺序进行：先完成当前步骤。" },
+    GUIDE_ERR_deja_passee:  { FR: "Cette étape est déjà passée.", EN: "This step is already behind you.", ZH: "该步骤已经跳过。" },
+    GUIDE_DONE:        { FR: "Parcours terminé — tu connais tous les modes et tous les onglets sont ouverts. Le bouton ? du haut ré-affiche l'aide à tout moment.", EN: "Journey complete — you know every mode and every tab is open now. The ? button at the top brings help back anytime.", ZH: "新手之路完成——你已了解所有模式，所有标签均已解锁。顶部的 ? 按钮随时可再次显示帮助。" },
     // Une phrase par onglet, à sa première ouverture : à quoi ça sert, ce que ça coûte, ce que ça rapporte.
     HINT_TAB_TEAM:        { FR: "Équipe : ta collection. Sélectionne 3 entités ; elles gagnent de l'XP à chaque victoire. Le Capitaine (totem) est un bonus passif lié à ton wallet.", EN: "Team: your collection. Select 3 entities; they gain XP every win. The Captain (totem) is a passive bonus tied to your wallet.", ZH: "队伍：你的收藏。选择 3 个实体；每次胜利它们获得 XP。队长（图腾）是与钱包绑定的被动加成。" },
     HINT_TAB_FOSSE:       { FR: "La Fosse : combats contre l'IA. 5 gratuits par jour (gains verrouillés), puis des mises Bronze 10 · Argent 25 · Or 50 payées ×1,7 en cas de victoire.", EN: "The Pit: fights against the AI. 5 free a day (locked winnings), then Bronze 10 · Silver 25 · Gold 50 stakes paid ×1.7 on a win.", ZH: "深坑：对战 AI。每天 5 场免费（收益锁定），之后可下注青铜 10 · 白银 25 · 黄金 50，胜利赔率 ×1.7。" },
@@ -1732,6 +1746,12 @@
     deja_reclame: "EXP_ERR_deja_reclame",
     destination_a_reclamer: "EXP_ERR_destination_a_reclamer",
     destination_occupee: "EXP_ERR_destination_occupee",
+    // Rail de la première session (15/10/2026) : refus du passage d'office.
+    // Ils ne s'affichent pas dans le parcours (le client retente au verdict
+    // suivant, sans rien dire au joueur), mais un code serveur se mappe ICI —
+    // jamais en snake_case brut devant le joueur.
+    etape_non_courante: "GUIDE_ERR_non_courante",
+    deja_passee: "GUIDE_ERR_deja_passee",
     // Économie / arène / retraits
     insufficient_balance: "AR_INSUFF",
     insufficient_liquid: "WL_WD_INSUFF",
