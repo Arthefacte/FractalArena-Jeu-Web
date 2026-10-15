@@ -1631,6 +1631,13 @@ body[data-fond="cite"] .app-bg {
 .guide-bar.claim .guide-step { color: var(--elec); }
 .guide-text { flex: 1 1 320px; color: var(--text); }
 .guide-go { white-space: nowrap; }
+/* La phrase de sortie du parcours : le seul moment du jeu qui dit « à bientôt
+   dans l'Arène ». Centrée, en mono, dans la couleur de l'accent. */
+.guide-fin-arene {
+  text-align: center; margin-top: 12px;
+  font-family: var(--font-mono); font-size: 13px; letter-spacing: 1px;
+  color: var(--fire); text-shadow: 0 0 14px rgba(247,147,26,0.35);
+}
 .guide-close {
   background: transparent; border: 1px solid var(--line); color: var(--text-dim);
   border-radius: 6px; width: 26px; height: 26px; cursor: pointer; font-size: 12px; line-height: 1;
