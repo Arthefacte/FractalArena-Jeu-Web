@@ -729,6 +729,19 @@
     // Sans ce message, il attend devant un écran qui ne lui demande rien.
     AUTHDIAG_PENDING_APP:  { FR: "Signature en attente : ouvre l'extension UniSat pour la valider. Une seule fois — ensuite le jeu se souviendra de toi.", EN: "Signature pending: open the UniSat extension to approve it. Just once — the game will remember you afterwards.", ZH: "签名待确认：请打开 UniSat 扩展进行批准。仅需一次，之后游戏会记住你。" },
     WL_REWARD_POOL: { FR: "Reward Pool", EN: "Reward Pool", ZH: "奖励池" },
+    FB_CASE: { FR: "Cagnotte FB", EN: "FB balance", ZH: "FB 余额" },
+    FB_CASE_TITLE: { FR: "Cagnotte FB : %s", EN: "FB balance: %s", ZH: "FB 余额：%s" },
+    FB_CASE_INFO: { FR: "Envoie du FB (Fractal Bitcoin) à l'adresse ci-dessous depuis le portefeuille de ton compte, puis colle le txid. Cette cagnotte est SÉPARÉE de ton solde FA : le FB déposé ne se convertit jamais en FA, il se dépense dans la boutique. Les dépôts s'additionnent.", EN: "Send FB (Fractal Bitcoin) to the address below from your account wallet, then paste the txid. This balance is SEPARATE from your FA balance: deposited FB is never converted into FA, it is spent in the shop. Deposits add up.", ZH: "从你的账户钱包向下方地址发送 FB（Fractal Bitcoin），然后粘贴交易号。该余额与 FA 余额相互独立：充值的 FB 不会兑换成 FA，仅可在商店消费。多次充值会累加。" },
+    FB_DEP_ADDRESS: { FR: "Adresse de dépôt FB", EN: "FB deposit address", ZH: "FB 充值地址" },
+    FB_DEP_UNAVAILABLE: { FR: "dépôt momentanément indisponible", EN: "deposit temporarily unavailable", ZH: "充值暂时不可用" },
+    FB_DEP_MIN: { FR: "Dépôt minimum : %s", EN: "Minimum deposit: %s", ZH: "最低充值：%s" },
+    FB_DEP_OK: { FR: "FB crédité — +%s sur ta cagnotte", EN: "FB credited — +%s to your balance", ZH: "FB 已到账 — +%s" },
+    FB_SHOP: { FR: "Boutique FB", EN: "FB shop", ZH: "FB 商店" },
+    FB_ITEM_XP2: { FR: "XP ×2 permanent", EN: "Permanent XP ×2", ZH: "永久双倍经验" },
+    FB_ITEM_XP2_DESC: { FR: "Le même bonus que le pack de charges XP ×2, mais à vie. Sans cumul : posséder les deux ne dépasse jamais ×2.", EN: "The same bonus as the XP ×2 charge pack, but for life. No stacking: holding both never exceeds ×2.", ZH: "与 XP ×2 充能包相同的加成，但永久有效。不叠加：同时拥有也不会超过 ×2。" },
+    FB_BUY: { FR: "Acheter (%s)", EN: "Buy (%s)", ZH: "购买（%s）" },
+    FB_BUY_OK: { FR: "Acheté — bonus activé", EN: "Purchased — bonus active", ZH: "已购买 — 加成已生效" },
+    FB_OWNED: { FR: "Déjà acquis", EN: "Already owned", ZH: "已拥有" },
     WL_COPY: { FR: "Copier", EN: "Copy", ZH: "复制" },
     WL_COPIED: { FR: "Copié !", EN: "Copied!", ZH: "已复制！" },
 
@@ -1735,6 +1748,18 @@
   // Fractal indisponible). Tous les codes que le serveur renvoie réellement sont
   // désormais mappés ici ; un code inconnu garde le fallback générique.
   const SERVER_ERROR_KEYS = {
+    insufficient_fb: { FR: "Il te manque du FB : complète ta cagnotte (les dépôts s'additionnent).", EN: "Not enough FB: top up your balance (deposits add up).", ZH: "FB 不足：请先充值（多次充值会累加）。" },
+    already_owned: { FR: "Tu possèdes déjà cet objet.", EN: "You already own this item.", ZH: "你已拥有该物品。" },
+    unknown_item: { FR: "Objet inconnu.", EN: "Unknown item.", ZH: "未知物品。" },
+    below_minimum: { FR: "Dépôt trop petit : ajoute du FB (ou vérifie le montant minimum).", EN: "Deposit too small: add FB (or check the minimum amount).", ZH: "充值金额过小：请增加 FB（或查看最低金额）。" },
+    sender_mismatch: { FR: "Cette transaction vient d'un autre portefeuille que ton compte.", EN: "This transaction comes from a wallet other than your account.", ZH: "该交易来自你账户以外的钱包。" },
+    sender_unverified: { FR: "Expéditeur non vérifiable pour l'instant — réessaie dans un instant.", EN: "Sender not verifiable yet — try again shortly.", ZH: "暂时无法验证发送方 — 请稍后再试。" },
+    tx_pending: { FR: "Transaction en attente de confirmation : réessaie dès qu'elle est minée.", EN: "Transaction awaiting confirmation: try again once mined.", ZH: "交易等待确认：上链后请重试。" },
+    tx_unconfirmed: { FR: "Transaction pas encore confirmée.", EN: "Transaction not confirmed yet.", ZH: "交易尚未确认。" },
+    wrong_recipient: { FR: "Cette transaction n'a pas payé l'adresse de dépôt FB.", EN: "This transaction did not pay the FB deposit address.", ZH: "该交易未支付 FB 充值地址。" },
+    already_used: { FR: "Ce txid a déjà été utilisé.", EN: "This txid was already used.", ZH: "该交易号已被使用。" },
+    deposits_disabled: { FR: "Les dépôts FB sont momentanément indisponibles.", EN: "FB deposits are temporarily unavailable.", ZH: "FB 充值暂时不可用。" },
+
     // Forge — fusion de rareté (FA / ticket Or / tickets Argent) et fusion de RANG
     // (décision fondateur 13/10/2026). Sans ce mapping, chaque refus s'affichait
     // « Une erreur est survenue » alors qu'il dit au joueur quoi corriger (règle de la
