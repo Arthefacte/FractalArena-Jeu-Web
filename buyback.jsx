@@ -355,6 +355,46 @@ function PanneauRachats({ dex, onClose }) {
   );
 }
 
+// Panneau des paiements de la cagnotte (demande fondateur 15/10/2026) : jour et heure de l'envoi,
+// montant, TXID on-chain de chaque envoi et destinataire TRONQUÉ, tels que renvoyés par
+// `GET /pot/history`. C'est la preuve que le FB est bien sorti du wallet Reward : l'adresse entière
+// ne sort pas du serveur (règle D9-5 : liste publique, jamais nominative), et le TXID — publié en
+// entier parce que c'est un fait on-chain — se vérifie sur UniScan d'un clic.
+function PanneauPaiements({ hist, onClose }) {
+  const I = window.FA_I18N, FP = window.FA_POT;
+  const liste = (hist && hist.payments) || [];
+  const sats = (n) => (FP ? FP.fbTexte(n) : String(n));
+  const quand = (iso) => {
+    const d = new Date(iso);
+    return isNaN(d.getTime()) ? "" : d.toLocaleString();
+  };
+  return (
+    <Modal onClose={onClose}>
+      <div className="h2" style={{ fontSize: 14, marginBottom: 6, textAlign: "center" }}>{I.t("POT_PAY_MODAL_TITLE")}</div>
+      <p className="muted" style={{ fontSize: 12, margin: "0 0 10px" }}>{I.t("POT_PAY_MODAL_SUB")}</p>
+      <div className="mono" style={{ marginBottom: 10, textAlign: "center" }}>
+        <FaText text={I.t("POT_PAY_TOTALS", sats((hist && hist.paid_sats) || 0), (hist && hist.paid_count) || 0)} s={12} />
+      </div>
+      <div className="bb-dex-liste">
+        {liste.length === 0 && <div className="muted" style={{ fontSize: 12 }}>{I.t("POT_PAY_EMPTY")}</div>}
+        {liste.map((p) => (
+          <div key={p.id} className="bb-dex-item mono">
+            <span className="muted">{quand(p.paid_at || p.draw_at)}</span>
+            <span><FaText text={sats(p.share_sats) + " FB"} s={11} /></span>
+            {/* Adresse TRONQUÉE fournie par le serveur : on n'affiche jamais l'adresse entière ici. */}
+            <span className="muted">{p.wallet || "?"}</span>
+            {p.txid
+              // UniScan réseau Fractal (`/fractal/tx/`), pas `/tx/` : le second cherche sur Bitcoin.
+              ? <a className="bb-burn-lien" href={"https://uniscan.cc/fractal/tx/" + p.txid}
+                   target="_blank" rel="noreferrer">{p.txid.slice(0, 8)}…{p.txid.slice(-6)} ↗</a>
+              : <span className="muted">{I.t("POT_PAY_PENDING")}</span>}
+          </div>
+        ))}
+      </div>
+    </Modal>
+  );
+}
+
 function BuybackTicker() {
   // Cagnotte : « où j'en suis » (150 combats payants le jour du tirage). Le bandeau est le
   // seul endroit qui parle du pot en permanence : c'est donc aussi le bon endroit pour
@@ -365,6 +405,11 @@ function BuybackTicker() {
   const [dex, setDex] = React.useState(null);
   const [burn, setBurn] = React.useState(null);
   const [voirRachats, setVoirRachats] = React.useState(false);
+  // Paiements de la cagnotte : la preuve on-chain (jour, heure, TXID, destinataire tronqué) servie
+  // par /pot/history. Le bouton n'apparaît qu'une fois des parts RÉELLEMENT payées : une part en
+  // attente d'envoi n'est pas une preuve, et l'annoncer en serait une fausse.
+  const [paiements, setPaiements] = React.useState(null);
+  const [voirPaiements, setVoirPaiements] = React.useState(false);
   // Ce qui vient d'entrer, par tier, et un compteur de relevé pour que React
   // remonte les nœuds et rejoue l'animation même si le montant est identique.
   const [gains, setGains] = React.useState({ n: 0, par: {} });
@@ -398,15 +443,19 @@ function BuybackTicker() {
       const seq = ++loadSeq.current;
       // /dex/status en parallèle : cache serveur 60 s, donc les réveils fréquents
       // (fa:buyback-refresh à chaque dépense) ne coûtent aucun appel UniSat de plus.
-      const [rb, dx, br] = await Promise.all([
+      // /pot/history en parallèle : même famille d'appel que les trois autres (lecture publique,
+      // sans clé), et le bandeau n'affiche rien tant qu'elle n'a pas répondu.
+      const [rb, dx, br, ph] = await Promise.all([
         fetch(API_URL + "/buyback/status").then((r) => r.json()).catch(() => null),
         fetch(API_URL + "/dex/status").then((r) => (r.ok ? r.json() : null)).catch(() => null),
         fetch(API_URL + "/burn/status").then((r) => (r.ok ? r.json() : null)).catch(() => null),
+        fetch(API_URL + "/pot/history?instance=human&limit=50").then((r) => (r.ok ? r.json() : null)).catch(() => null),
       ]);
       if (!alive) return;
       if (seq !== loadSeq.current) return; // réponse périmée : une plus récente est arrivée
       if (dx && dx.dex) setDex(dx.dex);
       if (br && br.burn) setBurn(br.burn);
+      if (ph && ph.status === "ok") setPaiements(ph);
       if (rb && rb.buyback && rb.buyback.pools && !Array.isArray(rb.buyback.pools)) {
         // Modèle 3 pools × 2 instances : aplati sur l'instance HUMAINE (le bandeau
         // est celui du jeu des humains) sous la forme tabulaire historique.
@@ -492,7 +541,21 @@ function BuybackTicker() {
           total={p.total}
           threshold={p.threshold}
           sub={i === last ? I.t(cleLibelleCumul(cumul.source), bbFmt(cumul.value)) : null}
-          potLigne={p.tier === "pot" ? <PotLigne etat={pot} s={10} /> : null}
+          potLigne={p.tier === "pot" ? (
+            <React.Fragment>
+              <PotLigne etat={pot} s={10} />
+              {/* Le bouton des paiements vit SOUS la ligne du joueur : il ne remplace aucun
+                  libellé, il ouvre la preuve. Rien tant qu'aucune part n'est payée. */}
+              {paiements && paiements.paid_count > 0 && (
+                <React.Fragment>
+                  {" "}
+                  <button className="bb-dex-btn" onClick={() => setVoirPaiements(true)}>
+                    {I.t("POT_PAY_BTN", paiements.paid_count)}
+                  </button>
+                </React.Fragment>
+              )}
+            </React.Fragment>
+          ) : null}
         />
       ))}
       <RangeeDex dex={dex} onVoirRachats={() => setVoirRachats(true)} />
@@ -502,6 +565,7 @@ function BuybackTicker() {
       <TapeBoursiere pools={bb.pools} gainsSession={cumulGains.current} fraiche={fraiche} cumulOnChain={cumul.value} />
       {rachat.n > 0 && Object.keys(rachat.tiers).length > 0 && <PluieOr graine={rachat.n} />}
       {voirRachats && dex && <PanneauRachats dex={dex} onClose={() => setVoirRachats(false)} />}
+      {voirPaiements && paiements && <PanneauPaiements hist={paiements} onClose={() => setVoirPaiements(false)} />}
     </div>
   );
 }
@@ -509,4 +573,5 @@ function BuybackTicker() {
 Object.assign(window, {
   BuybackTicker, buybackFraction, aplatirPoolsHumain, labelPool,
   resolveBoughtTotal, plancherCumul, cleLibelleCumul, lireCumulOnChain, ecrireCumulOnChain, BB_CUMUL_KEY,
+  PanneauPaiements,
 });
