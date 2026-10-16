@@ -3576,6 +3576,11 @@ function FbCaseModal({
         } : p);
         toast(I18N.t("FB_DEP_OK", fb(data.credited_sats)), "good");
         setTxid("");
+      } else if (data.status === "below_minimum" && data.minimum_sats) {
+        // Refus du PLANCHER de dépôt : le même code sert au minimum de RETRAIT côté serveur, donc
+        // on ne passe pas par localizeServerError (le joueur lirait une consigne de retrait pour
+        // un dépôt trop petit). Le minimum est celui que le serveur vient de renvoyer.
+        toast(I18N.t("FB_DEP_MIN", fb(data.minimum_sats)), "bad");
       } else {
         toast(I18N.localizeServerError(data.status || data.error), "bad");
       }
