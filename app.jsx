@@ -3119,14 +3119,16 @@ function worldBackdrop(view) {
   return WORLD_BG[view] || WORLD_BG_PARENT[view] || "team";
 }
 // Le drapeau voyage dans l'URL (?cite=1 / ?cite=0) et se mémorise : on peut comparer
-// les deux fonds en direct sur le site, sans redéployer.
+// les deux fonds en direct, sans redéployer. Depuis l'intégration des décors, le fond
+// peint est celui PAR DÉFAUT — l'ancien fond s'obtient avec ?cite=0, le choix étant
+// mémorisé pour la visite suivante.
 function worldBackdropActif() {
   try {
     const q = new URLSearchParams(location.search).get("cite");
     if (q === "1") { localStorage.setItem("fa_fond", "cite"); return true; }
-    if (q === "0") { localStorage.removeItem("fa_fond"); return false; }
-    return localStorage.getItem("fa_fond") === "cite";
-  } catch (e) { return false; }
+    if (q === "0") { localStorage.setItem("fa_fond", "ancien"); return false; }
+    return localStorage.getItem("fa_fond") !== "ancien";
+  } catch (e) { return true; }
 }
 // Les peintures passent par FA_ASSET_URL comme les autres images du balisage : elles ne
 // sont PAS dans le manifeste d'empreintes (tools/asset-hashes.mjs ne hache que les .glb et
