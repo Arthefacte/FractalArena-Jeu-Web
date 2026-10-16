@@ -1761,13 +1761,9 @@
     insufficient_fb: { FR: "Il te manque du FB : complète ta cagnotte (les dépôts s'additionnent).", EN: "Not enough FB: top up your balance (deposits add up).", ZH: "FB 不足：请先充值（多次充值会累加）。" },
     already_owned: { FR: "Tu possèdes déjà cet objet.", EN: "You already own this item.", ZH: "你已拥有该物品。" },
     unknown_item: { FR: "Objet inconnu.", EN: "Unknown item.", ZH: "未知物品。" },
-    below_minimum: { FR: "Dépôt trop petit : ajoute du FB (ou vérifie le montant minimum).", EN: "Deposit too small: add FB (or check the minimum amount).", ZH: "充值金额过小：请增加 FB（或查看最低金额）。" },
     sender_mismatch: { FR: "Cette transaction vient d'un autre portefeuille que ton compte.", EN: "This transaction comes from a wallet other than your account.", ZH: "该交易来自你账户以外的钱包。" },
-    sender_unverified: { FR: "Expéditeur non vérifiable pour l'instant — réessaie dans un instant.", EN: "Sender not verifiable yet — try again shortly.", ZH: "暂时无法验证发送方 — 请稍后再试。" },
     tx_pending: { FR: "Transaction en attente de confirmation : réessaie dès qu'elle est minée.", EN: "Transaction awaiting confirmation: try again once mined.", ZH: "交易等待确认：上链后请重试。" },
     tx_unconfirmed: { FR: "Transaction pas encore confirmée.", EN: "Transaction not confirmed yet.", ZH: "交易尚未确认。" },
-    wrong_recipient: { FR: "Cette transaction n'a pas payé l'adresse de dépôt FB.", EN: "This transaction did not pay the FB deposit address.", ZH: "该交易未支付 FB 充值地址。" },
-    already_used: { FR: "Ce txid a déjà été utilisé.", EN: "This txid was already used.", ZH: "该交易号已被使用。" },
     deposits_disabled: { FR: "Les dépôts FB sont momentanément indisponibles.", EN: "FB deposits are temporarily unavailable.", ZH: "FB 充值暂时不可用。" },
 
     // Forge — fusion de rareté (FA / ticket Or / tickets Argent) et fusion de RANG

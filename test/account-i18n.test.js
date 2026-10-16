@@ -34,6 +34,10 @@ const KEYS = [
   "DISC_TXID_LABEL", "DISC_TXID_HINT", "DISC_TXID_PLACEHOLDER", "DISC_TXID_BTN",
   "DISC_DUST_AUTO",
   "DISC_TXID_BAD", "DISC_TXID_NONE", "DISC_TXID_OK",
+  // Case FB — cagnotte séparée du FA et boutique payée en FB (depot en sats).
+  "FB_CASE", "FB_CASE_TITLE", "FB_CASE_INFO", "FB_DEP_ADDRESS", "FB_DEP_UNAVAILABLE",
+  "FB_DEP_MIN", "FB_DEP_OK", "FB_SHOP", "FB_ITEM_XP2", "FB_ITEM_XP2_DESC",
+  "FB_BUY", "FB_BUY_OK", "FB_OWNED",
 ];
 
 function bloc(cle) {
