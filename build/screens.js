@@ -2933,7 +2933,7 @@ function ForgeReliques() {
 }
 
 /* ---------------- BOOSTS ---------------- */
-// v2 : 4 boosts en packs de 50 charges. Les charges achetées restent INERTES tant
+// v2 : 4 boosts en packs de 100 charges. Les charges achetées restent INERTES tant
 // que le joueur n'a pas armé le boost (interrupteur ici et dans la Fosse).
 function BoostArmSwitch({
   armed,

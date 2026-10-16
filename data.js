@@ -26,7 +26,7 @@ window.FA_API_URL = (typeof location !== "undefined" &&
 // l'installation alors que la prod servait le nouveau depuis une heure.
 // Ne sert plus que de REPLI : un asset absent du manifeste doit rester cache-busté
 // plutôt que servi indéfiniment par le CDN.
-window.FA_ASSET_V = "352";
+window.FA_ASSET_V = "353";
 
 // L'URL porte l'empreinte du CONTENU du fichier (asset-hashes.js, généré au build),
 // et non la version du jeu. Versionner par la version du jeu — ce que faisait la
@@ -252,10 +252,10 @@ window.FA_ASSET_URL = function (chemin) {
   };
 
   const BOOSTS = {
-    xp_boost: { cost: 500, charges: 50, color: "#FFE600" },
-    lucky_strike: { cost: 750, charges: 50, color: "#F7931A" },
-    momentum: { cost: 750, charges: 50, color: "#9B5CFF" },
-    catalyst: { cost: 750, charges: 50, color: "#27E08A" },
+    xp_boost: { cost: 500, charges: 100, color: "#FFE600" },
+    lucky_strike: { cost: 750, charges: 100, color: "#F7931A" },
+    momentum: { cost: 750, charges: 100, color: "#9B5CFF" },
+    catalyst: { cost: 750, charges: 100, color: "#27E08A" },
   };
 
   // ---- helpers ----
