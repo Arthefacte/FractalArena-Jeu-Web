@@ -3292,28 +3292,40 @@ function Header({ liquidPop, lockedPop }) {
   // non-lus du salon arrive par événement depuis RoomFab.
   const [poolsOpen, setPoolsOpen] = useState(false);
   const [roomUnread, setRoomUnread] = useState(0);
-  // FB gagné via le jeu (parts de cagnotte payées, cumulées) : lecture serveur,
-  // rafraîchie chaque minute — ce n'est PAS le solde total du wallet.
-  const [fbBal, setFbBal] = useState(null);
+  // Liquidité FB (le FB DÉPOSÉ, celui qui se dépense dans la boutique) : MÊME source
+  // que la case FB — GET /fb — jamais un second calcul, jamais un solde inventé : si
+  // le serveur ne répond pas, le chip disparaît.
+  //
+  // Relecture A LA DEMANDE après un dépôt ou un achat réussi (événement
+  // « fa:fb-liquidity » émis par FbCaseModal) : le cycle de 60 s reste le filet de
+  // sécurité, mais il ne doit pas être le SEUL chemin — sinon le joueur lit le solde
+  // d'avant son dépôt, juste après l'avoir fait.
+  const [fbLiq, setFbLiq] = useState(null);
   useEffect(() => {
-    if (!g.wallet || !g.authToken) { setFbBal(null); return; }
-    let alive = true;
-    const load = async () => {
+    if (!g.wallet || !g.authToken) { setFbLiq(null); return undefined; }
+    let vivant = true;
+    const lire = async () => {
       try {
-        const r = await fetch(API_URL + "/wallet/fb-earned", {
+        const r = await fetch(`${API_URL}/fb?wallet=${encodeURIComponent(g.wallet)}`, {
           headers: { Authorization: `Bearer ${g.authToken}` },
         });
-        if (!alive) return;
-        if (r.ok) setFbBal(await r.json());
-        else setFbBal(null);
+        if (!vivant) return;
+        setFbLiq(r.ok ? await r.json() : null);
       } catch (e) {
-        if (alive) setFbBal(null);
+        if (vivant) setFbLiq(null);
       }
     };
-    load();
-    const id = setInterval(load, 60000);
-    return () => { alive = false; clearInterval(id); };
+    lire();
+    window.addEventListener("fa:fb-liquidity", lire);
+    const id = setInterval(lire, 60000);
+    return () => { vivant = false; window.removeEventListener("fa:fb-liquidity", lire); clearInterval(id); };
   }, [g.wallet, g.authToken]);
+  // FB gagné au pot, pas ENCORE envoyé au wallet lié : état PARTAGÉ (components.jsx,
+  // usePotEligibility), le même que la Fosse et le Wallet — le bandeau n'appelle donc
+  // plus /wallet/fb-earned pour son compte. Ce n'est pas un solde de jeu mais un
+  // paiement en route, et le « (+…) » du chip le dit.
+  const potEtat = usePotEligibility(g.wallet, g.authToken);
+  const fbEnAttente = potEtat && potEtat.status === "ok" ? Number(potEtat.fb_pending_sats) || 0 : 0;
   // Un quiz attend : point orange pulsant sur la pastille ❓. L'état vient de
   // QuizToast (fa:quiz-ready) — plus aucune bulle ne s'ouvre toute seule.
   const [quizReady, setQuizReady] = useState(false);
@@ -3350,12 +3362,17 @@ function Header({ liquidPop, lockedPop }) {
           {fmt(g.liquid)}
           <ChipDelta delta={liquidPop.delta} />
         </span>
-        {fbBal && fbBal.status === "ok" && (
+        {/* UN SEUL chip FB : la liquidité (le FB déposé) et, à côté, le FB gagné au pot
+            qui est encore en route. L'ancien chip « FB gagné » n'existe plus comme chip
+            à part : deux chips FB voisins, avec le même badge, se lisaient comme un même
+            solde compté deux fois. */}
+        {fbLiq && (
           <span className="chip fb" title={I18N.t("FB_CHIP_TITLE")}>
-            <b className="chip-amount">{fbFmt(fbBal.fb_earned_sats)}</b>
             <ChipBadge src="assets/fb-badge.webp" alt="FB" />
-            {Number(fbBal.fb_pending_sats) > 0 && (
-              <span className="chip-lbl" style={{ color: "var(--text-dim)" }}>(+{fbFmt(fbBal.fb_pending_sats)})</span>
+            <b className="chip-amount">{fbFmt(fbLiq.fb_sats)}</b>
+            <span className="chip-lbl"> {I18N.t("FB_CASE")}</span>
+            {fbEnAttente > 0 && (
+              <span className="chip-lbl" title={I18N.t("FB_POT_PEND_TITLE")} style={{ color: "var(--text-dim)" }}>(+{fbFmt(fbEnAttente)})</span>
             )}
           </span>
         )}
