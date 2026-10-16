@@ -3242,6 +3242,12 @@ function Wallet() {
     style: {
       flex: 1
     },
+    onClick: () => setModal("fb")
+  }, "\u25CE ", I18N.t("FB_CASE")), /*#__PURE__*/React.createElement("button", {
+    className: "btn btn-elec lg",
+    style: {
+      flex: 1
+    },
     onClick: () => setModal("deposit")
   }, "\u2193 ", I18N.t("WL_DEPOSIT")), /*#__PURE__*/React.createElement("button", {
     className: "btn btn-gold lg",
@@ -3354,7 +3360,9 @@ function Wallet() {
     }
   }, I18N.t("POT_WL_DEST")), /*#__PURE__*/React.createElement(CopyAddr, {
     addr: potR.destination
-  }))), modal === "deposit" && /*#__PURE__*/React.createElement(DepositModal, {
+  }))), modal === "fb" && /*#__PURE__*/React.createElement(FbCaseModal, {
+    onClose: () => setModal(null)
+  }), modal === "deposit" && /*#__PURE__*/React.createElement(DepositModal, {
     onClose: () => setModal(null)
   }), modal === "withdraw" && /*#__PURE__*/React.createElement(WithdrawModal, {
     onClose: () => setModal(null)
@@ -3506,6 +3514,214 @@ function CopyAddr({
       fontSize: 11
     }
   }, addr.slice(0, 8), "\u2026", addr.slice(-6)), " \xB7 ", done ? I18N.t("WL_COPIED") : I18N.t("WL_COPY"));
+}
+function FbCaseModal({
+  onClose
+}) {
+  const {
+    g,
+    actions,
+    toast
+  } = useFA();
+  const [info, setInfo] = useState(null); // { fb_sats, deposit_address, deposit_min_sats, items }
+  const [txid, setTxid] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [achat, setAchat] = useState(null);
+
+  // Le solde et le prix viennent du SERVEUR (GET /fb) : l'écran n'invente aucun chiffre, et
+  // l'adresse de dépôt est celle qu'il renvoie (le wallet Reward du jeu), jamais une constante
+  // recopiée ici — une adresse en dur redevient fausse au premier changement côté serveur.
+  useEffect(() => {
+    let vivant = true;
+    (async () => {
+      try {
+        const r = await fetch(`${API_URL}/fb?wallet=${encodeURIComponent(g.wallet)}`, {
+          headers: {
+            Authorization: `Bearer ${g.authToken}`
+          }
+        });
+        const d = await r.json();
+        if (vivant && r.ok) setInfo(d);
+      } catch (e) {/* écran utilisable quand même : on retente au prochain envoi */}
+    })();
+    return () => {
+      vivant = false;
+    };
+  }, [g.wallet, g.authToken]);
+  const fb = sats => (Number(sats || 0) / 1e8).toFixed(4) + " FB";
+  async function detecter() {
+    const tx = txid.trim().toLowerCase();
+    if (!/^[0-9a-f]{64}$/.test(tx)) {
+      toast(I18N.t("WL_DEP_TXID_INVALID"), "bad");
+      return;
+    }
+    setBusy(true);
+    try {
+      const resp = await fetch(`${API_URL}/verify-deposit/fb`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${g.authToken}`
+        },
+        body: JSON.stringify({
+          wallet: g.wallet,
+          txid: tx
+        })
+      });
+      const data = await resp.json();
+      if (data.status === "ok") {
+        setInfo(p => p ? {
+          ...p,
+          fb_sats: data.fb_sats
+        } : p);
+        toast(I18N.t("FB_DEP_OK", fb(data.credited_sats)), "good");
+        setTxid("");
+      } else {
+        toast(I18N.localizeServerError(data.status || data.error), "bad");
+      }
+    } catch (e) {
+      toast(I18N.t("WL_NET_ERROR"), "bad");
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function acheter(item) {
+    setAchat(item);
+    try {
+      const resp = await fetch(`${API_URL}/fb/buy`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${g.authToken}`
+        },
+        body: JSON.stringify({
+          wallet: g.wallet,
+          item: item.id
+        })
+      });
+      const data = await resp.json();
+      if (data.ok) {
+        setInfo(p => p ? {
+          ...p,
+          fb_sats: data.fb_sats,
+          items: p.items.map(it => it.id === data.item ? {
+            ...it,
+            owned: true
+          } : it)
+        } : p);
+        toast(I18N.t("FB_BUY_OK"), "good");
+      } else {
+        toast(I18N.localizeServerError(data.status || data.error), "bad");
+      }
+    } catch (e) {
+      toast(I18N.t("WL_NET_ERROR"), "bad");
+    } finally {
+      setAchat(null);
+    }
+  }
+  return /*#__PURE__*/React.createElement(Modal, {
+    onClose: onClose,
+    accent: "var(--gold)"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "eyebrow",
+    style: {
+      color: "var(--gold)"
+    }
+  }, I18N.t("FB_CASE")), /*#__PURE__*/React.createElement("div", {
+    className: "h2",
+    style: {
+      margin: "4px 0 10px"
+    }
+  }, I18N.t("FB_CASE_TITLE", fb(info && info.fb_sats))), /*#__PURE__*/React.createElement("div", {
+    className: "muted mono",
+    style: {
+      fontSize: 12,
+      lineHeight: 1.5,
+      marginBottom: 14
+    }
+  }, I18N.t("FB_CASE_INFO")), /*#__PURE__*/React.createElement("div", {
+    className: "panel oct",
+    style: {
+      border: "1px solid var(--line)",
+      padding: "12px 14px",
+      marginBottom: 14
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex between center",
+    style: {
+      gap: 10
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "mono muted",
+    style: {
+      fontSize: 12
+    }
+  }, I18N.t("FB_DEP_ADDRESS")), info && info.deposit_address ? /*#__PURE__*/React.createElement(CopyAddr, {
+    addr: info.deposit_address
+  }) : /*#__PURE__*/React.createElement("span", {
+    className: "mono muted",
+    style: {
+      fontSize: 11
+    }
+  }, I18N.t("FB_DEP_UNAVAILABLE"))), /*#__PURE__*/React.createElement("div", {
+    className: "mono muted",
+    style: {
+      fontSize: 11,
+      marginTop: 8
+    }
+  }, I18N.t("FB_DEP_MIN", fb(info && info.deposit_min_sats)))), /*#__PURE__*/React.createElement("input", {
+    className: "field",
+    style: {
+      fontSize: 12
+    },
+    value: txid,
+    onChange: e => setTxid(e.target.value.replace(/[^0-9a-fA-F]/g, "").slice(0, 64)),
+    placeholder: I18N.t("WL_DEP_TXID_PH")
+  }), /*#__PURE__*/React.createElement("button", {
+    className: "btn btn-elec block lg",
+    style: {
+      marginTop: 14
+    },
+    disabled: busy,
+    onClick: detecter
+  }, busy ? I18N.t("WL_DEP_DETECT") : I18N.t("WL_DEP_SEND")), /*#__PURE__*/React.createElement("div", {
+    className: "eyebrow",
+    style: {
+      color: "var(--gold)",
+      margin: "20px 0 8px"
+    }
+  }, I18N.t("FB_SHOP")), (info && info.items ? info.items : []).map(it => /*#__PURE__*/React.createElement("div", {
+    key: it.id,
+    className: "panel oct flex between center",
+    style: {
+      border: "1px solid var(--line)",
+      padding: "12px 14px",
+      gap: 12
+    }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13
+    }
+  }, I18N.t("FB_ITEM_XP2")), /*#__PURE__*/React.createElement("div", {
+    className: "muted",
+    style: {
+      fontSize: 11,
+      lineHeight: 1.4
+    }
+  }, I18N.t("FB_ITEM_XP2_DESC"))), it.owned ? /*#__PURE__*/React.createElement("span", {
+    className: "mono muted",
+    style: {
+      fontSize: 11,
+      whiteSpace: "nowrap"
+    }
+  }, I18N.t("FB_OWNED")) : /*#__PURE__*/React.createElement("button", {
+    className: "btn btn-elec sm",
+    style: {
+      whiteSpace: "nowrap"
+    },
+    disabled: achat !== null || info && info.fb_sats < it.price_sats,
+    onClick: () => acheter(it)
+  }, I18N.t("FB_BUY", fb(it.price_sats))))));
 }
 function DepositModal({
   onClose

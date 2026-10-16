@@ -1626,6 +1626,7 @@ function Wallet() {
         </div>
       </div>
       <div className="flex gap16" style={{ marginTop: 18 }}>
+        <button className="btn btn-elec lg" style={{ flex: 1 }} onClick={() => setModal("fb")}>◎ {I18N.t("FB_CASE")}</button>
         <button className="btn btn-elec lg" style={{ flex: 1 }} onClick={() => setModal("deposit")}>↓ {I18N.t("WL_DEPOSIT")}</button>
         <button className="btn btn-gold lg" style={{ flex: 1 }} onClick={() => setModal("withdraw")}>↑ {I18N.t("WL_WITHDRAW")}</button>
       </div>
@@ -1682,6 +1683,7 @@ function Wallet() {
         </div>
       )}
 
+      {modal === "fb" && <FbCaseModal onClose={() => setModal(null)} />}
       {modal === "deposit" && <DepositModal onClose={() => setModal(null)} />}
       {modal === "withdraw" && <WithdrawModal onClose={() => setModal(null)} />}
       {modal === "history" && <HistoryModal onClose={() => setModal(null)} />}
@@ -1762,6 +1764,114 @@ function CopyAddr({ addr }) {
     }}>
       <span className="mono" style={{ fontSize: 11 }}>{addr.slice(0, 8)}…{addr.slice(-6)}</span> · {done ? I18N.t("WL_COPIED") : I18N.t("WL_COPY")}
     </button>
+  );
+}
+
+function FbCaseModal({ onClose }) {
+  const { g, actions, toast } = useFA();
+  const [info, setInfo] = useState(null);   // { fb_sats, deposit_address, deposit_min_sats, items }
+  const [txid, setTxid] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [achat, setAchat] = useState(null);
+
+  // Le solde et le prix viennent du SERVEUR (GET /fb) : l'écran n'invente aucun chiffre, et
+  // l'adresse de dépôt est celle qu'il renvoie (le wallet Reward du jeu), jamais une constante
+  // recopiée ici — une adresse en dur redevient fausse au premier changement côté serveur.
+  useEffect(() => {
+    let vivant = true;
+    (async () => {
+      try {
+        const r = await fetch(`${API_URL}/fb?wallet=${encodeURIComponent(g.wallet)}`, {
+          headers: { Authorization: `Bearer ${g.authToken}` },
+        });
+        const d = await r.json();
+        if (vivant && r.ok) setInfo(d);
+      } catch (e) { /* écran utilisable quand même : on retente au prochain envoi */ }
+    })();
+    return () => { vivant = false; };
+  }, [g.wallet, g.authToken]);
+
+  const fb = (sats) => (Number(sats || 0) / 1e8).toFixed(4) + " FB";
+
+  async function detecter() {
+    const tx = txid.trim().toLowerCase();
+    if (!/^[0-9a-f]{64}$/.test(tx)) { toast(I18N.t("WL_DEP_TXID_INVALID"), "bad"); return; }
+    setBusy(true);
+    try {
+      const resp = await fetch(`${API_URL}/verify-deposit/fb`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${g.authToken}` },
+        body: JSON.stringify({ wallet: g.wallet, txid: tx }),
+      });
+      const data = await resp.json();
+      if (data.status === "ok") {
+        setInfo((p) => (p ? { ...p, fb_sats: data.fb_sats } : p));
+        toast(I18N.t("FB_DEP_OK", fb(data.credited_sats)), "good");
+        setTxid("");
+      } else {
+        toast(I18N.localizeServerError(data.status || data.error), "bad");
+      }
+    } catch (e) { toast(I18N.t("WL_NET_ERROR"), "bad"); } finally { setBusy(false); }
+  }
+
+  async function acheter(item) {
+    setAchat(item);
+    try {
+      const resp = await fetch(`${API_URL}/fb/buy`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${g.authToken}` },
+        body: JSON.stringify({ wallet: g.wallet, item: item.id }),
+      });
+      const data = await resp.json();
+      if (data.ok) {
+        setInfo((p) => (p ? { ...p, fb_sats: data.fb_sats,
+          items: p.items.map((it) => (it.id === data.item ? { ...it, owned: true } : it)) } : p));
+        toast(I18N.t("FB_BUY_OK"), "good");
+      } else {
+        toast(I18N.localizeServerError(data.status || data.error), "bad");
+      }
+    } catch (e) { toast(I18N.t("WL_NET_ERROR"), "bad"); } finally { setAchat(null); }
+  }
+
+  return (
+    <Modal onClose={onClose} accent="var(--gold)">
+      <div className="eyebrow" style={{ color: "var(--gold)" }}>{I18N.t("FB_CASE")}</div>
+      <div className="h2" style={{ margin: "4px 0 10px" }}>{I18N.t("FB_CASE_TITLE", fb(info && info.fb_sats))}</div>
+      <div className="muted mono" style={{ fontSize: 12, lineHeight: 1.5, marginBottom: 14 }}>{I18N.t("FB_CASE_INFO")}</div>
+      <div className="panel oct" style={{ border: "1px solid var(--line)", padding: "12px 14px", marginBottom: 14 }}>
+        <div className="flex between center" style={{ gap: 10 }}>
+          <span className="mono muted" style={{ fontSize: 12 }}>{I18N.t("FB_DEP_ADDRESS")}</span>
+          {info && info.deposit_address
+            ? <CopyAddr addr={info.deposit_address} />
+            : <span className="mono muted" style={{ fontSize: 11 }}>{I18N.t("FB_DEP_UNAVAILABLE")}</span>}
+        </div>
+        <div className="mono muted" style={{ fontSize: 11, marginTop: 8 }}>
+          {I18N.t("FB_DEP_MIN", fb(info && info.deposit_min_sats))}
+        </div>
+      </div>
+      <input className="field" style={{ fontSize: 12 }} value={txid}
+        onChange={(e) => setTxid(e.target.value.replace(/[^0-9a-fA-F]/g, "").slice(0, 64))}
+        placeholder={I18N.t("WL_DEP_TXID_PH")} />
+      <button className="btn btn-elec block lg" style={{ marginTop: 14 }} disabled={busy} onClick={detecter}>
+        {busy ? I18N.t("WL_DEP_DETECT") : I18N.t("WL_DEP_SEND")}
+      </button>
+
+      <div className="eyebrow" style={{ color: "var(--gold)", margin: "20px 0 8px" }}>{I18N.t("FB_SHOP")}</div>
+      {(info && info.items ? info.items : []).map((it) => (
+        <div key={it.id} className="panel oct flex between center" style={{ border: "1px solid var(--line)", padding: "12px 14px", gap: 12 }}>
+          <div>
+            <div style={{ fontSize: 13 }}>{I18N.t("FB_ITEM_XP2")}</div>
+            <div className="muted" style={{ fontSize: 11, lineHeight: 1.4 }}>{I18N.t("FB_ITEM_XP2_DESC")}</div>
+          </div>
+          {it.owned
+            ? <span className="mono muted" style={{ fontSize: 11, whiteSpace: "nowrap" }}>{I18N.t("FB_OWNED")}</span>
+            : <button className="btn btn-elec sm" style={{ whiteSpace: "nowrap" }} disabled={achat !== null || (info && info.fb_sats < it.price_sats)}
+                onClick={() => acheter(it)}>
+                {I18N.t("FB_BUY", fb(it.price_sats))}
+              </button>}
+        </div>
+      ))}
+    </Modal>
   );
 }
 
