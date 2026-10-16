@@ -1586,6 +1586,26 @@ function Wallet() {
   // confiance sans pouvoir vérifier.
   const dest = window.FA_ACCOUNT.withdrawDestination(g);
   const peutRetirer = !!window.FA_ACCOUNT.withdrawSigner(g);
+  // Cagnotte FB (demande fondateur 16/10/2026, variante C) : le FB est une monnaie SÉPARÉE du FA
+  // (dépôt en sats, jamais converti, dépensé en boutique) — elle a donc son propre encart, avec le
+  // badge réel du jeu et son solde. Même source et même format que la modale : GET /fb par le
+  // serveur, rien d'écrit à la main. Le solde n'apparaît que si le serveur répond.
+  const [fbInfo, setFbInfo] = useState(null);
+  const fbTexte = (sats) => (Number(sats || 0) / 1e8).toFixed(4) + " FB";
+  useEffect(() => {
+    let vivant = true;
+    (async () => {
+      try {
+        const r = await fetch(`${API_URL}/fb?wallet=${encodeURIComponent(g.wallet)}`, {
+          headers: { Authorization: `Bearer ${g.authToken}` },
+        });
+        const d = await r.json();
+        if (vivant && r.ok) setFbInfo(d);
+      } catch (e) { /* encart masqué : jamais un solde FB inventé */ }
+    })();
+    return () => { vivant = false; };
+  }, [g.wallet, g.authToken]);
+
   // Cagnotte : où en est le joueur (jours de tâche validés sur la fenêtre du pool, wallet
   // vérifié on-chain) et la règle exacte de répartition. Même état que la Fosse et le
   // bandeau — une seule requête.
@@ -1625,8 +1645,28 @@ function Wallet() {
           <div className="muted mono" style={{ fontSize: 12 }}>{I18N.t("WL_LOCKED_DESC")}</div>
         </div>
       </div>
+      {/* Cagnotte FB : encart à part, badge réel du jeu (assets/fb-badge.webp, le même que le chip
+          du header — passé par FA_ASSET_URL pour le cache-busting) et solde servi par le serveur.
+          Avant : un glyphe « ◎ » tenait lieu de logo et la cagnotte FB était un troisième bouton
+          au même niveau que Dépôt/Retrait — trois choses dans une rangée, aucune ne se lisait. */}
+      {fbInfo && (
+        <div className="panel oct" style={{ border: "1px solid var(--line)", padding: "12px 14px", marginTop: 18, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <img src={window.FA_ASSET_URL("assets/fb-badge.webp")} alt="FB" width={56} height={56}
+               className="chip-badge" style={{ flexShrink: 0 }} />
+          <div style={{ flex: 1, minWidth: 130 }}>
+            <div className="eyebrow" style={{ color: "var(--elec)" }}>{I18N.t("FB_CASE")}</div>
+            <div className="mono" style={{ fontSize: 22, fontWeight: 700, color: "var(--elec)", marginTop: 2 }}>
+              {fbTexte(fbInfo.fb_sats)}
+            </div>
+          </div>
+          <button className="btn btn-elec" style={{ whiteSpace: "nowrap" }} onClick={() => setModal("fb")}>
+            + {I18N.t("FB_CASE_OPEN")}
+          </button>
+        </div>
+      )}
+      {/* Les deux actions FA gardent LEUR rangée : elles déplacent des FA (BRC-20), l'encart du
+          dessus un autre solde. */}
       <div className="flex gap16" style={{ marginTop: 18 }}>
-        <button className="btn btn-elec lg" style={{ flex: 1 }} onClick={() => setModal("fb")}>◎ {I18N.t("FB_CASE")}</button>
         <button className="btn btn-elec lg" style={{ flex: 1 }} onClick={() => setModal("deposit")}>↓ {I18N.t("WL_DEPOSIT")}</button>
         <button className="btn btn-gold lg" style={{ flex: 1 }} onClick={() => setModal("withdraw")}>↑ {I18N.t("WL_WITHDRAW")}</button>
       </div>

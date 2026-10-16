@@ -740,6 +740,7 @@
     AUTHDIAG_PENDING_APP:  { FR: "Signature en attente : ouvre l'extension UniSat pour la valider. Une seule fois — ensuite le jeu se souviendra de toi.", EN: "Signature pending: open the UniSat extension to approve it. Just once — the game will remember you afterwards.", ZH: "签名待确认：请打开 UniSat 扩展进行批准。仅需一次，之后游戏会记住你。" },
     WL_REWARD_POOL: { FR: "Reward Pool", EN: "Reward Pool", ZH: "奖励池" },
     FB_CASE: { FR: "Cagnotte FB", EN: "FB balance", ZH: "FB 余额" },
+    FB_CASE_OPEN: { FR: "Déposer du FB", EN: "Deposit FB", ZH: "充值 FB" },
     FB_CASE_TITLE: { FR: "Cagnotte FB : %s", EN: "FB balance: %s", ZH: "FB 余额：%s" },
     FB_CASE_INFO: { FR: "Envoie du FB (Fractal Bitcoin) à l'adresse ci-dessous depuis le portefeuille de ton compte, puis colle le txid. Cette cagnotte est SÉPARÉE de ton solde FA : le FB déposé ne se convertit jamais en FA, il se dépense dans la boutique. Les dépôts s'additionnent.", EN: "Send FB (Fractal Bitcoin) to the address below from your account wallet, then paste the txid. This balance is SEPARATE from your FA balance: deposited FB is never converted into FA, it is spent in the shop. Deposits add up.", ZH: "从你的账户钱包向下方地址发送 FB（Fractal Bitcoin），然后粘贴交易号。该余额与 FA 余额相互独立：充值的 FB 不会兑换成 FA，仅可在商店消费。多次充值会累加。" },
     FB_DEP_ADDRESS: { FR: "Adresse de dépôt FB", EN: "FB deposit address", ZH: "FB 充值地址" },
