@@ -1,5 +1,5 @@
 // test/wallet-fb-card.test.js
-// Cagnotte FB dans l'écran Wallet (demande fondateur 16/10/2026, variante C) : le FB est une monnaie
+// Liquidité FB dans l'écran Wallet (demande fondateur 16/10/2026, variante C) : le FB est une monnaie
 // SÉPARÉE du FA (dépôt en sats, jamais converti, dépensé en boutique), donc un encart à part — badge
 // réel du jeu + solde — et les deux actions FA sur leur propre rangée.
 //
@@ -32,7 +32,7 @@ function blocWallet() {
   return SCREENS.slice(i, fin);
 }
 
-test("le logo de la cagnotte FB est l'asset du jeu, plus un glyphe texte", () => {
+test("le logo de la liquidité FB est l'asset du jeu, plus un glyphe texte", () => {
   const w = blocWallet();
   assert.ok(!/◎ \{I18N\.t\("FB_CASE"\)\}/.test(w), "le glyphe ◎ ne doit plus servir de logo");
   assert.match(w, /FA_ASSET_URL\("assets\/fb-badge\.webp"\)/,
@@ -48,7 +48,7 @@ test("le solde FB vient du serveur, et l'encart disparaît s'il ne répond pas",
   assert.ok(!/fbInfo \|\| \{/.test(w), "pas de solde de repli inventé");
 });
 
-test("les deux actions FA gardent leur rangée, et la cagnotte FB n'y est plus", () => {
+test("les deux actions FA gardent leur rangée, et la liquidité FB n'y est plus", () => {
   const w = blocWallet();
   const i = w.indexOf("Les deux actions FA gardent LEUR rangée");
   assert.ok(i > 0, "rangée des actions FA introuvable");
@@ -61,7 +61,7 @@ test("les deux actions FA gardent leur rangée, et la cagnotte FB n'y est plus",
   const rang = w.slice(i, fin).split("</div>")[0];
   assert.match(rang, /I18N\.t\("WL_DEPOSIT"\)/);
   assert.match(rang, /I18N\.t\("WL_WITHDRAW"\)/);
-  assert.ok(!/FB_CASE/.test(rang), "la cagnotte FB ne doit plus être un bouton de cette rangée");
+  assert.ok(!/FB_CASE/.test(rang), "la liquidité FB ne doit plus être un bouton de cette rangée");
   assert.strictEqual((rang.match(/<button /g) || []).length, 2, "exactement deux boutons : Dépôt et Retrait");
 });
 
@@ -76,7 +76,7 @@ test("le bouton de l'encart ouvre la modale FB et son libellé existe en FR/EN/Z
 
 test("l'encart dit la monnaie qui est affichée (libellé FB_CASE) et son montant en FB", () => {
   const w = blocWallet();
-  assert.match(w, /I18N\.t\("FB_CASE"\)/, "l'encart doit nommer la cagnotte FB");
+  assert.match(w, /I18N\.t\("FB_CASE"\)/, "l'encart doit nommer la liquidité FB");
   assert.match(w, /\{fbTexte\(fbInfo\.fb_sats\)\}/, "le montant affiché vient du solde serveur");
   assert.match(w, /toFixed\(4\) \+ " FB"/, "même format que la modale (4 décimales + FB)");
 });

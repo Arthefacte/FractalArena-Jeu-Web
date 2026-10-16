@@ -3133,15 +3133,19 @@ function Wallet() {
   // confiance sans pouvoir vérifier.
   const dest = window.FA_ACCOUNT.withdrawDestination(g);
   const peutRetirer = !!window.FA_ACCOUNT.withdrawSigner(g);
-  // Cagnotte FB (demande fondateur 16/10/2026, variante C) : le FB est une monnaie SÉPARÉE du FA
+  // Liquidité FB (demande fondateur 16/10/2026, variante C) : le FB est une monnaie SÉPARÉE du FA
   // (dépôt en sats, jamais converti, dépensé en boutique) — elle a donc son propre encart, avec le
-  // badge réel du jeu et son solde. Même source et même format que la modale : GET /fb par le
-  // serveur, rien d'écrit à la main. Le solde n'apparaît que si le serveur répond.
+  // badge réel du jeu et son solde. Même source que le chip du header : GET /fb par le serveur,
+  // rien d'écrit à la main. Le solde n'apparaît que si le serveur répond.
   const [fbInfo, setFbInfo] = useState(null);
   const fbTexte = sats => (Number(sats || 0) / 1e8).toFixed(4) + " FB";
   useEffect(() => {
+    if (!g.wallet || !g.authToken) {
+      setFbInfo(null);
+      return undefined;
+    }
     let vivant = true;
-    (async () => {
+    const lire = async () => {
       try {
         const r = await fetch(`${API_URL}/fb?wallet=${encodeURIComponent(g.wallet)}`, {
           headers: {
@@ -3151,9 +3155,15 @@ function Wallet() {
         const d = await r.json();
         if (vivant && r.ok) setFbInfo(d);
       } catch (e) {/* encart masqué : jamais un solde FB inventé */}
-    })();
+    };
+    lire();
+    // Un dépôt ou un achat qui vient d'aboutir dans la modale FB (« fa:fb-liquidity ») : sans
+    // cette relecture, l'encart afficherait le solde d'AVANT l'opération jusqu'au prochain
+    // chargement de l'écran.
+    window.addEventListener("fa:fb-liquidity", lire);
     return () => {
       vivant = false;
+      window.removeEventListener("fa:fb-liquidity", lire);
     };
   }, [g.wallet, g.authToken]);
 
@@ -3638,6 +3648,9 @@ function FbCaseModal({
         } : p);
         toast(I18N.t("FB_DEP_OK", fb(data.credited_sats)), "good");
         setTxid("");
+        // Le chip du header et l'encart du Wallet relisent le solde FRAIS tout de suite :
+        // le cycle de 60 s ne doit pas être le seul chemin, pas juste après un dépôt.
+        window.dispatchEvent(new Event("fa:fb-liquidity"));
       } else if (data.status === "below_minimum" && data.minimum_sats) {
         // Refus du PLANCHER de dépôt : le même code sert au minimum de RETRAIT côté serveur, donc
         // on ne passe pas par localizeServerError (le joueur lirait une consigne de retrait pour
@@ -3677,6 +3690,8 @@ function FbCaseModal({
           } : it)
         } : p);
         toast(I18N.t("FB_BUY_OK"), "good");
+        // Un achat DÉBITE la liquidité FB : même relecture immédiate que pour un dépôt.
+        window.dispatchEvent(new Event("fa:fb-liquidity"));
       } else {
         toast(I18N.localizeServerError(data.status || data.error), "bad");
       }

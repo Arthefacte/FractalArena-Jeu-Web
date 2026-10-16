@@ -221,7 +221,9 @@ body[data-fond="cite"] .app-bg {
 /* Le montant reprend la couleur que l'écran Portefeuille donne au verrouillé :
    le chiffre se lit, le mot « Verrouillé » reste en retrait. */
 .chip.locked .chip-amount { color: var(--fire); font-weight: 700; }
-/* Le solde FB du wallet lié : or, comme la cagnotte qu'il reçoit. */
+/* Le chip FB : la LIQUIDITÉ (le FB déposé, dépensé en boutique) en or, comme le
+   solde de la case FB. Le « (+…) » qui l'accompagne est le FB gagné au pot, encore
+   en route vers le wallet lié — en retrait, parce qu'il n'est pas dépensable. */
 .chip.fb { border-color: var(--line); }
 .chip.fb .chip-amount { color: var(--gold); font-weight: 700; }
 /* Le crédit qui s'échappe du chip et s'efface. `position: absolute` : il ne
