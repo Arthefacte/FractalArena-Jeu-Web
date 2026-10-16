@@ -937,6 +937,38 @@ function Cinematique(props) {
       scene = null,
       pmrem = null,
       envTex = null;
+    // Avancement de la préparation, affiché par l'écran de chargement.
+    // `boot-splash.js` est le DERNIER script de la page : sur un réseau lent,
+    // l'import de Three.js aboutit AVANT lui (mesuré : three à 10 184 ms, écran de
+    // chargement à 10 244 ms). Une étape annoncée trop tôt est donc gardée de côté
+    // et rejouée par boot-splash.js — sans quoi FA_PRET ne se lèverait jamais et
+    // l'écran brûlerait son plafond de 15 s, exactement le défaut qu'on corrige.
+    const marquer = nom => {
+      if (window.FA_PREP) return window.FA_PREP.etape(nom);
+      (window.FA_PREP_AVANT = window.FA_PREP_AVANT || []).push(nom);
+    };
+    // Repli baké : l'image ne sert QUE si la 3D échoue (troisDKo), mais elle était
+    // préparée À LA FIN de la liste, après les shaders et les textures — mesuré le
+    // 16/10/2026 sur téléphone simulé (CPU ÷4) : l'étape « images » arrivait à
+    // 3 766 ms contre 2 883 ms pour les polices, et ses 510 Ko ne partaient sur le
+    // réseau qu'à ce moment-là. Lancée ici, elle se décode pendant le
+    // téléchargement du modèle (1,4 Mo) et ne retarde plus rien.
+    const preparerLeRepli = () => {
+      try {
+        const img = new Image();
+        if (img.decode) {
+          img.src = EMBLEM_SPIN;
+          img.decode().then(() => marquer('images'), () => marquer('images'));
+        } else {
+          img.onload = () => marquer('images');
+          img.onerror = () => marquer('images');
+          img.src = EMBLEM_SPIN;
+        }
+      } catch (e) {
+        marquer('images');
+      }
+    };
+    preparerLeRepli();
     const prepareTimer = setTimeout(() => {
       if (!disposed) {
         setTroisDKo(true);
@@ -958,6 +990,12 @@ function Cinematique(props) {
         } = await import('three/addons/environments/RoomEnvironment.js');
         if (disposed) return;
         window.FA_DIAG && window.FA_DIAG.marque('three-importe');
+        // L'étape « three » existait dans la liste de boot-splash.js mais AUCUN code
+        // ne l'annonçait : le compte plafonnait à 8/9, FA_PRET restait faux, donc
+        // l'écran de chargement brûlait toujours son plafond de 15 s. Mesuré le
+        // 16/10/2026 (téléphone simulé, CPU ÷4) : tout était prêt à 4,4 s et le
+        // splash ne partait qu'à 17,6 s, en affichant « PRÉPARATION 89 % ».
+        marquer('three');
         const dpr = Math.min(2, window.devicePixelRatio || 1);
         renderer = new THREE.WebGLRenderer({
           canvas,
@@ -1060,37 +1098,21 @@ function Cinematique(props) {
             // bakée de l'emblème (repli, ou scène suivante), le son et les
             // polices. Décodé plus tard, chacun se paie en gel visible.
             (function preparerLaSuite() {
-              var marquer = function (nom) {
-                window.FA_PREP && window.FA_PREP.etape(nom);
-              };
-              try {
-                var img = new Image();
-                if (img.decode) {
-                  img.src = EMBLEM_SPIN;
-                  img.decode().then(function () {
-                    marquer("images");
-                  }, function () {
-                    marquer("images");
-                  });
-                } else {
-                  img.onload = function () {
-                    marquer("images");
-                  };
-                  img.onerror = function () {
-                    marquer("images");
-                  };
-                  img.src = EMBLEM_SPIN;
-                }
-              } catch (e) {
-                marquer("images");
-              }
+              // L'image de repli n'est plus préparée ici : elle part en parallèle
+              // du modèle 3D (cf. preparerLeRepli plus haut), sans quoi elle
+              // terminait la préparation une seconde après tout le reste.
               var a = audioRef.current;
               if (a) {
                 try {
                   a.load();
                 } catch (e) {/* réseau refusé : le son n'empêche pas de jouer */}
+                // « prêt » = on peut DÉMARRER la lecture (readyState 3), pas « les
+                // 1,46 Mo sont tous tamponnés ». Mesuré le 16/10/2026 : attendre
+                // `canplaythrough` faisait du son la DERNIÈRE étape de la
+                // préparation (4,5 s en local, 15,5 s sur mobile) alors que le son
+                // ne peut de toute façon pas jouer avant le premier geste.
                 if (a.readyState >= 3) marquer("audio");else {
-                  a.addEventListener("canplaythrough", function () {
+                  a.addEventListener("canplay", function () {
                     marquer("audio");
                   }, {
                     once: true

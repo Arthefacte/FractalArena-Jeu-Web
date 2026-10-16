@@ -35,6 +35,12 @@
     },
     pret: function () { return G.FA_PRET === true; },
   };
+  // Étapes annoncées AVANT l'existence de cet écran (cinematique.jsx peut résoudre
+  // son import de Three.js avant le dernier script de la page) : rejouées ici.
+  if (G.FA_PREP_AVANT) {
+    for (var i = 0; i < G.FA_PREP_AVANT.length; i++) G.FA_PREP.etape(G.FA_PREP_AVANT[i]);
+    G.FA_PREP_AVANT = null;
+  }
 
   var iv = setInterval(function () {
     tries++;
