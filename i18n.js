@@ -142,6 +142,16 @@
     POT_WINDOW_OPEN: { FR: "jours validés comptés depuis le %s, jusqu'au jour où la cagnotte atteint son seuil", EN: "completed days counted since %s, up to the day the jackpot reaches its threshold", ZH: "自 %s 起计天，直到彩池达到阈值当天" },
     POT_NONE_YET: { FR: "aucun tirage pour l'instant : la cagnotte attend ses %d FA", EN: "no draw yet: the jackpot is waiting for its %d FA", ZH: "尚无抽奖：彩池等待达到 %d FA" },
     POT_WL_DEST: { FR: "éligibilité liée à", EN: "eligibility tied to", ZH: "资格关联至" },
+    // ——— Historique des paiements de la cagnotte (`GET /pot/history`) ———
+    // Le bandeau ouvre la liste : un bouton discret sous la ligne du joueur, jamais une rangée de
+    // plus. Ces libellés disent ce que la liste EST — une preuve (adresse tronquée + TXID on-chain
+    // cliquable) — et ne promettent aucun montant : le montant d'un gagnant dépend du tirage.
+    POT_PAY_BTN: { FR: "%d paiement(s) vérifié(s)", EN: "%d verified payment(s)", ZH: "已验证支付 %d 笔" },
+    POT_PAY_MODAL_TITLE: { FR: "Paiements de la cagnotte", EN: "Jackpot payouts", ZH: "彩池支付记录" },
+    POT_PAY_MODAL_SUB: { FR: "Chaque tirage verse 1 FB, réparti au prorata des jours validés. Le TXID est la preuve on-chain de chaque envoi : l'adresse du gagnant est tronquée, le TXID se vérifie sur UniScan.", EN: "Each draw pays out 1 FB, split in proportion to completed days. The TXID is the on-chain proof of each send: the winner's address is truncated, the TXID can be checked on UniScan.", ZH: "每次开奖发放 1 FB，按完成天数比例分配。TXID 是每笔链上发送的凭证：获奖者地址已截断，可在 UniScan 上核验 TXID。" },
+    POT_PAY_TOTALS: { FR: "%s FB versés — %d paiement(s)", EN: "%s FB paid out — %d payment(s)", ZH: "已发放 %s FB — %d 笔" },
+    POT_PAY_PENDING: { FR: "envoi en cours", EN: "send pending", ZH: "正在发送" },
+    POT_PAY_EMPTY: { FR: "aucun paiement pour l'instant", EN: "no payout yet", ZH: "暂无支付记录" },
 
     // onboarding
     OB_TAG: { FR: "AUTO-BATTLER ON-CHAIN", EN: "ON-CHAIN AUTO-BATTLER", ZH: "链上自动战斗" },
