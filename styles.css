@@ -214,6 +214,10 @@ body[data-fond="cite"] .app-bg {
    domine le montant qu'il accompagne, et le bandeau monte à 97 px de haut ;
    en dessous de ~20 px la silhouette tient mais le monogramme ne se lit plus. */
 .chip-badge { display: block; width: 24px; height: 24px; flex: none; }
+/* Badge de l'encart FB du Portefeuille : la taille est ici, pas dans les attributs de
+   l'img — .chip-badge fige 24px et écrasait le width/height déclaré. Il se lit à côté
+   des jetons FA des deux cartes du haut, d'où la taille au-dessus du badge du header. */
+.fb-card-badge { display: block; width: 76px; height: 76px; flex: none; }
 /* Les deux chips portent leur delta : il est en absolu, il leur faut le contexte. */
 .chip.liquid, .chip.locked { position: relative; }
 .chip.locked { color: var(--text-dim); border-color: var(--line-soft); }
