@@ -4789,7 +4789,24 @@ function Options() {
     style: {
       fontSize: 12
     }
-  }, "\u2014"))), /*#__PURE__*/React.createElement(DeviceLinkPanel, null), g.wallet && /*#__PURE__*/React.createElement("div", {
+  }, "\u2014")), /*#__PURE__*/React.createElement("div", {
+    className: "flex between center",
+    style: {
+      gap: 14
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "mono",
+    style: {
+      fontSize: 12,
+      color: "var(--text-dim)"
+    }
+  }, I18N.t("OP_VERSION")), /*#__PURE__*/React.createElement("span", {
+    className: "mono",
+    style: {
+      fontSize: 12,
+      color: "var(--text-dim)"
+    }
+  }, "v", window.FA_ASSET_V || "?"))), /*#__PURE__*/React.createElement(DeviceLinkPanel, null), g.wallet && /*#__PURE__*/React.createElement("div", {
     className: "panel oct",
     style: {
       border: "1px solid var(--line)",
