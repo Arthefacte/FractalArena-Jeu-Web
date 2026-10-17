@@ -2437,6 +2437,15 @@ function Options() {
           <span className="mono" style={{ fontSize: 12, color: "var(--text-dim)" }}>{I18N.t("OP_WALLET_ADDR")}</span>
           {g.wallet ? <CopyAddr addr={g.wallet} /> : <span className="mono muted" style={{ fontSize: 12 }}>—</span>}
         </div>
+
+        {/* La version du client, ici et pas ailleurs : c'est le seul endroit que le joueur
+            peut lire lui-même sur n'importe quel appareil. Une capture d'écran de cet écran
+            date la session — indispensable quand un navigateur integre (app UniSat) sert
+            un vieux client, et c'est ce que le bandeau « nouvelle version » compare. */}
+        <div className="flex between center" style={{ gap: 14 }}>
+          <span className="mono" style={{ fontSize: 12, color: "var(--text-dim)" }}>{I18N.t("OP_VERSION")}</span>
+          <span className="mono" style={{ fontSize: 12, color: "var(--text-dim)" }}>v{window.FA_ASSET_V || "?"}</span>
+        </div>
       </div>
 
       <DeviceLinkPanel />

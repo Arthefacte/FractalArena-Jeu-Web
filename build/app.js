@@ -5384,7 +5384,7 @@ function App() {
       value: ctx
     }, /*#__PURE__*/React.createElement(Ambient, {
       view: g.wallet ? g.view : "compte"
-    }), /*#__PURE__*/React.createElement(Onboarding, {
+    }), /*#__PURE__*/React.createElement(window.MiseAJourBanner, null), /*#__PURE__*/React.createElement(Onboarding, {
       onAccountCreated: s => setAccSecrets(s)
     }), /*#__PURE__*/React.createElement(Toasts, {
       toasts: toasts
@@ -5424,7 +5424,7 @@ function App() {
     view: g.wallet ? g.view : "compte"
   }), /*#__PURE__*/React.createElement("div", {
     className: "app-shell"
-  }, /*#__PURE__*/React.createElement(Header, {
+  }, /*#__PURE__*/React.createElement(window.MiseAJourBanner, null), /*#__PURE__*/React.createElement(Header, {
     liquidPop: liquidPop,
     lockedPop: lockedPop
   }), g.wallet && !accSecrets && tutVu && /*#__PURE__*/React.createElement(LockedBanner, null), g.wallet && /*#__PURE__*/React.createElement(window.PwaInstallBanner, {

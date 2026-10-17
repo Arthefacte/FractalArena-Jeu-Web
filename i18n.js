@@ -831,6 +831,14 @@
     OP_DEVLINK_CODE_COPIED: { FR: "Code copié", EN: "Code copied", ZH: "代码已复制" },
     OP_DEVLINK_COPIED: { FR: "Lien copié", EN: "Link copied", ZH: "链接已复制" },
     OP_DEVLINK_ERROR: { FR: "Impossible de créer le code — réessaie", EN: "Couldn't create the code — try again", ZH: "无法创建代码——请重试" },
+    OP_VERSION: { FR: "Version", EN: "Version", ZH: "版本" },
+    /* ---- Mise a jour du client (bandeau, maj.jsx) ----
+       Adresse au joueur dont le client est perime : le navigateur integre de l'app
+       UniSat (ou une PWA installee) peut resservir un index.html ancien et faire
+       tourner un vieux jeu pendant des jours sans le moindre signe. */
+    MAJ_DISPO: { FR: "Nouvelle version disponible (v%d) — recharge pour jouer à jour.", EN: "New version available (v%d) — reload to play up to date.", ZH: "有新版本可用（v%d）——重新加载以更新游戏。" },
+    MAJ_RECHARGER: { FR: "Recharger", EN: "Reload", ZH: "重新加载" },
+    MAJ_PLUS_TARD: { FR: "Plus tard", EN: "Later", ZH: "稍后" },
     DEVLINK_CLAIM_TITLE: { FR: "Connecter cet appareil", EN: "Connect this device", ZH: "连接此设备" },
     DEVLINK_CLAIM_SUB: {
       FR: "Cet appareil va se connecter au compte affiché sur l'autre appareil.",

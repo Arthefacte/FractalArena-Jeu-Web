@@ -3028,6 +3028,10 @@ function App() {
     return (
       <FA_Ctx.Provider value={ctx}>
         <Ambient view={g.wallet ? g.view : "compte"} />
+        {/* Meme bandeau avant tout compte : le joueur dont le client est perime n'a pas
+            forcement de session ouverte — c'est meme souvent le cas (session rangee en
+            sessionStorage, perdue a la fermeture). */}
+        <window.MiseAJourBanner />
         <Onboarding onAccountCreated={(s) => setAccSecrets(s)} />
         <Toasts toasts={toasts} />
         {/* Aussi avant connexion : sans réseau, on ne peut même pas créer de
@@ -3047,6 +3051,11 @@ function App() {
     <FA_Ctx.Provider value={ctx}>
       <Ambient view={g.wallet ? g.view : "compte"} />
       <div className="app-shell">
+        {/* Le bandeau « nouvelle version » est monte ICI et sur l'ecran de depart : un client
+            perime passe le plus clair de son temps sur l'un ou l'autre, et le message ne sert
+            a rien s'il n'apparait que dans le jeu (verifie le 13/10/2026 : plafond d'expedition
+            affiche a 10 000 dans le navigateur de l'app UniSat, 20 000 cote serveur). */}
+        <window.MiseAJourBanner />
         <Header liquidPop={liquidPop} lockedPop={lockedPop} />
         {/* Contrepartie économique du compte sans wallet : doit être vue, pas juste exister.
             Rendu ICI (dans .app-shell, sous le Header) plutôt qu'en frère du shell — sinon
