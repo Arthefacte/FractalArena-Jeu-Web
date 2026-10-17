@@ -1657,8 +1657,11 @@ function Wallet() {
           au même niveau que Dépôt/Retrait — trois choses dans une rangée, aucune ne se lisait. */}
       {fbInfo && (
         <div className="panel oct" style={{ border: "1px solid var(--line)", padding: "12px 14px", marginTop: 18, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-          <img src={window.FA_ASSET_URL("assets/fb-badge.webp")} alt="FB" width={56} height={56}
-               className="chip-badge" style={{ flexShrink: 0 }} />
+          {/* Taille portée par .fb-card-badge (76px) et non par les attributs : .chip-badge
+              fige 24px en CSS, ce qui écrasait le width/height de l'img et rendait le badge
+              plus petit que les jetons FA des cartes du dessus. */}
+          <img src={window.FA_ASSET_URL("assets/fb-badge.webp")} alt="FB" width={76} height={76}
+               className="fb-card-badge" style={{ flexShrink: 0 }} />
           <div style={{ flex: 1, minWidth: 130 }}>
             <div className="eyebrow" style={{ color: "var(--elec)" }}>{I18N.t("FB_CASE")}</div>
             <div className="mono" style={{ fontSize: 22, fontWeight: 700, color: "var(--elec)", marginTop: 2 }}>

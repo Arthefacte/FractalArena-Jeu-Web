@@ -3280,9 +3280,9 @@ function Wallet() {
   }, /*#__PURE__*/React.createElement("img", {
     src: window.FA_ASSET_URL("assets/fb-badge.webp"),
     alt: "FB",
-    width: 56,
-    height: 56,
-    className: "chip-badge",
+    width: 76,
+    height: 76,
+    className: "fb-card-badge",
     style: {
       flexShrink: 0
     }
