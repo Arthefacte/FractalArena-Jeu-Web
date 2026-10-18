@@ -3128,14 +3128,16 @@ function worldBackdrop(view) {
   return WORLD_BG[view] || WORLD_BG_PARENT[view] || "team";
 }
 // Le drapeau voyage dans l'URL (?cite=1 / ?cite=0) et se mémorise : on peut comparer
-// les deux fonds en direct sur le site, sans redéployer.
+// les deux fonds en direct sur le site, sans redéployer. Les décors peints restent
+// OPT-IN tant que la nouvelle version n'est pas prête : c'est l'ancien fond qui est
+// le défaut.
 function worldBackdropActif() {
   try {
     const q = new URLSearchParams(location.search).get("cite");
     if (q === "1") { localStorage.setItem("fa_fond", "cite"); return true; }
-    if (q === "0") { localStorage.setItem("fa_fond", "ancien"); return false; }
-    return localStorage.getItem("fa_fond") !== "ancien";
-  } catch (e) { return true; }
+    if (q === "0") { localStorage.removeItem("fa_fond"); return false; }
+    return localStorage.getItem("fa_fond") === "cite";
+  } catch (e) { return false; }
 }
 // Les peintures passent par FA_ASSET_URL comme les autres images du balisage : elles ne
 // sont PAS dans le manifeste d'empreintes (tools/asset-hashes.mjs ne hache que les .glb et
@@ -3371,14 +3373,23 @@ function Header({ liquidPop, lockedPop }) {
           {fmt(g.liquid)}
           <ChipDelta delta={liquidPop.delta} />
         </span>
-        {/* Chip FB retiré du bandeau (fondateur, 18/10). Le solde FB n'a de sens
-            que dépensé dans la boutique : il vit dans l'écran Wallet, où l'icône
-            assets/fb-badge.webp reste servie (screens.jsx). Le FB encore en route
-            vers la cagnotte n'est plus annoncé ici non plus. */}
+        {/* Chip FB : le badge porte DÉJÀ le sigle « FB », donc aucun libellé texte
+            à côté du montant (fondateur, 18/10). Le solde reste celui qu'on
+            dépense en boutique. alt="" volontairement : si l'image manque, on ne
+            veut pas voir « FB » écrit en clair à la place du badge. */}
+        {fbLiq && (
+          <span className="chip fb" title={I18N.t("FB_CHIP_TITLE")}>
+            <ChipBadge src="assets/fb-badge.webp" alt="" />
+            <b className="chip-amount">{fbFmt(fbLiq.fb_sats)}</b>
+            {fbEnAttente > 0 && (
+              <span className="chip-lbl" title={I18N.t("FB_POT_PEND_TITLE")} style={{ color: "var(--text-dim)" }}>(+{fbFmt(fbEnAttente)})</span>
+            )}
+          </span>
+        )}
         {g.locked > 0 && (
           <span key={"lk" + lockedPop.n} className={cx("chip", "locked", lockedPop.n > 0 && "pop")}>
             <ChipBadge src="assets/fa-padlock.webp" alt="" />
-            <b className="chip-amount">{fmt(g.locked)}</b><span className="chip-lbl"> {I18N.t("LOCKED_CHIP")}</span>
+            <b className="chip-amount">{fmt(g.locked)}</b>
             <ChipDelta delta={lockedPop.delta} />
           </span>
         )}

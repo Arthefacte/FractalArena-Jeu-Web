@@ -21,6 +21,8 @@ test("les chips du header montrent un sprite 2D, plus un canvas", () => {
     "le chip FA/liquidé ne passe plus par le sprite 2D");
   assert.match(APP, /ChipBadge src="assets\/fa-padlock\.webp"/,
     "le chip verrouillé ne porte plus le cadenas dédié (Meshy) au lieu du badge FA");
+  assert.match(APP, /ChipBadge src="assets\/fb-badge\.webp"/,
+    "le chip FB ne passe plus par le sprite 2D");
   assert.doesNotMatch(APP, /Badge3D|chargerBadge|_badgeGlb/,
     "un canvas WebGL est revenu dans le bandeau — c'est ce qui débordait en mobile");
   assert.doesNotMatch(APP, /assets\/(fa|fb)-badge\.glb/,
