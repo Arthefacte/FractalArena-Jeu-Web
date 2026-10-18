@@ -820,7 +820,12 @@ function Cinematique(props) {
         onClick={enter}
       >{v.ctaText}</button>
 
-      <audio ref={audioRef} src="assets/FA_intro.mp3" preload="auto" />
+      {/* `preload="none"` : le montage ne déclenche AUCUN téléchargement. Le seul
+          chargement est le a.load() de « preparerLaSuite », une fois le premier
+          pixel affiché. Avec `preload="auto"`, le navigateur lançait les 1,4 Mo au
+          montage puis `a.load()` les relançait : deux téléchargements complets de
+          FA_intro.mp3 mesurés en prod (18/10/2026). */}
+      <audio ref={audioRef} src="assets/FA_intro.mp3" preload="none" />
       <button style={soundBtnStyle} onClick={toggleSound}>{soundLabel}</button>
       <button style={v.skipStyle} onClick={skip}>{I18N.t('CINE_SKIP')}</button>
       <button

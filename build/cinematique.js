@@ -1321,7 +1321,7 @@ function Cinematique(props) {
   }, v.ctaText), /*#__PURE__*/React.createElement("audio", {
     ref: audioRef,
     src: "assets/FA_intro.mp3",
-    preload: "auto"
+    preload: "none"
   }), /*#__PURE__*/React.createElement("button", {
     style: soundBtnStyle,
     onClick: toggleSound
