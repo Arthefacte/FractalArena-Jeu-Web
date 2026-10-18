@@ -19,8 +19,8 @@ const APP = lire("app.jsx");
 test("les chips du header montrent un sprite 2D, plus un canvas", () => {
   assert.match(APP, /ChipBadge src="assets\/fa-badge\.webp"/,
     "le chip FA/liquidé ne passe plus par le sprite 2D");
-  assert.match(APP, /ChipBadge src="assets\/fb-badge\.webp"/,
-    "le chip FB ne passe plus par le sprite 2D");
+  assert.match(APP, /ChipBadge src="assets\/fa-padlock\.webp"/,
+    "le chip verrouillé ne porte plus le cadenas dédié (Meshy) au lieu du badge FA");
   assert.doesNotMatch(APP, /Badge3D|chargerBadge|_badgeGlb/,
     "un canvas WebGL est revenu dans le bandeau — c'est ce qui débordait en mobile");
   assert.doesNotMatch(APP, /assets\/(fa|fb)-badge\.glb/,
@@ -44,8 +44,8 @@ test("la taille du badge est pilotée par le CSS des deux écrans", () => {
     "sans réduction mobile, le sprite de 56 px déborde du chip compact");
 });
 
-test("les deux sprites sont dans le dépôt", () => {
-  for (const f of ["assets/fa-badge.webp", "assets/fb-badge.webp"]) {
+test("les sprites des chips sont dans le dépôt", () => {
+  for (const f of ["assets/fa-badge.webp", "assets/fa-padlock.webp", "assets/fb-badge.webp"]) {
     assert.ok(fs.existsSync(path.join(__dirname, "..", f)), `${f} manquant`);
     assert.ok(fs.statSync(path.join(__dirname, "..", f)).size < 40 * 1024,
       `${f} : un sprite de chip doit rester léger (c'est tout l'intérêt)`,

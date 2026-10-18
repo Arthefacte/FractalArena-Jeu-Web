@@ -3371,23 +3371,13 @@ function Header({ liquidPop, lockedPop }) {
           {fmt(g.liquid)}
           <ChipDelta delta={liquidPop.delta} />
         </span>
-        {/* UN SEUL chip FB : la liquidité (le FB déposé) et, à côté, le FB gagné au pot
-            qui est encore en route. L'ancien chip « FB gagné » n'existe plus comme chip
-            à part : deux chips FB voisins, avec le même badge, se lisaient comme un même
-            solde compté deux fois. */}
-        {fbLiq && (
-          <span className="chip fb" title={I18N.t("FB_CHIP_TITLE")}>
-            <ChipBadge src="assets/fb-badge.webp" alt="FB" />
-            <b className="chip-amount">{fbFmt(fbLiq.fb_sats)}</b>
-            <span className="chip-lbl"> {I18N.t("FB_CASE")}</span>
-            {fbEnAttente > 0 && (
-              <span className="chip-lbl" title={I18N.t("FB_POT_PEND_TITLE")} style={{ color: "var(--text-dim)" }}>(+{fbFmt(fbEnAttente)})</span>
-            )}
-          </span>
-        )}
+        {/* Chip FB retiré du bandeau (fondateur, 18/10). Le solde FB n'a de sens
+            que dépensé dans la boutique : il vit dans l'écran Wallet, où l'icône
+            assets/fb-badge.webp reste servie (screens.jsx). Le FB encore en route
+            vers la cagnotte n'est plus annoncé ici non plus. */}
         {g.locked > 0 && (
           <span key={"lk" + lockedPop.n} className={cx("chip", "locked", lockedPop.n > 0 && "pop")}>
-            <ChipBadge src="assets/fa-badge.webp" />
+            <ChipBadge src="assets/fa-padlock.webp" alt="" />
             <b className="chip-amount">{fmt(g.locked)}</b><span className="chip-lbl"> {I18N.t("LOCKED_CHIP")}</span>
             <ChipDelta delta={lockedPop.delta} />
           </span>
