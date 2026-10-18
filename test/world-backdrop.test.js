@@ -84,13 +84,12 @@ test("app.jsx : le fond est branché sur la vue, en <picture>, et il est décora
   assert.strictEqual((src.match(/<Ambient /g) || []).length, 2, "les deux coquilles (avant/après connexion) doivent passer la vue");
 });
 
-test("app.jsx : les décors peints sont le fond par défaut, l'ancien se mémorise par l'URL", () => {
+test("app.jsx : le drapeau reste éteint par défaut et mémorisé par l'URL", () => {
   const src = read("app.jsx");
   assert.match(src, /new URLSearchParams\(location\.search\)\.get\("cite"\)/);
-  // Défaut = peinture ; seul un choix explicite « ancien » (?cite=0) l'éteint, et il est
-  // mémorisé pour la visite suivante.
-  assert.match(src, /localStorage\.setItem\("fa_fond", "ancien"\)/);
-  assert.match(src, /return localStorage\.getItem\("fa_fond"\) !== "ancien"/);
+  // Les décors peints sont OPT-IN tant que la nouvelle version n'est pas prête :
+  // c'est l'ancien fond qui doit rester le défaut.
+  assert.match(src, /localStorage\.getItem\("fa_fond"\) === "cite"/);
   // Le rendu de la peinture est conditionné : pas de `cite &&`, pas de fond.
   assert.match(src, /\{cite && \(\s*<picture/);
   // Les URL passent par FA_ASSET_URL (cache-bust par la version du jeu, convention
