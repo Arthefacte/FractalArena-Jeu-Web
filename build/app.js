@@ -5513,12 +5513,12 @@ function worldBackdropActif() {
       return true;
     }
     if (q === "0") {
-      localStorage.removeItem("fa_fond");
+      localStorage.setItem("fa_fond", "ancien");
       return false;
     }
-    return localStorage.getItem("fa_fond") === "cite";
+    return localStorage.getItem("fa_fond") !== "ancien";
   } catch (e) {
-    return false;
+    return true;
   }
 }
 // Les peintures passent par FA_ASSET_URL comme les autres images du balisage : elles ne
