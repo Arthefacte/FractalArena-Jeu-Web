@@ -358,6 +358,11 @@ function Expeditions() {
       const e = byDest[w.id];
       const s = XU.statusOf(e, now);
       const border = s === "ready" ? "rgba(247,147,26,.55)" : s === "running" ? `rgba(${w.rgb},.35)` : "var(--line)";
+      // Une carte « à réclamer » OUVRE le suivi, elle n'encaisse pas : le
+      // butin tiré au claim est définitif, il doit rester un geste
+      // délibéré (bouton Réclamer de la vue suivi) et pas le hasard d'un
+      // clic destiné à consulter. (vécu : un joueur croyait regarder sa
+      // carte et recevait le butin sans avoir rien réclamé.)
       const onClick = s === "free" ? () => {
         setSelWorld(w.id);
         setSel([]);
@@ -365,7 +370,7 @@ function Expeditions() {
         setMode("prudente");
         setTicket(null);
         setView("config");
-      } : s === "ready" ? () => claim(e) : () => {
+      } : () => {
         setSelWorld(w.id);
         setConfirmRecall(false);
         setView("track");
@@ -423,7 +428,7 @@ function Expeditions() {
           color: "var(--fire)",
           fontSize: 12
         }
-      }, I18N.t("EXP_CLAIM"), " \u203A")));
+      }, I18N.t("EXP_STATUS_READY"), " \u203A")));
     })));
   }
 
