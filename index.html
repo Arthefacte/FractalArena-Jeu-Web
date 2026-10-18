@@ -89,6 +89,13 @@
        signature UniSat affichait un placeholder au lieu de l'emblème). -->
   <link rel="icon" href="favicon.ico?v=365" sizes="16x16 32x32 48x48" />
   <link rel="icon" type="image/png" href="favicon.png?v=365" sizes="96x96" />
+  <!-- `shortcut icon` en plus de `icon` : des lecteurs anciens (et le carré
+       d'identité de certains wallets) ne regardent QUE ce rel. Depuis que le
+       fichier porte la marque petit format (_bake/gen-favicon-mark.mjs), une
+       vignette de 16 px affiche deux masses lisibles au lieu d'un emblème
+       détaillé réduit à une tache claire — c'est ce que le fondateur voyait
+       comme un carré vide dans la demande de signature UniSat. -->
+  <link rel="shortcut icon" href="favicon.ico?v=365" />
   <link rel="preload" as="image" href="assets/boot-strip.webp?v=365" />
   <!-- PWA : le manifeste rend le jeu installable (écran d'accueil, plein écran).
        iOS ignore le manifeste pour l'icône et le mode plein écran, d'où les trois
@@ -96,6 +103,9 @@
        l'emblème réel par _bake/gen-pwa-icons.mjs (dont une « maskable » réduite
        à 72 %, qu'Android insère dans son propre gabarit sans couper les pointes). -->
   <link rel="manifest" href="manifest.webmanifest?v=365" />
+  <!-- Écran d'accueil : l'emblème détaillé y est lisible (180 px), on le garde.
+       Le repli à la racine est la marque petit format : c'est elle qu'un
+       navigateur in-app (app UniSat mobile) récupère quand il ignore le <head>. -->
   <link rel="apple-touch-icon" href="assets/pwa/apple-touch-icon-180.png" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <meta name="mobile-web-app-capable" content="yes" />
