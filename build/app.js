@@ -5837,27 +5837,12 @@ function Header({
     src: "assets/fa-badge.webp"
   }), fmt(g.liquid), /*#__PURE__*/React.createElement(ChipDelta, {
     delta: liquidPop.delta
-  })), fbLiq && /*#__PURE__*/React.createElement("span", {
-    className: "chip fb",
-    title: I18N.t("FB_CHIP_TITLE")
-  }, /*#__PURE__*/React.createElement(ChipBadge, {
-    src: "assets/fb-badge.webp",
-    alt: "FB"
-  }), /*#__PURE__*/React.createElement("b", {
-    className: "chip-amount"
-  }, fbFmt(fbLiq.fb_sats)), /*#__PURE__*/React.createElement("span", {
-    className: "chip-lbl"
-  }, " ", I18N.t("FB_CASE")), fbEnAttente > 0 && /*#__PURE__*/React.createElement("span", {
-    className: "chip-lbl",
-    title: I18N.t("FB_POT_PEND_TITLE"),
-    style: {
-      color: "var(--text-dim)"
-    }
-  }, "(+", fbFmt(fbEnAttente), ")")), g.locked > 0 && /*#__PURE__*/React.createElement("span", {
+  })), g.locked > 0 && /*#__PURE__*/React.createElement("span", {
     key: "lk" + lockedPop.n,
     className: cx("chip", "locked", lockedPop.n > 0 && "pop")
   }, /*#__PURE__*/React.createElement(ChipBadge, {
-    src: "assets/fa-badge.webp"
+    src: "assets/fa-padlock.webp",
+    alt: ""
   }), /*#__PURE__*/React.createElement("b", {
     className: "chip-amount"
   }, fmt(g.locked)), /*#__PURE__*/React.createElement("span", {
