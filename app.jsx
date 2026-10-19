@@ -3586,10 +3586,33 @@ function Onboarding({ onAccountCreated }) {
   // l'a vécu avec son wallet principal : « ça m'a créé un compte ».
   const [busy, setBusy] = useState(null);
   const [recovering, setRecovering] = useState(false);
-  const hasWallet = HAS_UNISAT();
+  // Aide affichée quand on clique « J'ai déjà UniSat » sans provider disponible.
+  const [besoinExtension, setBesoinExtension] = useState(false);
+  // L'extension UniSat peut s'injecter APRÈS le premier rendu — constaté sur la
+  // landing : un joueur qui l'a installée lisait « Pas encore UniSat ? L'installer »
+  // parce que `hasWallet` était figé au montage. On relit la présence du provider
+  // quelques instants, puis à chaque retour sur l'onglet (installation à chaud,
+  // extension activée entre-temps, rechargement refusé).
+  const [hasWallet, setHasWallet] = useState(() => HAS_UNISAT());
+  useEffect(() => {
+    if (hasWallet) return undefined;
+    const relire = () => { if (HAS_UNISAT()) setHasWallet(true); };
+    const minuteries = [50, 250, 600, 1200, 2500].map((ms) => setTimeout(relire, ms));
+    window.addEventListener("focus", relire);
+    document.addEventListener("visibilitychange", relire);
+    return () => {
+      minuteries.forEach(clearTimeout);
+      window.removeEventListener("focus", relire);
+      document.removeEventListener("visibilitychange", relire);
+    };
+  }, [hasWallet]);
   const mobile = IS_MOBILE();
 
   async function connectUnisat() {
+    // La détection peut être muette (extension installée mais provider pas encore
+    // injecté : mesuré sur un profil neuf et en local, `window.unisat` absent).
+    // Plutôt qu'un toast d'échec sec, on ouvre l'aide à l'endroit du clic.
+    if (!HAS_UNISAT()) { setBesoinExtension(true); return; }
     setBusy("connect");
     let r;
     try { r = await actions.connectUnisat(); } finally { setBusy(null); }
@@ -3628,11 +3651,7 @@ function Onboarding({ onAccountCreated }) {
             Sur mobile sans provider, on redirige vers l'app UniSat (OPEN_IN_UNISAT) :
             son navigateur intégré injecte le provider UniSat et le flux redevient celui du
             desktop. Dans ce navigateur-là, hasWallet est vrai → branche du haut. */}
-        {hasWallet ? (
-          <button className="btn block" style={{ marginTop: 12 }} disabled={!!busy} onClick={connectUnisat}>
-            {I18N.t("ACC_HAVE_WALLET")}
-          </button>
-        ) : mobile ? (
+        {mobile ? (
           <>
             <button className="btn block" style={{ marginTop: 12 }} disabled={!!busy} onClick={OPEN_IN_UNISAT}>
               {I18N.t("OB_OPEN_UNISAT_BTN")}
@@ -3640,9 +3659,38 @@ function Onboarding({ onAccountCreated }) {
             <div className="muted mono" style={{ fontSize: 11, marginTop: 8 }}>{I18N.t("OB_OPEN_UNISAT_SUB")}</div>
           </>
         ) : (
-          <a className="btn block" style={{ marginTop: 12 }} href="https://unisat.io/download" target="_blank" rel="noopener noreferrer">
-            {I18N.t("OB_INSTALL_EXT_BTN")}
-          </a>
+          <>
+            {/* Toujours visible : la porte « wallet » ne dépend plus d'une
+                détection qui peut être muette (extension chargée mais provider
+                pas encore injecté). La liaison se fait au clic ; sans provider,
+                l'aide s'ouvre ici même. */}
+            <button className="btn block" style={{ marginTop: 12 }} disabled={!!busy} onClick={connectUnisat}>
+              {I18N.t("ACC_HAVE_WALLET")}
+            </button>
+            <div className="muted mono" style={{ fontSize: 11, marginTop: 8 }}>{I18N.t("ACC_HAVE_WALLET_SUB")}</div>
+            {besoinExtension && (
+              <div className="acc-warn" style={{ marginTop: 10, fontSize: 12, textAlign: "left" }}>
+                <div>{I18N.t("ACC_LINK_DESKTOP_ONLY")}</div>
+                <a className="btn btn-elec block" style={{ marginTop: 10, textAlign: "center" }}
+                   href="https://unisat.io/download" target="_blank" rel="noopener noreferrer">
+                  ⤓ {I18N.t("OB_INSTALL_EXT_BTN")}
+                </a>
+                <div className="muted" style={{ fontSize: 11, marginTop: 8, lineHeight: 1.6 }}>{I18N.t("ACC_LINK_INSTALL_HINT")}</div>
+                <button className="btn-link" style={{ marginTop: 6, background: "none", border: "none", color: "var(--text-dim)", fontSize: 11, cursor: "pointer", textDecoration: "underline" }}
+                        onClick={() => window.location.reload()}>
+                  {I18N.t("ACC_LINK_RELOAD")}
+                </button>
+              </div>
+            )}
+            {!hasWallet && !besoinExtension && (
+              <div style={{ marginTop: 10 }}>
+                <a className="btn-link" style={{ color: "var(--text-dim)", fontSize: 11, textDecoration: "underline" }}
+                   href="https://unisat.io/download" target="_blank" rel="noopener noreferrer">
+                  {I18N.t("ACC_NO_UNISAT")}
+                </a>
+              </div>
+            )}
+          </>
         )}
 
         {/* Le joueur déjà inscrit qui ouvre le jeu sur un appareil neuf ne peut
@@ -3657,8 +3705,8 @@ function Onboarding({ onAccountCreated }) {
           </button>
         ) : (
           <div style={{ marginTop: 14 }}>
-            <button className="btn-link" style={{ background: "none", border: "none", color: "var(--text-dim)", fontSize: 11, cursor: "pointer", textDecoration: "underline" }}
-                    onClick={() => setRecovering(true)}>{I18N.t("ACC_RECOVER_LINK")}</button>
+            <button className="btn ghost sm block" onClick={() => setRecovering(true)}>{I18N.t("ACC_RECOVER_LINK")}</button>
+            <div className="muted mono" style={{ fontSize: 11, marginTop: 8 }}>{I18N.t("ACC_RECOVER_HINT")}</div>
           </div>
         )}
 
