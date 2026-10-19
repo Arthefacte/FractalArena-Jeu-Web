@@ -980,7 +980,9 @@ function ForgeFragments({ onForged }) {
             <div key={rk} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 {/* ✦ = relique : le core a son propre onglet (Forge → Cores). Même marqueur qu'au claim d'expédition. */}
-                <span className="exq-hex" style={{ width: 26, height: 26, fontSize: 13, color: col, borderColor: col, background: "rgba(255,255,255,.04)" }}>✦</span>
+                <span className="exq-hex" style={{ width: 26, height: 26, fontSize: 13, color: col, borderColor: col, background: "rgba(255,255,255,.04)", padding: 0, overflow: "hidden" }}>
+                  <img src="assets/relic-shard.webp" alt="" style={{ display: "block", width: "100%", height: "100%", objectFit: "cover" }} />
+                </span>
                 <b style={{ flex: 1, minWidth: 0, fontSize: 13 }}>{I18N.t("EXP_FRAG_LINE", rk, have)}</b>
                 <b className="mono" style={{ flex: "none", color: ready ? col : "var(--text-dim)" }}>{have} / {need}</b>
               </div>

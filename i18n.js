@@ -168,9 +168,11 @@
     OB_MOBILE_MSG: { FR: "Sur mobile, joue avec un compte créé par le jeu — ou ouvre le jeu dans l'app UniSat Mobile pour te connecter avec ton wallet, comme sur ordinateur.", EN: "On mobile, play with an account created by the game — or open the game inside the UniSat Mobile app to connect your wallet, just like on desktop.", ZH: "在移动端可使用游戏创建的账号游玩——也可在 UniSat 移动端应用内打开游戏，用你的钱包登录，与电脑端相同。" },
 
     // --- Compte sans wallet ---
-    ACC_PLAY_NOW: { FR: "Jouer maintenant", EN: "Play now", ZH: "立即游玩" },
-    ACC_PLAY_NOW_SUB: { FR: "Sans installation. Le jeu crée ton compte et ton wallet.", EN: "No install. The game creates your account and wallet.", ZH: "无需安装。游戏为你创建账号和钱包。" },
-    ACC_HAVE_WALLET: { FR: "J'ai déjà un wallet", EN: "I already have a wallet", ZH: "我已有钱包" },
+    ACC_PLAY_NOW: { FR: "Jouer sans wallet", EN: "Play without a wallet", ZH: "无钱包游玩" },
+    ACC_PLAY_NOW_SUB: { FR: "Ton compte est créé en un clic, avec un portefeuille FICTIF. Tu pourras lier ton vrai wallet plus tard.", EN: "Your account is created in one click, with a FICTITIOUS wallet. You can link your real wallet later.", ZH: "一键创建账号，配一个虚拟钱包。之后可绑定你的真实钱包。" },
+    ACC_HAVE_WALLET: { FR: "J'ai déjà UniSat", EN: "I already have UniSat", ZH: "我已有 UniSat" },
+    ACC_HAVE_WALLET_SUB: { FR: "Connecte ton wallet et retrouve ton compte.", EN: "Connect your wallet and get your account back.", ZH: "连接钱包，找回你的账号。" },
+    ACC_NO_UNISAT: { FR: "Pas encore UniSat ? L'installer", EN: "No UniSat yet? Install it", ZH: "还没有 UniSat？去安装" },
     ACC_CREATING: { FR: "Création…", EN: "Creating…", ZH: "创建中…" },
     ACC_CREATE_FAIL: { FR: "Création impossible pour l'instant. Réessaie dans un moment.", EN: "Cannot create an account right now. Try again shortly.", ZH: "暂时无法创建账号，请稍后再试。" },
 
@@ -186,6 +188,7 @@
 
     ACC_ALREADY_LINKED: { FR: "J'ai déjà un compte lié", EN: "I already have a linked account", ZH: "我已有绑定的账号" },
     ACC_RECOVER_LINK: { FR: "Récupérer mon compte", EN: "Recover my account", ZH: "找回我的账号" },
+    ACC_RECOVER_HINT: { FR: "Code de récupération, ou code de liaison pris sur un appareil où tu es déjà connecté.", EN: "Recovery code, or a link code taken from a device where you are already signed in.", ZH: "恢复码，或从已登录设备获取的连接代码。" },
     ACC_RECOVER_TITLE: { FR: "Récupérer ton compte", EN: "Recover your account", ZH: "找回你的账号" },
     ACC_RECOVER_SUB: { FR: "Colle ton code de récupération, ou un code de liaison pris sur un appareil où tu es déjà connecté — ordinateur, ou le jeu ouvert dans l'app UniSat (Options → Connecter un autre appareil). Jamais ta phrase de 12 mots.", EN: "Paste your recovery code, or a link code taken from any device where you are already signed in — a computer, or the game open in the UniSat app (Options → Connect another device). Never your 12-word phrase.", ZH: "粘贴你的恢复码，或从任何已登录的设备上获取的连接代码——电脑，或在 UniSat 应用中打开的游戏（选项 → 连接其他设备）。切勿粘贴 12 个助记词。" },
     ACC_RECOVER_PLACEHOLDER: { FR: "Code de récupération ou de liaison", EN: "Recovery or link code", ZH: "恢复码或连接代码" },
