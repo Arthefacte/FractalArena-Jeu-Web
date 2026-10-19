@@ -5,6 +5,15 @@
 (function () {
   "use strict";
 
+  // Seuils LP (FA), en paliers : une seule source pour les textes ci-dessous,
+  // exposée sur window.FA_I18N.LP_TIER_MIN et vérifiée par test/lp-i18n.test.js.
+  // Miroir de lp.js LP_TIERS — G1 est passé de 50k à 250k le 04/09/2026 (commit
+  // serveur 09e2709) sans que ces textes suivent : le client annonçait un titre
+  // que le serveur n'accordait pas (audit 19/10, constat bloquant n°4).
+  const LP_TIER_MIN = { G1: 250_000, G2: 500_000 };
+  // 250000 → « 250 000 » en FR, « 250,000 » en EN/ZH.
+  const lpSeuil = (n, sep) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, sep);
+
   const T = {
     // nav
     NAV_TEAM: { FR: "Équipe", EN: "Team", ZH: "队伍" },
@@ -103,16 +112,18 @@
     LB_DELTA_STABLE: { FR: "Rang stable", EN: "Rank unchanged", ZH: "排名无变化" },
     LB_DELTA_NEW: { FR: "Nouveau joueur", EN: "New player", ZH: "新玩家" },
 
-    // --- Liquidity Guardian (badge LP + titres, seuils 50k / 500k VERROUILLÉS) ---
+    // --- Liquidity Guardian (badge LP + titres) — seuils dans LP_TIER_MIN ---
     LP_TIER_G1: { FR: "Market Maker", EN: "Market Maker", ZH: "做市商" },
     LP_TIER_G2: { FR: "Prime Market Maker", EN: "Prime Market Maker", ZH: "首席做市商" },
     LP_PANEL_TITLE: { FR: "Liquidity Guardian", EN: "Liquidity Guardian", ZH: "流动性守护者" },
+    // Les chiffres viennent de LP_TIER_MIN : ne JAMAIS les recopier en dur ici,
+    // le serveur (lp.js) est juge et un texte figé a déjà menti une fois.
     LP_PANEL_HINT: {
-      FR: "Verrouille de la liquidité FA sur InSwap : dès 50 000 FA verrouillés tu portes le logo du jeu (2D) et le titre Market Maker, dès 500 000 FA le logo 3D et le titre Prime Market Maker.",
-      EN: "Lock FA liquidity on InSwap: from 50,000 locked FA you wear the game logo (2D) and the Market Maker title, from 500,000 FA the 3D logo and the Prime Market Maker title.",
-      ZH: "在 InSwap 上锁定 FA 流动性：锁定达到 50,000 FA 即可佩戴游戏徽标（2D）和做市商称号，达到 500,000 FA 则为 3D 徽标和首席做市商称号。",
+      FR: `Verrouille de la liquidité FA sur InSwap : dès ${lpSeuil(LP_TIER_MIN.G1, " ")} FA verrouillés tu portes le logo du jeu (2D) et le titre Market Maker, dès ${lpSeuil(LP_TIER_MIN.G2, " ")} FA le logo 3D et le titre Prime Market Maker.`,
+      EN: `Lock FA liquidity on InSwap: from ${lpSeuil(LP_TIER_MIN.G1, ",")} locked FA you wear the game logo (2D) and the Market Maker title, from ${lpSeuil(LP_TIER_MIN.G2, ",")} FA the 3D logo and the Prime Market Maker title.`,
+      ZH: `在 InSwap 上锁定 FA 流动性：锁定达到 ${lpSeuil(LP_TIER_MIN.G1, ",")} FA 即可佩戴游戏徽标（2D）和做市商称号，达到 ${lpSeuil(LP_TIER_MIN.G2, ",")} FA 则为 3D 徽标和首席做市商称号。`,
     },
-    LP_STATUS_NONE: { FR: "Aucun palier LP pour l'instant — il faut au moins 50 000 FA en liquidité verrouillée.", EN: "No LP tier yet — at least 50,000 FA in locked liquidity required.", ZH: "尚无 LP 等级——需要至少 50,000 FA 的锁定流动性。" },
+    LP_STATUS_NONE: { FR: `Aucun palier LP pour l'instant — il faut au moins ${lpSeuil(LP_TIER_MIN.G1, " ")} FA en liquidité verrouillée.`, EN: `No LP tier yet — at least ${lpSeuil(LP_TIER_MIN.G1, ",")} FA in locked liquidity required.`, ZH: `尚无 LP 等级——需要至少 ${lpSeuil(LP_TIER_MIN.G1, ",")} FA 的锁定流动性。` },
     LP_REFRESH_BTN: { FR: "Rafraîchir mon statut LP", EN: "Refresh my LP status", ZH: "刷新我的 LP 状态" },
     LP_REFRESH_OK: { FR: "Statut LP mis à jour", EN: "LP status updated", ZH: "LP 状态已更新" },
     LP_REFRESH_ERR: { FR: "Vérification LP indisponible, réessaie.", EN: "LP check unavailable, try again.", ZH: "LP 验证不可用，请重试。" },
@@ -1899,5 +1910,5 @@
     return t("ERR_GENERIC");
   }
 
-  window.FA_I18N = { t, setLang, getLang, detectLang, T, localizeServerError };
+  window.FA_I18N = { t, setLang, getLang, detectLang, T, localizeServerError, LP_TIER_MIN };
 })();
