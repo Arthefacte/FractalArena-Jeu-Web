@@ -150,6 +150,19 @@ const IMAGE_EXCEPTIONS = {
   // dégradés) pour seulement 400 Ko de moins. Plafonné : toute régression
   // au-delà refait échouer ce test.
   "assets/boot-strip.webp": 700 * 1024,
+  // boot-strip-hd.webp (v371) : MÊME animation, re-rendue en 440 px pour l'app
+  // PC (`?app=pc`). Ce n'est pas un budget mobile : le fichier n'est demandé que
+  // par l'app native, qui affiche l'emblème dans une boîte de 200 px sur un
+  // écran où 220 px source se faisaient agrandir. Encodé sans perte (écart max
+  // 0/255 sur 6 195 200 pixels) parce qu'à 4:2:0 le WebP avec perte laissait
+  // 11 % des pixels à plus de 8/255 : des franges de chroma sur les éclairs cyan
+  // et la lave orange. 3 265 Ko mesurés, plafond à +10 % — toute régression
+  // au-delà refait échouer ce test.
+  "assets/boot-strip-hd.webp": 3600 * 1024,
+  // emblem-spin-hd.webp (v371) : le repli de la cinématique en 768 px, même
+  // cadence (132 images / 11 s / 12 fps) que la version web. Chargé seulement
+  // quand la 3D échoue DANS l'app (dataset.app === 'pc'). 1 686 Ko mesurés.
+  "assets/emblem-spin-hd.webp": 1900 * 1024,
 };
 
 test("aucune image servie ne dépasse le budget de poids", () => {
@@ -186,4 +199,58 @@ test("la cinématique d'ouverture tient dans le budget du premier écran", () =>
       `${info.triangles.toLocaleString("fr-FR")} triangles, ` +
       info.textures.map((t) => `${t.width}×${t.height}`).join(" + ")
   );
+});
+
+// ——————————————————————————————————————————————————————————————
+// App PC : les deux fichiers HD du logo
+// ——————————————————————————————————————————————————————————————
+// Ils sont dans assets/ (donc servis par le même CDN), mais aucun visiteur web
+// ne doit les DEMANDER : c'est tout l'objet de `?app=pc`. Ce test tient les
+// deux moitiés du contrat — le fichier existe et correspond à ses métadonnées,
+// et les seules références sont derrière la garde du mode app.
+test("les bandes HD du logo ne partent que vers l'app PC", () => {
+  const ROOT2 = path.join(__dirname, "..");
+  const lire = (f) => fs.readFileSync(path.join(ROOT2, f), "utf8");
+
+  const meta = JSON.parse(lire("assets/boot-strip-hd.json"));
+  const fichier = fs.statSync(path.join(ROOT2, "assets/boot-strip-hd.webp"));
+  assert.strictEqual(meta.images, 32);
+  assert.strictEqual(meta.cellule, 440, "la cellule HD doit valoir 440 px");
+  assert.strictEqual(meta.hauteur, meta.cellule * meta.images);
+  assert.strictEqual(fichier.size, meta.octets, "le fichier livré ne correspond pas à boot-strip-hd.json");
+  assert.strictEqual(meta.perteMax, 0, "la bande HD est encodée sans perte : tout écart est une régression");
+
+  const html = lire("index.html");
+  // Le balisage statique reste en SD : sans JS (ou sans ?app=pc), le web reçoit
+  // exactement le fichier d'avant.
+  assert.match(html, /<link rel="preload" as="image" href="assets\/boot-strip\.webp\?v=\d+"/);
+  assert.match(html, /id="boot-emblem"[^>]*src="assets\/boot-strip\.webp\?v=\d+"/);
+  // La bande HD n'est nommée NULLE PART dans le balisage : elle ne peut donc pas
+  // être téléchargée par un visiteur web. Elle vit dans app-mode.js, chargé
+  // après le preload (pour le réécrire) et avant la cinématique (pour le marqueur).
+  assert.ok(!html.includes("boot-strip-hd"), "index.html ne doit pas nommer la bande HD dans son balisage");
+  assert.match(html, /<script src="app-mode\.js\?v=\d+"><\/script>/);
+  assert.ok(html.indexOf('<link rel="preload" as="image"') < html.indexOf('src="app-mode.js'),
+    "app-mode.js doit venir APRÈS le preload : c'est le lien qu'il réécrit");
+  assert.ok(html.indexOf('src="app-mode.js') < html.indexOf("build/cinematique.js"),
+    "app-mode.js doit poser le marqueur avant le chargement de la cinématique");
+  assert.ok(html.indexOf('id="boot-emblem"') < html.indexOf('src="boot-emblem-hd.js?v='),
+    "boot-emblem-hd.js doit suivre l'image qu'il remplace");
+  assert.match(html, /<script src="boot-emblem-hd\.js\?v=\d+"><\/script>/);
+
+  const mode = lire("app-mode.js");
+  assert.match(mode, /\[\?&\]app=pc/, "app-mode.js doit tester le paramètre ?app=pc");
+  assert.match(mode, /return;/, "sans ?app=pc, app-mode.js ne doit rien faire");
+  assert.match(mode, /boot-strip-hd\.webp/, "app-mode.js doit nommer la bande HD");
+  assert.match(mode, /dataset\.app = "pc"/);
+
+  const boot = lire("boot-emblem-hd.js");
+  assert.match(boot, /__FA_APP_PC/, "boot-emblem-hd.js doit être gardé par le mode app");
+  assert.match(boot, /addEventListener\("error"/, "le repli 404 vers la SD doit exister");
+
+  const cine = lire("cinematique.jsx");
+  const iHd = cine.indexOf("assets/emblem-spin-hd.webp");
+  assert.ok(iHd > 0, "cinematique.jsx doit connaître la séquence HD");
+  const garde = cine.lastIndexOf("dataset.app === 'pc'", iHd);
+  assert.ok(garde > 0 && iHd - garde < 400, "la séquence HD doit être derrière la garde du mode app");
 });

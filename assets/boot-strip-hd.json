@@ -1,0 +1,15 @@
+{
+  "images": 32,
+  "cellule": 440,
+  "largeur": 440,
+  "hauteur": 14080,
+  "octets": 3342884,
+  "sha256": "703a5920e812d4940a7bdf7d5916c820144a66e7b4aad3ff4fd1e2ecc8ec7bb6",
+  "perteMax": 0,
+  "centile999": 0,
+  "partAuDessus8": 0,
+  "pixelsVus": 1904019,
+  "encodage": "webp sans perte",
+  "source": "re-rendu 3D depuis _bake/raw/boot-emblem.glb, 32 images 440x440 — voir RAPPORT_HD.md",
+  "usage": "app PC uniquement (?app=pc) : assets/boot-strip.webp reste la bande servie au web"
+}
