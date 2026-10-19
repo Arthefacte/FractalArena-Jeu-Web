@@ -6113,6 +6113,8 @@ function Onboarding({
   // l'a vécu avec son wallet principal : « ça m'a créé un compte ».
   const [busy, setBusy] = useState(null);
   const [recovering, setRecovering] = useState(false);
+  // Aide affichée quand on clique « J'ai déjà UniSat » sans provider disponible.
+  const [besoinExtension, setBesoinExtension] = useState(false);
   // L'extension UniSat peut s'injecter APRÈS le premier rendu — constaté sur la
   // landing : un joueur qui l'a installée lisait « Pas encore UniSat ? L'installer »
   // parce que `hasWallet` était figé au montage. On relit la présence du provider
@@ -6135,6 +6137,13 @@ function Onboarding({
   }, [hasWallet]);
   const mobile = IS_MOBILE();
   async function connectUnisat() {
+    // La détection peut être muette (extension installée mais provider pas encore
+    // injecté : mesuré sur un profil neuf et en local, `window.unisat` absent).
+    // Plutôt qu'un toast d'échec sec, on ouvre l'aide à l'endroit du clic.
+    if (!HAS_UNISAT()) {
+      setBesoinExtension(true);
+      return;
+    }
     setBusy("connect");
     let r;
     try {
@@ -6236,20 +6245,7 @@ function Onboarding({
       color: "var(--gold)",
       borderColor: "rgba(255,230,0,0.3)"
     }
-  }, "\uD83C\uDF81 ", I18N.t("OB_GIFT")), hasWallet ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
-    className: "btn block",
-    style: {
-      marginTop: 12
-    },
-    disabled: !!busy,
-    onClick: connectUnisat
-  }, I18N.t("ACC_HAVE_WALLET")), /*#__PURE__*/React.createElement("div", {
-    className: "muted mono",
-    style: {
-      fontSize: 11,
-      marginTop: 8
-    }
-  }, I18N.t("ACC_HAVE_WALLET_SUB"))) : mobile ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
+  }, "\uD83C\uDF81 ", I18N.t("OB_GIFT")), mobile ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
     className: "btn block",
     style: {
       marginTop: 12
@@ -6262,15 +6258,69 @@ function Onboarding({
       fontSize: 11,
       marginTop: 8
     }
-  }, I18N.t("OB_OPEN_UNISAT_SUB"))) : /*#__PURE__*/React.createElement("a", {
+  }, I18N.t("OB_OPEN_UNISAT_SUB"))) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
     className: "btn block",
     style: {
       marginTop: 12
     },
+    disabled: !!busy,
+    onClick: connectUnisat
+  }, I18N.t("ACC_HAVE_WALLET")), /*#__PURE__*/React.createElement("div", {
+    className: "muted mono",
+    style: {
+      fontSize: 11,
+      marginTop: 8
+    }
+  }, I18N.t("ACC_HAVE_WALLET_SUB")), besoinExtension && /*#__PURE__*/React.createElement("div", {
+    className: "acc-warn",
+    style: {
+      marginTop: 10,
+      fontSize: 12,
+      textAlign: "left"
+    }
+  }, /*#__PURE__*/React.createElement("div", null, I18N.t("ACC_LINK_DESKTOP_ONLY")), /*#__PURE__*/React.createElement("a", {
+    className: "btn btn-elec block",
+    style: {
+      marginTop: 10,
+      textAlign: "center"
+    },
     href: "https://unisat.io/download",
     target: "_blank",
     rel: "noopener noreferrer"
-  }, I18N.t("ACC_NO_UNISAT")), mobile && !hasWallet ? /*#__PURE__*/React.createElement("button", {
+  }, "\u2913 ", I18N.t("OB_INSTALL_EXT_BTN")), /*#__PURE__*/React.createElement("div", {
+    className: "muted",
+    style: {
+      fontSize: 11,
+      marginTop: 8,
+      lineHeight: 1.6
+    }
+  }, I18N.t("ACC_LINK_INSTALL_HINT")), /*#__PURE__*/React.createElement("button", {
+    className: "btn-link",
+    style: {
+      marginTop: 6,
+      background: "none",
+      border: "none",
+      color: "var(--text-dim)",
+      fontSize: 11,
+      cursor: "pointer",
+      textDecoration: "underline"
+    },
+    onClick: () => window.location.reload()
+  }, I18N.t("ACC_LINK_RELOAD"))), !hasWallet && !besoinExtension && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 10
+    }
+  }, /*#__PURE__*/React.createElement("a", {
+    className: "btn-link",
+    style: {
+      color: "var(--text-dim)",
+      fontSize: 11,
+      textDecoration: "underline"
+    },
+    href: "https://unisat.io/download",
+    target: "_blank",
+    rel: "noopener noreferrer"
+  }, I18N.t("ACC_NO_UNISAT")))), mobile && !hasWallet ? /*#__PURE__*/React.createElement("button", {
     className: "btn block",
     style: {
       marginTop: 10
