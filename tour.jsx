@@ -415,7 +415,17 @@ function Tour() {
         <span className="pill" style={{ color: "var(--gold)" }}>{I18N.t("TOUR_BEST", st.score.best_floor)}</span>
         <span className="pill mono" style={{ color: "var(--text-dim)" }}>{st.weekKey} · {I18N.t("TOUR_WEEK_ENDS", TAU.fmtCountdown(st.weekEndsAt - Date.now()))}</span>
         {!st.score.free_run_used && <span className="pill" style={{ color: "var(--success)" }}>{I18N.t("TOUR_FREE_BADGE")}</span>}
+        {/* État de classement : sans lui, un joueur qui n'a fait que le run gratuit
+            voit son étage et croit qu'il concourt pour la dotation. */}
+        {st.score.runs_paid > 0
+          ? <span className="pill" style={{ color: "var(--success)" }}>✔ {I18N.t("TOUR_RANKED")}</span>
+          : <span className="pill" style={{ color: "var(--gold)" }}>⚠ {I18N.t("TOUR_UNRANKED")}</span>}
       </div>
+      {st.score.runs_paid > 0 ? null : (
+        <div className="mono" style={{ fontSize: 11, color: "var(--text-dim)", marginBottom: 12, lineHeight: 1.6 }}>
+          {I18N.t("TOUR_UNRANKED_HINT", fmt(TU.nextCost(st, st.score)))}
+        </div>
+      )}
 
       {/* minmax(0,1fr) : une piste auto prendrait la min-content du bandeau de
           paliers (~900px, l'overflow-x:auto n'y change rien) et pousserait les

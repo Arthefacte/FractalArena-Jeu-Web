@@ -886,7 +886,25 @@ function Tour() {
     style: {
       color: "var(--success)"
     }
-  }, I18N.t("TOUR_FREE_BADGE"))), /*#__PURE__*/React.createElement("div", {
+  }, I18N.t("TOUR_FREE_BADGE")), st.score.runs_paid > 0 ? /*#__PURE__*/React.createElement("span", {
+    className: "pill",
+    style: {
+      color: "var(--success)"
+    }
+  }, "\u2714 ", I18N.t("TOUR_RANKED")) : /*#__PURE__*/React.createElement("span", {
+    className: "pill",
+    style: {
+      color: "var(--gold)"
+    }
+  }, "\u26A0 ", I18N.t("TOUR_UNRANKED"))), st.score.runs_paid > 0 ? null : /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      fontSize: 11,
+      color: "var(--text-dim)",
+      marginBottom: 12,
+      lineHeight: 1.6
+    }
+  }, I18N.t("TOUR_UNRANKED_HINT", fmt(TU.nextCost(st, st.score)))), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "grid",
       gridTemplateColumns: "minmax(0, 1fr)",
