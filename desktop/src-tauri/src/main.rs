@@ -19,7 +19,15 @@ const TITLE_HEIGHT: f64 = 40.0;
 struct Startup(Instant, std::sync::atomic::AtomicBool);
 
 fn game_source() -> WebviewUrl {
-    WebviewUrl::External(GAME_URL.parse().expect("valid game URL"))
+    // `?app=pc` : l'app native est le seul client à recevoir le logo 3D en haute
+    // définition (index.html ne réécrit ses bandes — démarrage et cinématique —
+    // que si ce paramètre est présent). La constante reste la source unique de
+    // l'origine : is_game_url() et la portée des permissions en dépendent.
+    WebviewUrl::External(
+        format!("{GAME_URL}?app=pc")
+            .parse()
+            .expect("valid game URL"),
+    )
 }
 
 fn is_game_url(url: &tauri::Url) -> bool {
