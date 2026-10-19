@@ -523,7 +523,11 @@ function Expeditions() {
           </div>
         )}
         {fragRanks.length > 0 && (
-          <div className="panel" style={{ padding: "12px 13px", display: "flex", flexDirection: "column", gap: 10 }}>
+          <div className="panel" style={{ padding: 0, overflow: "hidden" }}>
+            {/* Illustration du butin : sans elle, une ligne « Fragments C ×2 »
+                ne montrait rien de ce qu'on venait de trouver. */}
+            <img src="assets/relic-shard-banner.webp" alt="" style={{ display: "block", width: "100%", height: 108, objectFit: "cover" }} />
+            <div style={{ padding: "12px 13px", display: "flex", flexDirection: "column", gap: 10 }}>
             {fragRanks.map((rk) => {
               const total = (g.expFragments && g.expFragments[rk]) || 0;
               const need = XU.FRAGMENT_COSTS[rk];
@@ -531,7 +535,9 @@ function Expeditions() {
               return (
                 <div key={rk} style={{ display: "flex", flexDirection: "column", gap: 5 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <span className="exq-hex" style={{ color: col, borderColor: col, background: "rgba(255,255,255,.04)" }}>✦</span>
+                    <span className="exq-hex" style={{ color: col, borderColor: col, background: "rgba(255,255,255,.04)", padding: 0, overflow: "hidden" }}>
+                      <img src="assets/relic-shard.webp" alt="" style={{ display: "block", width: "100%", height: "100%", objectFit: "cover" }} />
+                    </span>
                     <b style={{ flex: 1, minWidth: 0, fontSize: 13 }}>{I18N.t("EXP_FRAG_LINE", rk, frags[rk])}</b>
                     <b className="exq-mono" style={{ color: col }}>{total} / {need}</b>
                   </div>
@@ -539,6 +545,7 @@ function Expeditions() {
                 </div>
               );
             })}
+            </div>
           </div>
         )}
         {coreFragRanks.length > 0 && (
