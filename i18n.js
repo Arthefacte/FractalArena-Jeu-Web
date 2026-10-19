@@ -483,7 +483,7 @@
     PRIZE_TOWER_RANK:    { FR: "Semaine %s — Rang %d · Étage %d", EN: "Week %s — Rank %d · Floor %d", ZH: "第 %s 周 — 第 %d 名 · 第 %d 层" },
     PRIZE_REWARD_LOCKED: { FR: "Récompense : +%d FA 🔒", EN: "Reward: +%d FA 🔒", ZH: "奖励：+%d FA 🔒" },
     AR2_PRIZE_FLAT:      { FR: "Rangs 11-50 : +25 FA 🔒 chacun (min. 3 combats)", EN: "Ranks 11-50: +25 FA 🔒 each (min. 3 fights)", ZH: "第 11-50 名：每人 +25 FA 🔒（至少 3 场战斗）" },
-    TOUR_LB_DOTATION:    { FR: "Dotation hebdo : 3 000 FA au top 10", EN: "Weekly prize pool: 3,000 FA for top 10", ZH: "每周奖池：前 10 名瓜分 3000 FA" },
+    TOUR_LB_DOTATION:    { FR: "Dotation hebdo : jusqu'à 3 000 FA au top 10 — runs payants seulement", EN: "Weekly prize pool: up to 3,000 FA for the top 10 — paid runs only", ZH: "每周奖池：前 10 名最高瓜分 3000 FA — 仅限付费挑战" },
 
     // combat log
     L_START: { FR: "COMBAT LANCÉ", EN: "FIGHT STARTED", ZH: "战斗开始" },
@@ -1337,6 +1337,15 @@
     TOUR_FLOOR: { FR: "Étage %d", EN: "Floor %d", ZH: "第%d层" },
     TOUR_NO_RUN: { FR: "Aucun run en cours cette semaine.", EN: "No run in progress this week.", ZH: "本周暂无进行中的挑战。" },
     TOUR_FREE_BADGE: { FR: "1 run gratuit disponible", EN: "1 free run available", ZH: "1次免费挑战可用" },
+    // Le classement hebdo ne retient que les wallets avec ≥ 1 run PAYÉ (anti-Sybil,
+    // 08/10/2026) : sans afficher cet état, un joueur qui n'a fait que le run gratuit
+    // voit son étage et croit qu'il concourt (constaté par le fondateur le 19/10).
+    TOUR_RANKED: { FR: "Classé cette semaine", EN: "Ranked this week", ZH: "本周已上榜" },
+    TOUR_UNRANKED: { FR: "Non classé — run gratuit", EN: "Not ranked — free run", ZH: "未上榜 — 免费挑战" },
+    TOUR_FREE_CAP_TAG: { FR: "Run gratuit — fin à l'étage 20", EN: "Free run — ends at floor 20", ZH: "免费挑战 — 第 20 层结束" },
+    TOUR_FREE_CAP_TITLE: { FR: "Étage 20 atteint : le run gratuit s'arrête", EN: "Floor 20 reached: the free run ends", ZH: "已到达第 20 层：免费挑战结束" },
+    TOUR_FREE_CAP_SUB: { FR: "Tes paliers sont crédités. Un run payant pour aller plus haut.", EN: "Your tiers are credited. A paid run goes further.", ZH: "层级奖励已入账。继续深入需付费挑战。" },
+    TOUR_UNRANKED_HINT: { FR: "Seul un run payant entre au classement hebdo (le premier coûte %s FA). Ton étage compte quand même pour les paliers.", EN: "Only a paid run enters the weekly ranking (the first costs %s FA). Your floor still counts for the tiers.", ZH: "只有付费挑战才进入周排行榜（首次花费 %s FA）。你的层数仍计入层级奖励。" },
     TOUR_START_FREE: { FR: "▶ Lancer le run gratuit", EN: "▶ Start free run", ZH: "▶ 开始免费挑战" },
     TOUR_START_PAID: { FR: "▶ Nouveau run — %s FA", EN: "▶ New run — %s FA", ZH: "▶ 新挑战 — %s FA" },
     TOUR_START_TITLE: { FR: "Lancer un run", EN: "Start a run", ZH: "开始挑战" },

@@ -446,7 +446,8 @@ function TourResultModal({
     won,
     rewards,
     runOver,
-    floor
+    floor,
+    freeCap
   } = result;
   return /*#__PURE__*/React.createElement(Modal, {
     onClose: onClose,
@@ -524,7 +525,25 @@ function TourResultModal({
     }
   }, I18N.t("CHAMP_COMMISSION_ROW", result.champName), " : ", /*#__PURE__*/React.createElement(TokenIcon, {
     s: 11
-  }), " ", fmt(result.commission)), runOver ? /*#__PURE__*/React.createElement("div", {
+  }), " ", fmt(result.commission)), runOver && freeCap ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "center",
+      padding: "8px 0"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      fontSize: 13,
+      color: "var(--gold)",
+      fontWeight: 700
+    }
+  }, I18N.t("TOUR_FREE_CAP_TITLE")), /*#__PURE__*/React.createElement("div", {
+    className: "muted mono",
+    style: {
+      fontSize: 11,
+      marginTop: 4
+    }
+  }, I18N.t("TOUR_FREE_CAP_SUB"))) : runOver ? /*#__PURE__*/React.createElement("div", {
     className: "mono",
     style: {
       fontSize: 13,
@@ -724,6 +743,7 @@ function Tour() {
       rewards: r.rewards,
       runOver: r.runOver,
       floor: r.floor,
+      freeCap: r.freeCap,
       commission: r.champion && r.champion.commission || 0,
       champName: champ ? champ.name : ""
     });
@@ -886,7 +906,25 @@ function Tour() {
     style: {
       color: "var(--success)"
     }
-  }, I18N.t("TOUR_FREE_BADGE"))), /*#__PURE__*/React.createElement("div", {
+  }, I18N.t("TOUR_FREE_BADGE")), st.score.runs_paid > 0 ? /*#__PURE__*/React.createElement("span", {
+    className: "pill",
+    style: {
+      color: "var(--success)"
+    }
+  }, "\u2714 ", I18N.t("TOUR_RANKED")) : /*#__PURE__*/React.createElement("span", {
+    className: "pill",
+    style: {
+      color: "var(--gold)"
+    }
+  }, "\u26A0 ", I18N.t("TOUR_UNRANKED"))), st.score.runs_paid > 0 ? null : /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      fontSize: 11,
+      color: "var(--text-dim)",
+      marginBottom: 12,
+      lineHeight: 1.6
+    }
+  }, I18N.t("TOUR_UNRANKED_HINT", fmt(TU.nextCost(st, st.score)))), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "grid",
       gridTemplateColumns: "minmax(0, 1fr)",
@@ -944,7 +982,13 @@ function Tour() {
     style: {
       fontSize: 11
     }
-  }, I18N.t("TOUR_ALIVE", alive)), /*#__PURE__*/React.createElement("button", {
+  }, I18N.t("TOUR_ALIVE", alive)), run.free && /*#__PURE__*/React.createElement("span", {
+    className: "pill mono",
+    style: {
+      fontSize: 11,
+      color: "var(--gold)"
+    }
+  }, I18N.t("TOUR_FREE_CAP_TAG")), /*#__PURE__*/React.createElement("button", {
     className: "btn ghost sm",
     onClick: () => setShowAbandon(true),
     disabled: busy || autoRunning

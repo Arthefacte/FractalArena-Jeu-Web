@@ -2723,7 +2723,7 @@ function App() {
         }
         return {
           ok: true, won: !!data.won, floor: data.floor, bestFloor: data.best_floor || 0,
-          rewards: rw, runOver: !!data.run_over, rosterState: data.roster_state || {},
+          rewards: rw, runOver: !!data.run_over, freeCap: !!data.free_cap, rosterState: data.roster_state || {},
           events: data.events || [], enemy: data.enemy || [],
           champion: data.champion || null,
         };
