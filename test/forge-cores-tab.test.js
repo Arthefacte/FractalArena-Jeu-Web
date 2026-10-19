@@ -54,7 +54,11 @@ test("ForgeReliques n'empile plus la forge de fragments de core", () => {
 });
 
 test("chaque forge de fragments porte son marqueur : ✦ relique, jamais ⬡ ; ⬡ core, jamais ✦", () => {
-  assert.match(F_RELIC, /exq-hex[^>]*>✦</, "marqueur ✦ absent de la forge de reliques");
+  // Décision du 19/10/2026 (fondateur) : les fragments de RELIQUE portent leur
+  // illustration (`assets/relic-shard.webp`) à la place du glyphe ✦ — le butin
+  // d'expédition n'avait aucune image de ce qu'on venait de trouver. La règle
+  // reste identique : un marqueur par objet, jamais celui de l'autre.
+  assert.match(F_RELIC, /exq-hex[^>]*>\s*<img[^>]*relic-shard\.webp/, "illustration absente de la forge de reliques");
   assert.ok(!/⬡/.test(F_RELIC), "la forge de reliques ne doit porter aucun ⬡");
   assert.match(F_CORE, /exq-hex[^>]*>⬡</, "marqueur ⬡ absent de la forge de cores");
   assert.ok(!/✦/.test(F_CORE), "la forge de cores ne doit porter aucun ✦");
