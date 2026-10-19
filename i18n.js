@@ -1342,6 +1342,9 @@
     // voit son étage et croit qu'il concourt (constaté par le fondateur le 19/10).
     TOUR_RANKED: { FR: "Classé cette semaine", EN: "Ranked this week", ZH: "本周已上榜" },
     TOUR_UNRANKED: { FR: "Non classé — run gratuit", EN: "Not ranked — free run", ZH: "未上榜 — 免费挑战" },
+    TOUR_FREE_CAP_TAG: { FR: "Run gratuit — fin à l'étage 20", EN: "Free run — ends at floor 20", ZH: "免费挑战 — 第 20 层结束" },
+    TOUR_FREE_CAP_TITLE: { FR: "Étage 20 atteint : le run gratuit s'arrête", EN: "Floor 20 reached: the free run ends", ZH: "已到达第 20 层：免费挑战结束" },
+    TOUR_FREE_CAP_SUB: { FR: "Tes paliers sont crédités. Un run payant pour aller plus haut.", EN: "Your tiers are credited. A paid run goes further.", ZH: "层级奖励已入账。继续深入需付费挑战。" },
     TOUR_UNRANKED_HINT: { FR: "Seul un run payant entre au classement hebdo (le premier coûte %s FA). Ton étage compte quand même pour les paliers.", EN: "Only a paid run enters the weekly ranking (the first costs %s FA). Your floor still counts for the tiers.", ZH: "只有付费挑战才进入周排行榜（首次花费 %s FA）。你的层数仍计入层级奖励。" },
     TOUR_START_FREE: { FR: "▶ Lancer le run gratuit", EN: "▶ Start free run", ZH: "▶ 开始免费挑战" },
     TOUR_START_PAID: { FR: "▶ Nouveau run — %s FA", EN: "▶ New run — %s FA", ZH: "▶ 新挑战 — %s FA" },

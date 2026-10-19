@@ -181,7 +181,7 @@ function TourStartModal({ state, score, balance, busy, onConfirm, onClose }) {
 
 /* Modale de résultat post-rejeu : victoire/défaite, paliers payés, run over. */
 function TourResultModal({ result, onClose }) {
-  const { won, rewards, runOver, floor } = result;
+  const { won, rewards, runOver, floor, freeCap } = result;
   return (
     <Modal onClose={onClose} accent={won ? "var(--success)" : "var(--alert)"} openSound={null}>
       <div className="h1" style={{ fontSize: 26, textAlign: "center", color: won ? "var(--success)" : "var(--alert)", margin: "4px 0 12px" }}>
@@ -208,7 +208,12 @@ function TourResultModal({ result, onClose }) {
           {I18N.t("CHAMP_COMMISSION_ROW", result.champName)} : <TokenIcon s={11} /> {fmt(result.commission)}
         </div>
       )}
-      {runOver ? (
+      {runOver && freeCap ? (
+        <div style={{ textAlign: "center", padding: "8px 0" }}>
+          <div className="mono" style={{ fontSize: 13, color: "var(--gold)", fontWeight: 700 }}>{I18N.t("TOUR_FREE_CAP_TITLE")}</div>
+          <div className="muted mono" style={{ fontSize: 11, marginTop: 4 }}>{I18N.t("TOUR_FREE_CAP_SUB")}</div>
+        </div>
+      ) : runOver ? (
         <div className="mono" style={{ fontSize: 13, textAlign: "center", color: "var(--alert)", padding: "8px 0" }}>{I18N.t("TOUR_RUN_OVER")}</div>
       ) : won ? (
         <div className="mono" style={{ fontSize: 13, textAlign: "center", color: "var(--text-dim)", padding: "4px 0" }}>{I18N.t("TOUR_FLOOR", floor)} →</div>
@@ -311,7 +316,7 @@ function Tour() {
       toast(tourErr(r.reason), "bad"); refresh(); return;
     }
     setBattle({ events: r.events, p1Team: champ ? [...selectedBeasts, champ.beast] : selectedBeasts, p2Team: r.enemy, won: r.won, floorFought: run.floor });
-    setResult({ won: r.won, rewards: r.rewards, runOver: r.runOver, floor: r.floor,
+    setResult({ won: r.won, rewards: r.rewards, runOver: r.runOver, floor: r.floor, freeCap: r.freeCap,
       commission: (r.champion && r.champion.commission) || 0, champName: champ ? champ.name : "" });
     setSt((s) => ({
       ...s,
@@ -447,6 +452,9 @@ function Tour() {
           <div className="flex between center wrap" style={{ marginBottom: 12, gap: 10 }}>
             <span className="h2" style={{ fontSize: 18, color: "var(--elec)" }}>{I18N.t("TOUR_FLOOR", run.floor)}</span>
             <span className="pill mono" style={{ fontSize: 11 }}>{I18N.t("TOUR_ALIVE", alive)}</span>
+            {/* Le run gratuit s'arrête à l'étage 20 : autant l'annoncer pendant le run
+                plutôt que de laisser la fin surprendre (décision 19/10/2026). */}
+            {run.free && <span className="pill mono" style={{ fontSize: 11, color: "var(--gold)" }}>{I18N.t("TOUR_FREE_CAP_TAG")}</span>}
             <button className="btn ghost sm" onClick={() => setShowAbandon(true)} disabled={busy || autoRunning}>{I18N.t("TOUR_ABANDON")}</button>
           </div>
 
