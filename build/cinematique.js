@@ -72,7 +72,13 @@ const SANS = (() => {
 // du repli automatique si la 3D echoue (WebGL ou GLB — voir troisDKo).
 // `?cine=3d` n'est plus lu : le defaut EST la 3D, les URLs des bancs rejouent.
 const CINE_3D = !(typeof location !== 'undefined' && /[?&]cine=bake\b/i.test(location.search));
-const EMBLEM_SPIN = typeof window !== 'undefined' && window.FA_ASSET_URL ? window.FA_ASSET_URL('assets/emblem-spin.webp') : 'assets/emblem-spin.webp';
+const EMBLEM_SPIN_SD = typeof window !== 'undefined' && window.FA_ASSET_URL ? window.FA_ASSET_URL('assets/emblem-spin.webp') : 'assets/emblem-spin.webp';
+// App PC (`?app=pc`) : la même séquence, bakée en 768 px au lieu de 384. Le
+// repli est une <img> : sa définition est un choix de fichier, pas une
+// contrainte de GPU. Dans l'app elle est affichée deux fois plus grande qu'un
+// mobile ne l'affiche, et 384 px y étaient agrandis. Le web ne reçoit jamais ce
+// fichier — même URL, même octets, même comportement qu'avant.
+const EMBLEM_SPIN = typeof document !== 'undefined' && document.documentElement.dataset.app === 'pc' ? typeof window !== 'undefined' && window.FA_ASSET_URL ? window.FA_ASSET_URL('assets/emblem-spin-hd.webp') : 'assets/emblem-spin-hd.webp' : EMBLEM_SPIN_SD;
 
 // Libère TOUTES les ressources GPU d'une scène Three.js au démontage. Sans ça, le GLB
 // (12 Mo, cloné ×2), le render target PMREM et les textures fuient en VRAM, et le contexte
@@ -1284,6 +1290,14 @@ function Cinematique(props) {
     src: EMBLEM_SPIN,
     alt: "",
     draggable: false,
+    onError: e => {
+      // App PC : si la séquence HD manque (404), on retombe sur la SD.
+      // Sur le web, EMBLEM_SPIN EST la SD : la garde évite une boucle.
+      const img = e.currentTarget;
+      if (img.dataset.repli) return;
+      img.dataset.repli = '1';
+      img.src = EMBLEM_SPIN_SD;
+    },
     style: {
       width: '100%',
       height: '100%',

@@ -29,3 +29,8 @@ _bake/*.gif
 _bake/*.webp
 _bake/frames/
 res-*.txt
+
+# Intermediaires du bake HD (regenerables par _bake/bake-hd.mjs) : 32 PNG + la
+# bande assemblee + les RGBA bruts servis au controle. Jamais versionnes.
+_bake/_hd-frames/
+_bake/_spin-frames/
