@@ -6217,14 +6217,20 @@ function Onboarding({
       color: "var(--gold)",
       borderColor: "rgba(255,230,0,0.3)"
     }
-  }, "\uD83C\uDF81 ", I18N.t("OB_GIFT")), hasWallet ? /*#__PURE__*/React.createElement("button", {
+  }, "\uD83C\uDF81 ", I18N.t("OB_GIFT")), hasWallet ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
     className: "btn block",
     style: {
       marginTop: 12
     },
     disabled: !!busy,
     onClick: connectUnisat
-  }, I18N.t("ACC_HAVE_WALLET")) : mobile ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
+  }, I18N.t("ACC_HAVE_WALLET")), /*#__PURE__*/React.createElement("div", {
+    className: "muted mono",
+    style: {
+      fontSize: 11,
+      marginTop: 8
+    }
+  }, I18N.t("ACC_HAVE_WALLET_SUB"))) : mobile ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
     className: "btn block",
     style: {
       marginTop: 12
@@ -6245,7 +6251,7 @@ function Onboarding({
     href: "https://unisat.io/download",
     target: "_blank",
     rel: "noopener noreferrer"
-  }, I18N.t("OB_INSTALL_EXT_BTN")), mobile && !hasWallet ? /*#__PURE__*/React.createElement("button", {
+  }, I18N.t("ACC_NO_UNISAT")), mobile && !hasWallet ? /*#__PURE__*/React.createElement("button", {
     className: "btn block",
     style: {
       marginTop: 10

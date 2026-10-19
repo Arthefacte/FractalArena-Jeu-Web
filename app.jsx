@@ -3629,9 +3629,12 @@ function Onboarding({ onAccountCreated }) {
             son navigateur intégré injecte le provider UniSat et le flux redevient celui du
             desktop. Dans ce navigateur-là, hasWallet est vrai → branche du haut. */}
         {hasWallet ? (
-          <button className="btn block" style={{ marginTop: 12 }} disabled={!!busy} onClick={connectUnisat}>
-            {I18N.t("ACC_HAVE_WALLET")}
-          </button>
+          <>
+            <button className="btn block" style={{ marginTop: 12 }} disabled={!!busy} onClick={connectUnisat}>
+              {I18N.t("ACC_HAVE_WALLET")}
+            </button>
+            <div className="muted mono" style={{ fontSize: 11, marginTop: 8 }}>{I18N.t("ACC_HAVE_WALLET_SUB")}</div>
+          </>
         ) : mobile ? (
           <>
             <button className="btn block" style={{ marginTop: 12 }} disabled={!!busy} onClick={OPEN_IN_UNISAT}>
@@ -3641,7 +3644,7 @@ function Onboarding({ onAccountCreated }) {
           </>
         ) : (
           <a className="btn block" style={{ marginTop: 12 }} href="https://unisat.io/download" target="_blank" rel="noopener noreferrer">
-            {I18N.t("OB_INSTALL_EXT_BTN")}
+            {I18N.t("ACC_NO_UNISAT")}
           </a>
         )}
 

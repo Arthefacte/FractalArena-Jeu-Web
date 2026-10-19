@@ -168,9 +168,11 @@
     OB_MOBILE_MSG: { FR: "Sur mobile, joue avec un compte créé par le jeu — ou ouvre le jeu dans l'app UniSat Mobile pour te connecter avec ton wallet, comme sur ordinateur.", EN: "On mobile, play with an account created by the game — or open the game inside the UniSat Mobile app to connect your wallet, just like on desktop.", ZH: "在移动端可使用游戏创建的账号游玩——也可在 UniSat 移动端应用内打开游戏，用你的钱包登录，与电脑端相同。" },
 
     // --- Compte sans wallet ---
-    ACC_PLAY_NOW: { FR: "Jouer maintenant", EN: "Play now", ZH: "立即游玩" },
-    ACC_PLAY_NOW_SUB: { FR: "Sans installation. Le jeu crée ton compte et ton wallet.", EN: "No install. The game creates your account and wallet.", ZH: "无需安装。游戏为你创建账号和钱包。" },
-    ACC_HAVE_WALLET: { FR: "J'ai déjà un wallet", EN: "I already have a wallet", ZH: "我已有钱包" },
+    ACC_PLAY_NOW: { FR: "Jouer sans wallet", EN: "Play without a wallet", ZH: "无钱包游玩" },
+    ACC_PLAY_NOW_SUB: { FR: "Ton compte est créé en un clic, avec un portefeuille FICTIF. Tu pourras lier ton vrai wallet plus tard.", EN: "Your account is created in one click, with a FICTITIOUS wallet. You can link your real wallet later.", ZH: "一键创建账号，配一个虚拟钱包。之后可绑定你的真实钱包。" },
+    ACC_HAVE_WALLET: { FR: "J'ai déjà UniSat", EN: "I already have UniSat", ZH: "我已有 UniSat" },
+    ACC_HAVE_WALLET_SUB: { FR: "Connecte ton wallet et retrouve ton compte.", EN: "Connect your wallet and get your account back.", ZH: "连接钱包，找回你的账号。" },
+    ACC_NO_UNISAT: { FR: "Pas encore UniSat ? L'installer", EN: "No UniSat yet? Install it", ZH: "还没有 UniSat？去安装" },
     ACC_CREATING: { FR: "Création…", EN: "Creating…", ZH: "创建中…" },
     ACC_CREATE_FAIL: { FR: "Création impossible pour l'instant. Réessaie dans un moment.", EN: "Cannot create an account right now. Try again shortly.", ZH: "暂时无法创建账号，请稍后再试。" },
 
