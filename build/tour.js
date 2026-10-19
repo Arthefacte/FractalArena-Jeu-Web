@@ -958,7 +958,27 @@ function Tour() {
     disabled: busy
   }, !st.score.free_run_used ? I18N.t("TOUR_START_FREE") : /*#__PURE__*/React.createElement(FaText, {
     text: I18N.t("TOUR_START_PAID", fmt(TU.nextCost(st, st.score)))
-  }))) : /*#__PURE__*/React.createElement("div", {
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 16,
+      textAlign: "left"
+    }
+  }, /*#__PURE__*/React.createElement(window.ChampionRow, {
+    champions: g.championsList,
+    activeOwner: champ ? champ.owner_id || champ.owner_wallet : null,
+    runState: null,
+    myWallet: g.wallet,
+    myId: g.publicId,
+    onPick: e => actions.championPickBorrow(e),
+    onClear: () => actions.championClearBorrow()
+  }), champ && /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      fontSize: 11,
+      color: "var(--elec)",
+      marginTop: 4
+    }
+  }, I18N.t("CHAMP_ACTIVE", champ.name), " \xB7 ", I18N.t("CHAMP_NEED2")))) : /*#__PURE__*/React.createElement("div", {
     className: "panel oct",
     style: {
       border: "1px solid var(--elec)",

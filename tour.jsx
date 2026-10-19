@@ -446,6 +446,20 @@ function Tour() {
           <button className="btn btn-fire lg" data-guide="tour-start" onClick={() => setShowStart(true)} disabled={busy}>
             {!st.score.free_run_used ? I18N.t("TOUR_START_FREE") : <FaText text={I18N.t("TOUR_START_PAID", fmt(TU.nextCost(st, st.score)))} />}
           </button>
+          {/* Les champions alliés se choisissent AVANT de lancer : la rangée ne
+              vivait que dans la vue du run, donc un joueur hors run n'en voyait
+              aucun (constaté le 19/10/2026). Le choix est mémorisé côté client
+              (g.championBorrow) et part au premier combat. */}
+          <div style={{ marginTop: 16, textAlign: "left" }}>
+            <window.ChampionRow champions={g.championsList} activeOwner={champ ? (champ.owner_id || champ.owner_wallet) : null}
+              runState={null} myWallet={g.wallet} myId={g.publicId}
+              onPick={(e) => actions.championPickBorrow(e)} onClear={() => actions.championClearBorrow()} />
+            {champ && (
+              <div className="mono" style={{ fontSize: 11, color: "var(--elec)", marginTop: 4 }}>
+                {I18N.t("CHAMP_ACTIVE", champ.name)} · {I18N.t("CHAMP_NEED2")}
+              </div>
+            )}
+          </div>
         </div>
       ) : (
         <div className="panel oct" style={{ border: "1px solid var(--elec)", padding: 18, marginBottom: 14 }}>
