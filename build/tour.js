@@ -449,6 +449,9 @@ function TourResultModal({
     floor,
     freeCap
   } = result;
+  // L'état du compte vit dans le contexte : sans cette lecture, `g` est
+  // indéfini et la modale casse (écran blanc) dès le premier palier payant.
+  const g = useFA() || {};
   return /*#__PURE__*/React.createElement(Modal, {
     onClose: onClose,
     accent: won ? "var(--success)" : "var(--alert)",

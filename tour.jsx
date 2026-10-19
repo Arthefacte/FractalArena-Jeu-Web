@@ -182,6 +182,9 @@ function TourStartModal({ state, score, balance, busy, onConfirm, onClose }) {
 /* Modale de résultat post-rejeu : victoire/défaite, paliers payés, run over. */
 function TourResultModal({ result, onClose }) {
   const { won, rewards, runOver, floor, freeCap } = result;
+  // L'état du compte vit dans le contexte : sans cette lecture, `g` est
+  // indéfini et la modale casse (écran blanc) dès le premier palier payant.
+  const g = useFA() || {};
   return (
     <Modal onClose={onClose} accent={won ? "var(--success)" : "var(--alert)"} openSound={null}>
       <div className="h1" style={{ fontSize: 26, textAlign: "center", color: won ? "var(--success)" : "var(--alert)", margin: "4px 0 12px" }}>
