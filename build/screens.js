@@ -2979,7 +2979,40 @@ function BoostArmSwitch({
     }
   }));
 }
-function Boosts() {
+/* ---------------- BOUTIQUE ---------------- */
+// UNE pastille de nav, DEUX monnaies : « Achat en FA » (les packs de charges, inchangés) et
+// « Achat en FB » (les objets permanents, débités de la cagnotte FB). Avant, les boosts vivaient
+// dans un onglet « Boosts » et la boutique FB dans une modale du Wallet : le joueur devait savoir
+// de lui-même laquelle de ses deux monnaies se dépense où.
+// La CLÉ de vue reste `boosts` (routes, hint de nav dynamique `HINT_TAB_ <clé>` et tests
+// inchangés) — seul le libellé devient « Boutique ».
+function Boutique() {
+  const [tab, setTab] = useState("fa");
+  return /*#__PURE__*/React.createElement("div", {
+    className: "container"
+  }, /*#__PURE__*/React.createElement(SectionHead, {
+    eyebrow: I18N.t("BO_SUB"),
+    title: I18N.t("BO_TITLE")
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "subtabs"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: cx("subtab", tab === "fa" && "on"),
+    style: {
+      "--c": "var(--gold)"
+    },
+    onClick: () => setTab("fa")
+  }, I18N.t("SH_TAB_FA")), /*#__PURE__*/React.createElement("button", {
+    className: cx("subtab", tab === "fb" && "on"),
+    style: {
+      "--c": "var(--elec)"
+    },
+    onClick: () => setTab("fb")
+  }, I18N.t("SH_TAB_FB"))), tab === "fa" ? /*#__PURE__*/React.createElement(BoostsPane, null) : /*#__PURE__*/React.createElement(FbShopPanel, null));
+}
+
+// Onglet « Achat en FA » : les quatre packs de charges, tels quels — aucun prix, aucune règle
+// d'armement ne bouge ici, c'est le même code qu'avant sous un autre nom d'écran.
+function BoostsPane() {
   const {
     g,
     actions,
@@ -3030,12 +3063,7 @@ function Boosts() {
     }
     toast(I18N.t(r.armed ? "BO_ARMED_ON" : "BO_ARMED_OFF"), r.armed ? "good" : "info");
   }
-  return /*#__PURE__*/React.createElement("div", {
-    className: "container"
-  }, /*#__PURE__*/React.createElement(SectionHead, {
-    eyebrow: I18N.t("BO_SUB"),
-    title: I18N.t("BO_TITLE")
-  }), /*#__PURE__*/React.createElement("div", {
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "muted",
     style: {
       fontSize: 13,
@@ -3601,6 +3629,16 @@ function CopyAddr({
 function FbCaseModal({
   onClose
 }) {
+  return /*#__PURE__*/React.createElement(Modal, {
+    onClose: onClose,
+    accent: "var(--gold)"
+  }, /*#__PURE__*/React.createElement(FbShopPanel, null));
+}
+
+// Corps de la boutique FB — PARTAGÉ par la modale du Wallet et par l'onglet « Achat en FB » de la
+// Boutique : un seul chemin d'achat et un seul endroit où le solde se relit (deux écrans FB
+// dupliqués divergeraient au premier correctif).
+function FbShopPanel() {
   const {
     g,
     actions,
@@ -3712,10 +3750,7 @@ function FbCaseModal({
       setAchat(null);
     }
   }
-  return /*#__PURE__*/React.createElement(Modal, {
-    onClose: onClose,
-    accent: "var(--gold)"
-  }, /*#__PURE__*/React.createElement("div", {
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "eyebrow",
     style: {
       color: "var(--gold)"
@@ -4989,7 +5024,8 @@ function Toggle({
 Object.assign(window, {
   Team,
   Forge,
-  Boosts,
+  Boutique,
+  Boosts: Boutique,
   Wallet,
   Perso,
   Options
