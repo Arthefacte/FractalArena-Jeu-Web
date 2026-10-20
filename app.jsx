@@ -4,7 +4,7 @@
 const { useState, useEffect, useRef, useMemo, useCallback } = React;
 const D = window.FA_DATA, I18N = window.FA_I18N, LOOP = window.FA_LOOP;
 const { FA_Ctx, useFA, cx, fmt, Coin, Bar } = window;
-const { Team, Fosse, Arene, Forge, Wallet, Boosts, Perso, Options, ChatFab, RoomFab, Leaderboard, Quests, Campaign, Tour, LoginGate, TutorialGate, Link, Cinematique, Market, LockedBanner, Expeditions, Referral } = window;
+const { Team, Fosse, Arene, Forge, Wallet, Boutique, Perso, Options, ChatFab, RoomFab, Leaderboard, Quests, Campaign, Tour, LoginGate, TutorialGate, Link, Cinematique, Market, LockedBanner, Expeditions, Referral } = window;
 const SAVE_KEY = "fractal_arena_v1";
 // Stockage du bearer : delegue a FA_ACCOUNT (account-ui.js), qui applique la regle
 // decidee le 2026-07-27 — sessionStorage pour un compte UniSat (efface a la fermeture
@@ -3043,7 +3043,7 @@ function App() {
     );
   }
 
-  const VIEWS = { team: Team, fosse: Fosse, arene: Arene, campaign: Campaign, tour: Tour, expeditions: Expeditions, quests: Quests, forge: Forge, market: Market, wallet: Wallet, boosts: Boosts, perso: Perso, leaderboard: Leaderboard, options: Options, lien: Link, parrainage: Referral };
+  const VIEWS = { team: Team, fosse: Fosse, arene: Arene, campaign: Campaign, tour: Tour, expeditions: Expeditions, quests: Quests, forge: Forge, market: Market, wallet: Wallet, boosts: Boutique, perso: Perso, leaderboard: Leaderboard, options: Options, lien: Link, parrainage: Referral };
 
   const View = VIEWS[g.view] || Team;
 
