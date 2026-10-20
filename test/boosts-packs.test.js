@@ -31,13 +31,17 @@ test("BOOSTS : les 4 packs portent la même taille (100 charges), prix inchangé
   assert.deepStrictEqual(prix, { xp_boost: 500, lucky_strike: 750, momentum: 750, catalyst: 750 });
 });
 
-test("le hint de l'onglet Boosts annonce la même taille, dans les 3 langues", () => {
+test("le hint de l'onglet Boutique annonce la même taille, dans les 3 langues", () => {
+  // L'onglet s'appelait « Boosts », il devient « Boutique » avec deux onglets (décision
+  // fondateur 20/10/2026 : achat en FA / achat en FB). Les marqueurs de langue suivent le
+  // nouveau libellé — la garantie testée, elle, ne bouge pas : le hint chiffre la taille du
+  // pack dans les trois langues, à la même valeur que la carte.
   const tailles = lignesBoosts().map((m) => Number(m[3]));
   const attendu = tailles[0];
   const i = i18nSrc.indexOf("HINT_TAB_BOOSTS:");
   assert.ok(i > 0, "i18n.js doit porter HINT_TAB_BOOSTS");
   const ligne = i18nSrc.slice(i, i18nSrc.indexOf("\n", i));
-  for (const [langue, marque] of [["FR", 'FR: "Boosts'], ["EN", 'EN: "Boosts'], ["ZH", 'ZH: "强化']]) {
+  for (const [langue, marque] of [["FR", 'FR: "Boutique'], ["EN", 'EN: "Shop'], ["ZH", 'ZH: "商店']]) {
     assert.ok(ligne.includes(marque), `le hint doit exister en ${langue}`);
   }
   const annoncees = [...ligne.matchAll(/(\d+)\s*(?:次)?\s*(?:charges|充能)/g)].map((m) => Number(m[1]));
