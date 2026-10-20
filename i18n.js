@@ -5,6 +5,15 @@
 (function () {
   "use strict";
 
+  // Seuils LP (FA), en paliers : une seule source pour les textes ci-dessous,
+  // exposée sur window.FA_I18N.LP_TIER_MIN et vérifiée par test/lp-i18n.test.js.
+  // Miroir de lp.js LP_TIERS — G1 est passé de 50k à 250k le 04/09/2026 (commit
+  // serveur 09e2709) sans que ces textes suivent : le client annonçait un titre
+  // que le serveur n'accordait pas (audit 19/10, constat bloquant n°4).
+  const LP_TIER_MIN = { G1: 250_000, G2: 500_000 };
+  // 250000 → « 250 000 » en FR, « 250,000 » en EN/ZH.
+  const lpSeuil = (n, sep) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, sep);
+
   const T = {
     // nav
     NAV_TEAM: { FR: "Équipe", EN: "Team", ZH: "队伍" },
@@ -12,7 +21,7 @@
     NAV_ARENE: { FR: "Arène", EN: "Arena", ZH: "竞技场" },
     NAV_FORGE: { FR: "Forge", EN: "Forge", ZH: "熔炉" },
     NAV_WALLET: { FR: "Wallet", EN: "Wallet", ZH: "钱包" },
-    NAV_BOOSTS: { FR: "Boosts", EN: "Boosts", ZH: "强化" },
+    NAV_BOOSTS: { FR: "Boutique", EN: "Shop", ZH: "商店" },
     NAV_PERSO: { FR: "Perso", EN: "Vanity", ZH: "外观" },
     NAV_OPTIONS: { FR: "Options", EN: "Options", ZH: "设置" },
     NAV_LEADERBOARD: { FR: "Classement", EN: "Ranking", ZH: "排行榜" },
@@ -103,16 +112,18 @@
     LB_DELTA_STABLE: { FR: "Rang stable", EN: "Rank unchanged", ZH: "排名无变化" },
     LB_DELTA_NEW: { FR: "Nouveau joueur", EN: "New player", ZH: "新玩家" },
 
-    // --- Liquidity Guardian (badge LP + titres, seuils 50k / 500k VERROUILLÉS) ---
+    // --- Liquidity Guardian (badge LP + titres) — seuils dans LP_TIER_MIN ---
     LP_TIER_G1: { FR: "Market Maker", EN: "Market Maker", ZH: "做市商" },
     LP_TIER_G2: { FR: "Prime Market Maker", EN: "Prime Market Maker", ZH: "首席做市商" },
     LP_PANEL_TITLE: { FR: "Liquidity Guardian", EN: "Liquidity Guardian", ZH: "流动性守护者" },
+    // Les chiffres viennent de LP_TIER_MIN : ne JAMAIS les recopier en dur ici,
+    // le serveur (lp.js) est juge et un texte figé a déjà menti une fois.
     LP_PANEL_HINT: {
-      FR: "Verrouille de la liquidité FA sur InSwap : dès 50 000 FA verrouillés tu portes le logo du jeu (2D) et le titre Market Maker, dès 500 000 FA le logo 3D et le titre Prime Market Maker.",
-      EN: "Lock FA liquidity on InSwap: from 50,000 locked FA you wear the game logo (2D) and the Market Maker title, from 500,000 FA the 3D logo and the Prime Market Maker title.",
-      ZH: "在 InSwap 上锁定 FA 流动性：锁定达到 50,000 FA 即可佩戴游戏徽标（2D）和做市商称号，达到 500,000 FA 则为 3D 徽标和首席做市商称号。",
+      FR: `Verrouille de la liquidité FA sur InSwap : dès ${lpSeuil(LP_TIER_MIN.G1, " ")} FA verrouillés tu portes le logo du jeu (2D) et le titre Market Maker, dès ${lpSeuil(LP_TIER_MIN.G2, " ")} FA le logo 3D et le titre Prime Market Maker.`,
+      EN: `Lock FA liquidity on InSwap: from ${lpSeuil(LP_TIER_MIN.G1, ",")} locked FA you wear the game logo (2D) and the Market Maker title, from ${lpSeuil(LP_TIER_MIN.G2, ",")} FA the 3D logo and the Prime Market Maker title.`,
+      ZH: `在 InSwap 上锁定 FA 流动性：锁定达到 ${lpSeuil(LP_TIER_MIN.G1, ",")} FA 即可佩戴游戏徽标（2D）和做市商称号，达到 ${lpSeuil(LP_TIER_MIN.G2, ",")} FA 则为 3D 徽标和首席做市商称号。`,
     },
-    LP_STATUS_NONE: { FR: "Aucun palier LP pour l'instant — il faut au moins 50 000 FA en liquidité verrouillée.", EN: "No LP tier yet — at least 50,000 FA in locked liquidity required.", ZH: "尚无 LP 等级——需要至少 50,000 FA 的锁定流动性。" },
+    LP_STATUS_NONE: { FR: `Aucun palier LP pour l'instant — il faut au moins ${lpSeuil(LP_TIER_MIN.G1, " ")} FA en liquidité verrouillée.`, EN: `No LP tier yet — at least ${lpSeuil(LP_TIER_MIN.G1, ",")} FA in locked liquidity required.`, ZH: `尚无 LP 等级——需要至少 ${lpSeuil(LP_TIER_MIN.G1, ",")} FA 的锁定流动性。` },
     LP_REFRESH_BTN: { FR: "Rafraîchir mon statut LP", EN: "Refresh my LP status", ZH: "刷新我的 LP 状态" },
     LP_REFRESH_OK: { FR: "Statut LP mis à jour", EN: "LP status updated", ZH: "LP 状态已更新" },
     LP_REFRESH_ERR: { FR: "Vérification LP indisponible, réessaie.", EN: "LP check unavailable, try again.", ZH: "LP 验证不可用，请重试。" },
@@ -657,9 +668,11 @@
     REROLL_REFUND_HINT: { FR: "Budget total identique. Si tu gardes les anciennes, 50 % du coût t'est remboursé.", EN: "Same total budget. Keep the old ones and 50% of the cost is refunded.", ZH: "总预算不变。保留原属性可退还 50% 费用。" },
     REROLL_KEPT_OLD: { FR: "Anciennes stats gardées — %d FA remboursés", EN: "Old stats kept — %d FA refunded", ZH: "保留原属性 — 退还 %d FA" },
 
-    // boosts
-    BO_TITLE: { FR: "Boosts", EN: "Boosts", ZH: "强化" },
-    BO_SUB: { FR: "Consommables — payés en FRACTALARENA", EN: "Consumables — paid in FRACTALARENA", ZH: "消耗品 — 用 FRACTALARENA 支付" },
+    // boutique — le même écran sert les deux monnaies, en deux onglets
+    BO_TITLE: { FR: "Boutique", EN: "Shop", ZH: "商店" },
+    SH_TAB_FA: { FR: "Achat en FA", EN: "Buy with FA", ZH: "用 FA 购买" },
+    SH_TAB_FB: { FR: "Achat en FB", EN: "Buy with FB", ZH: "用 FB 购买" },
+    BO_SUB: { FR: "Consommables en FA, objets permanents en FB", EN: "Consumables in FA, permanent items in FB", ZH: "FA 消耗品，FB 永久物品" },
     BO_XP_NAME: { FR: "XP ×2", EN: "XP ×2", ZH: "双倍经验" },
     BO_XP_DESC: { FR: "Double l'XP de chaque victoire. 1 charge par victoire.", EN: "Doubles the XP of each win. 1 charge per win.", ZH: "每次胜利双倍经验。每次胜利消耗 1 次充能。" },
     BO_LUCKY_NAME: { FR: "Lucky Strike", EN: "Lucky Strike", ZH: "幸运打击" },
@@ -1723,7 +1736,7 @@
     HINT_TAB_FORGE:       { FR: "Forge : fusion (2 entités de même rareté → rareté supérieure, 75 % en FA, 100 % avec un ticket Or ou des tickets Argent), fusion de rang (3 entités de même rang → 1 entité du rang au-dessus), reroll des stats, invocation d'une entité (10 000 FA) ou d'une relique (8 000). Tout ce qui est dépensé alimente les pools.", EN: "Forge: fusion (2 same-rarity entities → higher rarity, 75% with FA, 100% with a Gold ticket or Silver tickets), rank fusion (3 same-rank entities → 1 entity one rank up), stat reroll, summon an entity (10,000 FA) or a relic (8,000). Everything spent feeds the pools.", ZH: "熔炉：融合（2 个同稀有度实体 → 更高稀有度，FA 75%，金券或银券 100%）、阶位融合（3 个同阶实体 → 高一级实体）、重掷属性、召唤实体（10,000 FA）或遗物（8,000）。所有花费都进入资金池。" },
     HINT_TAB_MARKET:      { FR: "Marché : achète et vends des reliques et des cores entre joueurs, en FA liquide.", EN: "Market: buy and sell relics and cores between players, in liquid FA.", ZH: "市场：玩家之间用可用 FA 买卖遗物和核心。" },
     HINT_TAB_WALLET:      { FR: "Wallet : Liquide = misable et retirable on-chain ; Verrouillé = misable seulement. Pour retirer, lie un portefeuille UniSat et vérifie-le.", EN: "Wallet: Liquid = playable and withdrawable on-chain; Locked = playable only. To withdraw, link a UniSat wallet and verify it.", ZH: "钱包：可用 = 可下注且可链上提现；锁定 = 仅可下注。提现需绑定并验证 UniSat 钱包。" },
-    HINT_TAB_BOOSTS:      { FR: "Boosts : packs de 100 charges (XP ×2, Lucky Strike, Momentum). Un boost n'agit que s'il est activé, et se consomme une charge par victoire — il se cumule avec le XP ×2 permanent : ×4 tant que tu as des charges activées.", EN: "Boosts: packs of 100 charges (XP ×2, Lucky Strike, Momentum). A boost only works when armed, and burns one charge per win — it stacks with the permanent XP ×2: ×4 while armed charges remain.", ZH: "强化：100 次充能的礼包（XP ×2、幸运一击、动能）。只有激活后才生效，每次胜利消耗一次——可与永久双倍经验叠加：激活期间总计 ×4。" },
+    HINT_TAB_BOOSTS:      { FR: "Boutique : deux onglets — « Achat en FA » (packs de 100 charges : XP ×2, Lucky Strike, Momentum) et « Achat en FB » (objets permanents, payés avec le FB déposé). Un boost n'agit que s'il est activé, et se consomme une charge par victoire — il se cumule avec le XP ×2 permanent : ×4 tant que tu as des charges activées.", EN: "Shop: two tabs — “Buy with FA” (packs of 100 charges: XP ×2, Lucky Strike, Momentum) and “Buy with FB” (permanent items, paid with your deposited FB). A boost only works when armed, and burns one charge per win — it stacks with the permanent XP ×2: ×4 while armed charges remain.", ZH: "商店：两个标签——「用 FA 购买」（100 次充能的礼包：XP ×2、幸运一击、动能）与「用 FB 购买」（永久物品，用充值的 FB 支付）。强化只有激活后才生效，每次胜利消耗一次——可与永久双倍经验叠加：激活期间总计 ×4。" },
     HINT_TAB_PERSO:       { FR: "Perso : renomme une entité (100 FA) ou choisis un titre (1 000 FA). Purement cosmétique.", EN: "Vanity: rename an entity (100 FA) or pick a title (1,000 FA). Purely cosmetic.", ZH: "外观：重命名实体（100 FA）或选择称号（1,000 FA）。纯装饰。" },
     HINT_TAB_LEADERBOARD: { FR: "Classement : victoires, économie, puissance… Le rapport du jour part chaque soir sur Telegram.", EN: "Ranking: wins, economy, power… The daily report goes out on Telegram every evening.", ZH: "排行榜：胜场、经济、战力…… 每日报告每晚发布在 Telegram。" },
     // Diapositive du tutoriel qui présente le guide
@@ -1899,5 +1912,5 @@
     return t("ERR_GENERIC");
   }
 
-  window.FA_I18N = { t, setLang, getLang, detectLang, T, localizeServerError };
+  window.FA_I18N = { t, setLang, getLang, detectLang, T, localizeServerError, LP_TIER_MIN };
 })();

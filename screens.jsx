@@ -1517,7 +1517,30 @@ function BoostArmSwitch({ armed, color, disabled, onToggle }) {
     </span>
   );
 }
-function Boosts() {
+/* ---------------- BOUTIQUE ---------------- */
+// UNE pastille de nav, DEUX monnaies : « Achat en FA » (les packs de charges, inchangés) et
+// « Achat en FB » (les objets permanents, débités de la cagnotte FB). Avant, les boosts vivaient
+// dans un onglet « Boosts » et la boutique FB dans une modale du Wallet : le joueur devait savoir
+// de lui-même laquelle de ses deux monnaies se dépense où.
+// La CLÉ de vue reste `boosts` (routes, hint de nav dynamique `HINT_TAB_ <clé>` et tests
+// inchangés) — seul le libellé devient « Boutique ».
+function Boutique() {
+  const [tab, setTab] = useState("fa");
+  return (
+    <div className="container">
+      <SectionHead eyebrow={I18N.t("BO_SUB")} title={I18N.t("BO_TITLE")} />
+      <div className="subtabs">
+        <button className={cx("subtab", tab === "fa" && "on")} style={{ "--c": "var(--gold)" }} onClick={() => setTab("fa")}>{I18N.t("SH_TAB_FA")}</button>
+        <button className={cx("subtab", tab === "fb" && "on")} style={{ "--c": "var(--elec)" }} onClick={() => setTab("fb")}>{I18N.t("SH_TAB_FB")}</button>
+      </div>
+      {tab === "fa" ? <BoostsPane /> : <FbShopPanel />}
+    </div>
+  );
+}
+
+// Onglet « Achat en FA » : les quatre packs de charges, tels quels — aucun prix, aucune règle
+// d'armement ne bouge ici, c'est le même code qu'avant sous un autre nom d'écran.
+function BoostsPane() {
   const { g, actions, toast } = useFA();
   const items = [
     { key: "xp_boost", name: I18N.t("BO_XP_NAME"), desc: I18N.t("BO_XP_DESC"), color: "var(--gold)" },
@@ -1544,8 +1567,7 @@ function Boosts() {
     toast(I18N.t(r.armed ? "BO_ARMED_ON" : "BO_ARMED_OFF"), r.armed ? "good" : "info");
   }
   return (
-    <div className="container">
-      <SectionHead eyebrow={I18N.t("BO_SUB")} title={I18N.t("BO_TITLE")} />
+    <div>
       <div className="muted" style={{ fontSize: 13, marginBottom: 14 }}>{I18N.t("BO_ARM_HINT")}</div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))", gap: 16 }}>
         {items.map((it) => {
@@ -1819,6 +1841,17 @@ function CopyAddr({ addr }) {
 }
 
 function FbCaseModal({ onClose }) {
+  return (
+    <Modal onClose={onClose} accent="var(--gold)">
+      <FbShopPanel />
+    </Modal>
+  );
+}
+
+// Corps de la boutique FB — PARTAGÉ par la modale du Wallet et par l'onglet « Achat en FB » de la
+// Boutique : un seul chemin d'achat et un seul endroit où le solde se relit (deux écrans FB
+// dupliqués divergeraient au premier correctif).
+function FbShopPanel() {
   const { g, actions, toast } = useFA();
   const [info, setInfo] = useState(null);   // { fb_sats, deposit_address, deposit_min_sats, items }
   const [txid, setTxid] = useState("");
@@ -1895,7 +1928,7 @@ function FbCaseModal({ onClose }) {
   }
 
   return (
-    <Modal onClose={onClose} accent="var(--gold)">
+    <div>
       <div className="eyebrow" style={{ color: "var(--gold)" }}>{I18N.t("FB_CASE")}</div>
       <div className="h2" style={{ margin: "4px 0 10px" }}>{I18N.t("FB_CASE_TITLE", fb(info && info.fb_sats))}</div>
       <div className="muted mono" style={{ fontSize: 12, lineHeight: 1.5, marginBottom: 14 }}>{I18N.t("FB_CASE_INFO")}</div>
@@ -1932,7 +1965,7 @@ function FbCaseModal({ onClose }) {
               </button>}
         </div>
       ))}
-    </Modal>
+    </div>
   );
 }
 
@@ -2532,4 +2565,4 @@ function Toggle({ on, onClick }) {
   );
 }
 
-Object.assign(window, { Team, Forge, Boosts, Wallet, Perso, Options });
+Object.assign(window, { Team, Forge, Boutique, Boosts: Boutique, Wallet, Perso, Options });
