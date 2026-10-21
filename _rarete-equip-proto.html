@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<title>Proto — rareté dans la liste d'équipement</title>
+<link rel="stylesheet" href="styles.css" />
+<style>
+  /* Prototype autonome (comme _rarete-proto.html) : rien d'ici n'est chargé
+     par le jeu. But : juger la rangée d'équipement AVANT / APRÈS, à taille
+     réelle, sans compte ni serveur. */
+  body { padding: 22px; background: #070b14; }
+  h1 { font-size: 17px; margin: 0 0 4px; }
+  .sub { color: var(--text-dim, #7F8DAD); font-size: 12px; margin-bottom: 14px; }
+  .switch { display: flex; gap: 8px; margin-bottom: 16px; }
+  .switch button { font-family: var(--font-mono, monospace); font-size: 12px; padding: 7px 14px;
+                   background: #0a0f1e; color: #EAF1FF; border: 1px solid #1d2740; cursor: pointer; }
+  .switch button.on { border-color: #00F0FF; color: #00F0FF; }
+  /* la fenêtre du jeu, posée à plat pour la capture */
+  .demo .overlay { position: static; inset: auto; display: block; background: transparent; padding: 0; }
+  .demo .modal { max-width: 560px; margin: 0; }
+  .list { display: flex; flex-direction: column; gap: 6px; }
+  .list .row { display: flex; gap: 6px; }
+  .list .row > .btn:first-child { justify-content: flex-start; gap: 8px; text-align: left; flex: 1; min-width: 0; }
+  .list .row > .btn:last-child { flex: none; }
+  .ico { width: 8px; height: 8px; display: inline-block; clip-path: polygon(50% 0,100% 50%,50% 100%,0 50%); }
+  .tiers { display: flex; gap: 14px; margin-top: 18px; font-family: var(--font-mono, monospace); font-size: 11px; color: var(--text-dim, #7F8DAD); }
+</style>
+</head>
+<body>
+  <h1>Rareté dans la liste d'équipement</h1>
+  <div class="sub">Équiper une relique — mêmes rangées, mêmes données. Bascule pour comparer.</div>
+  <div class="switch">
+    <button id="b-avant" class="on">Avant</button>
+    <button id="b-apres">Après</button>
+  </div>
+
+  <div class="demo">
+    <div class="overlay">
+      <div class="modal">
+        <div class="h2" style="font-size:14px;margin-bottom:10px">Équiper — Blocku</div>
+        <div class="list" id="list"></div>
+        <button class="btn sm block" style="margin-top:10px">Retirer</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="tiers">
+    <span>◆ commune — métal mat</span><span>◆ rare — verre</span><span>◆ épique — cristal</span><span>◆ légendaire — or en fusion</span>
+  </div>
+
+<script>
+  const ROWS = [
+    { name: "Cellule d'Ambre",   rar: "Rare",      col: "#3B82F6", stat: "+10% PV" },
+    { name: "Circuit de Jade",   rar: "Commune",   col: "#9CA3AF", stat: "+5% CRIT" },
+    { name: "Ressort de Cobalt", rar: "Commune",   col: "#9CA3AF", stat: "+10% SPD" },
+    { name: "Plaque de Saphir",  rar: "Légendaire", col: "#F7931A", stat: "+20% DEF" },
+    { name: "Plaque de Saphir",  rar: "Commune",   col: "#9CA3AF", stat: "+10% DEF" },
+    { name: "Matrice de Prisme", rar: "Épique",    col: "#B026FF", stat: "+6% TOUT" },
+    { name: "Lentille de Quartz", rar: "Rare",     col: "#3B82F6", stat: "+13% MAG" },
+    { name: "Cellule d'Ambre",   rar: "Commune",   col: "#9CA3AF", stat: "+8% PV" },
+  ];
+  const KEY = { "Commune": "common", "Rare": "rare", "Épique": "epic", "Légendaire": "legendary" };
+  let apres = false;
+  function render() {
+    document.getElementById("list").innerHTML = ROWS.map((r, i) => {
+      const cls = ["btn", "sm"].concat(apres ? ["eq-row", "r-" + KEY[r.rar]] : []).join(" ");
+      return `<div class="row">
+        <button class="${cls}">
+          <span class="ico" style="background:${r.col}"></span> ${r.name} ·
+          <span style="color:${r.col};font-weight:600">${r.rar}</span> · ${r.stat}
+        </button>
+        <button class="btn sm">ⓘ</button>
+      </div>`;
+    }).join("");
+  }
+  document.getElementById("b-avant").onclick = () => { apres = false; document.getElementById("b-avant").classList.add("on"); document.getElementById("b-apres").classList.remove("on"); render(); };
+  document.getElementById("b-apres").onclick = () => { apres = true; document.getElementById("b-apres").classList.add("on"); document.getElementById("b-avant").classList.remove("on"); render(); };
+  render();
+</script>
+</body>
+</html>

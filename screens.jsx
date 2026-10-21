@@ -278,7 +278,7 @@ function RelicSlot({ beast }) {
               const e = D.relicEffect(inst.type, inst.rarity);
               return (
                 <div key={inst.id} style={{ display: "flex", gap: 6 }}>
-                  <button className={cx("btn sm", on && "on")} disabled={busy}
+                  <button className={cx("btn sm eq-row", "r-" + String(inst.rarity || "Common").toLowerCase(), on && "on")} disabled={busy}
                     onClick={() => doEquip(on ? null : inst.id)} style={{ justifyContent: "flex-start", gap: 8, textAlign: "left", flex: 1, minWidth: 0 }}>
                     <RelicIcon type={inst.type} rarity={inst.rarity} size={18} /> {I18N.t("RELIC_" + inst.type.toUpperCase())} · {rarityLabel(inst.rarity)} · {D.relicStatDelta(e)} {on ? "✓" : ""}
                   </button>
@@ -356,7 +356,7 @@ function CoreSlot({ beast }) {
               const on = beast.core_id === inst.id;
               return (
                 <div key={inst.id} style={{ display: "flex", gap: 6 }}>
-                  <button className={cx("btn sm", on && "on")} disabled={busy}
+                  <button className={cx("btn sm eq-row", "r-" + String(inst.rarity || "Common").toLowerCase(), on && "on")} disabled={busy}
                     onClick={() => doEquip(on ? null : inst.id)} style={{ justifyContent: "flex-start", gap: 8, textAlign: "left", flex: 1, minWidth: 0 }}>
                     <CoreIcon type={inst.core_id} rarity={inst.rarity || "Common"} size={16} /> {coreLabel(inst)} · <span style={{ color: D.RARITY_COLORS[inst.rarity] || "var(--text)", fontWeight: 600 }}>{rarityLabel(inst.rarity || "Common")}</span> {on ? "✓" : ""}
                   </button>

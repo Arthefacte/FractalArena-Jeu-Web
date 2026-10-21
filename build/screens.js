@@ -503,7 +503,7 @@ function RelicSlot({
         gap: 6
       }
     }, /*#__PURE__*/React.createElement("button", {
-      className: cx("btn sm", on && "on"),
+      className: cx("btn sm eq-row", "r-" + String(inst.rarity || "Common").toLowerCase(), on && "on"),
       disabled: busy,
       onClick: () => doEquip(on ? null : inst.id),
       style: {
@@ -664,7 +664,7 @@ function CoreSlot({
         gap: 6
       }
     }, /*#__PURE__*/React.createElement("button", {
-      className: cx("btn sm", on && "on"),
+      className: cx("btn sm eq-row", "r-" + String(inst.rarity || "Common").toLowerCase(), on && "on"),
       disabled: busy,
       onClick: () => doEquip(on ? null : inst.id),
       style: {

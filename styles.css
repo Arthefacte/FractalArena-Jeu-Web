@@ -513,6 +513,53 @@ body[data-fond="cite"] .app-bg {
   0%, 100% { box-shadow: inset 0 0 0 1px rgba(247,147,26,0.30), 0 0 22px -9px rgba(247,147,26,0.65); }
   50%      { box-shadow: inset 0 0 0 1px rgba(255,214,120,0.55), 0 0 30px -7px rgba(247,147,26,0.95); }
 }
+/* ============================================================
+   RARETÉ DANS LES LISTES D'ÉQUIPEMENT (reliques + cores)
+   Dans ces fenêtres, la rareté ne se lisait QUE dans un mot — donc il fallait
+   lire. Même langage que la « rareté comme matière » des cartes (ci-dessus),
+   comprimé à la hauteur d'une rangée :
+     commune = métal mat · rare = verre bleu · épique = cristal + halo ·
+     légendaire = or en fusion, la seule qui bouge (7 s, comme les cartes).
+   `--c` porte la rareté : le .btn en tire déjà sa bordure et son fond. Le
+   rail de gauche (::before) donne le rang d'un coup d'œil, sans texte.
+   ============================================================ */
+.eq-row { position: relative; --c: var(--elec); }
+.eq-row::before {
+  content: ""; position: absolute; left: 1px; top: 1px; bottom: 1px; width: var(--rail, 3px);
+  background: var(--c); opacity: .45; pointer-events: none;
+}
+/* Commune — métal brut : rail le plus fin, terne, aucun halo. La matière « pauvre ». */
+.eq-row.r-common { --c: #8A94A6; --rail: 2px; }
+.eq-row.r-common::before { opacity: .38; }
+/* Rare — verre : rail franc, liseré interne froid. */
+.eq-row.r-rare { --c: #3B82F6; --rail: 4px; box-shadow: inset 0 0 0 1px rgba(59,130,246,0.22); }
+.eq-row.r-rare::before { opacity: .70; }
+/* Épique — cristal : rail large, halo froid statique. */
+.eq-row.r-epic { --c: #B026FF; --rail: 6px; box-shadow: inset 0 0 0 1px rgba(176,38,255,0.26), 0 0 16px -8px rgba(176,38,255,0.85); }
+.eq-row.r-epic::before { opacity: .90; }
+/* Légendaire — or en fusion : rail le plus large et lumineux, bord qui respire,
+   voile qui passe. La largeur du rail classe les quatre rangs même en gris. */
+.eq-row.r-legendary { --c: #F7931A; --rail: 8px; border-color: #F7931A; animation: fa-fusion-bord 7s ease-in-out infinite; }
+.eq-row.r-legendary::before {
+  opacity: 1; background: linear-gradient(180deg, #FFE3A6, #F7931A);
+  box-shadow: 0 0 12px 1px rgba(247,147,26,0.75);
+}
+.eq-row.r-legendary::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen;
+  background: linear-gradient(100deg,
+    rgba(247,147,26,0) 32%, rgba(255,205,110,0.16) 45%,
+    rgba(255,240,200,0.24) 50%, rgba(255,205,110,0.16) 55%, rgba(247,147,26,0) 68%);
+  background-size: 300% 100%;
+  animation: fa-fusion 7s linear infinite;
+}
+/* Équipé (.btn.on remplit la rangée) : le rail resterait invisible sur un aplat,
+   on garde donc le repère par un liseré sombre. */
+.eq-row.on::before { background: #06101a; opacity: .55; }
+@media (prefers-reduced-motion: reduce) {
+  .eq-row.r-legendary, .eq-row.r-legendary::after { animation: none; }
+  .eq-row.r-legendary::after { background-position: 50% 0; }
+}
+
 .card.sel { border-color: var(--rc); box-shadow: 0 0 0 1px var(--rc), 0 0 28px color-mix(in srgb, var(--rc) 40%, transparent); }
 .card.sel::before {
   content: ""; position: absolute; inset: 0; z-index: 3; pointer-events: none;
