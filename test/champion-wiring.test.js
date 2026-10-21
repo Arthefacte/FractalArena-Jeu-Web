@@ -23,6 +23,17 @@ test("actions champion : API_URL + Authorization, pas d URL en dur", () => {
   assert.ok(!/https?:\/\//.test(pub));
 });
 
+test("championsList retire l emprunt d un champion devenu epuise (aucun « champion actif » fantome)", () => {
+  // Le plafond d appels du jour est par CHAMPION : il peut tomber pendant le run d un
+  // emprunteur. Le retrait doit se faire au rafraichissement de la liste — pas dans un
+  // ecran — sinon la Campagne et la Tour divergent, et l ecran garde un champion que le
+  // serveur refuse (le meme message revient a chaque combat).
+  const pub = bloc("async championsList", 1400);
+  assert.match(pub, /FA_CHAMPION_UI\.borrowExpire/);
+  assert.match(pub, /championBorrow:\s*null/);
+  assert.match(pub, /CHAMP_ERR_champion_epuise/);
+});
+
 test("campaignFight et towerFight envoient le champion emprunte (slot fixe)", () => {
   const c = bloc("async campaignFight", 2600);
   assert.match(c, /champion_owner_wallet/);

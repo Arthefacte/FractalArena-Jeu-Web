@@ -5014,13 +5014,26 @@ function App() {
         if (!r.ok) return {
           ok: false
         };
-        setG(st => ({
+        const liste = d.champions || [];
+        // L'emprunt suit la LISTE : un champion devenu « epuise » (plafond d'appels du
+        // jour atteint par d'autres emprunteurs pendant le run) ne peut pas rester
+        // « Champion actif » — sinon l'ecran garde un champion que le serveur refusera
+        // a chaque combat, et le meme message revient a chaque tentative. Le retrait
+        // est fait ICI (et non dans un ecran) pour couvrir Campagne et Tour, et pour
+        // qu'un simple retour sur l'ecran le constate.
+        const expire = window.FA_CHAMPION_UI.borrowExpire(liste, gRef.current && gRef.current.championBorrow);
+        setG(st => expire ? {
           ...st,
-          championsList: d.champions || []
-        }));
+          championsList: liste,
+          championBorrow: null
+        } : {
+          ...st,
+          championsList: liste
+        });
+        if (expire) toast(I18N.t("CHAMP_ERR_champion_epuise"), "bad");
         return {
           ok: true,
-          champions: d.champions || []
+          champions: liste
         };
       } catch (e) {
         return {

@@ -31,6 +31,19 @@
     return [...map.values()].sort((x, y) => (x.day < y.day ? 1 : -1));
   }
 
+  // Un emprunt ne survit pas a l epuisement de son champion : la liste annotee par
+  // le serveur (`epuise`, plafond d appels du jour) fait foi. Champion ABSENT de la
+  // liste (hors des 10 affiches) = on garde l emprunt : c est le combat qui tranche
+  // (409 champion_indisponible), sinon on retirerait un champion encore valable.
+  function borrowExpire(champions, borrow) {
+    if (!borrow) return false;
+    const id = borrow.owner_id || borrow.owner_wallet || null;
+    if (!id) return false;
+    const found = (Array.isArray(champions) ? champions : [])
+      .find((c) => c && (c.owner_id || c.owner_wallet) === id);
+    return !!(found && found.epuise);
+  }
+
   // Jours a afficher : les agregats serveur (exhaustifs, /champion/uses days[])
   // portent les chiffres ; les noms viennent des 20 dernieres lignes, seule
   // source qui les connait. Sans days (vieux serveur), repli sur l agregat local.
@@ -42,5 +55,5 @@
       points: d.points, names: names.get(d.day) || [] }));
   }
 
-  window.FA_CHAMPION_UI = { CHAMPION_SLOT, requiredOwnCount, championRunState, aggregateUsesByDay, mergeDays };
+  window.FA_CHAMPION_UI = { CHAMPION_SLOT, requiredOwnCount, championRunState, aggregateUsesByDay, mergeDays, borrowExpire };
 })();
