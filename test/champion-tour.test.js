@@ -24,6 +24,21 @@ test("l auto-combat conserve le champion et cumule la commission", () => {
   assert.match(SRC, /CHAMP_COMMISSION_GAIN/);
 });
 
+test("auto-combat : un champion epuise est RETIRE de l ecran, pas seulement du champ local", () => {
+  // Vecu le 21/10/2026 : le champion atteignait son plafond d appels pendant un run
+  // auto ; seul `champRef` etait purge, donc l ecran gardait « Champion actif : X »
+  // et chaque combat manuel suivant relancait le meme message. L invariant est que la
+  // branche d erreur purge AUSSI l emprunt visible (et re-liste pour griser la tuile).
+  const auto = SRC.slice(SRC.indexOf("async function onAuto"), SRC.indexOf("async function onAbandon"));
+  const i = auto.indexOf('r.reason === "champion_epuise"');
+  assert.ok(i > 0, "branche champion_epuise absente de l auto-combat");
+  const bloc = auto.slice(i, i + 700);
+  assert.match(bloc, /champRef\.current = null/);
+  assert.match(bloc, /actions\.championClearBorrow\(\)/);
+  assert.match(bloc, /actions\.championsList\(\)/);
+  assert.match(bloc, /CHAMP_ERR_/);
+});
+
 test("le resultat manuel affiche la commission", () => {
   const modal = SRC.slice(SRC.indexOf("function TourResultModal"), SRC.indexOf("function Tour("));
   assert.match(modal, /CHAMP_COMMISSION_ROW/);

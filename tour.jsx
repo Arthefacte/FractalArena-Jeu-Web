@@ -371,7 +371,17 @@ function Tour() {
         if (!mountedRef.current) break; // écran quitté pendant l'appel : plus rien à afficher ni à relancer
         if (!r.ok) {
           if (r.reason === "trop_rapide") { await sleep(300); continue; } // throttle serveur : ré-attente
-          if (r.reason === "champion_indisponible" || r.reason === "champion_epuise") { champRef.current = null; continue; }
+          if (r.reason === "champion_indisponible" || r.reason === "champion_epuise") {
+            // Le champion ne repart pas : la rangee doit le montrer RETIRE. Un simple
+            // `champRef` local laissait « Champion actif : X » sur un champion epuise,
+            // et chaque combat manuel suivant relancait le meme message (constate le
+            // 21/10/2026). On purge donc aussi l'etat visible + on re-liste.
+            champRef.current = null;
+            actions.championClearBorrow();
+            actions.championsList();
+            toast(I18N.t("CHAMP_ERR_" + r.reason), "bad");
+            continue;
+          }
           toast(tourErr(r.reason), "bad");
           break;
         }

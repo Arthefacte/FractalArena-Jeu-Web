@@ -51,3 +51,18 @@ test("mergeDays : chiffres serveur exhaustifs, noms des lignes locales, repli sa
   const repli = CU.mergeDays(undefined, uses);
   assert.equal(repli[0].fights, 20);
 });
+
+test("borrowExpire : un champion epuise retire l emprunt, un absent le laisse au combat", () => {
+  const borrow = { owner_id: "op_1", owner_wallet: "bc1qowner", name: "NAZZERU" };
+  // Plafond du jour atteint : l emprunt ne peut pas rester « Champion actif ».
+  assert.equal(CU.borrowExpire([{ owner_id: "op_1", epuise: true }], borrow), true);
+  // Encore disponible : on garde.
+  assert.equal(CU.borrowExpire([{ owner_id: "op_1", epuise: false, uses_today: 3 }], borrow), false);
+  // Absent de la liste (hors des 10 affiches) : on GARDE, le combat tranche (409).
+  assert.equal(CU.borrowExpire([{ owner_id: "op_2", epuise: true }], borrow), false);
+  // Repli sur l adresse quand le serveur ne sert pas encore d identifiant opaque.
+  assert.equal(CU.borrowExpire([{ owner_wallet: "bc1qowner", epuise: true }], { owner_wallet: "bc1qowner" }), true);
+  // Aucun emprunt / liste vide : jamais d expiration.
+  assert.equal(CU.borrowExpire([{ owner_id: "op_1", epuise: true }], null), false);
+  assert.equal(CU.borrowExpire(undefined, borrow), false);
+});
