@@ -93,7 +93,7 @@ function storageLocal() {
 // `gain` : ce qui vient d'entrer dans ce pool, à annoncer une fois. La rangée
 // s'allume et le montant s'affiche — sinon un don part sans que rien ne bouge à
 // l'écran, et « Offrir » redevient un bouton qui ne produit rien de visible.
-function TickerRow({ kind, icon, label, total, threshold, sub, gain, rachat, potLigne }) {
+function TickerRow({ kind, icon, label, total, threshold, sub, subExtra, gain, rachat, potLigne }) {
   const frac = buybackFraction(total, threshold);
   return (
     <div className={"bb-row " + kind + (gain ? " bb-gain" : "") + (rachat ? " bb-rachat" : "")}>
@@ -106,7 +106,14 @@ function TickerRow({ kind, icon, label, total, threshold, sub, gain, rachat, pot
         {gain > 0 && <span className="bb-delta">+{bbFmt(gain)}</span>}
         <span className="bb-nums">{bbFmt(total)} / {bbFmt(threshold)}</span>
       </div>
-      {sub && <div className="bb-sub"><FaText text={sub} s={10} /></div>}
+      {sub && (
+        <div className="bb-sub">
+          <FaText text={sub} s={10} />
+          {/* Suite de la même phrase (bouton, lien) : posée DANS la ligne du
+              cumul, jamais sur une ligne à part — c'est le même sujet. */}
+          {subExtra}
+        </div>
+      )}
       {/* Cagnotte : « où j'en suis » — la seule ligne du bandeau qui parle du joueur et
           non du pot. Rien tant que le serveur n'a pas répondu. */}
       {potLigne && <div className="bb-sub">{potLigne}</div>}
@@ -208,25 +215,21 @@ function PluieOr({ graine }) {
   );
 }
 
-// Rangée DEX : prix spot InSwap + accès aux rachats vérifiés. Ne s'affiche que si
-// /dex/status a répondu — pas de valeur fabriquée quand le serveur ou UniSat manque.
-function RangeeDex({ dex, onVoirRachats }) {
+// Pied du bandeau : prix spot InSwap + variation 24 h. Ne s'affiche que si
+// /dex/status a répondu — pas de valeur fabriquée quand le serveur ou UniSat
+// manque. Le compte de rachats vérifiés, lui, vit sur la ligne du rachat.
+function RangeeDex({ dex }) {
   const I = window.FA_I18N, FDX = window.FA_DEX;
   if (!dex || !dex.pool || !FDX) return null;
   const prix = FDX.prixTexte(dex.pool.price_fb);
   if (!prix) return null;
   const chg = Number(dex.pool.price_change_24h) || 0;
-  const count = (dex.buyback_totals && dex.buyback_totals.count) || 0;
   return (
     <div className="bb-dex mono">
       <span className="bb-dex-prix"><FaText text={I.t("DEX_PRICE", prix)} s={10} /></span>
       <span style={{ color: chg >= 0 ? "var(--success)" : "var(--alert)" }}>
         {I.t("DEX_CHANGE", FDX.variationTexte(chg))}
       </span>
-      <span style={{ flex: 1 }} />
-      {count > 0 && (
-        <button className="bb-dex-btn" onClick={onVoirRachats}>{I.t("DEX_VERIFIED_BTN", count)}</button>
-      )}
     </div>
   );
 }
@@ -527,7 +530,10 @@ function BuybackTicker() {
   // la rangée de cérémonie (RangeeBurn — envoi wallet vers l'adresse morte).
   // Un seul « brûlage » dans le ticker, pas deux (correction user 20/09).
   const rows = bb.pools.filter((p) => p.tier !== "burn");
-  const last = rows.length - 1;
+  // Le compte de rachats vérifiés parle du MÊME sujet que le cumul déjà racheté :
+  // il vit sur la ligne du rachat, à la suite du texte « cumul vérifié on-chain »
+  // (retour user 22/10). Sur sa propre ligne, il flottait entre deux jauges.
+  const dexCount = (dex && dex.buyback_totals && dex.buyback_totals.count) || 0;
   return (
     <div className="bb-ticker" title={I.t("BB_TICK_TITLE")}>
       {rows.map((p, i) => (
@@ -540,7 +546,15 @@ function BuybackTicker() {
           label={labelPool(I, p.tier)}
           total={p.total}
           threshold={p.threshold}
-          sub={i === last ? I.t(cleLibelleCumul(cumul.source), bbFmt(cumul.value)) : null}
+          sub={p.tier === "buyback" ? I.t(cleLibelleCumul(cumul.source), bbFmt(cumul.value)) : null}
+          subExtra={p.tier === "buyback" && dexCount > 0 ? (
+            <React.Fragment>
+              {" · "}
+              <button className="bb-dex-btn" onClick={() => setVoirRachats(true)}>
+                {I.t("DEX_VERIFIED_BTN", dexCount)}
+              </button>
+            </React.Fragment>
+          ) : null}
           potLigne={p.tier === "pot" ? (
             <React.Fragment>
               <PotLigne etat={pot} s={10} />
@@ -558,8 +572,11 @@ function BuybackTicker() {
           ) : null}
         />
       ))}
-      <RangeeDex dex={dex} onVoirRachats={() => setVoirRachats(true)} />
       <RangeeBurn burn={burn} />
+      {/* Pied du bandeau : le prix spot seul. La ligne d'info ne se glisse jamais
+          entre deux jauges (retour user 22/10) et le compte de rachats vérifiés
+          est remonté sur la ligne du rachat, à la suite de son cumul. */}
+      <RangeeDex dex={dex} />
       {/* La tape reçoit la valeur RÉSOLUE (plancher compris) : même chiffre que
           le sous-titre, jamais plus faible qu'un précédent de la session. */}
       <TapeBoursiere pools={bb.pools} gainsSession={cumulGains.current} fraiche={fraiche} cumulOnChain={cumul.value} />

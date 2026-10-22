@@ -137,6 +137,7 @@ function TickerRow({
   total,
   threshold,
   sub,
+  subExtra,
   gain,
   rachat,
   potLigne
@@ -165,7 +166,7 @@ function TickerRow({
   }, /*#__PURE__*/React.createElement(FaText, {
     text: sub,
     s: 10
-  })), potLigne && /*#__PURE__*/React.createElement("div", {
+  }), subExtra), potLigne && /*#__PURE__*/React.createElement("div", {
     className: "bb-sub"
   }, potLigne));
 }
@@ -271,11 +272,11 @@ function PluieOr({
   })));
 }
 
-// Rangée DEX : prix spot InSwap + accès aux rachats vérifiés. Ne s'affiche que si
-// /dex/status a répondu — pas de valeur fabriquée quand le serveur ou UniSat manque.
+// Pied du bandeau : prix spot InSwap + variation 24 h. Ne s'affiche que si
+// /dex/status a répondu — pas de valeur fabriquée quand le serveur ou UniSat
+// manque. Le compte de rachats vérifiés, lui, vit sur la ligne du rachat.
 function RangeeDex({
-  dex,
-  onVoirRachats
+  dex
 }) {
   const I = window.FA_I18N,
     FDX = window.FA_DEX;
@@ -283,7 +284,6 @@ function RangeeDex({
   const prix = FDX.prixTexte(dex.pool.price_fb);
   if (!prix) return null;
   const chg = Number(dex.pool.price_change_24h) || 0;
-  const count = dex.buyback_totals && dex.buyback_totals.count || 0;
   return /*#__PURE__*/React.createElement("div", {
     className: "bb-dex mono"
   }, /*#__PURE__*/React.createElement("span", {
@@ -295,14 +295,7 @@ function RangeeDex({
     style: {
       color: chg >= 0 ? "var(--success)" : "var(--alert)"
     }
-  }, I.t("DEX_CHANGE", FDX.variationTexte(chg))), /*#__PURE__*/React.createElement("span", {
-    style: {
-      flex: 1
-    }
-  }), count > 0 && /*#__PURE__*/React.createElement("button", {
-    className: "bb-dex-btn",
-    onClick: onVoirRachats
-  }, I.t("DEX_VERIFIED_BTN", count)));
+  }, I.t("DEX_CHANGE", FDX.variationTexte(chg))));
 }
 
 // Jauge burn : 5e rangée du ticker, même corps et mêmes animations que les pools
@@ -734,7 +727,10 @@ function BuybackTicker() {
   // la rangée de cérémonie (RangeeBurn — envoi wallet vers l'adresse morte).
   // Un seul « brûlage » dans le ticker, pas deux (correction user 20/09).
   const rows = bb.pools.filter(p => p.tier !== "burn");
-  const last = rows.length - 1;
+  // Le compte de rachats vérifiés parle du MÊME sujet que le cumul déjà racheté :
+  // il vit sur la ligne du rachat, à la suite du texte « cumul vérifié on-chain »
+  // (retour user 22/10). Sur sa propre ligne, il flottait entre deux jauges.
+  const dexCount = dex && dex.buyback_totals && dex.buyback_totals.count || 0;
   return /*#__PURE__*/React.createElement("div", {
     className: "bb-ticker",
     title: I.t("BB_TICK_TITLE")
@@ -747,7 +743,11 @@ function BuybackTicker() {
     label: labelPool(I, p.tier),
     total: p.total,
     threshold: p.threshold,
-    sub: i === last ? I.t(cleLibelleCumul(cumul.source), bbFmt(cumul.value)) : null,
+    sub: p.tier === "buyback" ? I.t(cleLibelleCumul(cumul.source), bbFmt(cumul.value)) : null,
+    subExtra: p.tier === "buyback" && dexCount > 0 ? /*#__PURE__*/React.createElement(React.Fragment, null, " · ", /*#__PURE__*/React.createElement("button", {
+      className: "bb-dex-btn",
+      onClick: () => setVoirRachats(true)
+    }, I.t("DEX_VERIFIED_BTN", dexCount))) : null,
     potLigne: p.tier === "pot" ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(PotLigne, {
       etat: pot,
       s: 10
@@ -755,11 +755,10 @@ function BuybackTicker() {
       className: "bb-dex-btn",
       onClick: () => setVoirPaiements(true)
     }, I.t("POT_PAY_BTN", paiements.paid_count)))) : null
-  })), /*#__PURE__*/React.createElement(RangeeDex, {
-    dex: dex,
-    onVoirRachats: () => setVoirRachats(true)
-  }), /*#__PURE__*/React.createElement(RangeeBurn, {
+  })), /*#__PURE__*/React.createElement(RangeeBurn, {
     burn: burn
+  }), /*#__PURE__*/React.createElement(RangeeDex, {
+    dex: dex
   }), /*#__PURE__*/React.createElement(TapeBoursiere, {
     pools: bb.pools,
     gainsSession: cumulGains.current,
