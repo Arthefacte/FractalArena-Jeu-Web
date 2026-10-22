@@ -25,6 +25,12 @@
   var FRAG_PER_H = { C: 2, B: 0.9, A: 0.75, S: 0.5 };
   var RISK_MULT = 1.3, FAIL_MULT = 0.35, TICKET_MULT = 1.5;
   var DUST_MIN_H = 8;
+  // Rang MINIMUM des trois entités pour la poussière de FB : miroir du serveur
+  // (expeditions.js, DUST_MIN_RARITY). Épique OU PLUS — une équipe 100 %
+  // Légendaire y a droit aussi. Sert à l'AFFICHAGE seulement : la trouvaille
+  // est tirée et créditée côté serveur.
+  var DUST_MIN_RARITY = "Epic";
+  var RARITY_ORDER = { Common: 0, Rare: 1, Epic: 2, Legendary: 3 };
   var FRAGMENT_COSTS = { C: 100, B: 250, A: 600, S: 1000 };
   // Fragments de CORE (BRIEF_CORES_FRAGMENTS_SERVER) : MÊME rythme que les
   // fragments de relique (le serveur crédite core_frags = copie exacte de
@@ -129,10 +135,19 @@
     return s === k ? I.t("EXP_ERR_generic") : s;
   }
 
+  // Équipe ÉLIGIBLE à la poussière de FB : exactement 3 entités, toutes d'une
+  // rareté >= Epic. Rang inconnu = sous le seuil (jamais une exception).
+  function isDustTeam(team) {
+    if (!Array.isArray(team) || team.length !== 3) return false;
+    var min = RARITY_ORDER[DUST_MIN_RARITY];
+    return team.every(function (b) { return b && (RARITY_ORDER[b.rarity] == null ? -1 : RARITY_ORDER[b.rarity]) >= min; });
+  }
+
   window.FA_EXPEDITIONS_UI = {
     WORLDS: WORLDS, FRAGMENT_COSTS: FRAGMENT_COSTS,
     CORE_FRAG_PER_H: CORE_FRAG_PER_H, CORE_FRAGMENT_COSTS: CORE_FRAGMENT_COSTS,
     DURATION_MIN_H: DURATION_MIN_H, DURATION_MAX_H: DURATION_MAX_H, DUST_MIN_H: DUST_MIN_H,
+    DUST_MIN_RARITY: DUST_MIN_RARITY, isDustTeam: isDustTeam,
     XP_PER_H: XP_PER_H, FA_PER_H: FA_PER_H, FRAG_PER_H: FRAG_PER_H,
     RISK_MULT: RISK_MULT, FAIL_MULT: FAIL_MULT, TICKET_MULT: TICKET_MULT,
     RATE_MIN: RATE_MIN, RATE_CAP: RATE_CAP,

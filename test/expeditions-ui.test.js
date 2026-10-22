@@ -115,3 +115,38 @@ test("statusOf : running tant que ends_at est futur, ready ensuite", () => {
 test("FRAGMENT_COSTS : seuils du serveur", () => {
   assert.deepEqual(XU.FRAGMENT_COSTS, { C: 100, B: 250, A: 600, S: 1000 });
 });
+
+// ---- Poussière de FB : la condition affichée doit être la VRAIE ----
+// Miroir du serveur (DUST_MIN_RARITY = "Epic") : Épique OU PLUS, la Légendaire
+// compte. Un désaccord ici n'envoie pas d'argent au mauvais joueur (le serveur
+// décide), il MENT au joueur sur ses chances — c'est ce qu'on interdit.
+test("isDustTeam : Epic ou plus, exactement 3 entités", () => {
+  const t = (...r) => r.map((rarity) => beast("HASH", rarity, 10));
+  assert.equal(XU.DUST_MIN_RARITY, "Epic", "seuil aligné sur le serveur");
+  assert.equal(XU.isDustTeam(t("Epic", "Epic", "Epic")), true);
+  assert.equal(XU.isDustTeam(t("Legendary", "Legendary", "Legendary")), true,
+    "une équipe 100 % Légendaire y a droit");
+  assert.equal(XU.isDustTeam(t("Epic", "Legendary", "Epic")), true, "mélange : oui");
+  assert.equal(XU.isDustTeam(t("Epic", "Epic", "Rare")), false, "un Rare exclut");
+  assert.equal(XU.isDustTeam(t("Legendary", "Legendary", "Common")), false, "un Common exclut");
+  assert.equal(XU.isDustTeam(t("Epic", "Epic")), false, "deux entités : jamais");
+  assert.equal(XU.isDustTeam(t("Epic", "Epic", "Epic", "Epic")), false, "quatre : jamais");
+  assert.equal(XU.isDustTeam([]), false, "équipe vide : jamais");
+  assert.equal(XU.isDustTeam([t("Epic")[0], null, t("Epic")[0]]), false, "entité absente : jamais");
+  assert.equal(XU.isDustTeam(t("Mythique", "Mythique", "Mythique")), false,
+    "rang inconnu = sous le seuil, jamais une exception");
+});
+
+test("l'écran affiche les trois états de la poussière, jamais un quatrième muet", () => {
+  const fs = require("node:fs");
+  const path = require("node:path");
+  const src = fs.readFileSync(path.join(__dirname, "..", "expeditions.jsx"), "utf8");
+  assert.match(src, /XU\.isDustTeam\(team\)/, "l'écran doit utiliser le miroir, pas sa propre règle");
+  assert.doesNotMatch(src, /rarity === "Epic"/, "plus de comparaison « Epic exactement »");
+  for (const cle of ["EXP_DUST", "EXP_DUST_RULE", "EXP_DUST_NEEDS_8H", "EXP_DUST_NEEDS_ONCHAIN", "EXP_DUST_NEEDS_EPIC"]) {
+    assert.ok(src.includes(cle), `l'écran doit afficher ${cle}`);
+  }
+  // Le cas qui manquait : équipe en dessous du rang -> le joueur apprend la règle.
+  assert.match(src, /sel\.length > 0 && !dustTeamOk[\s\S]{0,200}EXP_DUST_NEEDS_EPIC/,
+    "une équipe sous Épique doit lire la condition, pas le silence");
+});
