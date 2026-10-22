@@ -18,6 +18,11 @@ const I18N = window.FA_I18N;
 const ROOM_MAXLEN = 280;
 const ROOM_POLL_MS = 4000;
 const ROOM_BG_POLL_MS = 30000;
+// Le serveur détecte la langue et traduit APRÈS l'insertion (DeepSeek, 1-3 s) :
+// une ligne déjà reçue peut donc gagner sa traduction plus tard. Fenêtre pendant
+// laquelle on relit la liste complète pour la rattraper (au-delà, on n'insiste plus :
+// un message écrit hors FR/EN/ZH n'aura jamais de traduction).
+const ROOM_TR_PENDING_MS = 60000;
 
 /* ---- Ce qui est LU et MUTÉ vit sur le COMPTE, plus dans le navigateur ----
    Le dernier message vu et la liste des wallets mutés partaient dans le
@@ -213,6 +218,8 @@ function RoomFab() {
   const lastIdRef = useRef(0);
   const timerRef = useRef(null);
   const seenIdRef = useRef(seenIdDepuis(g));
+  // ids reçus sans traduction alors que le lecteur en a besoin → à relire.
+  const pendingTrRef = useRef(new Map());
 
   // Recharge quand le compte change — et quand sa sauvegarde arrive, puisqu'elle
   // apporte ui_state (dernier id vu, mutés) : c'est elle qui porte l'état lu
@@ -237,21 +244,53 @@ function RoomFab() {
       detail: unread
     }));
   }, [unread]);
+
+  // `?after=` ne renvoie JAMAIS un message déjà reçu : une ligne connue ne peut
+  // revenir que par la liste complète. On la REMPLACE donc dès que le serveur en
+  // sert une version plus riche (traduction arrivée après coup, langue détectée),
+  // au lieu de la jeter — sinon le lecteur gardait l'original jusqu'au rechargement
+  // de la page, alors que la traduction existait en base.
   const ingest = useCallback(incoming => {
     if (!incoming || incoming.length === 0) return;
     setMessages(prev => {
-      const known = new Set(prev.map(m => m.id));
-      const merged = prev.concat(incoming.filter(m => !known.has(m.id)));
+      const byId = new Map(prev.map(m => [m.id, m]));
+      let changed = false;
+      for (const m of incoming) {
+        const old = byId.get(m.id);
+        if (!old) {
+          byId.set(m.id, m);
+          changed = true;
+          continue;
+        }
+        if (m.tr !== old.tr || m.src_lang !== old.src_lang) {
+          byId.set(m.id, m);
+          changed = true;
+        }
+      }
+      if (!changed) return prev;
+      const merged = Array.from(byId.values());
       merged.sort((a, b) => a.id - b.id);
       return merged.slice(-200);
     });
+    const now = Date.now();
+    for (const m of incoming) {
+      if (m.tr) pendingTrRef.current.delete(m.id);else if (m.src_lang !== I18N.getLang() && !pendingTrRef.current.has(m.id)) pendingTrRef.current.set(m.id, now);
+    }
+    for (const [id, t] of pendingTrRef.current) if (now - t > ROOM_TR_PENDING_MS) pendingTrRef.current.delete(id);
     const maxId = incoming.reduce((mx, m) => Math.max(mx, m.id), lastIdRef.current);
     lastIdRef.current = maxId;
   }, []);
   const poll = useCallback(async () => {
     try {
       const res = await actions.fetchRoomMessages(lastIdRef.current || undefined);
-      if (res.ok) ingest(res.messages);
+      if (!res.ok) return;
+      ingest(res.messages);
+      // Rattrapage : tant qu'un message attend sa traduction, on relit la liste
+      // complète (les 50 derniers, seuls à porter `tr`) — `?after=` ne la rendrait pas.
+      if (pendingTrRef.current.size) {
+        const full = await actions.fetchRoomMessages();
+        if (full.ok) ingest(full.messages);
+      }
     } catch (e) {/* réseau : on réessaiera au prochain poll */}
   }, [actions, ingest]);
 
