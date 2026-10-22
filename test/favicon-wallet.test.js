@@ -92,3 +92,37 @@ test("chaque balise d'icône porte la version courante (sinon le wallet garde l'
     assert.strictEqual(m[1], v, "icône à la version " + m[1] + " alors que le déploiement est " + v);
   }
 });
+
+test("les icônes sont dans les PREMIERS enfants du <head>, avant tout script", () => {
+  // UniSat lit le carré d'identité de la demande de signature par
+  // `querySelector('head > link[rel~="icon"]')` au moment où son provider
+  // s'injecte (document_start), et ne relit JAMAIS ensuite : la valeur du
+  // premier passage est figée pour la session. Si la balise est derrière un
+  // <script src> bloquant (frame-guard.js), elle n'est pas encore dans le DOM
+  // à cet instant, le wallet reçoit `undefined`, et la fenêtre de signature
+  // affiche un carré vide — définitivement. Vécu deux fois avant ce test.
+  const html = code("index.html");
+  // Les commentaires sont retirés : ils citent les balises pour expliquer la
+  // règle, et un `<!-- ... <script ... -->` ne s'exécute pas.
+  const head = html
+    .slice(html.indexOf("<head"), html.indexOf("</head>"))
+    .replace(/<!--[\s\S]*?-->/g, "");
+  const premiereIcone = head.search(/<link rel="(?:icon|shortcut icon)"/);
+  assert.ok(premiereIcone > -1, "aucune balise d'icône dans le <head>");
+  // Aucune balise <script> (ni <link rel=stylesheet>, qui bloque le parseur
+  // pour les feuilles externes non bloquantes) ne doit précéder l'icône.
+  const premierScript = head.search(/<script/);
+  assert.ok(
+    premierScript === -1 || premiereIcone < premierScript,
+    "un <script> précède les icônes du <head> : le wallet les lira vides"
+  );
+  const premiereFeuille = head.search(/<link rel="stylesheet"/);
+  assert.ok(
+    premiereFeuille === -1 || premiereIcone < premiereFeuille,
+    "une feuille de style externe précède les icônes du <head>"
+  );
+  // Et elles restent groupées en tête : moins de 2 000 caractères de <head>
+  // avant la première icône (une balise perdue au milieu du microdata, c'est
+  // le même bug une version plus tard).
+  assert.ok(premiereIcone < 2000, "première icône trop loin dans le <head> : offset " + premiereIcone);
+});
