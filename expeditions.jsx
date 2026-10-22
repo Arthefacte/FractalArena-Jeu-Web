@@ -265,7 +265,10 @@ function Expeditions() {
     const pct = XU.previewStartRate(team, selWorld, ticket);
     const successColor = rateColor(pct);
     const warnTeam = sel.some((id) => (g.selected || []).includes(id));
-    const allEpic = ready3 && team.every((b) => b.rarity === "Epic");
+    // Poussière de FB : la condition est AFFICHÉE, pas devinée (elle ne
+    // dépend pas que de l'équipe — durée et compte vérifié on-chain aussi).
+    const dustTeamOk = ready3 && XU.isDustTeam(team);
+    const dustAccountOk = g.onchainVerified !== false;
     // Aperçu du butin dans les deux issues — c'est ce qui rend le choix de mode
     // lisible sans calcul : à droite, ce que la Risquée abandonne.
     const win = ready3 ? XU.previewLoot(selWorld, durH, mode, ticket, true) : null;
@@ -396,14 +399,26 @@ function Expeditions() {
               </div>
             </div>
           )}
-          {allEpic && durH >= XU.DUST_MIN_H && (
+          {/* Poussière de FB — trois états explicites. Le quatrième cas (équipe
+              en dessous du rang) n'existait pas : un joueur qui n'a jamais monté
+              d'Épique n'apprenait nulle part que la mécanique existe. */}
+          {dustTeamOk && dustAccountOk && durH >= XU.DUST_MIN_H && (
             <div className="exq-epicbox">
               <span style={{ color: "var(--gold)", fontSize: 15, flex: "none" }}>◈</span>
-              <span style={{ fontSize: 11, lineHeight: 1.4 }}>{I18N.t("EXP_DUST")}</span>
+              <div style={{ minWidth: 0 }}>
+                <span style={{ fontSize: 11, lineHeight: 1.4 }}>{I18N.t("EXP_DUST")}</span>
+                <div className="exq-mono" style={{ fontSize: 9, color: "var(--text-dim)", marginTop: 3 }}>{I18N.t("EXP_DUST_RULE")}</div>
+              </div>
             </div>
           )}
-          {allEpic && durH < XU.DUST_MIN_H && (
+          {dustTeamOk && dustAccountOk && durH < XU.DUST_MIN_H && (
             <div className="exq-mono exq-dustnote">{I18N.t("EXP_DUST_NEEDS_8H")}</div>
+          )}
+          {dustTeamOk && !dustAccountOk && durH >= XU.DUST_MIN_H && (
+            <div className="exq-mono exq-dustnote">{I18N.t("EXP_DUST_NEEDS_ONCHAIN")}</div>
+          )}
+          {sel.length > 0 && !dustTeamOk && (
+            <div className="exq-mono exq-dustnote">{I18N.t("EXP_DUST_NEEDS_EPIC")}</div>
           )}
         </div>
         <button className="exq-launch" disabled={!ready3 || busyCall} onClick={launch}

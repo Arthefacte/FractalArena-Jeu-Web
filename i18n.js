@@ -1241,6 +1241,21 @@
       EN: "FB Dust: 8h expeditions and longer only.",
       ZH: "FB尘埃：仅限8小时及以上的远征。",
     },
+    EXP_DUST_NEEDS_EPIC: {
+      FR: "Poussière de FB : réservée à une équipe d'Épiques ou de Légendaires (aucune en dessous d'Épique).",
+      EN: "FB Dust: Epic or Legendary team only (nothing below Epic).",
+      ZH: "FB尘埃：仅限史诗或传说实体组成的阵容（不得低于史诗）。",
+    },
+    EXP_DUST_NEEDS_ONCHAIN: {
+      FR: "Poussière de FB : ton compte doit être vérifié on-chain.",
+      EN: "FB Dust: your account must be verified on-chain.",
+      ZH: "FB尘埃：账户必须完成链上验证。",
+    },
+    EXP_DUST_RULE: {
+      FR: "1 % · 8 h et plus · une par semaine",
+      EN: "1% · 8h and longer · one per week",
+      ZH: "1% · 8小时及以上 · 每周一次",
+    },
     EXP_STATUS_FREE: { FR: "Disponible", EN: "Available", ZH: "可派遣" },
     EXP_STATUS_RUNNING: { FR: "En cours", EN: "In progress", ZH: "进行中" },
     EXP_STATUS_READY: { FR: "À réclamer", EN: "Ready to claim", ZH: "可领取" },

@@ -444,7 +444,10 @@ function Expeditions() {
     const pct = XU.previewStartRate(team, selWorld, ticket);
     const successColor = rateColor(pct);
     const warnTeam = sel.some(id => (g.selected || []).includes(id));
-    const allEpic = ready3 && team.every(b => b.rarity === "Epic");
+    // Poussière de FB : la condition est AFFICHÉE, pas devinée (elle ne
+    // dépend pas que de l'équipe — durée et compte vérifié on-chain aussi).
+    const dustTeamOk = ready3 && XU.isDustTeam(team);
+    const dustAccountOk = g.onchainVerified !== false;
     // Aperçu du butin dans les deux issues — c'est ce qui rend le choix de mode
     // lisible sans calcul : à droite, ce que la Risquée abandonne.
     const win = ready3 ? XU.previewLoot(selWorld, durH, mode, ticket, true) : null;
@@ -726,7 +729,7 @@ function Expeditions() {
       style: {
         color: world.color
       }
-    }, "+", lose.core_frags, " \xB7 \u2B21 ", I18N.t("EXP_FRAG_CORE"), " ", lose.rank))), allEpic && durH >= XU.DUST_MIN_H && /*#__PURE__*/React.createElement("div", {
+    }, "+", lose.core_frags, " \xB7 \u2B21 ", I18N.t("EXP_FRAG_CORE"), " ", lose.rank))), dustTeamOk && dustAccountOk && durH >= XU.DUST_MIN_H && /*#__PURE__*/React.createElement("div", {
       className: "exq-epicbox"
     }, /*#__PURE__*/React.createElement("span", {
       style: {
@@ -734,14 +737,29 @@ function Expeditions() {
         fontSize: 15,
         flex: "none"
       }
-    }, "\u25C8"), /*#__PURE__*/React.createElement("span", {
+    }, "\u25C8"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        minWidth: 0
+      }
+    }, /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 11,
         lineHeight: 1.4
       }
-    }, I18N.t("EXP_DUST"))), allEpic && durH < XU.DUST_MIN_H && /*#__PURE__*/React.createElement("div", {
+    }, I18N.t("EXP_DUST")), /*#__PURE__*/React.createElement("div", {
+      className: "exq-mono",
+      style: {
+        fontSize: 9,
+        color: "var(--text-dim)",
+        marginTop: 3
+      }
+    }, I18N.t("EXP_DUST_RULE")))), dustTeamOk && dustAccountOk && durH < XU.DUST_MIN_H && /*#__PURE__*/React.createElement("div", {
       className: "exq-mono exq-dustnote"
-    }, I18N.t("EXP_DUST_NEEDS_8H"))), /*#__PURE__*/React.createElement("button", {
+    }, I18N.t("EXP_DUST_NEEDS_8H")), dustTeamOk && !dustAccountOk && durH >= XU.DUST_MIN_H && /*#__PURE__*/React.createElement("div", {
+      className: "exq-mono exq-dustnote"
+    }, I18N.t("EXP_DUST_NEEDS_ONCHAIN")), sel.length > 0 && !dustTeamOk && /*#__PURE__*/React.createElement("div", {
+      className: "exq-mono exq-dustnote"
+    }, I18N.t("EXP_DUST_NEEDS_EPIC"))), /*#__PURE__*/React.createElement("button", {
       className: "exq-launch",
       disabled: !ready3 || busyCall,
       onClick: launch,
