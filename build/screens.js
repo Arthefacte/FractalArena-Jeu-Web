@@ -3644,14 +3644,12 @@ function FbShopPanel() {
     actions,
     toast
   } = useFA();
-  const [info, setInfo] = useState(null); // { fb_sats, deposit_address, deposit_min_sats, items }
-  const [txid, setTxid] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [info, setInfo] = useState(null); // { fb_sats, items }
   const [achat, setAchat] = useState(null);
 
-  // Le solde et le prix viennent du SERVEUR (GET /fb) : l'écran n'invente aucun chiffre, et
-  // l'adresse de dépôt est celle qu'il renvoie (le wallet Reward du jeu), jamais une constante
-  // recopiée ici — une adresse en dur redevient fausse au premier changement côté serveur.
+  // Le solde et le prix viennent du SERVEUR (GET /fb) : l'écran n'invente aucun chiffre.
+  // Le DÉPÔT n'a qu'une porte : l'écran Wallet, qui porte l'adresse, le minimum et la détection.
+  // Cet onglet sert à DÉPENSER le FB déjà déposé, donc il ne réaffiche aucun formulaire.
   useEffect(() => {
     let vivant = true;
     (async () => {
@@ -3670,50 +3668,6 @@ function FbShopPanel() {
     };
   }, [g.wallet, g.authToken]);
   const fb = sats => (Number(sats || 0) / 1e8).toFixed(4) + " FB";
-  async function detecter() {
-    const tx = txid.trim().toLowerCase();
-    if (!/^[0-9a-f]{64}$/.test(tx)) {
-      toast(I18N.t("WL_DEP_TXID_INVALID"), "bad");
-      return;
-    }
-    setBusy(true);
-    try {
-      const resp = await fetch(`${API_URL}/verify-deposit/fb`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${g.authToken}`
-        },
-        body: JSON.stringify({
-          wallet: g.wallet,
-          txid: tx
-        })
-      });
-      const data = await resp.json();
-      if (data.status === "ok") {
-        setInfo(p => p ? {
-          ...p,
-          fb_sats: data.fb_sats
-        } : p);
-        toast(I18N.t("FB_DEP_OK", fb(data.credited_sats)), "good");
-        setTxid("");
-        // Le chip du header et l'encart du Wallet relisent le solde FRAIS tout de suite :
-        // le cycle de 60 s ne doit pas être le seul chemin, pas juste après un dépôt.
-        window.dispatchEvent(new Event("fa:fb-liquidity"));
-      } else if (data.status === "below_minimum" && data.minimum_sats) {
-        // Refus du PLANCHER de dépôt : le même code sert au minimum de RETRAIT côté serveur, donc
-        // on ne passe pas par localizeServerError (le joueur lirait une consigne de retrait pour
-        // un dépôt trop petit). Le minimum est celui que le serveur vient de renvoyer.
-        toast(I18N.t("FB_DEP_MIN", fb(data.minimum_sats)), "bad");
-      } else {
-        toast(I18N.localizeServerError(data.status || data.error), "bad");
-      }
-    } catch (e) {
-      toast(I18N.t("WL_NET_ERROR"), "bad");
-    } finally {
-      setBusy(false);
-    }
-  }
   async function acheter(item) {
     setAchat(item);
     try {
@@ -3761,13 +3715,6 @@ function FbShopPanel() {
       margin: "4px 0 10px"
     }
   }, I18N.t("FB_CASE_TITLE", fb(info && info.fb_sats))), /*#__PURE__*/React.createElement("div", {
-    className: "muted mono",
-    style: {
-      fontSize: 12,
-      lineHeight: 1.5,
-      marginBottom: 14
-    }
-  }, I18N.t("FB_CASE_INFO")), /*#__PURE__*/React.createElement("div", {
     className: "panel oct",
     style: {
       border: "1px solid var(--line)",
@@ -3775,44 +3722,18 @@ function FbShopPanel() {
       marginBottom: 14
     }
   }, /*#__PURE__*/React.createElement("div", {
-    className: "flex between center",
+    className: "muted mono",
     style: {
-      gap: 10
+      fontSize: 12,
+      lineHeight: 1.5
     }
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "mono muted",
-    style: {
-      fontSize: 12
-    }
-  }, I18N.t("FB_DEP_ADDRESS")), info && info.deposit_address ? /*#__PURE__*/React.createElement(CopyAddr, {
-    addr: info.deposit_address
-  }) : /*#__PURE__*/React.createElement("span", {
-    className: "mono muted",
-    style: {
-      fontSize: 11
-    }
-  }, I18N.t("FB_DEP_UNAVAILABLE"))), /*#__PURE__*/React.createElement("div", {
-    className: "mono muted",
-    style: {
-      fontSize: 11,
-      marginTop: 8
-    }
-  }, I18N.t("FB_DEP_MIN", fb(info && info.deposit_min_sats)))), /*#__PURE__*/React.createElement("input", {
-    className: "field",
-    style: {
-      fontSize: 12
-    },
-    value: txid,
-    onChange: e => setTxid(e.target.value.replace(/[^0-9a-fA-F]/g, "").slice(0, 64)),
-    placeholder: I18N.t("WL_DEP_TXID_PH")
-  }), /*#__PURE__*/React.createElement("button", {
+  }, I18N.t("SH_FB_INFO")), /*#__PURE__*/React.createElement("button", {
     className: "btn btn-elec block lg",
     style: {
-      marginTop: 14
+      marginTop: 12
     },
-    disabled: busy,
-    onClick: detecter
-  }, busy ? I18N.t("WL_DEP_DETECT") : I18N.t("WL_DEP_SEND")), /*#__PURE__*/React.createElement("div", {
+    onClick: () => actions.setView("wallet")
+  }, I18N.t("SH_FB_WALLET"))), /*#__PURE__*/React.createElement("div", {
     className: "eyebrow",
     style: {
       color: "var(--gold)",

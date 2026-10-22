@@ -672,6 +672,10 @@
     BO_TITLE: { FR: "Boutique", EN: "Shop", ZH: "商店" },
     SH_TAB_FA: { FR: "Achat en FA", EN: "Buy with FA", ZH: "用 FA 购买" },
     SH_TAB_FB: { FR: "Achat en FB", EN: "Buy with FB", ZH: "用 FB 购买" },
+    // La Boutique DÉPENSE le FB ; le dépôt n'a qu'une porte, l'écran Wallet. Ces deux clés
+    // portent le renvoi : sans elles, le joueur qui n'a pas encore de FB ne sait pas où aller.
+    SH_FB_WALLET: { FR: "Déposer du FB depuis le Wallet", EN: "Deposit FB from the Wallet", ZH: "前往钱包充值 FB" },
+    SH_FB_INFO: { FR: "Le FB déposé se dépense dans la boutique et n'est jamais converti en FA. Les dépôts s'additionnent.", EN: "Deposited FB is spent in the shop and is never converted into FA. Deposits add up.", ZH: "充值的 FB 仅可在商店消费，不会兑换成 FA。多次充值会累加。" },
     BO_SUB: { FR: "Consommables en FA, objets permanents en FB", EN: "Consumables in FA, permanent items in FB", ZH: "FA 消耗品，FB 永久物品" },
     BO_XP_NAME: { FR: "XP ×2", EN: "XP ×2", ZH: "双倍经验" },
     BO_XP_DESC: { FR: "Double l'XP de chaque victoire. 1 charge par victoire.", EN: "Doubles the XP of each win. 1 charge per win.", ZH: "每次胜利双倍经验。每次胜利消耗 1 次充能。" },
@@ -763,7 +767,7 @@
     FB_CASE: { FR: "FB", EN: "FB", ZH: "FB" },
     FB_CASE_OPEN: { FR: "Déposer du FB", EN: "Deposit FB", ZH: "充值 FB" },
     FB_CASE_TITLE: { FR: "FB : %s — le FB que tu as déposé, dépensé dans la boutique (jamais converti en FA)", EN: "FB: %s — the FB you deposited, spent in the shop (never converted into FA)", ZH: "FB：%s——你充值的 FB，仅可在商店消费（不会兑换成 FA）" },
-    FB_CASE_INFO: { FR: "Envoie du FB (Fractal Bitcoin) à l'adresse ci-dessous depuis le portefeuille de ton compte, puis colle le txid. Cette liquidité est SÉPARÉE de ton solde FA : le FB déposé ne se convertit jamais en FA, il se dépense dans la boutique. Les dépôts s'additionnent.", EN: "Send FB (Fractal Bitcoin) to the address below from your account wallet, then paste the txid. These funds are SEPARATE from your FA balance: deposited FB is never converted into FA, it is spent in the shop. Deposits add up.", ZH: "从你的账户钱包向下方地址发送 FB（Fractal Bitcoin），然后粘贴交易号。该余额与 FA 余额相互独立：充值的 FB 不会兑换成 FA，仅可在商店消费。多次充值会累加。" },
+    FB_CASE_INFO: { FR: "Le FB (Fractal Bitcoin) déposé depuis ton Wallet se dépense dans la boutique et ne se convertit jamais en FA. Les dépôts s'additionnent.", EN: "FB (Fractal Bitcoin) deposited from your Wallet is spent in the shop and is never converted into FA. Deposits add up.", ZH: "从钱包充值的 FB（Fractal Bitcoin）仅可在商店消费，不会兑换为 FA。多次充值会累加。" },
     FB_DEP_ADDRESS: { FR: "Adresse de dépôt FB", EN: "FB deposit address", ZH: "FB 充值地址" },
     FB_DEP_UNAVAILABLE: { FR: "dépôt momentanément indisponible", EN: "deposit temporarily unavailable", ZH: "充值暂时不可用" },
     FB_DEP_MIN: { FR: "Dépôt minimum : %s", EN: "Minimum deposit: %s", ZH: "最低充值：%s" },
