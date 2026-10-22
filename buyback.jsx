@@ -557,7 +557,7 @@ function BuybackTicker() {
           ) : null}
           potLigne={p.tier === "pot" ? (
             <React.Fragment>
-              <PotLigne etat={pot} s={10} />
+              <PotLigne etat={pot} s={10} sansLibelle />
               {/* Le bouton des paiements vit SOUS la ligne du joueur : il ne remplace aucun
                   libellé, il ouvre la preuve. Rien tant qu'aucune part n'est payée. */}
               {paiements && paiements.paid_count > 0 && (

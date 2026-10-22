@@ -750,7 +750,8 @@ function BuybackTicker() {
     }, I.t("DEX_VERIFIED_BTN", dexCount))) : null,
     potLigne: p.tier === "pot" ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(PotLigne, {
       etat: pot,
-      s: 10
+      s: 10,
+      sansLibelle: true
     }), paiements && paiements.paid_count > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, " ", /*#__PURE__*/React.createElement("button", {
       className: "bb-dex-btn",
       onClick: () => setVoirPaiements(true)
