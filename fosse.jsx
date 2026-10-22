@@ -92,16 +92,18 @@ function CombatCard({ meta, live, side, cref, oppMeta, scale = 1 }) {
             chevauchaient à 3 cartes par rangée. Ici la jauge dit ce qu'il reste
             avant la rareté SUIVANTE — à 100 la rareté monte d'un cran et le
             niveau repart à 1 (data.js, MAX_LEVEL_UPGRADE). La Légendaire est
-            hors du cycle (`b.rarity !== "Legendary"`) : aucune cible, on montre
-            son niveau nu et la jauge pleine plutôt qu'un x/100 qui mentirait.
+            hors de ce cycle : elle ne repart jamais au niveau 1, donc sa jauge
+            vise le plafond absolu MAX_LEVEL_CAP (200) — un dénominateur
+            qu'elle peut réellement atteindre, contrairement à l'ancien « LV n »
+            sans cible.
             Jauge du côté joueur seulement, comme l'XP ; l'adversaire garde la
             ligne, qui reste une info tactique. */}
         <div style={{ marginTop: 6 }}>
           <div className="bar-label">
             <span style={{ color: rc }}>{rarityLabel(meta.rarity)}</span>
-            <span style={{ color: "var(--text)" }}>{maxRarity ? "LV " + meta.level : meta.level + "/" + D.ECON.MAX_LEVEL_UPGRADE}</span>
+            <span style={{ color: "var(--text)" }}>{maxRarity ? "LV " + meta.level + "/" + D.ECON.MAX_LEVEL_CAP : meta.level + "/" + D.ECON.MAX_LEVEL_UPGRADE}</span>
           </div>
-          {side === "p1" && <Bar frac={maxRarity ? 1 : meta.level / D.ECON.MAX_LEVEL_UPGRADE} kind="rar" />}
+          {side === "p1" && <Bar frac={maxRarity ? Math.min(1, meta.level / D.ECON.MAX_LEVEL_CAP) : meta.level / D.ECON.MAX_LEVEL_UPGRADE} kind="rar" />}
         </div>
         <div className="stat-row">
           {[["ATK", meta.atk], ["DEF", meta.def], ["SPD", meta.spd], ["MAG", meta.mag]].map(([k, v]) => (

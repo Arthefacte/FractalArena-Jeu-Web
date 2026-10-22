@@ -229,6 +229,10 @@ window.FA_ASSET_URL = function (chemin) {
     DEPOSIT_MIN: 100,
     XP_PER_VICTORY: 50,
     MAX_LEVEL_UPGRADE: 100,
+    // Plafond absolu (miroir de MAX_LEVEL_CAP côté serveur) : seule une Légendaire peut
+    // le toucher, puisqu'elle est au bout de la chaîne des raretés et ne repart jamais au
+    // niveau 1. Sert au dénominateur de sa jauge — avant, elle n'en avait aucun.
+    MAX_LEVEL_CAP: 200,
     WELCOME_LOCKED: 1000,
     WELCOME_LIQUID: 0,
     WELCOME_TICKETS_SILVER: 5,

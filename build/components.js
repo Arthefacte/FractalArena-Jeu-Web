@@ -352,8 +352,8 @@ function CreatureCard({
     style: {
       color: "var(--text)"
     }
-  }, maxRarity ? "LV " + beast.level : beast.level + "/" + D.ECON.MAX_LEVEL_UPGRADE)), /*#__PURE__*/React.createElement(Bar, {
-    frac: maxRarity ? 1 : beast.level / D.ECON.MAX_LEVEL_UPGRADE,
+  }, maxRarity ? "LV " + beast.level + "/" + D.ECON.MAX_LEVEL_CAP : beast.level + "/" + D.ECON.MAX_LEVEL_UPGRADE)), /*#__PURE__*/React.createElement(Bar, {
+    frac: maxRarity ? Math.min(1, beast.level / D.ECON.MAX_LEVEL_CAP) : beast.level / D.ECON.MAX_LEVEL_UPGRADE,
     kind: "rar"
   }))), /*#__PURE__*/React.createElement("div", {
     className: "foil",
