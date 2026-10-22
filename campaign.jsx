@@ -171,14 +171,15 @@ function CampCombatCard({ meta, live, side, cref, borrowTag, oppTypes }) {
         </div>
         {/* Même ligne qu'en Fosse : à 100 la rareté monte d'un cran et le
             niveau repart à 1 (data.js, MAX_LEVEL_UPGRADE), donc la jauge mesure
-            la marche vers la rareté suivante. La Légendaire en est exclue :
-            niveau nu et jauge pleine. Jauge côté joueur seulement. */}
+            la marche vers la rareté suivante. La Légendaire est hors de ce
+            cycle : sa jauge vise le plafond absolu MAX_LEVEL_CAP (200).
+            Jauge côté joueur seulement. */}
         <div style={{ marginTop: 6 }}>
           <div className="bar-label">
             <span style={{ color: rc }}>{rarityLabel(meta.rarity)}</span>
-            <span style={{ color: "var(--text)" }}>{maxRarity ? "LV " + meta.level : meta.level + "/" + D.ECON.MAX_LEVEL_UPGRADE}</span>
+            <span style={{ color: "var(--text)" }}>{maxRarity ? "LV " + meta.level + "/" + D.ECON.MAX_LEVEL_CAP : meta.level + "/" + D.ECON.MAX_LEVEL_UPGRADE}</span>
           </div>
-          {side === "p1" && <Bar frac={maxRarity ? 1 : meta.level / D.ECON.MAX_LEVEL_UPGRADE} kind="rar" />}
+          {side === "p1" && <Bar frac={maxRarity ? Math.min(1, meta.level / D.ECON.MAX_LEVEL_CAP) : meta.level / D.ECON.MAX_LEVEL_UPGRADE} kind="rar" />}
         </div>
         <div className="stat-row">
           {[["ATK", meta.atk], ["DEF", meta.def], ["SPD", meta.spd], ["MAG", meta.mag]].map(([k, v]) => (

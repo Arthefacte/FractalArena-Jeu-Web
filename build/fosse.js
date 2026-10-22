@@ -204,8 +204,8 @@ function CombatCard({
     style: {
       color: "var(--text)"
     }
-  }, maxRarity ? "LV " + meta.level : meta.level + "/" + D.ECON.MAX_LEVEL_UPGRADE)), side === "p1" && /*#__PURE__*/React.createElement(Bar, {
-    frac: maxRarity ? 1 : meta.level / D.ECON.MAX_LEVEL_UPGRADE,
+  }, maxRarity ? "LV " + meta.level + "/" + D.ECON.MAX_LEVEL_CAP : meta.level + "/" + D.ECON.MAX_LEVEL_UPGRADE)), side === "p1" && /*#__PURE__*/React.createElement(Bar, {
+    frac: maxRarity ? Math.min(1, meta.level / D.ECON.MAX_LEVEL_CAP) : meta.level / D.ECON.MAX_LEVEL_UPGRADE,
     kind: "rar"
   })), /*#__PURE__*/React.createElement("div", {
     className: "stat-row"

@@ -5,10 +5,10 @@
 // Légendaire, 4 en Commune. Ils vivent maintenant dans le CORPS de la carte, en
 // jauge — la vignette ne porte plus rien.
 //
-// La jauge ne mesure pas un plafond : à MAX_LEVEL_UPGRADE (100) la rareté monte
-// d'un cran et le niveau repart à 1 (data.js). Elle dit donc ce qu'il reste
-// avant la rareté SUIVANTE. La Légendaire est exclue de ce cycle et n'a aucune
-// cible — un « x/100 » y mentirait.
+// La jauge ne mesure pas un plafond pour les raretés basses : à MAX_LEVEL_UPGRADE (100)
+// la rareté monte d'un cran et le niveau repart à 1 (data.js). Elle dit donc ce qu'il
+// reste avant la rareté SUIVANTE. La Légendaire est exclue de ce cycle et ne repart
+// jamais au niveau 1 : sa cible est le plafond absolu MAX_LEVEL_CAP (200).
 //
 // Le rendu n'est couvert par aucun test : sans ce verrou, un retour des badges
 // sur la vignette repasserait en silence.
@@ -46,19 +46,26 @@ test("la jauge vise le palier de rareté, pas un nombre écrit en dur", () => {
   }
 });
 
-test("la Légendaire n'affiche pas de cible qu'elle n'a pas", () => {
-  // Une Légendaire monte sans fin, donc aucun dénominateur n'est vrai pour elle : c'est ce que la
-  // jauge doit distinguer.
+test("la Légendaire a une cible : le plafond absolu, pas un « LV n » sans mesure", () => {
+  // Une Légendaire ne repart jamais au niveau 1 : MAX_LEVEL_UPGRADE n'est donc pas son
+  // dénominateur. Depuis la décision du 22/10/2026 (MAX_LEVEL_CAP = 200) elle a une cible
+  // réelle, et la jauge doit la mesurer au lieu d'être pleine d'office.
   // E1 (clôture de l'audit 2026-09) : la montée de rareté n'est PLUS publiée dans data.js — le
-  // miroir du moteur de la Fosse a été retiré du fichier servi aux visiteurs. Ce n'est donc plus
-  // la fonction qu'on épingle ici, mais le MODÈLE qui justifie la jauge, et qui reste publié :
-  // `RARITY_UPGRADE` renvoie une Légendaire sur elle-même, c'est-à-dire au bout de l'échelle.
+  // miroir du moteur de la Fosse a été retiré du fichier servi aux visiteurs. Ce qu'on épingle
+  // ici, c'est le MODÈLE qui justifie la jauge et qui reste publié : `RARITY_UPGRADE` renvoie
+  // une Légendaire sur elle-même, c'est-à-dire au bout de l'échelle.
   const data = read("data.js");
   assert.match(data, /RARITY_UPGRADE\s*=\s*\{[^}]*Legendary:\s*"Legendary"/,
     "le modèle doit toujours dire qu'une Légendaire est au bout de l'échelle — sinon revoir ce que la jauge raconte");
+  assert.match(data, /MAX_LEVEL_CAP:\s*200/, "le plafond absolu doit être publié dans data.js");
   for (const f of COMBAT) {
-    assert.match(read(f), /maxRarity = meta\.rarity === "Legendary"/, f + " : le cas Légendaire doit être distingué");
+    const src = read(f);
+    assert.match(src, /maxRarity = meta\.rarity === "Legendary"/, f + " : le cas Légendaire doit être distingué");
+    assert.match(src, /D\.ECON\.MAX_LEVEL_CAP/, f + " : la jauge de la Légendaire doit viser le plafond");
+    assert.doesNotMatch(src, /maxRarity \? 1 :/, f + " : plus de jauge pleine sans mesure");
   }
+  assert.match(read("components.jsx"), /D\.ECON\.MAX_LEVEL_CAP/,
+    "le roster doit viser le même plafond que le combat");
 });
 
 test("le roster suit la même règle (mesuré : -11 px en Légendaire à 320 px)", () => {

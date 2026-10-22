@@ -227,16 +227,18 @@ function CreatureCard({ beast, selected, onClick, selectable, showXp, badge }) {
             chevauchaient sur les petits écrans (mesuré : -11 px en Légendaire à
             320 px, 9 px de marge à 360). Même jauge qu'en combat — à
             MAX_LEVEL_UPGRADE la rareté monte d'un cran et le niveau repart à 1,
-            donc elle mesure la marche vers la rareté SUIVANTE, pas un plafond.
-            La Légendaire est hors du cycle : niveau nu et jauge pleine.
+            donc elle mesure la marche vers la rareté SUIVANTE.
+            La Légendaire est hors de ce cycle : elle ne repart jamais au niveau 1,
+            donc sa jauge vise le plafond absolu (MAX_LEVEL_CAP, 200) — elle a
+            une cible, et c'est celle-là qu'on affiche.
             Toujours affichée : contrairement à l'XP, le niveau est une donnée
             que la carte doit porter partout où elle apparaît. */}
         <div style={{ marginTop: showXp ? 6 : 9 }}>
           <div className="bar-label">
             <span style={{ color: rc }}>{rarityLabel(beast.rarity)}</span>
-            <span style={{ color: "var(--text)" }}>{maxRarity ? "LV " + beast.level : beast.level + "/" + D.ECON.MAX_LEVEL_UPGRADE}</span>
+            <span style={{ color: "var(--text)" }}>{maxRarity ? "LV " + beast.level + "/" + D.ECON.MAX_LEVEL_CAP : beast.level + "/" + D.ECON.MAX_LEVEL_UPGRADE}</span>
           </div>
-          <Bar frac={maxRarity ? 1 : beast.level / D.ECON.MAX_LEVEL_UPGRADE} kind="rar" />
+          <Bar frac={maxRarity ? Math.min(1, beast.level / D.ECON.MAX_LEVEL_CAP) : beast.level / D.ECON.MAX_LEVEL_UPGRADE} kind="rar" />
         </div>
       </div>
       <div className="foil" aria-hidden="true" />
