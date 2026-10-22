@@ -151,9 +151,12 @@ function usePotEligibility(wallet, token) {
 
 // La ligne « où j'en suis » : Fosse, bandeau, Wallet. Le libellé de la poche est celui
 // du bandeau (BB_POOL_KIND_POT) — un seul mot pour une seule chose.
+// `sansLibelle` : dans le bandeau, la rangée porte DÉJÀ le nom de la poche ; sans ce
+// drapeau, « Cagnotte » s'écrivait deux fois, l'une sous l'autre (retour user 22/10).
 function PotLigne({
   etat,
-  s = 12
+  s = 12,
+  sansLibelle = false
 }) {
   const r = etat && window.FA_POT ? window.FA_POT.resume(etat) : null;
   if (!r) return null;
@@ -163,7 +166,7 @@ function PotLigne({
     style: {
       gap: 8
     }
-  }, /*#__PURE__*/React.createElement("span", {
+  }, !sansLibelle && /*#__PURE__*/React.createElement("span", {
     className: "mono",
     style: {
       fontSize: s,

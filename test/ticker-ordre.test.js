@@ -39,5 +39,16 @@ test("le pied DEX est séparé des jauges par un filet", () => {
   assert.ok(i > -1, "règle .bb-dex attendue dans styles.css");
   const bloc = CSS.slice(i, CSS.indexOf("}", i));
   assert.match(bloc, /border-top:/,
-    "sans filet, le prix et le compteur de rachats se lisent comme une 4e jauge");
+    "sans filet, le prix se lit comme une 4e jauge collée au burn");
+});
+
+test("le nom de la poche n'est pas écrit deux fois dans le bandeau", () => {
+  // La rangée cagnotte porte déjà son libellé : PotLigne ne doit pas le répéter.
+  assert.match(SRC, /<PotLigne etat=\{pot\} s=\{10\} sansLibelle \/>/,
+    "PotLigne doit recevoir sansLibelle depuis le bandeau");
+  const CMP = fs.readFileSync(path.join(__dirname, "..", "components.jsx"), "utf8");
+  const i = CMP.indexOf("function PotLigne");
+  const corps = CMP.slice(i, CMP.indexOf("\nfunction", i + 10));
+  assert.match(corps, /sansLibelle = false/, "drapeau sansLibelle attendu sur PotLigne");
+  assert.match(corps, /\{!sansLibelle && \(/, "le libellé doit être conditionnel");
 });
