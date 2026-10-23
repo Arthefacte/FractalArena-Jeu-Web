@@ -665,6 +665,14 @@ function App() {
         // une popup UniSat inexistante et rendrait "". Son jeton persiste en
         // localStorage ; s'il a expiré, l'UI le renverra vers l'écran de récupération.
         const generated = gRef.current.accountKind === ACC.KIND_GENERATED;
+        // Session perdue d'un compte rattaché à un portefeuille : UNE signature suffit à
+        // rouvrir le compte (le serveur le reconnaît derrière le portefeuille). Sans cette
+        // branche, le client tentait de signer l'adresse du COMPTE — que personne ne peut
+        // signer — et redemandait une signature à chaque action (prod 23/10/2026).
+        if (!token && gRef.current.linkedWallet) {
+          const r = await actions.connectUnisat();
+          if (r && r.ok) return;
+        }
         if (!token && !generated) token = await actions.authenticate(w);
         if (!token && generated) {
           clearToken();
@@ -1314,14 +1322,18 @@ function App() {
       // signature était vérifiée contre l'adresse du COMPTE : refus, « session
       // expirée » en boucle, joueur bloqué (prod 23/10/2026).
       const courant = gRef.current || {};
-      const compteGenere = courant.accountKind === ACC.KIND_GENERATED && addr === courant.wallet;
-      if (compteGenere && !courant.linkedWallet) {
+      // Le portefeuille lié est la SEULE clé signable de ce compte : on s'en sert dès
+      // qu'il existe, sans dépendre du marqueur de genre (qui peut manquer sur une page
+      // dont la sauvegarde n'a pas encore été appliquée). C'est la cause de la boucle
+      // du 23/10/2026 : le marqueur absent faisait signer l'adresse du COMPTE.
+      const compteRattacheSignable = !!courant.linkedWallet && addr === courant.wallet;
+      if (compteRattacheSignable === false && courant.accountKind === ACC.KIND_GENERATED && addr === courant.wallet) {
         // Aucune clé disponible pour ce compte : une popup ne pourrait rien prouver.
         // Le seul chemin qui reste est le code de récupération (écran de connexion).
         console.error("[auth] compte créé sans portefeuille et aucun portefeuille lié — signature impossible, passer par le code de récupération");
         return "";
       }
-      const signataire = compteGenere ? courant.linkedWallet : addr;
+      const signataire = compteRattacheSignable ? courant.linkedWallet : addr;
       try {
         const cr = await fetch(`${API_URL}/auth/challenge?wallet=${encodeURIComponent(signataire)}&scope=session`);
         if (!cr.ok) return echec("challenge", null, cr.status);
