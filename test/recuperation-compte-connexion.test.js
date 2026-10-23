@@ -67,8 +67,25 @@ test("le client demande explicitement la resolution (opt-in)", () => {
   // un client encore en cache recevait un jeton pour son compte tout en utilisant
   // l'adresse de son portefeuille : chaque appel en 401/403, une signature
   // redemandée pour chaque action, joueur bloqué (prod 23/10/2026).
-  assert.match(APP, /body: JSON\.stringify\(\{ wallet: addr, signature, want: "account" \}\)/,
+  assert.match(APP, /body: JSON\.stringify\(\{ wallet: signataire, signature, want: "account" \}\)/,
     "l'authentification doit porter want: account — c'est ce qui autorise le serveur à résoudre");
+});
+
+test("une re-signature de compte généré passe par le PORTEFEUILLE LIÉ", () => {
+  // L'adresse d'un compte créé sans portefeuille n'est signable par personne : le
+  // serveur n'en a jamais gardé la clé. Re-signer avec elle ouvrait une popup dont
+  // la signature était vérifiée contre le COMPTE — refus, « session expirée » en
+  // boucle (prod 23/10/2026). Le signataire est donc le portefeuille lié, et le
+  // serveur rend le compte derrière (want: account).
+  const i = APP.indexOf("async authenticate(addr) {");
+  const fin = APP.indexOf("async connectUnisat()", i);
+  const bloc = APP.slice(i, fin > i ? fin : i + 3000);
+  assert.match(bloc, /const signataire = compteGenere \? courant\.linkedWallet : addr;/,
+    "le signataire doit être le portefeuille lié pour un compte généré");
+  assert.match(bloc, /auth\/challenge\?wallet=\$\{encodeURIComponent\(signataire\)\}/,
+    "le challenge doit porter sur le signataire, pas sur l'adresse du compte");
+  assert.match(bloc, /compteGenere && !courant\.linkedWallet/,
+    "sans portefeuille lié, aucune popup ne doit s'ouvrir : elle ne prouverait rien");
 });
 
 test("un compte reconnu ne réclame pas l'airdrop de bienvenue", () => {

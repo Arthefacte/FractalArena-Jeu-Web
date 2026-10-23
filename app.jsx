@@ -956,8 +956,23 @@ function App() {
       // Résolu UNE fois : la garde et la signature doivent porter sur le même objet.
       const uni = ACC.provider();
       if (!uni) return echec("extension", null, 0);
+      // QUI SIGNE : un compte créé sans portefeuille a une adresse que PERSONNE ne peut
+      // signer (le serveur n'en a jamais gardé la clé). Toute re-signature doit donc
+      // passer par le PORTEFEUILLE LIÉ, et le serveur rend le compte derrière lui
+      // (`want: "account"`). Sans ça, chaque 401 relançait une popup UniSat dont la
+      // signature était vérifiée contre l'adresse du COMPTE : refus, « session
+      // expirée » en boucle, joueur bloqué (prod 23/10/2026).
+      const courant = gRef.current || {};
+      const compteGenere = courant.accountKind === ACC.KIND_GENERATED && addr === courant.wallet;
+      if (compteGenere && !courant.linkedWallet) {
+        // Aucune clé disponible pour ce compte : une popup ne pourrait rien prouver.
+        // Le seul chemin qui reste est le code de récupération (écran de connexion).
+        console.error("[auth] compte créé sans portefeuille et aucun portefeuille lié — signature impossible, passer par le code de récupération");
+        return "";
+      }
+      const signataire = compteGenere ? courant.linkedWallet : addr;
       try {
-        const cr = await fetch(`${API_URL}/auth/challenge?wallet=${encodeURIComponent(addr)}&scope=session`);
+        const cr = await fetch(`${API_URL}/auth/challenge?wallet=${encodeURIComponent(signataire)}&scope=session`);
         if (!cr.ok) return echec("challenge", null, cr.status);
         const ch = await cr.json();
         // En fenêtre installée, la popup d'UniSat ne s'affiche PAS d'elle-même :
@@ -977,7 +992,7 @@ function App() {
           // l'ancien comportement — un client encore en cache recevrait sinon un
           // jeton pour son compte tout en utilisant l'adresse du portefeuille
           // (401/403 en boucle, signature redemandée pour chaque action).
-          body: JSON.stringify({ wallet: addr, signature, want: "account" }),
+          body: JSON.stringify({ wallet: signataire, signature, want: "account" }),
         });
         if (!vr.ok) return echec("verify", null, vr.status);
         const { token, account } = await vr.json();
