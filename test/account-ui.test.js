@@ -7,7 +7,7 @@ const path = require("node:path");
 
 // Le module est une IIFE qui écrit sur `window` : on lui fournit un window et des
 // stockages factices, puis on l'évalue. Même approche que test/tour-ui.test.js.
-function load() {
+function load(globals) {
   const src = fs.readFileSync(path.join(__dirname, "..", "account-ui.js"), "utf8");
   function mkStore() {
     const m = new Map();
@@ -18,7 +18,7 @@ function load() {
       _map: m,
     };
   }
-  const win = { localStorage: mkStore(), sessionStorage: mkStore() };
+  const win = Object.assign({ localStorage: mkStore(), sessionStorage: mkStore(), navigator: {} }, globals || {});
   const fn = new Function("window", "localStorage", "sessionStorage", src);
   fn(win, win.localStorage, win.sessionStorage);
   return { A: win.FA_ACCOUNT, win };
@@ -237,4 +237,25 @@ test("estNavigateurMobile : pointeur grossier OU userAgent mobile suffisent", ()
   w3.matchMedia = () => ({ matches: false });
   w3.navigator = { userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" };
   assert.strictEqual(A3.estNavigateurMobile(), false);
+});
+
+// Dans l'app UniSat, ne plus proposer de la (re)télécharger.
+//
+// Vécu le 2026-10-23 : le joueur était DANS le navigateur de l'app UniSat, et
+// deux surfaces lui répétaient d'installer l'app — « Ouvrir dans l'app UniSat »
+// (qui renvoie sur app.unisat.cloud/request, une page de TÉLÉCHARGEMENT : le
+// jeu disparaît) et le lien « Télécharge-la » du pont de liaison. Il a dû
+// retrouver le jeu de lui-même. Le marqueur est le provider : l'app ne
+// l'injecte QUE dans son navigateur (réponse UniSat, dev-support#97 et #105).
+test("estDansAppUnisat : le provider injecté dit qu'on est dans l'app", () => {
+  const { A: dedans } = load({ unisat_wallet: { requestAccounts() {} } });
+  assert.strictEqual(dedans.estDansAppUnisat(), true);
+  const { A: dehors } = load();
+  assert.strictEqual(dehors.estDansAppUnisat(), false, "un navigateur externe ne l'est pas");
+});
+
+test("estDansAppUnisat accepte aussi l'ancien global window.unisat", () => {
+  const { A } = load({ unisat: { requestAccounts() {} } });
+  assert.strictEqual(A.estDansAppUnisat(), true,
+    "versions installées aujourd'hui : seul window.unisat est exposé");
 });

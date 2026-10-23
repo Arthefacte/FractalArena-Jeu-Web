@@ -242,7 +242,7 @@ function UnisatAppBridge({
     href: direct,
     target: "_blank",
     rel: "noopener"
-  }, "\u2197 ", I18N.t("UAPP_OPEN_BTN")), /*#__PURE__*/React.createElement("a", {
+  }, "\u2197 ", I18N.t("UAPP_OPEN_BTN")), !window.FA_ACCOUNT.estDansAppUnisat() && /*#__PURE__*/React.createElement("a", {
     className: "btn-link",
     style: {
       display: "inline-block",
