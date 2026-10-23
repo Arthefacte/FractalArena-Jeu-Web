@@ -80,12 +80,41 @@ test("une re-signature de compte généré passe par le PORTEFEUILLE LIÉ", () =
   const i = APP.indexOf("async authenticate(addr) {");
   const fin = APP.indexOf("async connectUnisat()", i);
   const bloc = APP.slice(i, fin > i ? fin : i + 3000);
-  assert.match(bloc, /const signataire = compteGenere \? courant\.linkedWallet : addr;/,
-    "le signataire doit être le portefeuille lié pour un compte généré");
+  assert.match(bloc, /const compteRattacheSignable = !!courant\.linkedWallet && addr === courant\.wallet;/,
+    "le signataire se décide sur le PORTEFEUILLE LIÉ, jamais sur le marqueur de genre (qui peut manquer)");
+  assert.match(bloc, /const signataire = compteRattacheSignable \? courant\.linkedWallet : addr;/,
+    "le signataire doit être le portefeuille lié");
   assert.match(bloc, /auth\/challenge\?wallet=\$\{encodeURIComponent\(signataire\)\}/,
     "le challenge doit porter sur le signataire, pas sur l'adresse du compte");
-  assert.match(bloc, /compteGenere && !courant\.linkedWallet/,
+  assert.match(bloc, /compteRattacheSignable === false && courant\.accountKind === ACC\.KIND_GENERATED/,
     "sans portefeuille lié, aucune popup ne doit s'ouvrir : elle ne prouverait rien");
+});
+
+test("une session perdue se rouvre par le portefeuille, pas par l'adresse du compte", () => {
+  // Au démarrage sans jeton, le client signait l'adresse du COMPTE : signature refusée,
+  // redemandée à chaque action (prod 23/10/2026). Avec un portefeuille lié, une seule
+  // signature rouvre le compte côté serveur.
+  const i = APP.indexOf("const generated = gRef.current.accountKind === ACC.KIND_GENERATED;");
+  assert.ok(i > 0, "la reconnexion automatique doit exister");
+  const bloc = APP.slice(i, i + 900);
+  assert.match(bloc, /if \(!token && gRef\.current\.linkedWallet\) \{[\s\S]*actions\.connectUnisat\(\)/,
+    "sans jeton et avec un portefeuille lié, on reconnecte par le portefeuille");
+  const iConnect = bloc.indexOf("connectUnisat()");
+  const iAuth = bloc.indexOf("actions.authenticate(w)");
+  assert.ok(iConnect > 0 && iAuth > 0 && iConnect < iAuth,
+    "la reconnexion par portefeuille passe AVANT la signature impossible");
+});
+
+test("une nouvelle version prend le relais sans fenêtre privée", () => {
+  // Le service worker fait skipWaiting + clients.claim, mais la page en cours garde
+  // l'ancien code : sans rechargement, un correctif livré n'atteint jamais le joueur
+  // (prod 23/10/2026 — « il n'a pas à ouvrir une fenêtre privée »).
+  const SWR = fs.readFileSync(path.join(__dirname, "..", "sw-register.js"), "utf8");
+  assert.match(SWR, /addEventListener\("controllerchange"/,
+    "la page doit réagir à la prise de contrôle du nouveau service worker");
+  assert.match(SWR, /location\.reload\(\)/, "…et se recharger une fois");
+  assert.match(SWR, /avaitControleur/, "une première visite ne doit pas être rechargée");
+  assert.match(SWR, /\.update\(\)/, "le navigateur doit aller chercher la nouvelle version sans attendre 24 h");
 });
 
 test("un compte reconnu ne réclame pas l'airdrop de bienvenue", () => {
