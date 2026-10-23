@@ -62,6 +62,15 @@ test("le compte reconnu garde le bon genre de compte et le bon stockage", () => 
     "c'est l'adresse du COMPTE qui charge la sauvegarde, jamais celle du portefeuille");
 });
 
+test("le client demande explicitement la resolution (opt-in)", () => {
+  // Le serveur ne résout le compte que si le client le demande. Sans ce drapeau,
+  // un client encore en cache recevait un jeton pour son compte tout en utilisant
+  // l'adresse de son portefeuille : chaque appel en 401/403, une signature
+  // redemandée pour chaque action, joueur bloqué (prod 23/10/2026).
+  assert.match(APP, /body: JSON\.stringify\(\{ wallet: addr, signature, want: "account" \}\)/,
+    "l'authentification doit porter want: account — c'est ce qui autorise le serveur à résoudre");
+});
+
 test("un compte reconnu ne réclame pas l'airdrop de bienvenue", () => {
   const branche = CONNECT.slice(CONNECT.indexOf("if (lastAuthAccount) {"));
   const fin = branche.indexOf("const isNew");
