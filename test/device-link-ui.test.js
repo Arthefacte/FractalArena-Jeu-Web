@@ -70,6 +70,12 @@ test("parseLinkHash : accepte le format du QR, rejette tout le reste", () => {
   assert.strictEqual(DL.parseLinkHash("#autre"), null);
   assert.strictEqual(DL.parseLinkHash(""), null);
   assert.strictEqual(DL.parseLinkHash("#link=<script>"), null);
+  // Le fragment se perd en traversant certains webviews et aperçus de
+  // messagerie : la forme « ?link= » doit être lue aussi, sinon le code est
+  // ignoré en silence et le joueur retombe sur l'accueil (2026-10-23).
+  assert.strictEqual(DL.parseLinkHash("?link=ABCD-2345-JKMN-PQRS"), "ABCD2345JKMNPQRS");
+  assert.strictEqual(DL.parseLinkHash("link=ABCD2345JKMNPQRS"), "ABCD2345JKMNPQRS");
+  assert.strictEqual(DL.parseLinkHash("?autre=ABCD2345JKMNPQRS"), null);
 });
 
 test("linkUrl et parseLinkHash sont symetriques", () => {

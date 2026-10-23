@@ -86,15 +86,34 @@ function RecoverScreen({
   } = useFA();
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
+  // L'échec s'affiche DANS la fenêtre, jamais seulement par un toast.
+  //
+  // Vécu le 2026-10-23 : le joueur prend son code dans Options (dans l'app
+  // UniSat), revient sur le PWA, le saisit… et retombe sur l'accueil sans un
+  // mot. La fenêtre se fermait au premier échec (onClose était appelé pour
+  // TOUS les cas, pas seulement le succès) et le toast, monté dans l'arbre de
+  // l'application, disparaissait avec elle dans le même rendu. Un code de
+  // liaison ne vit que quelques minutes : le cas le plus probable était
+  // l'expiration, et c'est justement celui qui se taisait.
+  //
+  // `echec` porte { cle, voie } : la clé i18n à lire ET le chemin tenté. Le
+  // même champ sert deux codes de natures très différentes (récupération du
+  // compte / liaison d'appareil) — dire lequel a été reconnu évite de faire
+  // chercher au joueur une erreur de saisie qui n'existe pas.
+  const [echec, setEchec] = useState(null);
+
+  // Quel code le joueur tient-il ? Le format tranche, comme avant : un code de
+  // liaison est un code Crockford de 16 caractères (avec ou sans tirets, ou
+  // l'URL complète d'un QR), tout le reste est traité comme un code de
+  // récupération et vérifié par le serveur.
+  const DL = window.FA_DEVICE_LINK;
+  const lien = DL ? DL.codeFromInput(code) : null;
+  const voie = lien ? "lien" : "recuperation";
   const submit = async () => {
+    if (busy) return;
     setBusy(true);
+    setEchec(null);
     let r;
-    // Un seul champ pour deux codes : celui de RÉCUPÉRATION (compte généré) et
-    // celui de LIAISON D'APPAREIL (affiché sous le QR du PC, ou copié par le
-    // pont vers l'app UniSat — lien complet accepté, codeFromInput en tire le
-    // code). Le format tranche ; le joueur n'a pas à savoir ce qu'il tient.
-    const DL = window.FA_DEVICE_LINK;
-    const lien = DL ? DL.codeFromInput(code) : null;
     try {
       r = lien ? await actions.claimDeviceLink(lien) : await actions.recoverAccount(code);
     } finally {
@@ -105,12 +124,19 @@ function RecoverScreen({
       return;
     }
     if (r.reason === "seed") {
+      setEchec({
+        cle: "ACC_RECOVER_SEED_REFUSED",
+        voie
+      });
       toast(I18N.t("ACC_RECOVER_SEED_REFUSED"), "bad");
       setCode("");
       return;
     }
     if (r.reason === "rate") {
-      toast(I18N.t("ACC_RECOVER_RATE"), "bad");
+      setEchec({
+        cle: "ACC_RECOVER_RATE",
+        voie
+      });
       return;
     }
     // Panne réseau ou serveur (5xx / exception fetch) : le code n'a PAS été jugé faux,
@@ -118,10 +144,21 @@ function RecoverScreen({
     // sinon un joueur avec un code correct mais du réseau instable s'entend dire que son
     // compte est perdu (IMPORTANT 7).
     if (r.reason === "network" || r.reason === "server") {
+      setEchec({
+        cle: "ACC_RECOVER_ERROR",
+        voie
+      });
       toast(I18N.t("ACC_RECOVER_ERROR"), "bad");
       return;
     }
-    toast(I18N.t("ACC_RECOVER_FAIL"), "bad");
+    // Refus explicite du serveur. Pour un code de LIAISON, l'écrasante majorité
+    // des cas est l'expiration : le message doit le dire, et dire quoi faire.
+    const cle = voie === "lien" ? "ACC_RECOVER_LINK_FAIL" : "ACC_RECOVER_FAIL";
+    setEchec({
+      cle,
+      voie
+    });
+    toast(I18N.t(cle), "bad");
   };
   return /*#__PURE__*/React.createElement(Modal, {
     onClose: onClose,
@@ -138,21 +175,42 @@ function RecoverScreen({
   }, I18N.t("ACC_RECOVER_SUB")), /*#__PURE__*/React.createElement("input", {
     className: "field",
     style: {
-      marginBottom: 10
+      marginBottom: 8
     },
     value: code,
     autoComplete: "off",
     spellCheck: false,
     autoCapitalize: "off",
     autoCorrect: "off",
-    onChange: e => setCode(e.target.value),
+    onChange: e => {
+      setCode(e.target.value);
+      if (echec) setEchec(null);
+    },
     placeholder: I18N.t("ACC_RECOVER_PLACEHOLDER"),
     onKeyDown: e => e.key === "Enter" && submit()
-  }), /*#__PURE__*/React.createElement("button", {
+  }), !!code.trim() && /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      fontSize: 10.5,
+      color: "var(--text-dim)",
+      marginBottom: 10
+    }
+  }, lien ? I18N.t("ACC_RECOVER_KIND_LINK") : I18N.t("ACC_RECOVER_KIND_RECOVERY")), echec && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      lineHeight: 1.5,
+      marginTop: 4,
+      marginBottom: 12,
+      padding: "9px 11px",
+      borderRadius: 8,
+      background: "rgba(255,90,90,0.12)",
+      color: "var(--alert)"
+    }
+  }, I18N.t(echec.cle)), /*#__PURE__*/React.createElement("button", {
     className: "btn btn-gold block lg",
     disabled: busy || !code.trim(),
     onClick: submit
-  }, I18N.t("ACC_RECOVER_BTN")));
+  }, busy ? "…" : I18N.t("ACC_RECOVER_BTN")));
 }
 
 /* Pont vers l'app UniSat — mobile sans extension.
