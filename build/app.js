@@ -186,8 +186,12 @@ window.FA_ECHECS_API_RAZ = () => {
 // Le claim le remet donc à null AVANT l'await (le remontage a lieu pendant).
 let BOOT_LINK_CODE = (() => {
   const DL = window.FA_DEVICE_LINK;
-  const c = DL ? DL.parseLinkHash(window.location.hash) : null;
-  if (c) window.history.replaceState(null, "", window.location.pathname + window.location.search);
+  if (!DL) return null;
+  // Fragment d'abord (la forme du QR), puis paramètre de requête : un lien
+  // relayé par un aperçu de messagerie ou un webview arrive parfois sans son
+  // fragment, et le code n'est alors lu par personne.
+  const c = DL.parseLinkHash(window.location.hash) || DL.parseLinkHash(window.location.search);
+  if (c) window.history.replaceState(null, "", window.location.pathname);
   return c;
 })();
 // Code de parrain (?ref=CODE, spec 2026-09-07) : lu UNE fois au boot, hors du

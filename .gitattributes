@@ -1,2 +1,8 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Fichiers dont l'empreinte sha384 est vérifiée par les tests (SRI des balises
+# <script> d'index.html) : une fin de ligne convertie au checkout change chaque
+# octet, donc l'empreinte, donc la CI casse sur toute machine Windows alors que
+# le fichier livré est le bon. On les sort de la normalisation de texte.
+vendor/*.min.js -text

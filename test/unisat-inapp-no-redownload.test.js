@@ -44,3 +44,27 @@ test("pont de liaison : le lien « télécharge l'app » disparaît quand on est
   assert.match(avant, /estDansAppUnisat\(\)/,
     "le lien doit être gardé par estDansAppUnisat — sinon il réinstalle l'app depuis l'app");
 });
+
+// Le refus d'un code de récupération/liaison ne doit JAMAIS être muet.
+//
+// Vécu le 2026-10-23 : code de liaison pris dans Options (app UniSat), saisi
+// sur le PWA — retour à l'accueil, aucun message. La fenêtre appelait onClose()
+// sur TOUS les chemins, y compris l'échec ; le toast, monté plus haut dans
+// l'arbre de l'application, partait avec elle dans le même rendu.
+test("une saisie de code refusée reste affichée, avec une raison lisible", () => {
+  const src = lire("account.jsx");
+  const i = src.indexOf("function RecoverScreen");
+  assert.ok(i > 0, "RecoverScreen introuvable");
+  const bloc = src.slice(i, src.indexOf("function UnisatAppBridge", i));
+  // onClose ne doit apparaître QUE dans la branche de succès.
+  const fermetures = bloc.split("\n").filter((l) => /onClose && onClose\(\)/.test(l));
+  assert.strictEqual(fermetures.length, 1,
+    "onClose() doit être appelé une seule fois, dans la branche de succès");
+  assert.match(bloc, /r\.ok\) \{ onClose && onClose\(\); return; \}/,
+    "la fermeture doit être conditionnée au succès");
+  // Et l'échec doit produire un message DANS la fenêtre, pas seulement un toast.
+  assert.match(bloc, /setEchec\(\{ cle:/,
+    "un échec doit poser un message affiché dans la fenêtre");
+  assert.match(bloc, /ACC_RECOVER_LINK_FAIL/,
+    "un code de liaison refusé doit dire l'expiration, pas « code invalide »");
+});

@@ -207,6 +207,14 @@
     ACC_RECOVER_FAIL: { FR: "Code invalide.", EN: "Invalid code.", ZH: "恢复码无效。" },
     ACC_RECOVER_SEED_REFUSED: { FR: "C'est ta phrase de 12 mots — ne la saisis jamais ici. Utilise ton code de récupération.", EN: "That's your 12-word phrase — never enter it here. Use your recovery code.", ZH: "这是你的 12 个助记词 —— 切勿在此输入。请使用恢复码。" },
     ACC_RECOVER_RATE: { FR: "Trop de tentatives. Réessaie dans un moment.", EN: "Too many attempts. Try again shortly.", ZH: "尝试次数过多，请稍后再试。" },
+    // Deux codes, deux natures : le champ de récupération les accepte tous les
+    // deux, mais un refus doit dire LEQUEL a été jugé invalide. Le cas courant
+    // d'un code de liaison refusé est l'expiration (quelques minutes), pas une
+    // faute de saisie — un simple « Code invalide » envoyait chercher au mauvais
+    // endroit (vécu le 2026-10-23).
+    ACC_RECOVER_LINK_FAIL: { FR: "Ce code de liaison n'est plus valable : il ne vit que quelques minutes, et il ne sert qu'une fois. Regénère-le dans Options → Connecter un autre appareil, puis saisis-le tout de suite ici (ou scanne le QR).", EN: "That link code is no longer valid: it only lives a few minutes and works once. Regenerate it under Options → Connect another device, then enter it here right away (or scan the QR).", ZH: "该连接代码已失效：它只在几分钟内有效，且只能使用一次。请在「选项 → 连接其他设备」中重新生成，然后立即在此输入（或扫描二维码）。" },
+    ACC_RECOVER_KIND_LINK: { FR: "Code de liaison reconnu — usage unique, valable quelques minutes.", EN: "Link code recognised — single use, valid a few minutes.", ZH: "已识别为连接代码——仅限一次，几分钟内有效。" },
+    ACC_RECOVER_KIND_RECOVERY: { FR: "Traité comme un code de récupération (celui de ton compte). Un code de liaison fait 16 caractères, celui-ci en fait davantage.", EN: "Treated as a recovery code (your account's). A link code is 16 characters — this one is longer.", ZH: "按恢复码处理（你账号的恢复码）。连接代码为 16 个字符，此代码更长。" },
 
     ACC_LOCKED_BANNER: { FR: "Tes gains sont verrouillés : dépensables en jeu, pas encore retirables.", EN: "Your earnings are locked: spendable in game, not yet withdrawable.", ZH: "你的收益已锁定：可在游戏中使用，但暂不可提现。" },
     ACC_LOCKED_HOW: { FR: "Comment débloquer", EN: "How to unlock", ZH: "如何解锁" },

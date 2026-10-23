@@ -76,7 +76,10 @@ test("l'ecran de recuperation ne suggere jamais la seed", () => {
 
 test("l'ecran de recuperation traite le refus de seed", () => {
   const i = ACCJSX.indexOf("function RecoverScreen");
-  const bloc = ACCJSX.slice(i, i + 1800);
+  // Toute la fonction, comme le test precedent : une fenetre en nombre de
+  // caracteres cassait des qu'un commentaire s'ajoutait (2026-10-23).
+  const fin = ACCJSX.indexOf("function UnisatAppBridge");
+  const bloc = ACCJSX.slice(i, fin > i ? fin : i + 6000);
   assert.match(bloc, /ACC_RECOVER_SEED_REFUSED/,
     "coller une seed doit produire un avertissement explicite, pas un 'code invalide' muet");
 });
@@ -155,7 +158,7 @@ test("cache-bust homogene : aucune balise ne reste sur l'ancienne version", () =
   // exige que ce fichier porte la version courante, ce qui fait échouer la CI
   // quand un bump l'oublie. Source unique pour l'égalité des balises : data.js
   // FA_ASSET_V (test/asset-cache-bust.test.js).
-  assert.deepStrictEqual(uniques, ["391"],
+  assert.deepStrictEqual(uniques, ["392"],
     `versions heterogenes trouvees : ${uniques.join(", ")} — une seule balise oubliee sert du code perime`);
 });
 
@@ -175,7 +178,7 @@ test("les icones du manifeste portent la version courante", () => {
   // que le jeu servait déjà v336 — un numéro figé ici ne l'aurait pas vu. La
   // comparaison à la version courante est faite par le test ci-dessus, qui lit
   // index.html ET ce fichier.
-  assert.deepStrictEqual(vs, ["391"],
+  assert.deepStrictEqual(vs, ["392"],
     `versions heterogenes dans le manifeste : ${vs.join(", ")} — les icônes doivent porter la version courante`);
 });
 

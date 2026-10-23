@@ -59,10 +59,16 @@
     return "https://app.unisat.cloud/request?method=openDapp&from=FractalArena&data=" + data;
   }
 
-  // Au boot du téléphone : le hash contient-il un code de liaison ?
+  // Au boot du téléphone : l'URL courante porte-t-elle un code de liaison ?
   // Renvoie le code NORMALISÉ ou null — jamais une chaîne brute du monde.
-  function parseLinkHash(hash) {
-    const m = /^#link=([0-9A-Za-z-]{16,25})$/.exec(String(hash || ""));
+  //
+  // Deux formes acceptées, `#link=` ET `?link=` : le QR et le bouton « Copier
+  // le lien » produisent la première, mais un lien qui traverse un webview ou
+  // un aperçu de messagerie perd parfois son fragment — et un code perdu au
+  // dernier mètre coûte une session entière (constaté le 2026-10-23 : code
+  // saisi à la main, expiré avant d'arriver).
+  function parseLinkHash(valeur) {
+    const m = /^[#?]?link=([0-9A-Za-z-]{16,25})$/.exec(String(valeur || ""));
     return m ? normalizeLinkCode(m[1]) : null;
   }
 
