@@ -1325,9 +1325,15 @@ function App() {
           headers: {
             "Content-Type": "application/json"
           },
+          // `want: "account"` : le client SAIT se rattacher au compte que le serveur
+          // reconnaît derrière ce portefeuille. Sans ce drapeau, le serveur garde
+          // l'ancien comportement — un client encore en cache recevrait sinon un
+          // jeton pour son compte tout en utilisant l'adresse du portefeuille
+          // (401/403 en boucle, signature redemandée pour chaque action).
           body: JSON.stringify({
             wallet: addr,
-            signature
+            signature,
+            want: "account"
           })
         });
         if (!vr.ok) return echec("verify", null, vr.status);
