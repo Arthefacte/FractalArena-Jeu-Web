@@ -89,8 +89,10 @@ test("toute clé produite par authFailure existe en i18n, dans les 3 langues", (
 const APP = fs.readFileSync(path.join(__dirname, "..", "app.jsx"), "utf8");
 
 test("authenticate ne renvoie plus un échec muet", () => {
-  const i = APP.indexOf("async authenticate(");
-  const bloc = APP.slice(i, i + 1600);
+  // Le corps de la signature vit dans `_authenticate` ; `authenticate` n'est qu'un
+  // aiguillage (un seul vol à la fois) qui ne peut pas échouer en silence.
+  const i = APP.indexOf("async _authenticate(");
+  const bloc = APP.slice(i, i + 1800);
   assert.match(bloc, /authFailure/,
     "chaque sortie en échec d'authenticate doit nommer sa cause");
   assert.match(bloc, /console\.(error|warn)/,

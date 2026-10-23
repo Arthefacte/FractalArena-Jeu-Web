@@ -144,6 +144,12 @@ let lastAuthReason = null;
 // champ, il repartait sur un compte neuf à l'adresse du portefeuille (prod,
 // 23/10/2026). Renseigné par `authenticate`, consommé par `connectUnisat`.
 let lastAuthAccount = null;
+// Authentification en cours (une seule à la fois). Plusieurs appels simultanés
+// (sauvegarde, boosts, totem, classements, combat…) prenaient chacun un 401 et
+// ouvraient CHACUN une popup UniSat ; comme le challenge est indexé par portefeuille,
+// le dernier nonce écrasait les autres et toutes les signatures sauf une étaient
+// refusées — le joueur revoyait la popup sans fin (prod 23/10/2026).
+let authEnCours = null;
 const IS_MOBILE = () => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
 
 // Ouvre le jeu dans le navigateur intégré de l'app UniSat Mobile, où window.unisat
@@ -950,7 +956,17 @@ function App() {
     // muet nous a fait diagnostiquer à l'aveugle et livrer une régression
     // (v111 → retour arrière v112). Chaque sortie nomme désormais sa cause :
     // en console pour nous, et dans `lastAuthReason` pour l'afficher au joueur.
-    async authenticate(addr) {
+    // UN SEUL vol d'authentification à la fois (voir `authEnCours`) : un appel qui
+    // arrive pendant une signature attend celle-ci au lieu d'en ouvrir une deuxième.
+    authenticate(addr) {
+      if (!authEnCours) {
+        authEnCours = actions._authenticate(addr)
+          .catch((e) => { console.error("[auth] échec inattendu —", e && e.message); return ""; })
+          .then((t) => { authEnCours = null; return t; });
+      }
+      return authEnCours;
+    },
+    async _authenticate(addr) {
       // Pas de résidu de l'appel précédent : `lastAuthAccount` décide si la
       // connexion ouvre un compte existant, il ne doit jamais venir d'un autre
       // portefeuille.
@@ -1004,7 +1020,11 @@ function App() {
           // l'ancien comportement — un client encore en cache recevrait sinon un
           // jeton pour son compte tout en utilisant l'adresse du portefeuille
           // (401/403 en boucle, signature redemandée pour chaque action).
-          body: JSON.stringify({ wallet: signataire, signature, want: "account" }),
+          // `nonce` : le client renvoie CELUI qu'il a signé. Sans lui, le serveur
+          // retombe sur le dernier challenge du portefeuille — écrasable par un appel
+          // concurrent, donc signature refusée alors qu'elle est valide (constaté en
+          // prod : « verify sans nonce » suivi d'un refus, en boucle).
+          body: JSON.stringify({ wallet: signataire, signature, nonce: ch.nonce, want: "account" }),
         });
         if (!vr.ok) return echec("verify", null, vr.status);
         const { token, account } = await vr.json();
