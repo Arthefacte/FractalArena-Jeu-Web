@@ -35,7 +35,7 @@ test("le compte rendu par le serveur est retenu à l'authentification", () => {
 });
 
 test("l'authentification ne réutilise jamais le compte de l'appel précédent", () => {
-  const i = APP.indexOf("async authenticate(addr) {");
+  const i = APP.indexOf("async _authenticate(addr) {");
   assert.ok(i > -1, "authenticate doit exister");
   const bloc = APP.slice(i, i + 400);
   assert.match(bloc, /lastAuthAccount = null;/,
@@ -67,8 +67,21 @@ test("le client demande explicitement la resolution (opt-in)", () => {
   // un client encore en cache recevait un jeton pour son compte tout en utilisant
   // l'adresse de son portefeuille : chaque appel en 401/403, une signature
   // redemandée pour chaque action, joueur bloqué (prod 23/10/2026).
-  assert.match(APP, /body: JSON\.stringify\(\{ wallet: signataire, signature, want: "account" \}\)/,
-    "l'authentification doit porter want: account — c'est ce qui autorise le serveur à résoudre");
+  assert.match(APP, /body: JSON\.stringify\(\{ wallet: signataire, signature, nonce: ch\.nonce, want: "account" \}\)/,
+    "l'authentification doit porter want: account et le nonce signé — c'est ce qui autorise le serveur à résoudre");
+});
+
+test("une seule authentification à la fois, et le nonce signé est renvoyé", () => {
+  // Plusieurs appels simultanés prenaient chacun un 401 et ouvraient chacun une popup ;
+  // le dernier challenge écrasait les autres, donc les signatures étaient refusées et
+  // le joueur revoyait la popup sans fin (prod 23/10/2026).
+  assert.match(APP, /let authEnCours = null;/, "l'état du vol en cours doit exister");
+  assert.match(APP, /authenticate\(addr\) \{\s*\n\s*if \(!authEnCours\) \{[\s\S]{0,400}return authEnCours;/,
+    "authenticate doit partager le vol en cours au lieu d'en ouvrir un second");
+  assert.match(APP, /async _authenticate\(addr\) \{/,
+    "le corps reste dans _authenticate : un seul endroit fait la signature");
+  assert.match(APP, /nonce: ch\.nonce/,
+    "le nonce signé doit être renvoyé (sinon le serveur retombe sur le dernier challenge)");
 });
 
 test("une re-signature de compte généré passe par le PORTEFEUILLE LIÉ", () => {
@@ -77,7 +90,7 @@ test("une re-signature de compte généré passe par le PORTEFEUILLE LIÉ", () =
   // la signature était vérifiée contre le COMPTE — refus, « session expirée » en
   // boucle (prod 23/10/2026). Le signataire est donc le portefeuille lié, et le
   // serveur rend le compte derrière (want: account).
-  const i = APP.indexOf("async authenticate(addr) {");
+  const i = APP.indexOf("async _authenticate(addr) {");
   const fin = APP.indexOf("async connectUnisat()", i);
   const bloc = APP.slice(i, fin > i ? fin : i + 3000);
   assert.match(bloc, /const compteRattacheSignable = !!courant\.linkedWallet && addr === courant\.wallet;/,
