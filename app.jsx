@@ -138,6 +138,12 @@ const HAS_UNISAT = () => ACC.hasProvider();
 // ACC.authFailure. Hors du state React à dessein : c'est un fait de diagnostic,
 // il ne doit pas provoquer de rendu ni disparaître au remontage d'un écran.
 let lastAuthReason = null;
+// Compte que le SERVEUR a reconnu derrière le portefeuille qui vient de signer
+// (/auth/verify rend `account` quand ce portefeuille est le portefeuille lié d'un
+// compte créé sans wallet). Le client ne connaît que le portefeuille : sans ce
+// champ, il repartait sur un compte neuf à l'adresse du portefeuille (prod,
+// 23/10/2026). Renseigné par `authenticate`, consommé par `connectUnisat`.
+let lastAuthAccount = null;
 const IS_MOBILE = () => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
 
 // Ouvre le jeu dans le navigateur intégré de l'app UniSat Mobile, où window.unisat
@@ -937,6 +943,10 @@ function App() {
     // (v111 → retour arrière v112). Chaque sortie nomme désormais sa cause :
     // en console pour nous, et dans `lastAuthReason` pour l'afficher au joueur.
     async authenticate(addr) {
+      // Pas de résidu de l'appel précédent : `lastAuthAccount` décide si la
+      // connexion ouvre un compte existant, il ne doit jamais venir d'un autre
+      // portefeuille.
+      lastAuthAccount = null;
       const echec = (etape, err, status) => {
         const r = ACC.authFailure(etape, err, status);
         lastAuthReason = r;
@@ -965,7 +975,10 @@ function App() {
           body: JSON.stringify({ wallet: addr, signature }),
         });
         if (!vr.ok) return echec("verify", null, vr.status);
-        const { token } = await vr.json();
+        const { token, account } = await vr.json();
+        // Le serveur sait à quel compte ce portefeuille appartient ; le client, non.
+        // Retenu pour `connectUnisat`, seul chemin de connexion par portefeuille.
+        if (account && account !== addr) lastAuthAccount = account;
         if (token) {
           lastAuthReason = null;
           // gRef n'est réassigné qu'au RENDU, or le retry après un 401 repart
@@ -998,6 +1011,22 @@ function App() {
         // la saisie manuelle d'adresse ; même règle que « pas de repli client
         // sur une donnée serveur », incident roster du 2026-07-28).
         if (!token) return { ok: false, reason: "auth" };
+        // Le portefeuille qui vient de signer est le portefeuille LIÉ d'un compte
+        // existant : le serveur l'a dit (`account`). On entre dans CE compte, on ne
+        // crée rien. Sans cette branche, le premier /save ouvrait une ligne à
+        // l'adresse du portefeuille — un compte neuf et vide, le vrai compte et ses
+        // gains devenant inatteignables (prod 23/10/2026 : 25 000 FA perdus de vue,
+        // plus de code de récupération puisque le navigateur était l'unique copie).
+        if (lastAuthAccount) {
+          const compte = lastAuthAccount;
+          // Le marqueur décide du STOCKAGE du jeton : un compte créé sans wallet
+          // n'a aucune clé dans le navigateur, son jeton vit donc en localStorage —
+          // exactement comme au moment de sa création.
+          writeToken(token, ACC.KIND_GENERATED);
+          setG((s) => ({ ...s, accountKind: ACC.KIND_GENERATED }));
+          await actions.connectWallet(compte, token);
+          return { ok: true, restored: true };
+        }
         const isNew = await actions.connectWallet(addr, token);
         await actions.claimAirdropIfNew(addr, token, isNew);
         return { ok: true };

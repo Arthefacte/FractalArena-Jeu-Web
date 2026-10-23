@@ -39,11 +39,17 @@ test("la saisie manuelle d'adresse n'existe plus", () => {
 test("connectUnisat n'appelle JAMAIS connectWallet sans jeton", () => {
   // Sans jeton, /save repond 401 et le repli reseau fabrique le meme compte
   // fantome : l'echec d'auth doit sortir AVANT connectWallet.
+  // Fenetre bornee par la FONCTION SUIVANTE et non plus par une longueur en
+  // caracteres : la branche « compte reconnu » (23/10/2026) a allonge
+  // connectUnisat, et une fenetre en dur coupait l'appel teste (faux rouge sur
+  // un invariant par ailleurs respecte).
   const i = APP.indexOf("async connectUnisat");
-  const bloc = APP.slice(i, i + 1600);
+  const fin = APP.indexOf("async createAccount", i);
+  const bloc = APP.slice(i, fin > i ? fin : i + 3000);
   const garde = bloc.indexOf("if (!token) return");
   const appel = bloc.indexOf("actions.connectWallet(");
   assert.ok(garde > 0, "garde anti-fantome absente de connectUnisat");
+  assert.ok(appel > 0, "l'appel a connectWallet doit rester dans la fenetre de connectUnisat");
   assert.ok(garde < appel, "la garde doit preceder l'appel a connectWallet");
 });
 
