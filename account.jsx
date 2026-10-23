@@ -170,11 +170,17 @@ function UnisatAppBridge({ mode }) {
       {/* L'app n'est pas forcément installée : sans ce lien, le bouton du dessus
           est un cul-de-sac (app absente = rien ne s'ouvre) et les marches à
           suivre parlent d'une installation que le joueur n'a aucun moyen de
-          faire depuis ici. */}
-      <a className="btn-link" style={{ display: "inline-block", marginTop: 8, color: "var(--text-dim)", fontSize: 11, textDecoration: "underline" }}
-         href="https://unisat.io/download" target="_blank" rel="noopener noreferrer">
-        {I18N.t("UAPP_INSTALL")}
-      </a>
+          faire depuis ici.
+          SAUF si on EST déjà dans l'app (provider injecté) : proposer de la
+          télécharger depuis l'intérieur de l'app, c'est exactement la boucle
+          qui a perdu le joueur le 2026-10-23 — il touchait le lien, tombait sur
+          la page de téléchargement, et devait retrouver le jeu de lui-même. */}
+      {!window.FA_ACCOUNT.estDansAppUnisat() && (
+        <a className="btn-link" style={{ display: "inline-block", marginTop: 8, color: "var(--text-dim)", fontSize: 11, textDecoration: "underline" }}
+           href="https://unisat.io/download" target="_blank" rel="noopener noreferrer">
+          {I18N.t("UAPP_INSTALL")}
+        </a>
+      )}
       {!secours ? (
         /* Le pont à code n'est PAS le chemin courant : il ne sert qu'au premier
            passage, ou si la session de l'app a été perdue. Au premier plan, il

@@ -205,6 +205,23 @@
     } catch (e) { return false; }
   }
 
+  // Le jeu tourne-t-il dans le navigateur INTÉGRÉ de l'app UniSat ?
+  //
+  // Pourquoi ça compte (vécu le 2026-10-23, PWA / Safari sur téléphone) : les
+  // écrans « sans wallet » proposaient TOUJOURS « Ouvrir dans l'app UniSat » et
+  // « Télécharge l'app » — y compris quand le joueur était DÉJÀ dans l'app.
+  // Toucher le bouton pendant qu'on est dedans renvoie sur
+  // app.unisat.cloud/request, une page de TÉLÉCHARGEMENT : le jeu disparaît,
+  // et la promesse « ouvre le jeu dans l'app » est un mensonge circulaire.
+  //
+  // Le marqueur est le portefeuille lui-même : l'app ne l'injecte que dans SON
+  // navigateur (réponse UniSat, dev-support#97 et #105). `ou` volontairement
+  // ouvert : un faux positif (desktop dont le provider s'injecte tard) ne
+  // coûte que le chemin principal, jamais un cul-de-sac.
+  function estDansAppUnisat() {
+    return hasProvider();
+  }
+
   // Quel chemin proposer pour lier (ou signer) quand le joueur est là. Sans
   // extension injectée, rien n'est signable sur place — mais le secours diffère :
   //  - mobile → « unisat-app » : le navigateur intégré de l'app UniSat injecte le
@@ -291,7 +308,7 @@
     KIND_GENERATED, KIND_UNISAT, TOKEN_KEY, KIND_KEY, DEVICE_LINKED_KEY, BANNER_SNOOZE_MS,
     readToken, writeToken, clearToken, readKind, markDeviceLinked, estAppareilLie,
     isValidRecoveryCode, looksLikeSeed, shouldShowLockedBanner, discoveryNextAction,
-    withdrawSigner, withdrawDestination, cheminLiaison, estNavigateurMobile, authFailure,
+    withdrawSigner, withdrawDestination, cheminLiaison, estNavigateurMobile, estDansAppUnisat, authFailure,
     estAppInstallee, provider, hasProvider, localDisplayName,
   };
 })();

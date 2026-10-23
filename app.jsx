@@ -3664,10 +3664,24 @@ function Onboarding({ onAccountCreated }) {
             desktop. Dans ce navigateur-là, hasWallet est vrai → branche du haut. */}
         {mobile ? (
           <>
-            <button className="btn block" style={{ marginTop: 12 }} disabled={!!busy} onClick={OPEN_IN_UNISAT}>
-              {I18N.t("OB_OPEN_UNISAT_BTN")}
-            </button>
-            <div className="muted mono" style={{ fontSize: 11, marginTop: 8 }}>{I18N.t("OB_OPEN_UNISAT_SUB")}</div>
+            {/* DÉJÀ dans l'app UniSat (provider injecté) : « Ouvrir dans l'app »
+                renvoyait sur sa page de TÉLÉCHARGEMENT — le jeu disparaissait
+                pour proposer d'installer une app dans laquelle on est (vécu le
+                2026-10-23). Sur ce chemin, on ne propose plus le saut : soit on
+                se connecte avec le portefeuille injecté, soit on rejoint un
+                compte déjà créé avec un code de liaison. */}
+            {hasWallet ? (
+              <button className="btn block" style={{ marginTop: 12 }} disabled={!!busy} onClick={connectUnisat}>
+                {I18N.t("ACC_HAVE_WALLET")}
+              </button>
+            ) : (
+              <button className="btn block" style={{ marginTop: 12 }} disabled={!!busy} onClick={OPEN_IN_UNISAT}>
+                {I18N.t("OB_OPEN_UNISAT_BTN")}
+              </button>
+            )}
+            <div className="muted mono" style={{ fontSize: 11, marginTop: 8 }}>
+              {I18N.t(hasWallet ? "ACC_HAVE_WALLET_SUB" : "OB_OPEN_UNISAT_SUB")}
+            </div>
           </>
         ) : (
           <>
