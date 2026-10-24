@@ -1977,9 +1977,20 @@ function ForgeCoreFragments({
         fontSize: 13,
         color: col,
         borderColor: col,
-        background: "rgba(255,255,255,.04)"
+        background: "rgba(255,255,255,.04)",
+        padding: 0,
+        overflow: "hidden"
       }
-    }, "\u2B21"), /*#__PURE__*/React.createElement("b", {
+    }, /*#__PURE__*/React.createElement("img", {
+      src: "assets/core-shard.webp",
+      alt: "",
+      style: {
+        display: "block",
+        width: "100%",
+        height: "100%",
+        objectFit: "cover"
+      }
+    })), /*#__PURE__*/React.createElement("b", {
       style: {
         flex: 1,
         minWidth: 0,

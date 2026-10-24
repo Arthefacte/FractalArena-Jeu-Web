@@ -1095,6 +1095,20 @@ function Expeditions() {
     }))), coreFragRanks.length > 0 && /*#__PURE__*/React.createElement("div", {
       className: "panel",
       style: {
+        padding: 0,
+        overflow: "hidden"
+      }
+    }, /*#__PURE__*/React.createElement("img", {
+      src: "assets/core-shard-banner.webp",
+      alt: "",
+      style: {
+        display: "block",
+        width: "100%",
+        height: 108,
+        objectFit: "cover"
+      }
+    }), /*#__PURE__*/React.createElement("div", {
+      style: {
         padding: "12px 13px",
         display: "flex",
         flexDirection: "column",
@@ -1122,9 +1136,20 @@ function Expeditions() {
         style: {
           color: col,
           borderColor: col,
-          background: "rgba(255,255,255,.04)"
+          background: "rgba(255,255,255,.04)",
+          padding: 0,
+          overflow: "hidden"
         }
-      }, "\u2B21"), /*#__PURE__*/React.createElement("b", {
+      }, /*#__PURE__*/React.createElement("img", {
+        src: "assets/core-shard.webp",
+        alt: "",
+        style: {
+          display: "block",
+          width: "100%",
+          height: "100%",
+          objectFit: "cover"
+        }
+      })), /*#__PURE__*/React.createElement("b", {
         style: {
           flex: 1,
           minWidth: 0,
@@ -1139,7 +1164,7 @@ function Expeditions() {
         frac: Math.min(1, total / need),
         kind: "xp"
       }));
-    })), /*#__PURE__*/React.createElement("div", {
+    }))), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         flexDirection: "column",

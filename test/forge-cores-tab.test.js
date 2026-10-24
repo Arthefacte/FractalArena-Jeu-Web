@@ -53,14 +53,19 @@ test("ForgeReliques n'empile plus la forge de fragments de core", () => {
   assert.match(b, /<ForgeEquipement/, "la forge d'équipement doit rester dans l'onglet Reliques");
 });
 
-test("chaque forge de fragments porte son marqueur : ✦ relique, jamais ⬡ ; ⬡ core, jamais ✦", () => {
+test("chaque forge de fragments porte son marqueur : illustration de relique, jamais ⬡ ; illustration de core, jamais ✦", () => {
   // Décision du 19/10/2026 (fondateur) : les fragments de RELIQUE portent leur
   // illustration (`assets/relic-shard.webp`) à la place du glyphe ✦ — le butin
-  // d'expédition n'avait aucune image de ce qu'on venait de trouver. La règle
-  // reste identique : un marqueur par objet, jamais celui de l'autre.
+  // d'expédition n'avait aucune image de ce qu'on venait de trouver. Le 24/10, même
+  // décision pour les fragments de CORE (`assets/core-shard.webp`), qui n'avaient
+  // qu'un ⬡. La règle reste identique : un marqueur par objet, jamais celui de l'autre.
   assert.match(F_RELIC, /exq-hex[^>]*>\s*<img[^>]*relic-shard\.webp/, "illustration absente de la forge de reliques");
   assert.ok(!/⬡/.test(F_RELIC), "la forge de reliques ne doit porter aucun ⬡");
-  assert.match(F_CORE, /exq-hex[^>]*>⬡</, "marqueur ⬡ absent de la forge de cores");
+  assert.match(F_CORE, /exq-hex[^>]*>\s*<img[^>]*core-shard\.webp/, "illustration absente de la forge de cores");
+  // Le ⬡ peut rester en TÊTE de panneau (il nomme la famille, comme le ✦ de la
+  // relique) ; ce qui ne doit plus exister, c'est le ⬡ comme marqueur de LIGNE.
+  assert.ok(!/exq-hex[^>]*>\s*⬡/.test(F_CORE), "le marqueur de ligne doit être l'image, plus le glyphe ⬡");
+  assert.ok(!/relic-shard/.test(F_CORE), "la forge de cores ne doit pas reprendre l'image de la relique");
   assert.ok(!/✦/.test(F_CORE), "la forge de cores ne doit porter aucun ✦");
 });
 
