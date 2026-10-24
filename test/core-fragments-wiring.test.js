@@ -72,7 +72,9 @@ test("expeditions.jsx : le claim affiche rewards.core_frags quand ils existent, 
   assert.match(b, /coreFragRanks\.length > 0 &&/, "un serveur sans core_frags ne doit rien afficher");
   assert.match(b, /EXP_FRAG_CORE_LINE/, "ligne i18n dédiée manquante");
   assert.match(b, /g\.expCoreFragments/, "jauge total/need sur les compteurs de core manquante");
-  assert.match(b, /⬡/, "marqueur ⬡ (distinct du ✦ relique) manquant");
+  assert.match(b, /core-shard\.webp/, "illustration du fragment de core manquante (miroir de la relique)");
+  assert.match(b, /core-shard-banner\.webp/, "bannière des fragments de core manquante (miroir de la relique)");
+  assert.ok(!/⬡/.test(b), "le claim ne doit plus afficher le glyphe ⬡ pour les fragments de core");
 });
 
 test("expeditions.jsx : l'aperçu au lancement montre win.core_frags si > 0", () => {

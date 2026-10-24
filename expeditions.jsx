@@ -564,7 +564,12 @@ function Expeditions() {
           </div>
         )}
         {coreFragRanks.length > 0 && (
-          <div className="panel" style={{ padding: "12px 13px", display: "flex", flexDirection: "column", gap: 10 }}>
+          <div className="panel" style={{ padding: 0, overflow: "hidden" }}>
+            {/* Illustration des fragments de CORE — miroir de la bannière relique
+                au-dessus : sans elle, une ligne « Fragments de core C ×2 » ne
+                montrait rien de ce qu'on venait de trouver. */}
+            <img src="assets/core-shard-banner.webp" alt="" style={{ display: "block", width: "100%", height: 108, objectFit: "cover" }} />
+            <div style={{ padding: "12px 13px", display: "flex", flexDirection: "column", gap: 10 }}>
             {coreFragRanks.map((rk) => {
               const total = (g.expCoreFragments && g.expCoreFragments[rk]) || 0;
               const need = XU.CORE_FRAGMENT_COSTS[rk];
@@ -572,8 +577,10 @@ function Expeditions() {
               return (
                 <div key={rk} style={{ display: "flex", flexDirection: "column", gap: 5 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    {/* ⬡ = fragment de CORE (le ✦ au-dessus reste la relique) */}
-                    <span className="exq-hex" style={{ color: col, borderColor: col, background: "rgba(255,255,255,.04)" }}>⬡</span>
+                    {/* Fragment de CORE : son illustration, comme la relique au-dessus */}
+                    <span className="exq-hex" style={{ color: col, borderColor: col, background: "rgba(255,255,255,.04)", padding: 0, overflow: "hidden" }}>
+                      <img src="assets/core-shard.webp" alt="" style={{ display: "block", width: "100%", height: "100%", objectFit: "cover" }} />
+                    </span>
                     <b style={{ flex: 1, minWidth: 0, fontSize: 13 }}>{I18N.t("EXP_FRAG_CORE_LINE", rk, coreFrags[rk])}</b>
                     <b className="exq-mono" style={{ color: col }}>{total} / {need}</b>
                   </div>
@@ -581,6 +588,7 @@ function Expeditions() {
                 </div>
               );
             })}
+            </div>
           </div>
         )}
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
