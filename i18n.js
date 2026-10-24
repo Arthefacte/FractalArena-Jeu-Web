@@ -1372,7 +1372,19 @@
       EN: "Climb as high as you can with your whole roster — HP carries over between floors, deaths are final for the run.",
       ZH: "带上你的全部实体尽力攀登——生命值在层与层之间保留，阵亡在本次挑战中不可复活。",
     },
-    TOUR_WEEK_ENDS: { FR: "Reset dans %s", EN: "Resets in %s", ZH: "%s后重置" },
+    // Badge hebdo de la Tour : la DURÉE est localisée par I18N.dur (jours/heures/
+    // minutes + pluriels). Le gabarit ne porte que la phrase et l'ordre des mots —
+    // en ZH la valeur se place AVANT le verbe (« 距离重置还有1天7小时 »).
+    TOUR_WEEK_ENDS: { FR: "Réinitialisation dans %s", EN: "Restart in %s", ZH: "距离重置还有%s" },
+    // Durées « humaines » (I18N.dur) : jamais de « j/h » français hors FR — le
+    // pluriel est porté par une paire singulier/pluriel, le ZH n'en a pas besoin.
+    DUR_DAY:   { FR: "%d jour", EN: "%d day", ZH: "%d天" },
+    DUR_DAYS:  { FR: "%d jours", EN: "%d days", ZH: "%d天" },
+    DUR_HOUR:  { FR: "%d heure", EN: "%d hour", ZH: "%d小时" },
+    DUR_HOURS: { FR: "%d heures", EN: "%d hours", ZH: "%d小时" },
+    DUR_MIN:   { FR: "%d minute", EN: "%d minute", ZH: "%d分钟" },
+    DUR_MINS:  { FR: "%d minutes", EN: "%d minutes", ZH: "%d分钟" },
+    DUR_UNDER_MIN: { FR: "moins d'une minute", EN: "less than a minute", ZH: "不到1分钟" },
     TOUR_BEST: { FR: "Meilleur étage : %d", EN: "Best floor: %d", ZH: "最高层数：%d" },
     TOUR_FLOOR: { FR: "Étage %d", EN: "Floor %d", ZH: "第%d层" },
     TOUR_NO_RUN: { FR: "Aucun run en cours cette semaine.", EN: "No run in progress this week.", ZH: "本周暂无进行中的挑战。" },
@@ -1814,6 +1826,30 @@
     return args.length ? fmt(s, args) : s;
   }
 
+  // Durée « humaine » localisée : jours / heures / minutes, pluriels compris.
+  // Cause du badge hebdo à moitié français : `TAU.fmtCountdown` (arene-ui.js)
+  // fabrique « 1j 7h » avec des unités FR codées en dur, puis on l'injectait dans
+  // un gabarit EN/ZH — « Resets in 1j 7h ». Ici la LANGUE est relue à chaque appel
+  // (aucun cache) : une bascule FR→EN→ZH se voit au rendu suivant, et la séparation
+  // des unités suit la langue (ZH colle « 1天7小时 », FR/EN espacent).
+  function dur(ms) {
+    const s = Math.max(0, Math.floor(Number(ms) || 0) / 1000);
+    const d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60);
+    const pick = (n, one, many) => t(n === 1 ? one : many, n);
+    const parts = [];
+    if (d > 0) {
+      parts.push(pick(d, "DUR_DAY", "DUR_DAYS"));
+      if (h > 0) parts.push(pick(h, "DUR_HOUR", "DUR_HOURS"));
+    } else if (h > 0) {
+      parts.push(pick(h, "DUR_HOUR", "DUR_HOURS"));
+      if (m > 0) parts.push(pick(m, "DUR_MIN", "DUR_MINS"));
+    } else if (m > 0) {
+      parts.push(pick(m, "DUR_MIN", "DUR_MINS"));
+    }
+    if (!parts.length) return t("DUR_UNDER_MIN");
+    return parts.join(lang === "ZH" ? "" : " ");
+  }
+
   // Localise une erreur serveur : code neutre connu → clé dédiée, sinon
   // fallback générique localisé. JAMAIS la chaîne brute (un joueur ZH/EN
   // verrait du français). Audit 2026-09-06 (P2.1).
@@ -1939,5 +1975,5 @@
     return t("ERR_GENERIC");
   }
 
-  window.FA_I18N = { t, setLang, getLang, detectLang, T, localizeServerError, LP_TIER_MIN };
+  window.FA_I18N = { t, setLang, getLang, detectLang, dur, T, localizeServerError, LP_TIER_MIN };
 })();
