@@ -1040,7 +1040,7 @@ function ForgeCoreFragments({ onForged }) {
                     le 24/10 le fragment de CORE porte son illustration, comme la relique : le
                     butin d'expédition montre ce qu'on vient de trouver, plus un glyphe. */}
                 <span className="exq-hex" style={{ width: 26, height: 26, fontSize: 13, color: col, borderColor: col, background: "rgba(255,255,255,.04)", padding: 0, overflow: "hidden" }}>
-                  <img src="assets/core-shard.webp" alt="" style={{ display: "block", width: "100%", height: "100%", objectFit: "cover" }} />
+                  <img src="assets/core-shard.webp?v=400" alt="" style={{ display: "block", width: "100%", height: "100%", objectFit: "cover" }} />
                 </span>
                 <b style={{ flex: 1, minWidth: 0, fontSize: 13 }}>{I18N.t("EXP_FRAG_CORE_LINE", rk, have)}</b>
                 <b className="mono" style={{ flex: "none", color: ready ? col : "var(--text-dim)" }}>{have} / {need}</b>
