@@ -1099,7 +1099,7 @@ function Expeditions() {
         overflow: "hidden"
       }
     }, /*#__PURE__*/React.createElement("img", {
-      src: "assets/core-shard-banner.webp?v=400",
+      src: "assets/core-shard-banner.webp?v=401",
       alt: "",
       style: {
         display: "block",
@@ -1141,7 +1141,7 @@ function Expeditions() {
           overflow: "hidden"
         }
       }, /*#__PURE__*/React.createElement("img", {
-        src: "assets/core-shard.webp?v=400",
+        src: "assets/core-shard.webp?v=401",
         alt: "",
         style: {
           display: "block",

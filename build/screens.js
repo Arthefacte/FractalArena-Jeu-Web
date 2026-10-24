@@ -1982,7 +1982,7 @@ function ForgeCoreFragments({
         overflow: "hidden"
       }
     }, /*#__PURE__*/React.createElement("img", {
-      src: "assets/core-shard.webp?v=400",
+      src: "assets/core-shard.webp?v=401",
       alt: "",
       style: {
         display: "block",
