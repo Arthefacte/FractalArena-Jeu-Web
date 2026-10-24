@@ -11,6 +11,10 @@ const KEYS = [
   ["NAV_TOUR", 0],
   ["TOUR_TITLE", 0], ["TOUR_SUB", 0],
   ["TOUR_WEEK_ENDS", 1], ["TOUR_BEST", 1], ["TOUR_FLOOR", 1],
+  // Durées localisées du badge hebdo (I18N.dur) : 1 nombre chacune, sauf le
+  // plancher « moins d'une minute » qui n'en prend aucun.
+  ["DUR_DAY", 1], ["DUR_DAYS", 1], ["DUR_HOUR", 1], ["DUR_HOURS", 1],
+  ["DUR_MIN", 1], ["DUR_MINS", 1], ["DUR_UNDER_MIN", 0],
   ["TOUR_NO_RUN", 0], ["TOUR_FREE_BADGE", 0],
   ["TOUR_RANKED", 0], ["TOUR_UNRANKED", 0], ["TOUR_UNRANKED_HINT", 1],
   ["TOUR_FREE_CAP_TAG", 0], ["TOUR_FREE_CAP_TITLE", 0], ["TOUR_FREE_CAP_SUB", 0],

@@ -7,7 +7,7 @@
 const { useState, useEffect } = React;
 const D = window.FA_DATA, I18N = window.FA_I18N;
 const { useFA, cx, fmt, rarityLabel, Bar, Modal, SectionHead, PostureSelect, AreneBattle, TokenIcon, FaText } = window;
-const TU = window.FA_TOUR_UI, TAU = window.FA_ARENE_UI;
+const TU = window.FA_TOUR_UI;
 
 const TOUR_ERRK = {
   run_actif: "TOUR_ERR_ACTIVE", pas_de_run: "TOUR_ERR_NORUN",
@@ -431,7 +431,11 @@ function Tour() {
 
       <div className="flex between center wrap" style={{ marginBottom: 14, gap: 10 }}>
         <span className="pill" style={{ color: "var(--gold)" }}>{I18N.t("TOUR_BEST", st.score.best_floor)}</span>
-        <span className="pill mono" style={{ color: "var(--text-dim)" }}>{st.weekKey} · {I18N.t("TOUR_WEEK_ENDS", TAU.fmtCountdown(st.weekEndsAt - Date.now()))}</span>
+        {/* Durée LOCALISÉE (jours/heures/minutes, pluriels) : `TAU.fmtCountdown` colle
+            des unités françaises (« 1j 7h ») dans un gabarit EN/ZH — le badge restait
+            donc à moitié français quelle que soit la langue. I18N.dur lit la langue au
+            rendu, donc le badge suit une bascule FR/EN/ZH sans remonter l'écran. */}
+        <span className="pill mono" style={{ color: "var(--text-dim)" }}>{st.weekKey} · {I18N.t("TOUR_WEEK_ENDS", I18N.dur(st.weekEndsAt - Date.now()))}</span>
         {!st.score.free_run_used && <span className="pill" style={{ color: "var(--success)" }}>{I18N.t("TOUR_FREE_BADGE")}</span>}
         {/* État de classement : sans lui, un joueur qui n'a fait que le run gratuit
             voit son étage et croit qu'il concourt pour la dotation. */}
@@ -459,20 +463,10 @@ function Tour() {
           <button className="btn btn-fire lg" data-guide="tour-start" onClick={() => setShowStart(true)} disabled={busy}>
             {!st.score.free_run_used ? I18N.t("TOUR_START_FREE") : <FaText text={I18N.t("TOUR_START_PAID", fmt(TU.nextCost(st, st.score)))} />}
           </button>
-          {/* Les champions alliés se choisissent AVANT de lancer : la rangée ne
-              vivait que dans la vue du run, donc un joueur hors run n'en voyait
-              aucun (constaté le 19/10/2026). Le choix est mémorisé côté client
-              (g.championBorrow) et part au premier combat. */}
-          <div style={{ marginTop: 16, textAlign: "left" }}>
-            <window.ChampionRow champions={g.championsList} activeOwner={champ ? (champ.owner_id || champ.owner_wallet) : null}
-              runState={null} myWallet={g.wallet} myId={g.publicId}
-              onPick={(e) => actions.championPickBorrow(e)} onClear={() => actions.championClearBorrow()} />
-            {champ && (
-              <div className="mono" style={{ fontSize: 11, color: "var(--elec)", marginTop: 4 }}>
-                {I18N.t("CHAMP_ACTIVE", champ.name)} · {I18N.t("CHAMP_NEED2")}
-              </div>
-            )}
-          </div>
+          {/* Hors run, AUCUNE rangée de champions (décision fondateur, 24/10/2026) :
+              l'emprunt ne sert qu'une fois le run lancé, donc l'écran d'avant-run
+              n'affiche que le bouton de départ. La rangée vit dans la vue du run
+              (plus bas), où le choix part au combat suivant. */}
         </div>
       ) : (
         <div className="panel oct" style={{ border: "1px solid var(--elec)", padding: 18, marginBottom: 14 }}>
