@@ -230,6 +230,23 @@ body[data-fond="cite"] .app-bg {
    en route vers le wallet lié — en retrait, parce qu'il n'est pas dépensable. */
 .chip.fb { border-color: var(--line); }
 .chip.fb .chip-amount { color: var(--gold); font-weight: 700; }
+/* Montant compact + EXACT au clic (ChipAmount). Le wrap ne participe pas au
+   flex du chip au-delà de sa boîte (inline-flex + gap hérités) : la bulle est
+   en absolu, elle ne pousse donc ni le chip ni le bandeau — même règle que
+   .chip-delta. */
+.chip-amount-wrap { position: relative; display: inline-flex; align-items: center; }
+.chip-amount-wrap .chip-amount { cursor: pointer; }
+/* Elle s'ouvre en DESSOUS, comme le delta : le bandeau est collé en haut, un
+   panneau au-dessus sortirait de la fenêtre. */
+.chip-exact {
+  position: absolute; top: calc(100% + 6px); right: 0; z-index: 60;
+  padding: 4px 8px; white-space: nowrap;
+  font-family: var(--font-mono); font-size: 12px; font-weight: 700;
+  color: var(--text); background: #0b1120;
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  box-shadow: 0 8px 22px -10px rgba(0, 0, 0, .9);
+  pointer-events: none;
+}
 /* Le crédit qui s'échappe du chip et s'efface. `position: absolute` : il ne
    pousse rien, donc le bandeau ne se réagence pas à chaque gain.
    Il descend au lieu de monter — le bandeau est collé en haut de l'écran

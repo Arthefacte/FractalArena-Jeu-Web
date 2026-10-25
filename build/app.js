@@ -5814,6 +5814,70 @@ function fbFmt(sats) {
   return v >= 0.01 ? v.toFixed(4) : v.toFixed(6);
 }
 
+// Format COMPACT pour les chips du bandeau : « 1,25 M », « 10,5 k », « 950 ».
+// Sur un téléphone, une montée de liquidité de sept chiffres poussait la rangée
+// hors du cadre (fondateur, 25/10/2026) : la place se gagne en abrégeant, pas en
+// rétrécissant la police. Le montant EXACT n'est jamais perdu — ChipAmount
+// l'affiche en entier au clic, au-dessus du bandeau.
+// Seuils volontairement bas (10 k, 1 M) : sous 10 000, la valeur exacte tient.
+function abbr(n) {
+  const v = Math.abs(Math.floor(Number(n) || 0));
+  const s = x => {
+    // Une décimale, sauf .0 qu'on jette : « 1,5 M » mais « 2 M ».
+    const r = Math.round(x * 10) / 10;
+    return (Number.isInteger(r) ? String(r) : r.toFixed(1)).replace(".", ",");
+  };
+  if (v >= 1e6) return s(v / 1e6) + " M";
+  if (v >= 1e4) return s(v / 1e3) + " k";
+  return fmt(v);
+}
+
+// Montant d'un chip : compact par défaut, EXACT au clic (retour haptique/visuel
+// par une bulle au-dessus du bandeau, refermée au tap ailleurs ou après 3 s).
+// Pas de `title` en seul canal : sur téléphone, un title ne s'ouvre pas.
+function ChipAmount({
+  value,
+  format
+}) {
+  const [open, setOpen] = useState(false);
+  const f = format || fmt;
+  const exact = f(value);
+  const compact = abbr(value);
+  useEffect(() => {
+    if (!open) return undefined;
+    const fermer = () => setOpen(false);
+    const t = setTimeout(fermer, 3000);
+    window.addEventListener("pointerdown", fermer, {
+      once: true
+    });
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener("pointerdown", fermer);
+    };
+  }, [open]);
+  return /*#__PURE__*/React.createElement("span", {
+    className: "chip-amount-wrap"
+  }, /*#__PURE__*/React.createElement("b", {
+    className: "chip-amount",
+    role: "button",
+    tabIndex: 0,
+    "aria-label": exact,
+    onClick: e => {
+      e.stopPropagation();
+      setOpen(o => !o);
+    },
+    onKeyDown: e => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        setOpen(o => !o);
+      }
+    }
+  }, compact), open && /*#__PURE__*/React.createElement("span", {
+    className: "chip-exact",
+    role: "tooltip"
+  }, exact));
+}
+
 // Badge 2D d'un chip : sprite figé des deux modèles 3D (mêmes caméra, lumières
 // et pose de repos que le rendu temps réel), baké le 21/09/2026 — source dans
 // l'historique de _bake-badges.html, fichiers assets/fa-badge.webp / fb-badge.webp.
@@ -5847,6 +5911,14 @@ function Header({
   // non-lus du salon arrive par événement depuis RoomFab.
   const [poolsOpen, setPoolsOpen] = useState(false);
   const [roomUnread, setRoomUnread] = useState(0);
+  // Le tiroir « Plus » (Nav) demande le pli des pools depuis la v402 : le caret
+  // a quitté le bandeau en mobile. On écoute ici et on émet l'état (une seule
+  // source, comme le caret desktop).
+  useEffect(() => {
+    const t = () => togglePools();
+    window.addEventListener("fa:toggle-pools", t);
+    return () => window.removeEventListener("fa:toggle-pools", t);
+  }, []);
   // Liquidité FB (le FB DÉPOSÉ, celui qui se dépense dans la boutique) : MÊME source
   // que la case FB — GET /fb — jamais un second calcul, jamais un solde inventé : si
   // le serveur ne répond pas, le chip disparaît.
@@ -5949,7 +6021,9 @@ function Header({
     className: cx("chip", "liquid", liquidPop.n > 0 && "pop")
   }, /*#__PURE__*/React.createElement(ChipBadge, {
     src: "assets/fa-badge.webp"
-  }), fmt(g.liquid), /*#__PURE__*/React.createElement(ChipDelta, {
+  }), /*#__PURE__*/React.createElement(ChipAmount, {
+    value: g.liquid
+  }), /*#__PURE__*/React.createElement(ChipDelta, {
     delta: liquidPop.delta
   })), fbLiq && /*#__PURE__*/React.createElement("span", {
     className: "chip fb",
@@ -5957,9 +6031,10 @@ function Header({
   }, /*#__PURE__*/React.createElement(ChipBadge, {
     src: "assets/fb-badge.webp",
     alt: ""
-  }), /*#__PURE__*/React.createElement("b", {
-    className: "chip-amount"
-  }, fbFmt(fbLiq.fb_sats)), fbEnAttente > 0 && /*#__PURE__*/React.createElement("span", {
+  }), /*#__PURE__*/React.createElement(ChipAmount, {
+    value: Math.round((Number(fbLiq.fb_sats) || 0) / 1e8),
+    format: fbFmt
+  }), fbEnAttente > 0 && /*#__PURE__*/React.createElement("span", {
     className: "chip-lbl",
     title: I18N.t("FB_POT_PEND_TITLE"),
     style: {
@@ -5971,9 +6046,9 @@ function Header({
   }, /*#__PURE__*/React.createElement(ChipBadge, {
     src: "assets/fa-padlock.webp",
     alt: ""
-  }), /*#__PURE__*/React.createElement("b", {
-    className: "chip-amount"
-  }, fmt(g.locked)), /*#__PURE__*/React.createElement(ChipDelta, {
+  }), /*#__PURE__*/React.createElement(ChipAmount, {
+    value: g.locked
+  }), /*#__PURE__*/React.createElement(ChipDelta, {
     delta: lockedPop.delta
   })), /*#__PURE__*/React.createElement(LangSwitch, null), /*#__PURE__*/React.createElement("button", {
     className: "btn ghost sm tut-help",
@@ -6072,6 +6147,22 @@ function Nav() {
     g,
     actions
   } = useFA();
+  // Le tiroir « Plus » porte aussi les outils du bandeau mobile (quiz, support,
+  // salon, pli des pools) : la rangée du header ne laisse plus la place au logo
+  // ni au nom du jeu. Le Header reste la SOURCE de ces états — on les écoute
+  // ici, on ne les recalcule pas.
+  const [roomUnread, setRoomUnread] = useState(0);
+  const [quizReady, setQuizReady] = useState(false);
+  useEffect(() => {
+    const r = e => setRoomUnread(e.detail || 0);
+    const q = e => setQuizReady(!!e.detail);
+    window.addEventListener("fa:room-unread", r);
+    window.addEventListener("fa:quiz-ready", q);
+    return () => {
+      window.removeEventListener("fa:room-unread", r);
+      window.removeEventListener("fa:quiz-ready", q);
+    };
+  }, []);
   // Mobile : 4 onglets principaux + « Plus » (bottom sheet avec le reste).
   const [sheetOpen, setSheetOpen] = useState(false);
   const tabs = [["team", "NAV_TEAM"], ["fosse", "NAV_FOSSE"], ["arene", "NAV_ARENE"], ["campaign", "NAV_CAMPAIGN"], ["tour", "NAV_TOUR"], ["expeditions", "NAV_EXPEDITIONS"], ["quests", "NAV_QUESTS"], ["forge", "NAV_FORGE"], ["market", "NAV_MARKET"], ["wallet", "NAV_WALLET"], ["boosts", "NAV_BOOSTS"], ["perso", "NAV_PERSO"], ["leaderboard", "NAV_LEADERBOARD"], ["options", "NAV_OPTIONS"]];
@@ -6195,6 +6286,47 @@ function Nav() {
     className: "fa-sheet-dot",
     "aria-hidden": "true"
   })))), /*#__PURE__*/React.createElement("div", {
+    className: "fa-sheet-tools"
+  }, g.wallet && /*#__PURE__*/React.createElement("button", {
+    className: "hdr-mbtn",
+    "aria-label": I18N.t("QUIZ_FAB_LABEL"),
+    onClick: () => {
+      setSheetOpen(false);
+      window.dispatchEvent(new Event("fa:open-quiz"));
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    "aria-hidden": "true"
+  }, "\u2753"), quizReady && /*#__PURE__*/React.createElement("span", {
+    className: "hdr-mdot",
+    "aria-hidden": "true"
+  })), /*#__PURE__*/React.createElement("button", {
+    className: "hdr-mbtn",
+    "aria-label": I18N.t("CHAT_FAB_LABEL"),
+    onClick: () => {
+      setSheetOpen(false);
+      window.dispatchEvent(new Event("fa:open-chat"));
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    "aria-hidden": "true"
+  }, "\uD83D\uDCAC")), /*#__PURE__*/React.createElement("button", {
+    className: "hdr-mbtn",
+    "aria-label": I18N.t("ROOM_FAB_LABEL"),
+    onClick: () => {
+      setSheetOpen(false);
+      window.dispatchEvent(new Event("fa:open-room"));
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    "aria-hidden": "true"
+  }, "\uD83D\uDC65"), roomUnread > 0 && /*#__PURE__*/React.createElement("span", {
+    className: "hdr-mbadge"
+  }, roomUnread > 9 ? "9+" : roomUnread)), /*#__PURE__*/React.createElement("button", {
+    className: cx("hdr-mbtn", "hdr-mcaret", poolsOpen && "on"),
+    "aria-label": I18N.t("POOLS_FOLD_LABEL"),
+    onClick: () => {
+      setSheetOpen(false);
+      window.dispatchEvent(new Event("fa:toggle-pools"));
+    }
+  }, "\u25BE")), /*#__PURE__*/React.createElement("div", {
     className: "fa-sheet-foot"
   }, /*#__PURE__*/React.createElement(LangSwitch, null), /*#__PURE__*/React.createElement("button", {
     className: "btn ghost sm",

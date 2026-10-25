@@ -1545,6 +1545,9 @@
     ROOM_PLACEHOLDER: { FR: "Message au salon…", EN: "Message the room…", ZH: "发送到聊天室…" },
     ROOM_SEND: { FR: "Envoyer", EN: "Send", ZH: "发送" },
     ROOM_FAB_LABEL: { FR: "Ouvrir le chat des joueurs", EN: "Open players chat", ZH: "打开玩家聊天" },
+    // Pli des pools depuis le tiroir « Plus » (mobile, v402) : le caret a quitté
+    // le bandeau pour laisser la place au logo et au nom du jeu.
+    POOLS_FOLD_LABEL: { FR: "Plier ou déplier les pools", EN: "Fold or unfold the pools", ZH: "折叠或展开池" },
     ROOM_EMPTY: { FR: "Aucun message. Lance la conversation !", EN: "No messages yet. Start the conversation!", ZH: "还没有消息，来开启对话吧！" },
     ROOM_MUTE: { FR: "Masquer", EN: "Mute", ZH: "屏蔽" },
     ROOM_MUTED: { FR: "Joueur masqué", EN: "Player muted", ZH: "已屏蔽该玩家" },
