@@ -3378,6 +3378,54 @@ function fbFmt(sats) {
   return v >= 0.01 ? v.toFixed(4) : v.toFixed(6);
 }
 
+// Format COMPACT pour les chips du bandeau : « 1,25 M », « 10,5 k », « 950 ».
+// Sur un téléphone, une montée de liquidité de sept chiffres poussait la rangée
+// hors du cadre (fondateur, 25/10/2026) : la place se gagne en abrégeant, pas en
+// rétrécissant la police. Le montant EXACT n'est jamais perdu — ChipAmount
+// l'affiche en entier au clic, au-dessus du bandeau.
+// Seuils volontairement bas (10 k, 1 M) : sous 10 000, la valeur exacte tient.
+function abbr(n) {
+  const v = Math.abs(Math.floor(Number(n) || 0));
+  const s = (x) => {
+    // Une décimale, sauf .0 qu'on jette : « 1,5 M » mais « 2 M ».
+    const r = Math.round(x * 10) / 10;
+    return (Number.isInteger(r) ? String(r) : r.toFixed(1)).replace(".", ",");
+  };
+  if (v >= 1e6) return s(v / 1e6) + " M";
+  if (v >= 1e4) return s(v / 1e3) + " k";
+  return fmt(v);
+}
+
+// Montant d'un chip : compact par défaut, EXACT au clic (retour haptique/visuel
+// par une bulle au-dessus du bandeau, refermée au tap ailleurs ou après 3 s).
+// Pas de `title` en seul canal : sur téléphone, un title ne s'ouvre pas.
+function ChipAmount({ value, format }) {
+  const [open, setOpen] = useState(false);
+  const f = format || fmt;
+  const exact = f(value);
+  const compact = abbr(value);
+  useEffect(() => {
+    if (!open) return undefined;
+    const fermer = () => setOpen(false);
+    const t = setTimeout(fermer, 3000);
+    window.addEventListener("pointerdown", fermer, { once: true });
+    return () => { clearTimeout(t); window.removeEventListener("pointerdown", fermer); };
+  }, [open]);
+  return (
+    <span className="chip-amount-wrap">
+      <b
+        className="chip-amount"
+        role="button"
+        tabIndex={0}
+        aria-label={exact}
+        onClick={(e) => { e.stopPropagation(); setOpen((o) => !o); }}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpen((o) => !o); } }}
+      >{compact}</b>
+      {open && <span className="chip-exact" role="tooltip">{exact}</span>}
+    </span>
+  );
+}
+
 // Badge 2D d'un chip : sprite figé des deux modèles 3D (mêmes caméra, lumières
 // et pose de repos que le rendu temps réel), baké le 21/09/2026 — source dans
 // l'historique de _bake-badges.html, fichiers assets/fa-badge.webp / fb-badge.webp.
@@ -3399,6 +3447,14 @@ function Header({ liquidPop, lockedPop }) {
   // non-lus du salon arrive par événement depuis RoomFab.
   const [poolsOpen, setPoolsOpen] = useState(false);
   const [roomUnread, setRoomUnread] = useState(0);
+  // Le tiroir « Plus » (Nav) demande le pli des pools depuis la v402 : le caret
+  // a quitté le bandeau en mobile. On écoute ici et on émet l'état (une seule
+  // source, comme le caret desktop).
+  useEffect(() => {
+    const t = () => togglePools();
+    window.addEventListener("fa:toggle-pools", t);
+    return () => window.removeEventListener("fa:toggle-pools", t);
+  }, []);
   // Liquidité FB (le FB DÉPOSÉ, celui qui se dépense dans la boutique) : MÊME source
   // que la case FB — GET /fb — jamais un second calcul, jamais un solde inventé : si
   // le serveur ne répond pas, le chip disparaît.
@@ -3466,7 +3522,7 @@ function Header({ liquidPop, lockedPop }) {
       <div className="flex gap8 center wrap" style={{ justifyContent: "flex-end" }}>
         <span key={"lq" + liquidPop.n} className={cx("chip", "liquid", liquidPop.n > 0 && "pop")}>
           <ChipBadge src="assets/fa-badge.webp" />
-          {fmt(g.liquid)}
+          <ChipAmount value={g.liquid} />
           <ChipDelta delta={liquidPop.delta} />
         </span>
         {/* Chip FB : le badge porte DÉJÀ le sigle « FB », donc aucun libellé texte
@@ -3476,7 +3532,10 @@ function Header({ liquidPop, lockedPop }) {
         {fbLiq && (
           <span className="chip fb" title={I18N.t("FB_CHIP_TITLE")}>
             <ChipBadge src="assets/fb-badge.webp" alt="" />
-            <b className="chip-amount">{fbFmt(fbLiq.fb_sats)}</b>
+            {/* FB = sats au serveur : on passe des unités entières au chip
+                (1 sats =.00000001 FB) pour que le compact et l'exact parlent
+                de la même grandeur. */}
+            <ChipAmount value={Math.round((Number(fbLiq.fb_sats) || 0) / 1e8)} format={fbFmt} />
             {fbEnAttente > 0 && (
               <span className="chip-lbl" title={I18N.t("FB_POT_PEND_TITLE")} style={{ color: "var(--text-dim)" }}>(+{fbFmt(fbEnAttente)})</span>
             )}
@@ -3485,7 +3544,7 @@ function Header({ liquidPop, lockedPop }) {
         {g.locked > 0 && (
           <span key={"lk" + lockedPop.n} className={cx("chip", "locked", lockedPop.n > 0 && "pop")}>
             <ChipBadge src="assets/fa-padlock.webp" alt="" />
-            <b className="chip-amount">{fmt(g.locked)}</b>
+            <ChipAmount value={g.locked} />
             <ChipDelta delta={lockedPop.delta} />
           </span>
         )}
@@ -3561,6 +3620,30 @@ function MnavSlot({ active, icon, glyph, label, badge, onClick, locked }) {
 
 function Nav() {
   const { g, actions } = useFA();
+  // Le tiroir « Plus » porte aussi les outils du bandeau mobile (quiz, support,
+  // salon, pli des pools) : la rangée du header ne laisse plus la place au logo
+  // ni au nom du jeu. Le Header reste la SOURCE de ces états — on les écoute
+  // ici, on ne les recalcule pas.
+  const [roomUnread, setRoomUnread] = useState(0);
+  const [quizReady, setQuizReady] = useState(false);
+  // Le caret des pools vit ici depuis la v402 : il lui faut SON état, sinon on
+  // lit `poolsOpen` sans l'avoir déclaré — ReferenceError, et React démonte
+  // tout l'arbre (écran blanc au tap sur « Plus »). Le Header reste la source
+  // du pli ; ici on n'affiche que la flèche.
+  const [poolsOpen, setPoolsOpen] = useState(false);
+  useEffect(() => {
+    const r = (e) => setRoomUnread(e.detail || 0);
+    const q = (e) => setQuizReady(!!e.detail);
+    const p = (e) => setPoolsOpen(!!e.detail);
+    window.addEventListener("fa:room-unread", r);
+    window.addEventListener("fa:quiz-ready", q);
+    window.addEventListener("fa:pools-open", p);
+    return () => {
+      window.removeEventListener("fa:room-unread", r);
+      window.removeEventListener("fa:quiz-ready", q);
+      window.removeEventListener("fa:pools-open", p);
+    };
+  }, []);
   // Mobile : 4 onglets principaux + « Plus » (bottom sheet avec le reste).
   const [sheetOpen, setSheetOpen] = useState(false);
   const tabs = [
@@ -3652,6 +3735,31 @@ function Nav() {
             </div>
             {/* En mobile, langue et aide n'ont plus de place dans le header une
                 ligne : elles vivent ici, dans le tiroir « Plus ». */}
+            {/* Outils du bandeau rapatriés ici en mobile (la rangée prenait la
+                place du logo et du nom du jeu). Mêmes actions, mêmes badges :
+                ce sont des boutons MIROIR — la rangée du header reste montée et
+                active en desktop, et c'est elle qui porte l'état (non-lus,
+                point du quiz, pli des pools). */}
+            <div className="fa-sheet-tools">
+              {g.wallet && (
+                <button className="hdr-mbtn" aria-label={I18N.t("QUIZ_FAB_LABEL")} onClick={() => { setSheetOpen(false); window.dispatchEvent(new Event("fa:open-quiz")); }}>
+                  <span aria-hidden="true">❓</span>
+                  {quizReady && <span className="hdr-mdot" aria-hidden="true" />}
+                </button>
+              )}
+              <button className="hdr-mbtn" aria-label={I18N.t("CHAT_FAB_LABEL")} onClick={() => { setSheetOpen(false); window.dispatchEvent(new Event("fa:open-chat")); }}>
+                <span aria-hidden="true">💬</span>
+              </button>
+              <button className="hdr-mbtn" aria-label={I18N.t("ROOM_FAB_LABEL")} onClick={() => { setSheetOpen(false); window.dispatchEvent(new Event("fa:open-room")); }}>
+                <span aria-hidden="true">👥</span>
+                {roomUnread > 0 && <span className="hdr-mbadge">{roomUnread > 9 ? "9+" : roomUnread}</span>}
+              </button>
+              <button
+                className={cx("hdr-mbtn", "hdr-mcaret", poolsOpen && "on")}
+                aria-label={I18N.t("POOLS_FOLD_LABEL")}
+                onClick={() => { setSheetOpen(false); window.dispatchEvent(new Event("fa:toggle-pools")); }}
+              >▾</button>
+            </div>
             <div className="fa-sheet-foot">
               <LangSwitch />
               <button

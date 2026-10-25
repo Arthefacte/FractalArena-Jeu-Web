@@ -29,7 +29,24 @@
     box-shadow: 0 1px 0 rgba(247, 147, 26, .16), inset 0 -14px 26px rgba(247, 147, 26, .05);
   }
   .hdr-logo { width: clamp(26px, 7.4vw, 32px); height: clamp(26px, 7.4vw, 32px); }
-  .hdr-word { display: none; }
+  /* Le nom du jeu revient en portrait (fondateur, 25/10/2026) : la rangée
+     d'outils a quitté le bandeau, la place est libre. Il est TAILLÉ POUR ÊTRE
+     ENTIER, pas seulement présent : à 320 px avec trois chips, « FRACTAL
+     ARENA » débordait et le début des chips passait par-dessus « ARENA »
+     (fondateur : « ça mange Arena »). Le nom cède la place en premier, les
+     chips ensuite — jamais l'inverse. */
+  .hdr-word { display: flex; min-width: 0; flex: 0 1 auto; overflow: hidden; }
+  .hdr-title {
+    /* Taille MESURÉE, pas estimée : « FRACTAL ARENA » = 14 caractères ≈ 7,2 px
+       par caractère à cette taille. À 320 px avec quatre chips, il ne reste que
+       73 px pour le nom → 7 px de police, 0 d'interlettrage. Mesuré dans le
+       vrai DOM : 9,5 px donnait 91 px de texte pour 73 px de place, et la fin
+       (« ARENA ») passait SOUS le premier chip. C'est la place qui commande. */
+    font-size: clamp(7px, 2.15vw, 12.5px);
+    letter-spacing: clamp(0px, 0.12vw, 1.6px);
+    white-space: nowrap; overflow: hidden; text-overflow: clip;
+  }
+  .hdr-sub { display: none; }
   .chip { font-size: clamp(10px, 2.9vw, 12px); padding: 3px clamp(5px, 1.8vw, 8px); gap: 4px; white-space: nowrap; }
   /* Badge 2D du chip : 13 px (l'ancienne taille, pensée pour un jeton plein) ne
      laissait rien lire du monogramme. 16 px est la plus grande taille qui tienne
@@ -45,10 +62,17 @@
   /* Langue et aide migrent dans le bottom sheet « Plus » */
   .hdr .lang-switch { display: none; }
   .hdr .tut-help { display: none; }
+  /* Quiz / support / salon / caret des pools : ils quittent le bandeau en
+     mobile et vivent dans le tiroir « Plus » (`.fa-mtools-mirror`), à côté de
+     la langue et de l'aide. Raison (fondateur, 25/10) : la rangée d'outils
+     prenait toute la place à droite, ne laissait rien au logo 3D ni au nom du
+     jeu, et poussait les chips hors cadre sur les petits écrans. Les boutons
+     restent montés dans le DOM (desktop + tests), simplement masqués ici. */
+  .hdr-mtools { display: none; }
+  .hdr-mbtn.hdr-mcaret { display: none; }
   /* Boutons du header : styles de base dans styles.css (v229 — ils vivent
-     partout). Ici, seul le caret des pools est réactivé : le pli n'existe
-     qu'en mobile. */
-  .hdr-mbtn.hdr-mcaret { display: grid; }
+     partout). Plus de caret à réactiver ici : les pools se plient depuis le
+     tiroir « Plus ». */
 
   /* ---- Pli des pools : replié derrière le header, tap sur le caret ---- */
   .fa-pools { display: none; }
@@ -204,6 +228,12 @@
   .fa-sheet-item.on { border-color: rgba(247, 147, 26, .6); }
   .fa-sheet-item.on span { color: #ffd6a3; }
   .fa-sheet-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  /* Outils du bandeau (quiz, support, salon, pli des pools) dans le tiroir :
+     le header ne garde que le logo, les chips et le nom du jeu. On dimensionne
+     les boutons PAR LEUR CONTENEUR, pas en redéfinissant `.hdr-mbtn` (sa taille
+     de base reste dans styles.css, une seule fois — garde de test). */
+  .fa-sheet-tools { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 4px 0 12px; }
+  .fa-sheet-tools button { width: 42px; height: 42px; font-size: 16px; }
 
   /* ---- vh → dvh : la barre d'URL mobile ne fait plus sauter les listes ---- */
   .app-shell { min-height: 100dvh; }
@@ -315,7 +345,29 @@
 
 /* Extra squeeze for very narrow phones */
 @media (max-width: 380px) {
+  /* Quatre chips + nom du jeu ne tiennent pas à 340 px et moins : les montants
+     abrégés ont gagné ~90 px, mais le nom mérite plus que 7 px de police.
+     Sous 380 px on plafonne le nom à 8,5 px et c'est la RANGÉE qui cède :
+     elle passe sur deux lignes alignées à droite (wrap) au lieu de rogner le
+     titre ou de le laisser sous un chip. Mesuré : 320 px → la 1re ligne perd
+     le chip liquidité, la seconde porte le nom et les autres chips. */
   .chip { font-size: 11px; padding: 5px 8px; }
+  .hdr .flex.gap8 { flex-wrap: wrap; row-gap: 4px; }
+  .hdr-word { flex: none; }
+  .hdr-spacer { flex: 1 1 auto; min-width: 0; }
+  .hdr .flex.gap8 { flex: 0 1 auto; min-width: 0; }
+  .hdr-title { font-size: 8.5px; letter-spacing: 0.2px; }
+  /* Le header est en flex-wrap: nowrap : à 320 px, les outils du bandeau
+     (quiz, support, salon, caret — visibles en paysage seulement) se resserrent
+     AVANT que quoi que ce soit ne déborde. On les cible par leur rangée, pas en
+     redéfinissant `.hdr-mbtn` : sa taille de base reste dans styles.css, une
+     seule fois (garde de test). */
+  .hdr { gap: 5px; padding: 4px 6px; padding-top: calc(4px + env(safe-area-inset-top, 0px)); }
+  .hdr .wrap { gap: 4px; }
+  .chip { gap: 3px; }
+  .hdr-mtools { gap: 3px; }
+  .hdr-mtools button { width: 28px; height: 28px; font-size: 13px; }
+  .hdr-logo { width: 24px; height: 24px; }
   .fa-mnav-label { font-size: 8.5px; }
   /* Les 5 puces de stats passent en 3 + 2 au lieu de s'écraser sur une ligne */
   .stat-row { gap: 4px; }
@@ -332,4 +384,9 @@
   .hdr-word { display: flex; }
   .hdr-title { font-size: 15px; letter-spacing: 3px; }
   .hdr-sub { display: block; font-size: 8.5px; letter-spacing: 2px; }
+  /* PaySAGE : la place abonde, la rangée d'outils revient dans le bandeau
+     (c'était le comportement d'avant le 25/10/2026, et le tiroir reste une
+     corvée quand on a de la largeur). */
+  .hdr-mtools { display: flex; }
+  .hdr-mbtn.hdr-mcaret { display: grid; }
 }
