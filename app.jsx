@@ -3626,14 +3626,22 @@ function Nav() {
   // ici, on ne les recalcule pas.
   const [roomUnread, setRoomUnread] = useState(0);
   const [quizReady, setQuizReady] = useState(false);
+  // Le caret des pools vit ici depuis la v402 : il lui faut SON état, sinon on
+  // lit `poolsOpen` sans l'avoir déclaré — ReferenceError, et React démonte
+  // tout l'arbre (écran blanc au tap sur « Plus »). Le Header reste la source
+  // du pli ; ici on n'affiche que la flèche.
+  const [poolsOpen, setPoolsOpen] = useState(false);
   useEffect(() => {
     const r = (e) => setRoomUnread(e.detail || 0);
     const q = (e) => setQuizReady(!!e.detail);
+    const p = (e) => setPoolsOpen(!!e.detail);
     window.addEventListener("fa:room-unread", r);
     window.addEventListener("fa:quiz-ready", q);
+    window.addEventListener("fa:pools-open", p);
     return () => {
       window.removeEventListener("fa:room-unread", r);
       window.removeEventListener("fa:quiz-ready", q);
+      window.removeEventListener("fa:pools-open", p);
     };
   }, []);
   // Mobile : 4 onglets principaux + « Plus » (bottom sheet avec le reste).
