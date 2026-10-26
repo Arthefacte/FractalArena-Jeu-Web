@@ -39,5 +39,9 @@ Contrôle statique réussi (scripts, ressources et clés). Contrôle visuel non 
 
 ## Livraison
 
-- Versions distantes vérifiées après `git fetch origin` : maximum 408. Version libre candidate : 409, à revérifier avant livraison.
+- Étape fonctionnelle committée : `4abd4e1` (`feat(arene): exiger une defense posee et gerer ses PV`).
+- Versions distantes revérifiées après un second `git fetch origin` : maximum 408. Version libre retenue : **409**.
+- Marqueurs alignés : tous les `?v=` d'`index.html`, `FA_ASSET_V` de `data.js`, manifeste, `fa-v409` du service worker, `version.json` et les deux littéraux d'`account-wiring.test.js`.
+- Nouveau build réussi après bump ; suite finale : **1 269 tests, 1 263 réussis, 6 ignorés, 0 échec**. Ajout à l'index après le build.
+- Sauvegarde temporaire de référence et premier journal nettoyés ; seul le journal final `ar_v2_client.log` est conservé dans Temp.
 - Aucun merge et aucun push sur `main`.
