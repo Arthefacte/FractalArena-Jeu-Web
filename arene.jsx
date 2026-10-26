@@ -49,6 +49,9 @@ function Arene() {
   // E4 : mon propre identifiant opaque quand il est là — la route accepte les deux formes
   // (adresse ou identifiant), et l'identifiant n'apprend rien sur moi si la requête traînait.
   useEffect(() => { if (g.wallet) { actions.pvpRefresh().then(() => actions.pvpAttacksSeen()); actions.pvpDefenseOf(g.publicId || g.wallet).then((r) => { setDefPosture((r && r.posture) || "equilibre"); setMyDefensePosted(!!(r && r.team && r.team.length === 3) && !r.implicit); }); } }, [g.wallet, g.publicId]);
+  // Historique des paiements de saison : la donnée vit dans pvp_season_archive, elle
+  // n'était visible nulle part. Lue avec l'écran, indépendamment du popup.
+  useEffect(() => { if (g.wallet) actions.pvpPrizesHistory(); }, [g.wallet]);
   useEffect(() => {
     const id = setInterval(() => setNowTs(Date.now()), 1000);
     return () => clearInterval(id);
@@ -335,6 +338,39 @@ function Arene() {
             ))}
         </div>
 
+      {(() => {
+        /* Historique des paiements (26/10/2026). Le popup ne revient qu'une fois et
+           disparaissait sur une fermeture ; le joueur n'avait alors plus aucun moyen de
+           revoir ce qu'il avait touché (« j'ai rien reçu » alors que 492 FA étaient
+           crédités). Lecture seule, du plus récent au plus ancien. */
+        const hist = Array.isArray(g.pvpPrizesHistory) ? g.pvpPrizesHistory : [];
+        const totalHist = hist.reduce((s, h) => s + (h.reward || 0), 0);
+        return (
+          <div className="card" style={{ marginTop: 14 }} data-fa="hist-prix">
+            <h3 style={{ margin: "0 0 8px" }}>{I18N.t("AR2_HIST_TITLE")}</h3>
+            {hist.length === 0
+              ? <div style={{ color: "var(--text-dim)", fontSize: 12 }}>{I18N.t("AR2_HIST_NONE")}</div>
+              : (
+                <div>
+                  {hist.map((h, i) => (
+                    <div key={h.season + "-" + i} className="flex between" style={{ borderTop: i ? "1px solid var(--line,#1c2740)" : "none", padding: "7px 0", fontSize: 12, gap: 8 }}>
+                      <span className="mono" style={{ color: AU.leagueColor(h.league) }}>
+                        {I18N.t("PRIZE_SEASON_RANK", h.season, h.rank, AU.leagueLabel(h.league))}
+                      </span>
+                      <span className="mono" style={{ color: h.locked ? "var(--text-dim)" : "var(--success)", whiteSpace: "nowrap" }}>
+                        <FaText text={"+" + (h.reward || 0) + " FA" + (h.locked ? " 🔒" : "")} s={12} />
+                      </span>
+                    </div>
+                  ))}
+                  <div className="mono" style={{ marginTop: 8, fontSize: 11, color: "var(--text-dim)", textAlign: "right" }}>
+                    <FaText text={I18N.t("AR2_HIST_TOTAL", totalHist)} s={11} />
+                  </div>
+                </div>
+              )}
+          </div>
+        );
+      })()}
+
       {pick && (() => {
         const byId = (id) => g.roster.find((b) => b.id === id);
         // Affinités face à l'équipe adverse affichée — cosmétique (arene-ui.js).
@@ -420,12 +456,17 @@ function Arene() {
   );
 }
 
-function PrizeModal({ prizes, onClaim }) {
+function PrizeModal({ prizes, onClaim, onClose }) {
   const { Modal } = window;
   const AU = window.FA_ARENE_UI;
   const total = prizes.reduce((s, p) => s + (p.reward || 0), 0);
   return (
-    <Modal onClose={onClaim} accent="var(--gold)">
+    /* Fermer (✕, Échap, clic à côté) n'est PAS récupérer. Avant, `onClose` valait
+       `onClaim` : un clic à côté posait `seen = TRUE` sur tous les prix, et
+       `/pvp/prizes` (filtre `seen = FALSE`) ne les renvoyait plus jamais — le joueur
+       perdait la trace d'un gain pourtant crédité (26/10/2026 : 492 FA, saison 18).
+       Seul le bouton « Récupérer » appelle `onClaim`. */
+    <Modal onClose={onClose} accent="var(--gold)">
       <div style={{ textAlign: "center", marginBottom: 16 }}>
         <div className="h1" style={{ fontSize: 28, color: "var(--gold)" }}>{I18N.t(prizes.every((p) => p.kind === "tower") ? "PRIZE_TOWER_TITLE" : "PRIZE_TITLE")}</div>
       </div>
@@ -453,6 +494,9 @@ function PrizeModal({ prizes, onClaim }) {
       <button className="btn block lg btn-elec" style={{ marginTop: 16 }} onClick={onClaim}>
         {I18N.t("PRIZE_CLAIM")}
       </button>
+      <div className="mono" style={{ textAlign: "center", marginTop: 8, fontSize: 11, color: "var(--text-dim)" }}>
+        {I18N.t("PRIZE_KEEP_HINT")}
+      </div>
     </Modal>
   );
 }

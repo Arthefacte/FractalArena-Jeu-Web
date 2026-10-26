@@ -472,6 +472,8 @@ function freshState() {
     // { type, tier, active, loyaltyDays, worldsCompleted, paidWins, aura }
     pvp: {},
     pvpPrizes: [],
+    pvpPrizesHistory: [],
+    // paiements de saison passés (écran Arène), vus ou non
     towerPrizes: [],
     // Champion de soutien (location de puissance)
     championBeastId: null,
@@ -625,6 +627,10 @@ function App() {
   // vivrait. SecretsGate doit rester monté malgré cette bascule → il est rendu ici, dans les
   // deux branches du if (!g.wallet) ci-dessous, jamais à l'intérieur d'Onboarding.
   const [accSecrets, setAccSecrets] = useState(null);
+  // Modale de récompense fermée sans être récupérée : elle ne se rallume pas dans cette
+  // session (le joueur a dit « plus tard »), mais `seen` n'est PAS touché — le prix
+  // reste dû et l'historique de l'Arène le montre.
+  const [prixClos, setPrixClos] = useState(false);
   const gRef = useRef(g);
   gRef.current = g;
   // Jeton de séquence du marché : une réponse « relic » arrivant après « core »
@@ -5003,10 +5009,30 @@ function App() {
           }
         });
       } catch (e) {/* silencieux */}
+      // Le prix marqué « vu » ne reviendra plus dans le popup : on garde la ligne à
+      // l'écran en la poussant dans l'historique, sans attendre un rechargement.
       setG(s => ({
         ...s,
+        pvpPrizesHistory: [...(s.pvpPrizes || []).map(p => ({
+          ...p
+        })).reverse(), ...(s.pvpPrizesHistory || [])],
         pvpPrizes: []
       }));
+    },
+    async pvpPrizesHistory() {
+      if (!gRef.current.authToken) return;
+      try {
+        const r = await fetch(`${API_URL}/pvp/prizes/history`, {
+          headers: {
+            "Authorization": "Bearer " + gRef.current.authToken
+          }
+        });
+        const data = await r.json().catch(() => ({}));
+        if (data.ok) setG(s => ({
+          ...s,
+          pvpPrizesHistory: data.history || []
+        }));
+      } catch (e) {/* silencieux */}
     },
     async towerPrizes() {
       if (!gRef.current.authToken) return;
@@ -5568,12 +5594,17 @@ function App() {
       ...p,
       kind: "tower"
     })) : [])];
-    return pz.length > 0 && /*#__PURE__*/React.createElement(window.PrizeModal, {
+    if (pz.length === 0 || prixClos) return null;
+    /* « Récupérer » marque les prix comme vus ; fermer ne fait que masquer la modale
+       pour la session. Avant, la fermeture valait récupération et le joueur pouvait
+       perdre la trace d'un gain crédité (26/10/2026). */
+    return /*#__PURE__*/React.createElement(window.PrizeModal, {
       prizes: pz,
       onClaim: () => {
         if (g.pvpPrizes && g.pvpPrizes.length) actions.pvpPrizesSeen();
         if (g.towerPrizes && g.towerPrizes.length) actions.towerPrizesSeen();
-      }
+      },
+      onClose: () => setPrixClos(true)
     });
   })(), g.championUses.unseen > 0 && g.championUses.uses.length > 0 && /*#__PURE__*/React.createElement(window.ChampionUsesModal, {
     uses: g.championUses.uses,
