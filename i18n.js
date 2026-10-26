@@ -28,6 +28,7 @@
     NAV_QUESTS: { FR: "Quêtes", EN: "Quests", ZH: "任务" },
     NAV_CAMPAIGN: { FR: "Campagne", EN: "Campaign", ZH: "战役" },
     NAV_MORE: { FR: "Plus", EN: "More", ZH: "更多" },
+    LEGAL_HUB: { FR: "Informations légales", EN: "Legal information", ZH: "法律信息" },
     LEGAL_NOTICE: { FR: "Mentions légales", EN: "Legal notice", ZH: "法律信息" },
     LEGAL_PRIVACY: { FR: "Confidentialité", EN: "Privacy", ZH: "隐私政策" },
     LEGAL_TERMS: { FR: "Conditions d'utilisation", EN: "Terms of use", ZH: "使用条款" },

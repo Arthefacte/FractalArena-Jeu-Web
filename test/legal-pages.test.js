@@ -102,6 +102,18 @@ test("aucun marqueur provisoire dans les pages légales", () => {
   }
 });
 
+// La page-hub est l'entrée permanente du bandeau : elle doit exister et pointer
+// vers les trois documents. Sans elle, un joueur desktop en jeu n'a aucun chemin
+// (le tiroir « Plus » n'existe qu'en mobile, l'écran d'entrée disparaît au 1er compte).
+test("la page-hub juridique est atteignable depuis le bandeau", () => {
+  const app = lire("app.jsx");
+  const hub = lire("juridique.html");
+  assert.match(app, /href="juridique\.html"/, "aucun lien vers juridique.html dans le bandeau");
+  for (const page of PAGES) assert.ok(hub.includes(`href="${page}"`), `le hub ne renvoie pas vers ${page}`);
+  assert.ok(lire("sitemap.xml").includes("juridique.html"), "juridique.html absente du sitemap");
+  assert.match(hub, /contact@arthefacte\.com/);
+});
+
 test("le sitemap déclare les pages légales", () => {
   const sitemap = lire("sitemap.xml");
   for (const page of PAGES) assert.ok(sitemap.includes(page), `${page} absente du sitemap`);
