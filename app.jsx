@@ -3787,6 +3787,11 @@ function Nav() {
             </div>
             <div className="fa-sheet-foot">
               <LangSwitch />
+              <div className="legal-links legal-links-sheet">
+                <a href="mentions-legales.html">{I18N.t("LEGAL_NOTICE")}</a>
+                <a href="confidentialite.html">{I18N.t("LEGAL_PRIVACY")}</a>
+                <a href="cgu.html">{I18N.t("LEGAL_TERMS")}</a>
+              </div>
               <button
                 className="btn ghost sm"
                 onClick={() => { setSheetOpen(false); window.dispatchEvent(new Event("fa-open-tutorial")); }}
@@ -3957,6 +3962,15 @@ function Onboarding({ onAccountCreated }) {
           {[["FR", "Français"], ["EN", "English"], ["ZH", "中文"]].map(([code, lbl]) => (
             <button key={code} className={I18N.getLang() === code ? "on" : ""} onClick={() => actions.setLang(code)}>{lbl}</button>
           ))}
+        </div>
+
+        {/* Pages légales de CE domaine (LCEN art. 6-III, RGPD art. 13) : ce sont des
+            liens <a> classiques, donc une navigation pleine page hors de la SPA.
+            Elles doivent rester atteignables avant tout compte créé. */}
+        <div className="legal-links">
+          <a href="mentions-legales.html">{I18N.t("LEGAL_NOTICE")}</a>
+          <a href="confidentialite.html">{I18N.t("LEGAL_PRIVACY")}</a>
+          <a href="cgu.html">{I18N.t("LEGAL_TERMS")}</a>
         </div>
       </div>
 

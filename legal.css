@@ -1,0 +1,65 @@
+/* Pages juridiques du jeu — autonomes : aucun script, aucune ressource externe. */
+:root{
+  --bg:#05070f; --panel:rgba(255,255,255,.03); --line:rgba(255,255,255,.09);
+  --line2:rgba(255,255,255,.16); --ink:#e9eefb; --dim:rgba(233,238,251,.82);
+  --faint:rgba(233,238,251,.62); --elec:#28d0ff; --gold:#ffb02e;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{overflow-x:hidden;scroll-behavior:smooth}
+body{
+  font-family:'Chakra Petch',system-ui,sans-serif;background:var(--bg);color:var(--ink);
+  font-size:16.5px;line-height:1.62;-webkit-font-smoothing:antialiased;
+  background-image:radial-gradient(ellipse at 50% -10%,rgba(40,208,255,.10),transparent 55%),
+                   radial-gradient(ellipse at 50% 120%,rgba(255,176,46,.05),transparent 50%);
+  min-height:100vh;
+}
+a{color:var(--elec);text-decoration:none;border-bottom:1px solid rgba(40,208,255,.3)}
+a:hover{border-bottom-color:var(--elec)}
+:focus-visible{outline:2px solid var(--elec);outline-offset:3px;border-radius:4px}
+.top{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;
+  gap:1rem;padding:.8rem 1.1rem;background:rgba(5,7,15,.9);border-bottom:1px solid var(--line);
+  backdrop-filter:blur(10px)}
+.brand{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;letter-spacing:2.5px;
+  color:var(--ink);border:0;text-transform:uppercase}
+.brand span{color:var(--elec)}
+.back{font-family:'JetBrains Mono',monospace;font-size:9.5px;font-weight:700;letter-spacing:1.4px;
+  text-transform:uppercase;color:var(--dim);border:1px solid var(--line2);padding:.45rem .75rem;border-radius:999px}
+main{max-width:800px;margin:0 auto;padding:2.6rem 1.1rem 3.5rem}
+.eyebrow{font-family:'JetBrains Mono',monospace;font-size:9.5px;font-weight:700;letter-spacing:2px;
+  text-transform:uppercase;color:var(--faint);margin-bottom:.6rem}
+h1{font-size:clamp(1.45rem,4vw,2rem);font-weight:700;letter-spacing:.4px;line-height:1.2;margin-bottom:.45rem}
+.updated{color:var(--faint);font-size:.88rem;margin-bottom:2rem;padding-bottom:1.1rem;border-bottom:1px solid var(--line)}
+h2{font-size:1rem;font-weight:700;letter-spacing:.6px;margin:2.2rem 0 .7rem;color:#fff;
+  text-transform:uppercase;font-family:'JetBrains Mono',monospace;font-size:.82rem;letter-spacing:1.5px}
+h3{font-size:1rem;font-weight:700;margin:1.4rem 0 .35rem;color:#fff}
+p,ul,ol,dl{margin-bottom:.95rem;color:var(--dim)}
+li{margin:.28rem 0 .28rem 1.15rem}
+li::marker{color:var(--elec)}
+strong{color:var(--ink);font-weight:700}
+code{font-family:'JetBrains Mono',monospace;font-size:.84em;background:rgba(255,255,255,.06);
+  padding:.1em .35em;border-radius:4px;color:#cfe9ff}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:1rem 1.1rem;margin:1.1rem 0}
+.card p:last-child,.card ul:last-child{margin-bottom:0}
+.summary{border-left:3px solid var(--gold);padding-left:1rem}
+dl.grid{display:grid;grid-template-columns:minmax(9rem,auto) 1fr;gap:.32rem 1rem;margin:0 0 1rem}
+dl.grid dt{font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:1.2px;
+  text-transform:uppercase;color:var(--faint);padding-top:.3rem}
+dl.grid dd{color:var(--dim)}
+@media(max-width:520px){dl.grid{grid-template-columns:1fr;gap:0}dl.grid dd{margin-bottom:.65rem}}
+table{width:100%;border-collapse:collapse;margin:.9rem 0;font-size:.92rem}
+th,td{text-align:left;padding:.5rem .55rem;border-bottom:1px solid var(--line);vertical-align:top;color:var(--dim)}
+th{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1.1px;text-transform:uppercase;color:var(--faint)}
+footer{border-top:1px solid var(--line);padding:1.4rem 1.1rem 2.2rem;display:flex;flex-direction:column;
+  align-items:center;gap:.8rem;text-align:center}
+.links{display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center}
+.links a{font-family:'JetBrains Mono',monospace;font-size:9.5px;font-weight:700;letter-spacing:1.3px;
+  text-transform:uppercase;color:var(--dim);border:1px solid var(--line);padding:.42rem .72rem;border-radius:999px}
+.links a:hover,.links a[aria-current="page"]{color:#fff;background:rgba(40,208,255,.09);border-color:rgba(40,208,255,.4)}
+footer small{color:var(--faint);font-size:.84rem;max-width:54ch}
+
+/* Polices auto-hébergées : aucune requête vers Google dans les pages juridiques. */
+@font-face{font-family:'Chakra Petch';font-style:normal;font-weight:400;font-display:swap;src:url('assets/fonts/chakra-petch-400-latin.woff2') format('woff2')}
+@font-face{font-family:'Chakra Petch';font-style:normal;font-weight:500;font-display:swap;src:url('assets/fonts/chakra-petch-500-latin.woff2') format('woff2')}
+@font-face{font-family:'Chakra Petch';font-style:normal;font-weight:600;font-display:swap;src:url('assets/fonts/chakra-petch-600-latin.woff2') format('woff2')}
+@font-face{font-family:'Chakra Petch';font-style:normal;font-weight:700;font-display:swap;src:url('assets/fonts/chakra-petch-700-latin.woff2') format('woff2')}
+@font-face{font-family:'JetBrains Mono';font-style:normal;font-weight:400 700;font-display:swap;src:url('assets/fonts/jetbrains-mono-latin.woff2') format('woff2')}
