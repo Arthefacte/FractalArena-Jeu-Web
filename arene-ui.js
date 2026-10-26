@@ -161,5 +161,20 @@
       && best_power > power * 1.25;
   }
 
-  window.FA_ARENE_UI = { leagueLabel, leagueColor, fmtCountdown, fmtCountdownSec, eventLogLines, entryModes, seasonCountdown, computeSynergiesLabels, affinityIndicator, powerGapPct, powerGapTone, powerGapLabel, defenseStatus, defensePostedDate, defenseOutdated };
+  // Même mesure que le topThree de pvp.js : somme des stats de base × niveau
+  // × poids de rareté. Le miroir de leaderboard.beastPower existe déjà dans
+  // les Expéditions ; le consulter à l'appel, après le chargement des helpers.
+  function entityPower(entity) {
+    return window.FA_EXPEDITIONS_UI.beastPower(entity);
+  }
+
+  function rankedRoster(roster) {
+    // Comme Équipe, partir uniquement du roster actif renvoyé par le serveur :
+    // une fusion retire ses sacrifices de cette liste, pas d'un catalogue annexe.
+    // filter copie la liste ; le tri stable conserve son ordre en cas d'égalité.
+    return (Array.isArray(roster) ? roster : []).filter(Boolean)
+      .sort((a, b) => entityPower(b) - entityPower(a));
+  }
+
+  window.FA_ARENE_UI = { leagueLabel, leagueColor, fmtCountdown, fmtCountdownSec, eventLogLines, entryModes, seasonCountdown, computeSynergiesLabels, affinityIndicator, powerGapPct, powerGapTone, powerGapLabel, defenseStatus, defensePostedDate, defenseOutdated, entityPower, rankedRoster };
 })();

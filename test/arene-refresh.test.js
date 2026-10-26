@@ -46,11 +46,10 @@ test("Arène V2 : l'entrée explique les trois conséquences d'une défense abse
   assert.doesNotMatch(src, /AR2_ATTACKS_NO_DEFENSE|r\.implicit/);
 });
 
-test("Arène V2 : les deux boutons d'entrée ouvrent la sélection d'équipe", () => {
+test("Arène V2 : l'entrée permet de choisir sur place ou d'ouvrir Équipe", () => {
   const src = lire("arene.jsx");
-  for (const key of ["AR2_OPEN_TEAM", "AR2_CHOOSE_THREE"]) {
-    assert.match(src, new RegExp('<button[^>]*onClick=\\{\\(\\) => actions\\.setView\\("team"\\)\\}[^>]*>\\{I18N\\.t\\("' + key + '"\\)\\}'));
-  }
+  assert.match(src, /onClick=\{\(\) => actions\.setView\("team"\)\}>\{I18N\.t\("AR2_OPEN_TEAM"\)\}/);
+  assert.match(src, /onClick=\{\(\) => setReplacementIndex\(0\)\}>\{I18N\.t\("AR2_CHOOSE_THREE"\)\}/);
 });
 
 test("les libellés de rotation et d'entrée existent dans les trois langues", () => {
