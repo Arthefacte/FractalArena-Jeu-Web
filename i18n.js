@@ -505,6 +505,10 @@
     PRIZE_TOWER_RANK:    { FR: "Semaine %s — Rang %d · Étage %d", EN: "Week %s — Rank %d · Floor %d", ZH: "第 %s 周 — 第 %d 名 · 第 %d 层" },
     PRIZE_REWARD_LOCKED: { FR: "Récompense : +%d FA 🔒", EN: "Reward: +%d FA 🔒", ZH: "奖励：+%d FA 🔒" },
     AR2_PRIZE_FLAT:      { FR: "Rangs 11-50 : +25 FA 🔒 chacun (min. 3 combats)", EN: "Ranks 11-50: +25 FA 🔒 each (min. 3 fights)", ZH: "第 11-50 名：每人 +25 FA 🔒（至少 3 场战斗）" },
+    AR2_HIST_TITLE:      { FR: "Historique des paiements", EN: "Payment history", ZH: "奖励记录" },
+    AR2_HIST_NONE:       { FR: "Aucun paiement de saison pour l'instant.", EN: "No season payout yet.", ZH: "暂无赛季奖励。" },
+    AR2_HIST_TOTAL:      { FR: "Total reçu : %d FA", EN: "Total received: %d FA", ZH: "累计获得：%d FA" },
+    PRIZE_KEEP_HINT:     { FR: "Fermer ne perd rien : le gain reste dans l'historique de l'Arène.", EN: "Closing loses nothing: the reward stays in the Arena history.", ZH: "关闭不会丢失：奖励会保留在竞技场记录中。" },
     TOUR_LB_DOTATION:    { FR: "Dotation hebdo : jusqu'à 3 000 FA au top 10 — runs payants seulement", EN: "Weekly prize pool: up to 3,000 FA for the top 10 — paid runs only", ZH: "每周奖池：前 10 名最高瓜分 3000 FA — 仅限付费挑战" },
 
     // combat log

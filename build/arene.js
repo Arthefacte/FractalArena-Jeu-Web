@@ -97,6 +97,11 @@ function Arene() {
       });
     }
   }, [g.wallet, g.publicId]);
+  // Historique des paiements de saison : la donnée vit dans pvp_season_archive, elle
+  // n'était visible nulle part. Lue avec l'écran, indépendamment du popup.
+  useEffect(() => {
+    if (g.wallet) actions.pvpPrizesHistory();
+  }, [g.wallet]);
   useEffect(() => {
     const id = setInterval(() => setNowTs(Date.now()), 1000);
     return () => clearInterval(id);
@@ -676,7 +681,64 @@ function Arene() {
       overflow: "hidden",
       textOverflow: "ellipsis"
     }
-  }, D.displayName(b)), /*#__PURE__*/React.createElement("div", null, I18N.t("LINK_TIER"), b.level, " \xB7 ", D.fmtStat(D.eff(b, "atk")), "/", D.fmtStat(D.eff(b, "def"))))))))), pick && (() => {
+  }, D.displayName(b)), /*#__PURE__*/React.createElement("div", null, I18N.t("LINK_TIER"), b.level, " \xB7 ", D.fmtStat(D.eff(b, "atk")), "/", D.fmtStat(D.eff(b, "def"))))))))), (() => {
+    /* Historique des paiements (26/10/2026). Le popup ne revient qu'une fois et
+       disparaissait sur une fermeture ; le joueur n'avait alors plus aucun moyen de
+       revoir ce qu'il avait touché (« j'ai rien reçu » alors que 492 FA étaient
+       crédités). Lecture seule, du plus récent au plus ancien. */
+    const hist = Array.isArray(g.pvpPrizesHistory) ? g.pvpPrizesHistory : [];
+    const totalHist = hist.reduce((s, h) => s + (h.reward || 0), 0);
+    return /*#__PURE__*/React.createElement("div", {
+      className: "card",
+      style: {
+        marginTop: 14
+      },
+      "data-fa": "hist-prix"
+    }, /*#__PURE__*/React.createElement("h3", {
+      style: {
+        margin: "0 0 8px"
+      }
+    }, I18N.t("AR2_HIST_TITLE")), hist.length === 0 ? /*#__PURE__*/React.createElement("div", {
+      style: {
+        color: "var(--text-dim)",
+        fontSize: 12
+      }
+    }, I18N.t("AR2_HIST_NONE")) : /*#__PURE__*/React.createElement("div", null, hist.map((h, i) => /*#__PURE__*/React.createElement("div", {
+      key: h.season + "-" + i,
+      className: "flex between",
+      style: {
+        borderTop: i ? "1px solid var(--line,#1c2740)" : "none",
+        padding: "7px 0",
+        fontSize: 12,
+        gap: 8
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "mono",
+      style: {
+        color: AU.leagueColor(h.league)
+      }
+    }, I18N.t("PRIZE_SEASON_RANK", h.season, h.rank, AU.leagueLabel(h.league))), /*#__PURE__*/React.createElement("span", {
+      className: "mono",
+      style: {
+        color: h.locked ? "var(--text-dim)" : "var(--success)",
+        whiteSpace: "nowrap"
+      }
+    }, /*#__PURE__*/React.createElement(FaText, {
+      text: "+" + (h.reward || 0) + " FA" + (h.locked ? " 🔒" : ""),
+      s: 12
+    })))), /*#__PURE__*/React.createElement("div", {
+      className: "mono",
+      style: {
+        marginTop: 8,
+        fontSize: 11,
+        color: "var(--text-dim)",
+        textAlign: "right"
+      }
+    }, /*#__PURE__*/React.createElement(FaText, {
+      text: I18N.t("AR2_HIST_TOTAL", totalHist),
+      s: 11
+    }))));
+  })(), pick && (() => {
     const byId = id => g.roster.find(b => b.id === id);
     // Affinités face à l'équipe adverse affichée — cosmétique (arene-ui.js).
     const oppTypes = (pick.oppTeam || []).map(b => b && b.type);
@@ -872,93 +934,110 @@ function Arene() {
 }
 function PrizeModal({
   prizes,
-  onClaim
+  onClaim,
+  onClose
 }) {
   const {
     Modal
   } = window;
   const AU = window.FA_ARENE_UI;
   const total = prizes.reduce((s, p) => s + (p.reward || 0), 0);
-  return /*#__PURE__*/React.createElement(Modal, {
-    onClose: onClaim,
-    accent: "var(--gold)"
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      textAlign: "center",
-      marginBottom: 16
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "h1",
-    style: {
-      fontSize: 28,
-      color: "var(--gold)"
-    }
-  }, I18N.t(prizes.every(p => p.kind === "tower") ? "PRIZE_TOWER_TITLE" : "PRIZE_TITLE"))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      flexDirection: "column",
-      gap: 12
-    }
-  }, prizes.map((p, i) => /*#__PURE__*/React.createElement("div", {
-    key: i,
-    className: "panel oct",
-    style: {
-      border: "1px solid var(--line)",
-      padding: "10px 14px"
-    }
-  }, p.kind === "tower" ? /*#__PURE__*/React.createElement("div", {
-    className: "mono",
-    style: {
-      color: "var(--elec)",
-      marginBottom: 6,
-      fontWeight: "bold"
-    }
-  }, "\uD83D\uDDFC ", I18N.t("PRIZE_TOWER_RANK", p.week_key, p.rank, p.best_floor)) : /*#__PURE__*/React.createElement("div", {
-    className: "mono",
-    style: {
-      color: AU.leagueColor(p.league),
-      marginBottom: 6,
-      fontWeight: "bold"
-    }
-  }, I18N.t("PRIZE_SEASON_RANK", p.season, p.rank, AU.leagueLabel(p.league))), /*#__PURE__*/React.createElement("div", {
-    className: "mono",
-    style: {
-      fontSize: 13
-    }
-  }, /*#__PURE__*/React.createElement(FaText, {
-    text: I18N.t("PRIZE_BEFORE", p.balance_before)
-  })), /*#__PURE__*/React.createElement("div", {
-    className: "mono",
-    style: {
-      fontSize: 13,
-      color: "var(--success)"
-    }
-  }, /*#__PURE__*/React.createElement(FaText, {
-    text: I18N.t(p.locked ? "PRIZE_REWARD_LOCKED" : "PRIZE_REWARD", p.reward)
-  })), /*#__PURE__*/React.createElement("div", {
-    className: "mono",
-    style: {
-      fontSize: 13
-    }
-  }, /*#__PURE__*/React.createElement(FaText, {
-    text: I18N.t("PRIZE_AFTER", p.balance_after)
-  }))))), prizes.length > 1 && /*#__PURE__*/React.createElement("div", {
-    className: "mono",
-    style: {
-      textAlign: "center",
-      marginTop: 12,
-      color: "var(--success)",
-      fontWeight: "bold"
-    }
-  }, /*#__PURE__*/React.createElement(FaText, {
-    text: I18N.t("PRIZE_TOTAL", total)
-  })), /*#__PURE__*/React.createElement("button", {
-    className: "btn block lg btn-elec",
-    style: {
-      marginTop: 16
-    },
-    onClick: onClaim
-  }, I18N.t("PRIZE_CLAIM")));
+  return (
+    /*#__PURE__*/
+    /* Fermer (✕, Échap, clic à côté) n'est PAS récupérer. Avant, `onClose` valait
+       `onClaim` : un clic à côté posait `seen = TRUE` sur tous les prix, et
+       `/pvp/prizes` (filtre `seen = FALSE`) ne les renvoyait plus jamais — le joueur
+       perdait la trace d'un gain pourtant crédité (26/10/2026 : 492 FA, saison 18).
+       Seul le bouton « Récupérer » appelle `onClaim`. */
+    React.createElement(Modal, {
+      onClose: onClose,
+      accent: "var(--gold)"
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        textAlign: "center",
+        marginBottom: 16
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "h1",
+      style: {
+        fontSize: 28,
+        color: "var(--gold)"
+      }
+    }, I18N.t(prizes.every(p => p.kind === "tower") ? "PRIZE_TOWER_TITLE" : "PRIZE_TITLE"))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        flexDirection: "column",
+        gap: 12
+      }
+    }, prizes.map((p, i) => /*#__PURE__*/React.createElement("div", {
+      key: i,
+      className: "panel oct",
+      style: {
+        border: "1px solid var(--line)",
+        padding: "10px 14px"
+      }
+    }, p.kind === "tower" ? /*#__PURE__*/React.createElement("div", {
+      className: "mono",
+      style: {
+        color: "var(--elec)",
+        marginBottom: 6,
+        fontWeight: "bold"
+      }
+    }, "\uD83D\uDDFC ", I18N.t("PRIZE_TOWER_RANK", p.week_key, p.rank, p.best_floor)) : /*#__PURE__*/React.createElement("div", {
+      className: "mono",
+      style: {
+        color: AU.leagueColor(p.league),
+        marginBottom: 6,
+        fontWeight: "bold"
+      }
+    }, I18N.t("PRIZE_SEASON_RANK", p.season, p.rank, AU.leagueLabel(p.league))), /*#__PURE__*/React.createElement("div", {
+      className: "mono",
+      style: {
+        fontSize: 13
+      }
+    }, /*#__PURE__*/React.createElement(FaText, {
+      text: I18N.t("PRIZE_BEFORE", p.balance_before)
+    })), /*#__PURE__*/React.createElement("div", {
+      className: "mono",
+      style: {
+        fontSize: 13,
+        color: "var(--success)"
+      }
+    }, /*#__PURE__*/React.createElement(FaText, {
+      text: I18N.t(p.locked ? "PRIZE_REWARD_LOCKED" : "PRIZE_REWARD", p.reward)
+    })), /*#__PURE__*/React.createElement("div", {
+      className: "mono",
+      style: {
+        fontSize: 13
+      }
+    }, /*#__PURE__*/React.createElement(FaText, {
+      text: I18N.t("PRIZE_AFTER", p.balance_after)
+    }))))), prizes.length > 1 && /*#__PURE__*/React.createElement("div", {
+      className: "mono",
+      style: {
+        textAlign: "center",
+        marginTop: 12,
+        color: "var(--success)",
+        fontWeight: "bold"
+      }
+    }, /*#__PURE__*/React.createElement(FaText, {
+      text: I18N.t("PRIZE_TOTAL", total)
+    })), /*#__PURE__*/React.createElement("button", {
+      className: "btn block lg btn-elec",
+      style: {
+        marginTop: 16
+      },
+      onClick: onClaim
+    }, I18N.t("PRIZE_CLAIM")), /*#__PURE__*/React.createElement("div", {
+      className: "mono",
+      style: {
+        textAlign: "center",
+        marginTop: 8,
+        fontSize: 11,
+        color: "var(--text-dim)"
+      }
+    }, I18N.t("PRIZE_KEEP_HINT")))
+  );
 }
 Object.assign(window, {
   Arene,
