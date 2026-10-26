@@ -19,6 +19,10 @@ test("les trois pages légales existent et sont liées depuis l'interface", () =
     // Deux points d'accès : l'écran d'entrée (avant tout compte) et le tiroir « Plus ».
     const liens = app.split(`href="${page}"`).length - 1;
     assert.ok(liens >= 2, `${page} doit être liée depuis l'écran d'entrée ET le tiroir « Plus » (${liens})`);
+    // Troisième point d'accès : l'écran Options, seul commun entre desktop et
+    // mobile une fois le compte créé (le tiroir « Plus » n'existe qu'en mobile).
+    assert.ok(lire("screens.jsx").includes(`href="${page}"`),
+      `${page} doit aussi être liée depuis l'écran Options`);
   }
 });
 
