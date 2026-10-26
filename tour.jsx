@@ -124,21 +124,32 @@ function TourTierBand({ score, verified }) {
 /* Top 50 de la semaine — lignes enrichies serveur {rank, name, wallet_short, value}. */
 function TourLeaderboard() {
   const { g, actions } = useFA();
-  const [st, setSt] = useState({ loading: true, top: [], error: false });
+  const [st, setSt] = useState({ loading: true, top: [], error: false, ranked: 0, dotation: 0, rank1: 0 });
   useEffect(() => {
     let alive = true;
     actions.towerLeaderboard().then((r) => {
       if (!alive) return;
-      if (r.ok) setSt({ loading: false, top: r.top, error: false });
-      else setSt({ loading: false, top: [], error: true });
+      if (r.ok) setSt({ loading: false, top: r.top, error: false, ranked: r.ranked || 0, dotation: r.dotation || 0, rank1: r.rank1 || 0 });
+      else setSt({ loading: false, top: [], error: true, ranked: 0, dotation: 0, rank1: 0 });
     });
     return () => { alive = false; };
   }, []);
+  // Part du rang 1 : servie par le serveur (towerRankFirstShare) — elle inclut le reste de
+  // division, que `pool * 10 / 55` laisse tomber (186 payes contre 181 calcules).
+  const rang1 = st.rank1 || 0;
   const myShort = g.wallet ? g.wallet.slice(0, 6) + "…" + g.wallet.slice(-4) : "";
   return (
     <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 12 }}>
       <div className="h2" style={{ fontSize: 13, color: "var(--elec)", marginBottom: 8 }}>🗼 {I18N.t("TOUR_LB_TITLE")}</div>
-      <div className="mono" style={{ fontSize: 11, color: "var(--text-dim)", marginBottom: 8 }}><FaText text={I18N.t("TOUR_LB_DOTATION")} s={11} /></div>
+      {/* 26/10/2026 : la ligne annonçait « jusqu'à 3 000 FA », un montant que le barème ne
+          produit pas (10 payés × 100 FA = 1 000 max). On affiche désormais la dotation
+          RÉELLE de la semaine, servie par le serveur (towerRankPool), et la part du rang 1. */}
+      <div className="mono" style={{ fontSize: 11, color: "var(--text-dim)", marginBottom: 4 }}><FaText text={I18N.t("TOUR_LB_DOTATION")} s={11} /></div>
+      {!st.loading && !st.error && (
+        <div className="mono" style={{ fontSize: 11, color: "var(--gold)", marginBottom: 8 }}>
+          <FaText text={I18N.t("TOUR_LB_LIVE", st.ranked, st.dotation, rang1)} s={11} />
+        </div>
+      )}
       {st.loading && <div className="muted mono" style={{ fontSize: 12, padding: 8 }}>{I18N.t("TOUR_LOADING")}</div>}
       {st.error && <div className="muted mono" style={{ fontSize: 12, padding: 8, color: "var(--alert)" }}>{I18N.t("TOUR_ERROR")}</div>}
       {!st.loading && !st.error && (

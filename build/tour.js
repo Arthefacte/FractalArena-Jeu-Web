@@ -298,7 +298,10 @@ function TourLeaderboard() {
   const [st, setSt] = useState({
     loading: true,
     top: [],
-    error: false
+    error: false,
+    ranked: 0,
+    dotation: 0,
+    rank1: 0
   });
   useEffect(() => {
     let alive = true;
@@ -307,17 +310,26 @@ function TourLeaderboard() {
       if (r.ok) setSt({
         loading: false,
         top: r.top,
-        error: false
+        error: false,
+        ranked: r.ranked || 0,
+        dotation: r.dotation || 0,
+        rank1: r.rank1 || 0
       });else setSt({
         loading: false,
         top: [],
-        error: true
+        error: true,
+        ranked: 0,
+        dotation: 0,
+        rank1: 0
       });
     });
     return () => {
       alive = false;
     };
   }, []);
+  // Part du rang 1 : servie par le serveur (towerRankFirstShare) — elle inclut le reste de
+  // division, que `pool * 10 / 55` laisse tomber (186 payes contre 181 calcules).
+  const rang1 = st.rank1 || 0;
   const myShort = g.wallet ? g.wallet.slice(0, 6) + "…" + g.wallet.slice(-4) : "";
   return /*#__PURE__*/React.createElement("div", {
     className: "panel oct",
@@ -337,10 +349,20 @@ function TourLeaderboard() {
     style: {
       fontSize: 11,
       color: "var(--text-dim)",
-      marginBottom: 8
+      marginBottom: 4
     }
   }, /*#__PURE__*/React.createElement(FaText, {
     text: I18N.t("TOUR_LB_DOTATION"),
+    s: 11
+  })), !st.loading && !st.error && /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      fontSize: 11,
+      color: "var(--gold)",
+      marginBottom: 8
+    }
+  }, /*#__PURE__*/React.createElement(FaText, {
+    text: I18N.t("TOUR_LB_LIVE", st.ranked, st.dotation, rang1),
     s: 11
   })), st.loading && /*#__PURE__*/React.createElement("div", {
     className: "muted mono",
