@@ -71,3 +71,15 @@ FR/EN/ZH et six sections. Le fichier est ignoré par Git et reste **hors commit*
   1 276 réussis, 6 ignorés, 0 échec**. `git diff --check` réussi.
 - L'ajout à l'index suit ce build ; le bump accompagne le commit des fichiers
   servis pour respecter le contrôle de cache-busting par rapport au parent.
+
+## Livraison
+
+- Étape fonctionnelle et version committées ensemble : `40eff3e`
+  (`feat(arene): afficher la provenance de la defense (v410)`).
+- Contrôle du cache-busting rejoué après commit contre son parent : **2/2 réussis**,
+  journal `ar_v2_prov_commit.log` dans Temp.
+- `git push -u origin Arthefacte/arene-v2-provenance` effectué.
+- PR en brouillon : [#315](https://github.com/Arthefacte/FractalArena-Jeu-Web/pull/315),
+  base `main`, avec compte de tests avant/après, version et points ouverts.
+- CI GitHub du commit fonctionnel `40eff3e` : workflow `tests`, job `test` réussi.
+- Aucun merge ; les deux briefs locaux et la preview ne sont pas committés.
