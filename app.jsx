@@ -2850,7 +2850,8 @@ function App() {
 
     async pvpRefresh() {
       const w = gRef.current.wallet; if (!w) return;
-      const authHeaders = () => ({ "Authorization": "Bearer " + gRef.current.authToken });
+      const token = gRef.current.authToken;
+      const authHeaders = () => ({ "Authorization": "Bearer " + token });
       try {
         const [cad, season, opp, ladder, atk] = await Promise.all([
           fetch(`${API_URL}/pvp/cadence`, { headers: authHeaders() }).then((r) => r.json()).catch(() => ({})),
@@ -2863,12 +2864,13 @@ function App() {
         // la réponse (`me_player_id`), avec repli sur l'adresse tant qu'elle est là (phase 1).
         const myRow = (ladder.ladder || []).find((x) =>
           (ladder.me_player_id && x.player_id) ? x.player_id === ladder.me_player_id : x.wallet === w);
-        setG((s) => ({ ...s, pvp: {
+        setG((s) => s.wallet !== w || s.authToken !== token ? s : ({ ...s, pvp: {
           league: (myRow && myRow.league) || ladder.league,
           rating: myRow ? myRow.rating : undefined,
           free_remaining: cad.free_remaining, fa_cost: cad.fa_cost, revanches: cad.revanches || [],
+          heal_cost: cad.heal_cost, pair_limit: cad.pair_limit,
           season: season && season.ok ? season : undefined,
-          opponents: opp.opponents || [], power: opp.power || 0, ladder: ladder.ladder || [],
+          opponents: (opp.opponents || []).slice(0, 6), power: opp.power, ladder: ladder.ladder || [],
           refresh_free: opp.refresh_free_remaining, refresh_cost: opp.refresh_cost,
           attacks: atk.attacks || [], attacksUnseen: atk.unseen || 0,
         } }));
@@ -3022,20 +3024,39 @@ function App() {
       const j = await r.json().catch(() => ({})); return j;
     },
     async pvpDefenseOf(wallet) {
-      if (!wallet) return { posture: null };
+      if (!wallet) return { ok: false, posture: null, error: "auth" };
+      const authHeaders = () => ({ "Authorization": "Bearer " + gRef.current.authToken });
       try {
         // Le jeton est OBLIGATOIRE sur cette route (requireWalletAuth → 401 sans Bearer) :
         // l'appel partait sans en-tête, donc en 401 systématique — masqué parce que l'appelant
         // retombait sur « equilibre », une posture que personne n'avait choisie (audit 22/09/2026).
         const r = await fetch(`${API_URL}/pvp/defense/${encodeURIComponent(wallet)}`, { headers: authHeaders() });
-        if (r.status === 401) return { posture: null, error: "session_expiree" };
-        if (r.status === 429) return { posture: null, error: "rate_limited" };
+        if (r.status === 401) return { ok: false, status: r.status, posture: null, error: "session_expiree" };
+        if (r.status === 429) return { ok: false, status: r.status, posture: null, error: "rate_limited" };
         const j = await r.json().catch(() => ({}));
-        if (!r.ok || !j) return { posture: null };
+        if (!r.ok) return { ...j, ok: false, status: r.status, posture: null, error: j.error || "server" };
         // `posture` n'est renvoyée que pour MA défense : pour un adversaire le serveur répond
         // posture_hidden, et on renvoie null — jamais une posture inventée.
-        return { team: j.team || [], posture: j.posture || null, hidden: !!j.posture_hidden, implicit: !!j.implicit };
-      } catch (e) { return { posture: null }; }
+        return { ...j, ok: !!j.ok, status: r.status, posture: j.posture || null, hidden: !!j.posture_hidden };
+      } catch (e) { return { ok: false, posture: null, error: "network" }; }
+    },
+    // Arène V2 : le soin confirme les PV ; seul /save confirme le nouveau solde.
+    async pvpHeal() {
+      const s = gRef.current;
+      if (!s.wallet || !s.authToken) return { ok: false, error: "auth" };
+      const options = { headers: { Authorization: `Bearer ${s.authToken}` } };
+      try {
+        const r = await fetch(`${API_URL}/pvp/heal`, { ...options, method: "POST" });
+        const j = await r.json().catch(() => ({}));
+        if (!r.ok) return { ...j, ok: false, error: r.status === 401 ? "session_expiree" : j.error || (r.status === 429 ? "rate_limited" : "server") };
+        if (j.ok && gRef.current.wallet === s.wallet && gRef.current.authToken === s.authToken) {
+          try {
+            const sv = await fetch(`${API_URL}/save/${s.wallet}`, options);
+            if (sv.ok) { const { save } = await sv.json(); applySave(save, s.wallet, s.authToken); }
+          } catch (e) { /* Le soin est confirmé ; la prochaine synchro actualisera le solde. */ }
+        }
+        return j;
+      } catch (e) { return { ok: false, error: "network" }; }
     },
     async pvpAttack(target, entry, attackers, posture) {
       const authHeaders = () => ({ "Authorization": "Bearer " + gRef.current.authToken });
@@ -3045,14 +3066,15 @@ function App() {
       // 401 (jeton expiré) et 429 (trop de requêtes) remontent comme des erreurs typées :
       // sans ça le joueur ne voyait rien du tout, ou un « error » nu (audit 22/09/2026).
       if (r.status === 401) return { ok: false, error: "session_expiree" };
-      if (r.status === 429) return { ok: false, error: "rate_limited" };
       const j = await r.json().catch(() => ({}));
+      // Arène V2 : un 429 peut être le plafond par couple, pas le rate limiter.
+      if (!r.ok) return { ...j, ok: false, error: j.error || (r.status === 429 ? "rate_limited" : "server") };
       // Déduction optimiste à l'écran : le serveur a déjà débité (FA → liquid, ou 1 ticket Argent).
       // pvpRefresh ne recharge pas le solde, donc pas de double-comptage.
       if (j && j.ok) {
         if (j.entry === "fa") {
-          const cost = (gRef.current.pvp && gRef.current.pvp.fa_cost) || 50;
-          setG((s) => ({ ...s, liquid: Math.max(0, (s.liquid || 0) - cost) }));
+          const cost = gRef.current.pvp && gRef.current.pvp.fa_cost;
+          if (Number.isFinite(cost)) setG((s) => ({ ...s, liquid: Math.max(0, (s.liquid || 0) - cost) }));
         } else if (j.entry === "ticket") {
           setG((s) => ({ ...s, ticketsSilver: Math.max(0, (s.ticketsSilver || 0) - 1) }));
         }

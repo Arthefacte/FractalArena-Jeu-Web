@@ -109,11 +109,9 @@ function AreneBattle({ events, p1Team, p2Team, won, delta, elo, onClose, opponen
             <div style={{ fontWeight: 800, fontSize: 18, color: won ? "var(--success)" : "var(--alert)" }}>
               {won ? I18N.t("AR2_WON") : I18N.t("AR2_LOST")}
               {elo === false
-                /* Le classement n'était pas en jeu (adversaire sans défense enregistrée, donc non
-                   classé — règle d'audit B2/#130). L'écran affichait « +0 ELO », illisible : le
-                   joueur ne pouvait pas distinguer « rien échangé » de « combat hors classement ».
-                   L'API envoie désormais `elo` ; on le NOMME. */
-                ? <span style={{ marginLeft: 8, fontSize: 13, color: "var(--text-dim)" }}>{I18N.t("AR2_NO_ELO_UNRANKED")}</span>
+                /* Arène V2 : `elo: false` reste un état explicite du résultat serveur.
+                   Il ne permet plus de déduire que l'adversaire n'a pas de défense. */
+                ? <span style={{ marginLeft: 8, fontSize: 13, color: "var(--text-dim)" }}>{I18N.t("AR2_NO_ELO")}</span>
                 : typeof delta === "number" ? <span style={{ marginLeft: 8, fontSize: 13, color: "var(--text-dim)" }}>{delta >= 0 ? "+" : ""}{delta} ELO</span> : null}
             </div>
             <button className="btn ghost sm" style={{ marginTop: 10 }} onClick={onClose}>{I18N.t("AR2_CLOSE")}</button>

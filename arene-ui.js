@@ -125,5 +125,24 @@
     return null;
   }
 
-  window.FA_ARENE_UI = { leagueLabel, leagueColor, fmtCountdown, fmtCountdownSec, eventLogLines, entryModes, seasonCountdown, computeSynergiesLabels, affinityIndicator, powerGapPct, powerGapTone, powerGapLabel };
+  // Arène V2 : les PV et la relève restent des faits serveur. Un timer expiré
+  // n'autorise jamais à inventer des PV ou à relever une défense à zéro.
+  function defenseStatus(defense, now) {
+    const d = defense || {};
+    const hpLeft = Number.isFinite(d.hp_left) ? d.hp_left : null;
+    const hpMax = Number.isFinite(d.hp_max) && d.hp_max > 0 ? d.hp_max : null;
+    const hpKnown = hpLeft !== null && hpMax !== null;
+    const until = typeof d.down_until === "string" && !/^\d+$/.test(d.down_until)
+      ? Date.parse(d.down_until) : Number(d.down_until);
+    const remainingMs = Number.isFinite(until) ? Math.max(0, until - now) : 0;
+    return {
+      hpLeft, hpMax, hpKnown,
+      hpPct: hpKnown ? Math.max(0, Math.min(100, hpLeft / hpMax * 100)) : 0,
+      down: remainingMs > 0 || hpLeft === 0,
+      full: hpKnown && hpLeft >= hpMax,
+      remainingMs,
+    };
+  }
+
+  window.FA_ARENE_UI = { leagueLabel, leagueColor, fmtCountdown, fmtCountdownSec, eventLogLines, entryModes, seasonCountdown, computeSynergiesLabels, affinityIndicator, powerGapPct, powerGapTone, powerGapLabel, defenseStatus };
 })();

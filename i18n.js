@@ -430,6 +430,20 @@
     AR2_TAG: { FR: "PVP CLASSÉ — LIGUES", EN: "RANKED PVP — LEAGUES", ZH: "排位 PVP — 联赛" },
     AR2_MY_DEFENSE: { FR: "Ma défense", EN: "My defense", ZH: "我的防守" },
     AR2_SET_DEFENSE: { FR: "Mettre à jour ma défense", EN: "Update my defense", ZH: "更新我的防守" },
+    // Arène V2 : une défense posée est requise pour entrer, attaquer et être attaqué.
+    AR2_ENTRY_TITLE: { FR: "Pose ta défense pour entrer dans l'Arène", EN: "Set your defense to enter the Arena", ZH: "设置防守，进入竞技场" },
+    AR2_ENTRY_HINT: { FR: "Sans défense, tu ne peux pas attaquer, tu ne gagnes pas d'ELO et tu ne peux pas être attaqué.", EN: "Without a defense, you cannot attack, earn ELO or be attacked.", ZH: "未设置防守时，你无法进攻、获得 ELO 积分，也不会被攻击。" },
+    AR2_OPEN_TEAM: { FR: "Ouvrir mon équipe", EN: "Open my team", ZH: "打开我的队伍" },
+    AR2_CHOOSE_THREE: { FR: "Choisir mes 3 entités", EN: "Choose my 3 entities", ZH: "选择我的 3 个实体" },
+    AR2_DEFENSE_HP: { FR: "PV : %d / %d", EN: "HP: %d / %d", ZH: "生命值：%d / %d" },
+    AR2_HEAL: { FR: "Soigner — %d FA", EN: "Heal — %d FA", ZH: "治疗 — %d FA" },
+    AR2_HEAL_OK: { FR: "Défense soignée.", EN: "Defense healed.", ZH: "防守已恢复生命值。" },
+    AR2_DEFENSE_FULL: { FR: "Défense à PV pleins", EN: "Defense at full HP", ZH: "防守生命值已满" },
+    AR2_DEFENSE_DOWN: { FR: "Défense tombée — relève dans %s min", EN: "Defense down — recovers in %s min", ZH: "防守已倒下 — %s 分钟后恢复" },
+    AR2_DEFENSE_RAISE: { FR: "Défense tombée — relevez-la pour pouvoir attaquer.", EN: "Defense down — restore it before attacking.", ZH: "防守已倒下 — 恢复防守后才能进攻。" },
+    AR2_DEFENSE_LOADING: { FR: "Chargement de ta défense…", EN: "Loading your defense…", ZH: "正在加载你的防守…" },
+    AR2_DEFENSE_RETRY: { FR: "Réessayer", EN: "Retry", ZH: "重试" },
+    AR2_DEFENSE_ERROR: { FR: "Impossible de charger ta défense. Réessaie.", EN: "Couldn't load your defense. Please try again.", ZH: "无法加载你的防守，请重试。" },
     AR2_OPPONENTS: { FR: "Adversaires", EN: "Opponents", ZH: "对手" },
     AR2_LADDER: { FR: "Classement", EN: "Ladder", ZH: "排行榜" },
     AR2_ATTACK: { FR: "Attaquer", EN: "Attack", ZH: "进攻" },
@@ -444,10 +458,7 @@
     AR2_FA: { FR: "%d FA", EN: "%d FA", ZH: "%d FA" },
     AR2_TICKET: { FR: "🎟 Ticket Argent", EN: "🎟 Silver ticket", ZH: "🎟 白银券" },
     AR2_NO_DEFENSE: { FR: "Choisis 3 entités pour poser ta défense.", EN: "Pick 3 entities to post your defense.", ZH: "请选择 3 个实体来设置防守。" },
-    // Le bandeau annonçait une condition à remplir pour jouer : c'est faux, le serveur laisse
-    // jouer sans défense. Ce texte dit la règle réelle (on combat avec ses 3 meilleures) et
-    // l'enjeu (classement + prix) — c'est l'enjeu, pas l'interdiction, qui fait poser les défenses.
-    AR2_DEFENSE_HINT: { FR: "Choisis 3 entités (onglet Équipe) pour POSER ta défense : c'est elle qui te classe et t'ouvre les prix de saison. Sans défense, tu combats avec tes 3 meilleures entités et tu n'apparais pas au classement.", EN: "Pick 3 entities (Team tab) to POST your defense: it's what ranks you and opens the season prizes. Without one, you fight with your 3 strongest entities and stay unranked.", ZH: "在「队伍」中选择 3 个实体来设置防守：设置防守才会进入排名并获得赛季奖励。未设置防守时，你会用最强的 3 个实体出战，但不计入排名。" },
+    AR2_DEFENSE_HINT: { FR: "Choisis 3 entités dans l'onglet Équipe, puis pose ta défense pour entrer dans l'Arène.", EN: "Choose 3 entities in the Team tab, then set your defense to enter the Arena.", ZH: "在「队伍」中选择 3 个实体，然后设置防守，即可进入竞技场。" },
     AR2_SEASON: { FR: "Saison %d", EN: "Season %d", ZH: "第 %d 赛季" },
     AR2_ENDS_IN: { FR: "finit dans %s", EN: "ends in %s", ZH: "%s 后结束" },
     AR2_PRIZE: { FR: "Prize pool %d FA", EN: "Prize pool %d FA", ZH: "奖池 %d FA" },
@@ -459,14 +470,9 @@
     AR2_ELO_DELTA: { FR: "ELO %s → %d", EN: "ELO %s → %d", ZH: "ELO %s → %d" },
     AR2_NO_OPPONENTS: { FR: "Aucun adversaire pour l'instant — reviens bientôt.", EN: "No opponents yet — check back soon.", ZH: "暂无对手 — 请稍后再来。" },
     AR2_POWER: { FR: "puissance %d", EN: "power %d", ZH: "战力 %d" },
-    AR2_UNRANKED: { FR: "non classé", EN: "unranked", ZH: "未排名" },
     AR2_GAP_FAR_WEAKER: { FR: "bien plus faible", EN: "far weaker", ZH: "远弱于你" },
-    AR2_NO_ELO_UNRANKED: { FR: "aucun ELO — adversaire non classé", EN: "no rating change — unranked opponent", ZH: "不改变积分 — 对手未排名" },
+    AR2_NO_ELO: { FR: "aucun ELO — combat hors classement", EN: "no rating change — unranked battle", ZH: "不改变积分 — 非排位战斗" },
     AR2_GAP_FAR_STRONGER: { FR: "bien plus fort", EN: "far stronger", ZH: "远强于你" },
-    AR2_GROUP_MINE: { FR: "Ma ligue", EN: "My league", ZH: "我的段位" },
-    AR2_GROUP_OTHER: { FR: "Ligues voisines", EN: "Neighbouring leagues", ZH: "邻近段位" },
-    AR2_GROUP_UNRANKED: { FR: "Sans défense enregistrée", EN: "No saved defense", ZH: "未设置防守" },
-    AR2_GROUP_UNRANKED_HINT: { FR: "Ces comptes n'ont jamais posé de défense : ils ne sont pas classés, leur ligue est estimée sur leur puissance.", EN: "These accounts never saved a defense: they are unranked, and their league is estimated from their power.", ZH: "这些账号从未设置防守：没有排名，其段位按战力估算。" },
     AR2_RANK: { FR: "Rang", EN: "Rank", ZH: "排名" },
     AR2_REFRESH: { FR: "Rafraîchir", EN: "Refresh", ZH: "刷新" },
     AR2_REFRESH_FREE: { FR: "gratuit", EN: "free", ZH: "免费" },
@@ -477,7 +483,6 @@
     AR2_LOST:   { FR: "Défaite", EN: "Defeat", ZH: "失败" },
     AR2_CLOSE:  { FR: "Fermer", EN: "Close", ZH: "关闭" },
     AR2_ATTACKS_TITLE: { FR: "Attaques subies récemment", EN: "Recent attacks on you", ZH: "最近受到的攻击" },
-    AR2_ATTACKS_NO_DEFENSE: { FR: "Ces joueurs t'ont attaqué alors que tu n'as pas posé de défense : tu n'apparais pas au classement, et les prix de saison ne te sont pas ouverts. Choisis 3 entités (onglet Équipe) puis pose ta défense pour rendre les coups.", EN: "These players attacked you while you had no defense posted: you don't appear in the ranking, and the season prizes aren't open to you. Pick 3 entities (Team tab) then post your defense to hit back.", ZH: "这些玩家攻击了你，但你还没有设置防守：你不会出现在排名中，也无法获得赛季奖励。在「队伍」中选择 3 个实体并设置防守，就能反击。" },
     AR2_ATTACKS_NONE:  { FR: "Personne ne t'a attaqué récemment.", EN: "No recent attacks.", ZH: "最近无人攻击你。" },
     AR2_ATTACKS_BEAT:  { FR: "a battu ta défense", EN: "beat your defense", ZH: "击败了你的防御" },
     AR2_ATTACKS_REPELLED: { FR: "repoussé", EN: "repelled", ZH: "被击退" },
@@ -1807,6 +1812,10 @@
     AR2_ERR_ENTRY:       { FR: "Mode d'entrée invalide.", EN: "Invalid entry mode.", ZH: "入场方式无效。" },
     AR2_ERR_NOT_STARTED: { FR: "La saison n'a pas encore commencé.", EN: "The season hasn't started yet.", ZH: "赛季尚未开始。" },
     AR2_ERR_NO_DEFENSE:  { FR: "Pose d'abord ta défense (3 entités).", EN: "Set your defense first (3 entities).", ZH: "请先设置防守（3 个实体）。" },
+    AR2_ERR_DEFENSE_DOWN: { FR: "Ta défense est tombée. Relève-la avant de pouvoir attaquer ou la soigner.", EN: "Your defense is down. Restore it before attacking or healing it.", ZH: "你的防守已倒下。请先恢复防守，再进攻或治疗。" },
+    AR2_ERR_PAIR_LIMIT: { FR: "Tu as déjà attaqué ce joueur %d fois aujourd'hui.", EN: "You have already attacked this player %d times today.", ZH: "你今天已经攻击该玩家 %d 次。" },
+    AR2_ERR_PAIR_LIMIT_UNKNOWN: { FR: "Tu as atteint la limite d'attaques contre ce joueur aujourd'hui.", EN: "You have reached today's attack limit against this player.", ZH: "你今天对该玩家的攻击次数已达上限。" },
+    AR2_ERR_DEFENSE_FULL: { FR: "Ta défense est déjà à PV pleins.", EN: "Your defense is already at full HP.", ZH: "你的防守生命值已经全满。" },
     AR2_ERR_NO_REMATCH:  { FR: "Plus de revanche disponible contre cet adversaire.", EN: "No rematch left against this opponent.", ZH: "对该对手已无复仇机会。" },
     AR2_ERR_QUOTA:       { FR: "Quota de combats atteint pour aujourd'hui.", EN: "Today's fight quota is used up.", ZH: "今日战斗次数已用完。" },
     AR2_POS_UNKNOWN:     { FR: "Posture inconnue", EN: "Posture unknown", ZH: "姿态未知" },
@@ -1931,6 +1940,9 @@
     entry_invalide: "AR2_ERR_ENTRY",
     saison_pas_demarree: "AR2_ERR_NOT_STARTED",
     pas_de_defense: "AR2_ERR_NO_DEFENSE",
+    defense_tombee: "AR2_ERR_DEFENSE_DOWN",
+    plafond_couple: "AR2_ERR_PAIR_LIMIT",
+    defense_pleine: "AR2_ERR_DEFENSE_FULL",
     pas_de_fantome: "AR2_ERR_NO_GHOST",
     cible_sans_fantome: "AR2_ERR_NO_GHOST",
     fantome_corrompu: "AR2_ERR_GHOST_BROKEN",
@@ -1973,9 +1985,16 @@
     account_frozen: "MKT_ERR_account_frozen",
     withdraw_frozen: "MKT_ERR_withdraw_frozen",
   };
-  function localizeServerError(code) {
+  function localizeServerError(code, context = {}) {
     if (!code) return t("ERR_GENERIC");
     const raw = typeof code === "string" ? code.trim() : code;
+    // Arène V2 : le plafond affiché vient de /pvp/cadence, jamais d'une copie locale.
+    if (raw === "plafond_couple") {
+      const limit = Number(context && context.pair_limit);
+      return Number.isInteger(limit) && limit > 0
+        ? t("AR2_ERR_PAIR_LIMIT", limit)
+        : t("AR2_ERR_PAIR_LIMIT_UNKNOWN");
+    }
     const key = SERVER_ERROR_KEYS[raw];
     if (key && T[key]) return t(key);
     // Valeur NON MAPPÉE — deux cas très différents (audit 22/09/2026) :

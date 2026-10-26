@@ -55,19 +55,16 @@ test("la carte adversaire construit sa cible sur `opponent_id`", () => {
     "l'identifiant de l'adversaire doit venir de `opponent_id` (ce que publie /pvp/opponents)");
 });
 
-test("les boutons Attaquer ET Revanche désignent leur cible par `oId`", () => {
-  // `pvpDefenseOf(ref)` + `target: ref` : les deux boutons de la carte. Le troisième
-  // appel de l'écran (la posture de MA défense, en tête de composant) part de
-  // `g.publicId || g.wallet` et ne passe pas par `ref` — il ne compte donc pas ici.
-  const lignes = ARENE.split("\n").filter((l) => /actions\.pvpDefenseOf\(ref\)/.test(l));
-  assert.strictEqual(lignes.length, 2,
-    "attendu les deux boutons de la carte (Attaquer et Revanche), trouvé " + lignes.length);
-  for (const l of lignes) {
-    assert.match(l, /const ref = oId;/,
-      "la cible partait d'un champ que /pvp/opponents ne publie pas (`player_id`/`wallet`) : " +
-      "le serveur répond `cible_invalide` et le joueur lit « 对手无效 »");
-    assert.match(l, /target: ref,/, "le tour d'attaque doit viser la même référence");
-  }
+test("les boutons Attaquer et Revanche partagent la même résolution de cible", () => {
+  // Arène V2 : la lecture de la défense adverse et son refus 404 sont centralisés,
+  // sans deux branches inline dont l'une pourrait envoyer un identifiant absent.
+  assert.match(ARENE, /onPickOpponent\(o, true\)/);
+  assert.match(ARENE, /onPickOpponent\(o, false\)/);
+  const pick = ARENE.slice(ARENE.indexOf("async function onPickOpponent"), ARENE.indexOf("async function onAttack"));
+  assert.match(pick, /const ref = o\.opponent_id \|\| o\.wallet;/);
+  assert.match(pick, /actions\.pvpDefenseOf\(ref\)/);
+  assert.match(pick, /setPick\(\{ target: ref,/);
+  assert.match(pick, /cible_sans_fantome/);
 });
 
 test("aucun champ que /pvp/opponents ne publie n'est lu comme cible", () => {

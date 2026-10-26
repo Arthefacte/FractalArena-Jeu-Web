@@ -40,15 +40,49 @@ function Arene() {
   const [pick, setPick] = useState(null); // { target, revanche, ids:[id,id,id], oppTeam, posture, oppPosture } ou null
   const [nowTs, setNowTs] = useState(Date.now());
   const [defPosture, setDefPosture] = useState("equilibre");
-  // Ai-je une défense POSÉE ? (le serveur renvoie `implicit: true` quand il sert le fantôme
-  // top-3 à ma place). C'est ce qui décide si je suis classé et éligible aux prix — et donc le
-  // message à me montrer quand on m'attaque.
-  const [myDefensePosted, setMyDefensePosted] = useState(true);
+  // Arène V2 : seule une défense confirmée par le serveur ouvre les adversaires.
+  // undefined = lecture en cours ; null = absence explicite (404), jamais une panne réseau.
+  const [myDefense, setMyDefense] = useState(undefined);
+  const [defenseError, setDefenseError] = useState(null);
+  const defenseRequest = useRef(0);
+  const defenseLock = useRef(false);
+  const recoveryChecked = useRef(null);
   const seasonFlipTried = useRef(false); // anti-rafale : une seule tentative + backoff
+
+  const serverError = (code) => I18N.localizeServerError(code, { pair_limit: pvp.pair_limit });
+  async function loadMyDefense() {
+    const request = ++defenseRequest.current;
+    try {
+      const r = await actions.pvpDefenseOf(g.publicId || g.wallet);
+      if (request !== defenseRequest.current) return;
+      if (r && r.status === 404 && r.error === "pas_de_fantome") {
+        setMyDefense(null);
+        setDefenseError(null);
+        setPick(null);
+      } else if (r && r.ok && Array.isArray(r.team) && r.team.length === 3) {
+        setMyDefense(r);
+        setDefenseError(null);
+        setDefPosture(r.posture || "equilibre");
+      } else {
+        setDefenseError((r && r.error) || "network");
+      }
+    } catch (e) {
+      if (request === defenseRequest.current) setDefenseError("network");
+    }
+  }
 
   // E4 : mon propre identifiant opaque quand il est là — la route accepte les deux formes
   // (adresse ou identifiant), et l'identifiant n'apprend rien sur moi si la requête traînait.
-  useEffect(() => { if (g.wallet) { actions.pvpRefresh().then(() => actions.pvpAttacksSeen()); actions.pvpDefenseOf(g.publicId || g.wallet).then((r) => { setDefPosture((r && r.posture) || "equilibre"); setMyDefensePosted(!!(r && r.team && r.team.length === 3) && !r.implicit); }); } }, [g.wallet, g.publicId]);
+  useEffect(() => {
+    setMyDefense(undefined);
+    setDefenseError(null);
+    recoveryChecked.current = null;
+    if (g.wallet) {
+      loadMyDefense();
+      actions.pvpRefresh().then(() => actions.pvpAttacksSeen());
+    }
+    return () => { ++defenseRequest.current; };
+  }, [g.wallet, g.publicId]);
   // Historique des paiements de saison : la donnée vit dans pvp_season_archive, elle
   // n'était visible nulle part. Lue avec l'écran, indépendamment du popup.
   useEffect(() => { if (g.wallet) actions.pvpPrizesHistory(); }, [g.wallet]);
@@ -69,43 +103,126 @@ function Arene() {
   }, [nowTs]);
 
   const defenseReady = g.selected.length === 3;
+  const myDefensePosted = !!myDefense;
+  const defense = AU.defenseStatus(myDefense, nowTs);
+  const canAttack = myDefensePosted && defense.hpKnown && !defense.down && !defenseError;
+  const healCostKnown = pvp.heal_cost != null && Number.isFinite(Number(pvp.heal_cost));
+  const refreshCostKnown = pvp.refresh_cost != null && Number.isFinite(Number(pvp.refresh_cost));
   const sc = AU.seasonCountdown(pvp.season, nowTs);
+  // L'échéance invite à RELIRE la défense : elle ne rend jamais des PV côté client.
+  useEffect(() => {
+    const deadline = myDefense && myDefense.down_until;
+    if (!deadline || defense.remainingMs > 0 || recoveryChecked.current === deadline) return;
+    recoveryChecked.current = deadline;
+    loadMyDefense();
+  }, [nowTs, myDefense && myDefense.down_until]);
 
   // Rafraîchit la liste d'adversaires : le serveur fait tourner le vivier (un tour gratuit par
   // fenêtre de 24 h, puis payant) et on relit la tranche suivante.
   async function onRefreshList() {
-    if (busy) return;
+    if (busy || defenseLock.current || attackLock.current || !myDefensePosted || defenseError || (!(pvp.refresh_free > 0) && !refreshCostKnown)) return;
+    defenseLock.current = true;
     setBusy(true);
     try {
       const r = await actions.pvpRefreshList();
-      if (!r || !r.ok) { toast(I18N.localizeServerError((r && r.error) || null), "bad"); return; }
+      if (!r || !r.ok) { toast(serverError((r && r.error) || null), "bad"); return; }
       await actions.pvpRefresh();
+      await loadMyDefense();
       toast(r.charged > 0 ? I18N.t("AR2_REFRESH_PAID", r.charged) : I18N.t("AR2_REFRESH_OK"), "good");
+    } catch (e) {
+      toast(serverError("network"), "bad");
     } finally {
+      defenseLock.current = false;
       setBusy(false);
     }
   }
   async function onSetDefense() {
+    if (busy || defenseLock.current || attackLock.current) return;
     if (!defenseReady) { toast(I18N.t("AR2_NO_DEFENSE"), "bad"); return; }
+    defenseLock.current = true;
     setBusy(true);
-    const r = await actions.pvpSetDefense(defPosture);
-    setBusy(false);
-    if (r && r.ok) toast(I18N.t("AR2_SET_DEFENSE"), "good"); else toast(I18N.localizeServerError(r && r.error), "bad");
+    try {
+      const r = await actions.pvpSetDefense(defPosture);
+      if (r && r.ok) {
+        await loadMyDefense();
+        await actions.pvpRefresh();
+        toast(I18N.t("AR2_SET_DEFENSE"), "good");
+      } else {
+        toast(serverError(r && r.error), "bad");
+        if (r && (r.error === "pas_de_defense" || r.error === "defense_tombee")) await loadMyDefense();
+      }
+    } catch (e) {
+      toast(serverError("network"), "bad");
+    } finally {
+      defenseLock.current = false;
+      setBusy(false);
+    }
+  }
+
+  async function onHeal() {
+    if (busy || defenseLock.current || attackLock.current || !canAttack || defense.full || !healCostKnown) return;
+    defenseLock.current = true;
+    setBusy(true);
+    const request = ++defenseRequest.current;
+    try {
+      const r = await actions.pvpHeal();
+      if (request !== defenseRequest.current) return;
+      if (r && r.ok) {
+        setMyDefense((d) => d && ({ ...d, hp_left: r.hp_left, hp_max: r.hp_max }));
+        toast(I18N.t("AR2_HEAL_OK"), "good");
+      } else {
+        toast(serverError(r && r.error), "bad");
+        await loadMyDefense();
+      }
+    } catch (e) {
+      toast(serverError("network"), "bad");
+    } finally {
+      defenseLock.current = false;
+      setBusy(false);
+    }
+  }
+
+  async function onPickOpponent(o, revanche) {
+    if (busy || attackLock.current || defenseLock.current || !canAttack) return;
+    attackLock.current = true;
+    setBusy(true);
+    const request = defenseRequest.current;
+    try {
+      const ref = o.opponent_id || o.wallet;
+      const r = await actions.pvpDefenseOf(ref);
+      if (request !== defenseRequest.current) return;
+      if (!r || !r.ok) {
+        toast(serverError(r && r.error === "pas_de_fantome" ? "cible_sans_fantome" : r && r.error), "bad");
+        return;
+      }
+      setPick({ target: ref, revanche, ids: [...g.selected], oppTeam: r.team || o.team, posture: "equilibre", oppPosture: r.posture || null });
+    } catch (e) {
+      toast(serverError("network"), "bad");
+    } finally {
+      attackLock.current = false;
+      setBusy(false);
+    }
   }
 
   async function onAttack(target, useRevanche, attackers, myPosture, enemyPosture) {
-    if (attackLock.current || busy) return; // le ref bloque les clics de la même rafale avant que `busy` ne re-render
+    if (attackLock.current || defenseLock.current || busy || !canAttack) return; // bloque aussi une défense tombée pendant la sélection
     attackLock.current = true;
     setBusy(true);
     try {
       const prev = (g.pvp && typeof g.pvp.rating === "number") ? g.pvp.rating : null;
       const r = await actions.pvpAttack(target, useRevanche ? "revanche" : entry, attackers, myPosture);
-      if (!r || !r.ok) { toast(I18N.localizeServerError((r && (r.error || r.reason)) || null), "bad"); return; }
+      if (!r || !r.ok) {
+        toast(serverError((r && (r.error || r.reason)) || null), "bad");
+        if (r && (r.error === "pas_de_defense" || r.error === "defense_tombee")) await loadMyDefense();
+        return;
+      }
       const delta = (prev != null && typeof r.rating === "number") ? r.rating - prev : null;
       const myTeam = (attackers || g.selected).map((id) => g.roster.find((b) => b.id === id)).filter(Boolean);
       setResult({ ...r, delta, p1Team: myTeam, p2Team: r.enemy || [], p1Posture: myPosture || "equilibre", p2Posture: enemyPosture || null });
       // Pas de refresh PvP ici (différé au onClose du rejeu) : rafraîchir maintenant
       // mettrait à jour le pill ELO du header et le ladder pendant le combat → résultat spoilé.
+    } catch (e) {
+      toast(serverError("network"), "bad");
     } finally {
       attackLock.current = false;
       setBusy(false);
@@ -124,35 +241,67 @@ function Arene() {
           <div className="h1" style={{ marginBottom: 0 }}>{I18N.t("AR2_TITLE")}</div>
         </div>
         <div className="flex gap8 wrap">
-          <span className="pill" style={{ color: AU.leagueColor(pvp.league) }}>{AU.leagueLabel(pvp.league)}</span>
-          <span className="pill" style={{ color: "var(--elec)" }}>ELO {pvp.rating != null ? pvp.rating : "—"}</span>
+          {myDefensePosted && <span className="pill" style={{ color: AU.leagueColor(pvp.league) }}>{AU.leagueLabel(pvp.league)}</span>}
+          {myDefensePosted && <span className="pill" style={{ color: "var(--elec)" }}>ELO {pvp.rating != null ? pvp.rating : "—"}</span>}
           <span className="pill" style={{ color: "var(--success)" }}>⚡ {pvp.free_remaining != null ? pvp.free_remaining : 0}</span>
           {pvp.season && <span className="pill" style={{ color: "var(--gold)" }}>{I18N.t("AR2_SEASON", pvp.season.season)} · {I18N.t("AR2_ENDS_IN", AU.fmtCountdown(seasonMs))}</span>}
           {/* Rafraîchir = ROTATION de la liste : le serveur sert une autre tranche du vivier. Le
               bouton existait déjà mais ne relançait que la même requête — la liste ne changeait
               donc jamais. Un tour gratuit par fenêtre de 24 h, puis payant. */}
-          <button className="btn sm" data-guide="arene-refresh" disabled={busy} onClick={onRefreshList}>
-            {I18N.t("AR2_REFRESH")} · {(pvp.refresh_free || 0) > 0 ? I18N.t("AR2_REFRESH_FREE") : `${pvp.refresh_cost || 100} FA`}
-          </button>
+          {myDefensePosted && <button className="btn sm" data-guide="arene-refresh" disabled={busy || !!defenseError || (!(pvp.refresh_free > 0) && !refreshCostKnown)} onClick={onRefreshList}>
+            {I18N.t("AR2_REFRESH")} · {(pvp.refresh_free || 0) > 0 ? I18N.t("AR2_REFRESH_FREE") : refreshCostKnown ? `${pvp.refresh_cost} FA` : "—"}
+          </button>}
         </div>
       </div>
 
-      {/* Ma défense */}
+      {defenseError ? (
+        <div className="panel oct" role="alert" style={{ border: "1px solid var(--alert)", padding: 20, marginBottom: 14 }}>
+          <p>{I18N.t("AR2_DEFENSE_ERROR")}</p>
+          <div className="mono" style={{ marginBottom: 12 }}>{serverError(defenseError)}</div>
+          <button className="btn btn-elec" disabled={busy} onClick={loadMyDefense}>{I18N.t("AR2_DEFENSE_RETRY")}</button>
+        </div>
+      ) : myDefense === undefined ? (
+        <div className="panel oct" role="status" style={{ padding: 20, marginBottom: 14 }}>{I18N.t("AR2_DEFENSE_LOADING")}</div>
+      ) : myDefense === null ? (
+        <div className="panel oct" data-fa="arene-entry" style={{ border: "1px solid var(--elec)", padding: 24, marginBottom: 14 }}>
+          <h2 className="h2" style={{ color: "var(--elec)", marginBottom: 12 }}>{I18N.t("AR2_ENTRY_TITLE")}</h2>
+          <p style={{ color: "var(--text-dim)", lineHeight: 1.6 }}>{I18N.t("AR2_ENTRY_HINT")}</p>
+          <div className="flex gap12 wrap" style={{ marginTop: 16 }}>
+            <button className="btn btn-elec" onClick={() => actions.setView("team")}>{I18N.t("AR2_OPEN_TEAM")}</button>
+            <button className="btn" onClick={() => actions.setView("team")}>{I18N.t("AR2_CHOOSE_THREE")}</button>
+          </div>
+        </div>
+      ) : null}
+
+      {/* La carte affiche la défense posée ; la formation sous la carte reste celle à enregistrer. */}
       <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 14, marginBottom: 14 }}>
         <div className="flex between center wrap" style={{ gap: 10 }}>
           <div className="flex center gap12">
             <span className="h2" style={{ fontSize: 14 }}>{I18N.t("AR2_MY_DEFENSE")}</span>
-            <TeamPreview team={g.selected.map((id) => g.roster.find((b) => b.id === id)).filter(Boolean)} />
+            <TeamPreview team={myDefensePosted ? myDefense.team : g.selected.map((id) => g.roster.find((b) => b.id === id)).filter(Boolean)} />
           </div>
           <button className="btn btn-forge" disabled={busy || !defenseReady} onClick={onSetDefense}>{I18N.t("AR2_SET_DEFENSE")}</button>
         </div>
+        {myDefensePosted && <div data-fa="arene-defense-hp" style={{ marginTop: 14 }}>
+          <div className="flex between center wrap" style={{ gap: 12 }}>
+            <span className="mono">{I18N.t("AR2_DEFENSE_HP", defense.hpKnown ? defense.hpLeft : "—", defense.hpKnown ? defense.hpMax : "—")}</span>
+            <button className="btn btn-success" disabled={busy || !canAttack || defense.full || !healCostKnown} onClick={onHeal}>
+              {defense.full ? I18N.t("AR2_DEFENSE_FULL") : I18N.t("AR2_HEAL", healCostKnown ? pvp.heal_cost : "—")}
+            </button>
+          </div>
+          <div role="progressbar" aria-label={I18N.t("AR2_MY_DEFENSE")} aria-valuemin={0} aria-valuemax={defense.hpKnown ? defense.hpMax : undefined} aria-valuenow={defense.hpKnown ? defense.hpLeft : undefined} style={{ height: 10, marginTop: 10, background: "var(--line-soft)", borderRadius: 5, overflow: "hidden" }}>
+            <div style={{ width: `${defense.hpPct}%`, height: "100%", background: defense.down ? "var(--alert)" : "var(--success)", transition: "width .2s" }} />
+          </div>
+          {defense.down && <div className="mono" data-fa="arene-defense-down" style={{ color: "var(--alert)", marginTop: 10 }}>
+            {defense.remainingMs > 0
+              ? I18N.t("AR2_DEFENSE_DOWN", `${Math.floor(Math.ceil(defense.remainingMs / 1000) / 60)}:${String(Math.ceil(defense.remainingMs / 1000) % 60).padStart(2, "0")}`)
+              : I18N.t("AR2_DEFENSE_RAISE")}
+          </div>}
+        </div>}
         <div style={{ marginTop: 10 }}>
           <PostureSelect value={defPosture} onChange={setDefPosture} disabled={busy} />
         </div>
-        {/* Le bandeau annonçait une condition à remplir pour jouer : c'est faux — le serveur laisse
-            jouer sans défense (on combat alors avec ses 3 meilleures entités et on reste non
-            classé). Il dit maintenant la RÈGLE et l'ENJEU, qui sont le vrai levier pour faire
-            poser les défenses. */}
+        {/* Arène V2 : choisir une équipe ne suffit pas, il faut poser la défense côté serveur. */}
         {!defenseReady && <div className="mono" style={{ fontSize: 11, color: "var(--alert)", marginTop: 8 }}>{I18N.t("AR2_DEFENSE_HINT")}</div>}
         {/* Formation (Avant/Milieu/Arrière) + synergies actives */}
         {defenseReady && (() => {
@@ -182,7 +331,7 @@ function Arene() {
         })()}
       </div>
 
-      {sc.prelaunch ? (
+      {myDefensePosted && !defenseError && (sc.prelaunch ? (
         <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 24, textAlign: "center" }}>
           <div className="h1" style={{ color: "var(--elec)", marginBottom: 8 }}>{I18N.t("AR2_PRELAUNCH_TITLE")}</div>
           <div className="mono" style={{ fontSize: 28, color: "var(--gold)", margin: "12px 0" }}>{I18N.t("AR2_STARTS_IN", AU.fmtCountdownSec(sc.ms))}</div>
@@ -198,22 +347,14 @@ function Arene() {
               <span className="mono" style={{ fontSize: 11, color: "var(--text-dim)", alignSelf: "center" }}>{I18N.t("AR2_ENTRY")} :</span>
               {modes.map((m) => (
                 <button key={m.key} className={cx("btn sm", entry === m.key && "on")} disabled={!m.available} onClick={() => setEntry(m.key)}>
-                  {m.key === "free" ? I18N.t("AR2_FREE") : m.key === "fa" ? <FaText text={I18N.t("AR2_FA", pvp.fa_cost || 0)} s={12} /> : I18N.t("AR2_TICKET")}
+                  {m.key === "free" ? I18N.t("AR2_FREE") : m.key === "fa" ? <FaText text={I18N.t("AR2_FA", pvp.fa_cost ?? "—")} s={12} /> : I18N.t("AR2_TICKET")}
                 </button>
               ))}
             </div>
           </div>
           {(!pvp.opponents || pvp.opponents.length === 0) && <div className="mono" style={{ color: "var(--text-dim)", fontSize: 13 }}>{I18N.t("AR2_NO_OPPONENTS")}</div>}
           {(() => {
-            /* Lisibilité de la liste d'adversaires (01/10/2026). Elle mélangeait trois
-               populations sous un même badge de ligue : ma ligue (classée), les ligues voisines
-               (classées, l'élargissement du matchmaking quand le vivier est mince) et les
-               comptes SANS défense enregistrée — dont la « ligue » n'est qu'une estimation
-               calculée sur la puissance de leurs 3 entités. C'est ce badge-là qui faisait lire
-               « adversaire d'une autre ligue » là où il n'y avait qu'un compte non classé.
-               Relevé des autres jeux (skill serveur references/matchmaking-industrie.md) :
-               aucun n'affiche de rang sur un compte non classé — le badge dit une position
-               GAGNÉE. On groupe donc, et le badge disparaît là où il ne dit rien. */
+            // Arène V2 : un seul vivier de défenses posées, six cartes au maximum.
             const carte = (o) => {
               // E3 (D10/M4, emplacements 2 et 3) : l'identifiant opaque de l'adversaire devient la
               // CLÉ de cette liste. La liste de revanches de l'appareil contient encore des adresses
@@ -228,12 +369,14 @@ function Arene() {
                 (pvp.revanches.includes(oId) || (o.opponent_id && pvp.revanches.includes(o.wallet)));
               // L'appariement se fait sur la puissance : c'est l'écart qui dit si le
               // combat est jouable, pas l'ELO (tout le monde y démarre à 1000).
-              const gap = AU.powerGapPct(pvp.power, o.power);
+              // Le contrat V2 ne garantit pas `power` sur une carte : son absence ne vaut pas zéro.
+              const powerKnown = Number.isFinite(o.power);
+              const gap = powerKnown && pvp.power > 0 ? AU.powerGapPct(pvp.power, o.power) : null;
               const tone = AU.powerGapTone(gap);
-              const gapColor = tone === "even" ? "var(--success)" : tone === "edge" ? "var(--gold)" : "var(--alert)";
+              const gapColor = gap === null ? "var(--text-dim)" : tone === "even" ? "var(--success)" : tone === "edge" ? "var(--gold)" : "var(--alert)";
               // Au-delà de ±50 %, le pourcentage sature (« −100 % » sur toutes les cartes) : on
               // nomme l'écart au lieu de le chiffrer.
-              const ecart = AU.powerGapLabel(gap);
+              const ecart = gap === null ? null : AU.powerGapLabel(gap);
               return (
                 <div key={oId} className="oct-sm" style={{ border: "1px solid var(--line-soft)", padding: 10, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
                   <div style={{ minWidth: 0 }}>
@@ -243,40 +386,22 @@ function Arene() {
                       {o.name || oId}
                     </div>
                     <div className="flex gap8 center">
-                      {/* Le badge de ligue ne s'affiche que s'il désigne une position GAGNÉE : un
-                          compte sans défense n'est pas classé, sa « ligue » est une estimation
-                          tirée de sa puissance — l'afficher faisait lire une liste inter-ligues. */}
-                      {!o.implicit && <span className="mono" style={{ fontSize: 12, color: AU.leagueColor(o.league) }}>{AU.leagueLabel(o.league)}</span>}
-                      {o.implicit
-                        ? <span className="mono" style={{ fontSize: 12, color: "var(--text-dim)" }}>{I18N.t("AR2_UNRANKED")}</span>
-                        : <span className="mono" style={{ fontSize: 12, color: "var(--elec)" }}>ELO {o.rating}</span>}
+                      <span className="mono" style={{ fontSize: 12, color: AU.leagueColor(o.league) }}>{AU.leagueLabel(o.league)}</span>
+                      <span className="mono" style={{ fontSize: 12, color: "var(--elec)" }}>ELO {o.rating}</span>
                       <span className="mono" style={{ fontSize: 12, color: gapColor }}>
-                        {I18N.t("AR2_POWER", o.power || 0)}{ecart ? ` · ${I18N.t(ecart)}` : (gap !== 0 && ` (${gap > 0 ? "+" : "−"}${Math.abs(gap)} %)`)}
+                        {I18N.t("AR2_POWER", powerKnown ? o.power : "—")}{ecart ? ` · ${I18N.t(ecart)}` : (gap !== null && gap !== 0 && ` (${gap > 0 ? "+" : "−"}${Math.abs(gap)} %)`)}
                       </span>
                       {canRevanche && <span className="mono" style={{ fontSize: 11, color: "var(--success)" }}>🔥 {I18N.t("AR2_REVANCHE")}</span>}
                     </div>
                     <div style={{ marginTop: 6 }}><TeamPreview team={o.team} /></div>
                   </div>
                   {canRevanche
-                    ? <button className="btn btn-success sm" disabled={busy} onClick={async () => { const ref = oId; const r = await actions.pvpDefenseOf(ref); setPick({ target: ref, revanche: true, ids: [...g.selected], oppTeam: o.team, posture: "equilibre", oppPosture: (r && r.posture) || null }); }}>{I18N.t("AR2_REVANCHE")}</button>
-                    : <button className="btn btn-elec sm" data-guide="arene-attack" disabled={busy} onClick={async () => { const ref = oId; const r = await actions.pvpDefenseOf(ref); setPick({ target: ref, revanche: false, ids: [...g.selected], oppTeam: o.team, posture: "equilibre", oppPosture: (r && r.posture) || null }); }}>{I18N.t("AR2_ATTACK")}</button>}
+                    ? <button className="btn btn-success sm" disabled={busy || !canAttack} onClick={() => onPickOpponent(o, true)}>{I18N.t("AR2_REVANCHE")}</button>
+                    : <button className="btn btn-elec sm" data-guide="arene-attack" disabled={busy || !canAttack} onClick={() => onPickOpponent(o, false)}>{I18N.t("AR2_ATTACK")}</button>}
                 </div>
               );
             };
-            const groupes = [
-              { cle: "mine", titre: "AR2_GROUP_MINE", liste: (pvp.opponents || []).filter((o) => !o.implicit && o.league === pvp.league) },
-              { cle: "voisines", titre: "AR2_GROUP_OTHER", liste: (pvp.opponents || []).filter((o) => !o.implicit && o.league && o.league !== pvp.league) },
-              { cle: "sansdefense", titre: "AR2_GROUP_UNRANKED", hint: "AR2_GROUP_UNRANKED_HINT", liste: (pvp.opponents || []).filter((o) => o.implicit) },
-            ].filter((gr) => gr.liste.length);
-            return groupes.map((gr) => (
-              <div key={gr.cle} style={{ marginTop: 12 }}>
-                <div className="mono" style={{ fontSize: 11, letterSpacing: 1, textTransform: "uppercase", color: "var(--text-dim)", marginBottom: 4 }}>
-                  {I18N.t(gr.titre)} · {gr.liste.length}
-                </div>
-                {gr.hint && <div className="mono" style={{ fontSize: 11, color: "var(--text-dim)", marginTop: -2, marginBottom: 6 }}>{I18N.t(gr.hint)}</div>}
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>{gr.liste.map(carte)}</div>
-              </div>
-            ));
+            return <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>{(pvp.opponents || []).slice(0, 6).map(carte)}</div>;
           })()}
         </div>
 
@@ -298,18 +423,10 @@ function Arene() {
           {pvp.season && <div className="mono" style={{ fontSize: 11, color: "var(--text-dim)", marginTop: 2 }}><FaText text={I18N.t("AR2_PRIZE_FLAT")} s={11} /></div>}
         </div>
       </div>
-      )}
+      ))}
 
       <div className="card" style={{ marginTop: 14 }}>
           <h3 style={{ margin: "0 0 8px" }}>{I18N.t("AR2_ATTACKS_TITLE")}</h3>
-          {/* Le levier « faire poser les défenses » : c'est ici qu'il se voit. Un compte sans
-              défense subit des attaques (impossible à manquer) mais n'est ni classé ni éligible
-              aux prix de saison — et c'est le seul endroit du jeu où il l'apprend. */}
-          {!myDefensePosted && (pvp.attacks || []).length > 0 && (
-            <div className="mono" style={{ fontSize: 11, color: "var(--gold)", marginBottom: 8 }}>
-              {I18N.t("AR2_ATTACKS_NO_DEFENSE")}
-            </div>
-          )}
           {(!pvp.attacks || pvp.attacks.length === 0)
             ? <div style={{ color: "var(--text-dim)", fontSize: 12 }}>{I18N.t("AR2_ATTACKS_NONE")}</div>
             : pvp.attacks.map((a, i) => (
@@ -434,7 +551,7 @@ function Arene() {
               </div>
               <div className="flex gap8" style={{ marginTop: 12, justifyContent: "flex-end" }}>
                 <button className="btn sm" onClick={() => setPick(null)}>{I18N.t("CANCEL")}</button>
-                <button className="btn btn-elec sm" disabled={!ready || busy} onClick={() => { const ids = [...pick.ids]; const t = pick.target, rv = pick.revanche, myPosture = pick.posture || "equilibre", oppPosture = pick.oppPosture || null; setPick(null); onAttack(t, rv, ids, myPosture, oppPosture); }}>{I18N.t("AR2_ATTACK")}</button>
+                <button className="btn btn-elec sm" disabled={!ready || busy || !canAttack} onClick={() => { const ids = [...pick.ids]; const t = pick.target, rv = pick.revanche, myPosture = pick.posture || "equilibre", oppPosture = pick.oppPosture || null; setPick(null); onAttack(t, rv, ids, myPosture, oppPosture); }}>{I18N.t("AR2_ATTACK")}</button>
               </div>
             </div>
           </div>
@@ -451,7 +568,7 @@ function Arene() {
         opponentName={result.opponent_name}
         p1Posture={result.p1Posture}
         p2Posture={result.p2Posture}
-        onClose={() => { setResult(null); actions.pvpRefresh(); }} />}
+        onClose={() => { setResult(null); actions.pvpRefresh(); loadMyDefense(); }} />}
     </div>
   );
 }
