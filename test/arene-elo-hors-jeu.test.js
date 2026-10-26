@@ -1,14 +1,4 @@
-/* L'écran de combat affichait « +0 ELO ».
-
- * Le serveur ne fait PAS bouger le classement contre une cible implicite (adversaire sans
- * défense enregistrée, donc non classé) — règle d'audit B2, doublée par #130 pour les cibles
- * hors de portée. Le client, lui, calculait `delta = rating - rating_precedent` et affichait
- * donc « +0 ELO » : le joueur ne pouvait pas distinguer « rien échangé » de « combat hors
- * classement », et lisait un zéro qui ressemble à un bug.
- *
- * La réponse d'attaque porte maintenant `elo` (le classement était-il en jeu ?), et l'écran
- * le NOMME. Ces tests tiennent le contrat des deux côtés.
- */
+/* Arène V2 : les adversaires implicites disparaissent. Le rejeu conserve le drapeau serveur elo=false pour nommer un combat hors classement, sans inventer sa cause. */
 const test = require("node:test");
 const assert = require("node:assert");
 const fs = require("node:fs");
@@ -21,7 +11,7 @@ const I18N = lire("i18n.js");
 
 test("l'écran de combat nomme un combat hors classement au lieu d'afficher « +0 ELO »", () => {
   assert.match(BATTLE, /elo === false/, "le combat hors classement doit être reconnu");
-  assert.match(BATTLE, /I18N\.t\("AR2_NO_ELO_UNRANKED"\)/, "et NOMMÉ, pas rendu comme un zéro");
+  assert.match(BATTLE, /I18N\.t\("AR2_NO_ELO"\)/, "et NOMMÉ, pas rendu comme un zéro");
 });
 
 test("l'écran reçoit `elo` (le drapeau que porte la réponse d'attaque)", () => {
@@ -31,8 +21,8 @@ test("l'écran reçoit `elo` (le drapeau que porte la réponse d'attaque)", () =
 });
 
 test("le libellé existe dans les TROIS langues (FR/EN/ZH)", () => {
-  const m = /AR2_NO_ELO_UNRANKED:\s*\{[^}]*\}/.exec(I18N);
-  assert.ok(m, "AR2_NO_ELO_UNRANKED absent de i18n.js");
+  const m = /AR2_NO_ELO:\s*\{[^}]*\}/.exec(I18N);
+  assert.ok(m, "AR2_NO_ELO absent de i18n.js");
   for (const lg of ["FR", "EN", "ZH"]) {
     assert.ok(m[0].includes(lg + ":"), "traduction " + lg + " manquante");
   }

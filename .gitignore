@@ -22,6 +22,7 @@ _jeton-test.html
 _chips-check.html
 _pot-check.html
 _session_*.json
+preview-arene-v2.html
 
 # Sorties de verification du bake (jetables, regenerables)
 _bake/*.png
