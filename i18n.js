@@ -427,8 +427,12 @@
 
     // arène (pvp)
     AR2_TITLE: { FR: "L'Arène", EN: "The Arena", ZH: "竞技场" },
-    AR2_TAG: { FR: "PVP CLASSÉ — LIGUES", EN: "RANKED PVP — LEAGUES", ZH: "排位 PVP — 联赛" },
+    AR2_TAG: { FR: "PVP CLASSÉ", EN: "RANKED PVP", ZH: "排位 PVP" },
     AR2_MY_DEFENSE: { FR: "Ma défense", EN: "My defense", ZH: "我的防守" },
+    AR2_DEFENSE_POSTED_AT: { FR: "Défense posée le %s", EN: "Defense posted on %s", ZH: "防守设置于 %s" },
+    AR2_DEFENSE_STALE: { FR: "Défense périmée — pose-la à nouveau.", EN: "Defense expired — post it again.", ZH: "防守已过期，请重新设置。" },
+    AR2_DEFENSE_OUTDATED: { FR: "Ta défense est dépassée par tes meilleures entités : elle va tomber.", EN: "Your best entities have outgrown your defense: it will fall.", ZH: "你最强的实体已远超当前防守阵容：防守将被击败。" },
+    AR2_TAKE_TOP_THREE: { FR: "Prendre mon top-3", EN: "Use my top 3", ZH: "使用我的最强 3 个实体" },
     AR2_SET_DEFENSE: { FR: "Mettre à jour ma défense", EN: "Update my defense", ZH: "更新我的防守" },
     // Arène V2 : une défense posée est requise pour entrer, attaquer et être attaqué.
     AR2_ENTRY_TITLE: { FR: "Pose ta défense pour entrer dans l'Arène", EN: "Set your defense to enter the Arena", ZH: "设置防守，进入竞技场" },

@@ -1,5 +1,5 @@
 /* ============================================================
-   FRACTAL ARENA — Écran Arène (PvP classé, ligues)
+   FRACTAL ARENA — Écran Arène (PvP classé)
    ============================================================ */
 const { useState, useEffect, useRef } = React;
 const D = window.FA_DATA, I18N = window.FA_I18N;
@@ -105,6 +105,7 @@ function Arene() {
   const defenseReady = g.selected.length === 3;
   const myDefensePosted = !!myDefense;
   const defense = AU.defenseStatus(myDefense, nowTs);
+  const defensePostedDate = AU.defensePostedDate(myDefense && myDefense.posted_at, I18N.getLang());
   const canAttack = myDefensePosted && defense.hpKnown && !defense.down && !defenseError;
   const healCostKnown = pvp.heal_cost != null && Number.isFinite(Number(pvp.heal_cost));
   const refreshCostKnown = pvp.refresh_cost != null && Number.isFinite(Number(pvp.refresh_cost));
@@ -282,6 +283,17 @@ function Arene() {
           </div>
           <button className="btn btn-forge" disabled={busy || !defenseReady} onClick={onSetDefense}>{I18N.t("AR2_SET_DEFENSE")}</button>
         </div>
+        {myDefensePosted && <div data-fa="arene-defense-provenance" style={{ marginTop: 10 }}>
+          {defensePostedDate && <div className="mono" style={{ color: "var(--text-dim)", fontSize: 11, marginBottom: 6 }}>
+            {I18N.t("AR2_DEFENSE_POSTED_AT", defensePostedDate)}
+          </div>}
+          <div className="mono" style={{ fontSize: 12, lineHeight: 1.6, overflowWrap: "anywhere" }}>
+            {myDefense.team.map((b) => D.displayName(b)).join(" · ")}
+          </div>
+          {myDefense.stale && <div className="mono" role="status" style={{ color: "var(--alert)", fontSize: 11, marginTop: 6 }}>
+            {I18N.t("AR2_DEFENSE_STALE")}
+          </div>}
+        </div>}
         {myDefensePosted && <div data-fa="arene-defense-hp" style={{ marginTop: 14 }}>
           <div className="flex between center wrap" style={{ gap: 12 }}>
             <span className="mono">{I18N.t("AR2_DEFENSE_HP", defense.hpKnown ? defense.hpLeft : "—", defense.hpKnown ? defense.hpMax : "—")}</span>
@@ -302,7 +314,7 @@ function Arene() {
           <PostureSelect value={defPosture} onChange={setDefPosture} disabled={busy} />
         </div>
         {/* Arène V2 : choisir une équipe ne suffit pas, il faut poser la défense côté serveur. */}
-        {!defenseReady && <div className="mono" style={{ fontSize: 11, color: "var(--alert)", marginTop: 8 }}>{I18N.t("AR2_DEFENSE_HINT")}</div>}
+        {!myDefensePosted && <div className="mono" style={{ fontSize: 11, color: "var(--alert)", marginTop: 8 }}>{I18N.t("AR2_DEFENSE_HINT")}</div>}
         {/* Formation (Avant/Milieu/Arrière) + synergies actives */}
         {defenseReady && (() => {
           const selTeam = g.selected.map((id) => g.roster.find((b) => b.id === id)).filter(Boolean);
@@ -330,6 +342,15 @@ function Arene() {
           );
         })()}
       </div>
+
+      {myDefensePosted && !defenseError && AU.defenseOutdated(myDefense) && <div className="panel oct" data-fa="arene-defense-outdated" role="status" style={{ border: "1px solid var(--gold)", padding: 14, marginBottom: 14 }}>
+        <div className="mono" style={{ color: "var(--gold)", fontSize: 12, lineHeight: 1.6 }}>{I18N.t("AR2_DEFENSE_OUTDATED")}</div>
+        <div className="flex gap8 wrap" style={{ marginTop: 10 }}>
+          <button className="btn btn-elec sm" disabled={busy} onClick={() => actions.setView("team")}>{I18N.t("AR2_OPEN_TEAM")}</button>
+          {/* Le store ne fournit pas de sélection top-3 : passer par l'Équipe, sans inventer de classement local. */}
+          <button className="btn sm" disabled={busy} onClick={() => actions.setView("team")}>{I18N.t("AR2_TAKE_TOP_THREE")}</button>
+        </div>
+      </div>}
 
       {myDefensePosted && !defenseError && (sc.prelaunch ? (
         <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 24, textAlign: "center" }}>
@@ -407,7 +428,7 @@ function Arene() {
 
         {/* Classement */}
         <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 16 }}>
-          <span className="h2" style={{ fontSize: 14, color: "var(--gold)" }}>{I18N.t("AR2_LADDER")} — {AU.leagueLabel(pvp.league)}</span>
+          <span className="h2" style={{ fontSize: 14, color: "var(--gold)" }}>{I18N.t("AR2_LADDER")}</span>
           <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 4 }}>
             {(pvp.ladder || []).map((row) => (
               <div key={row.player_id || row.wallet} className="flex between" style={{ padding: "5px 8px", background: estMoi(row, g) ? "rgba(0,240,255,0.08)" : "transparent", fontSize: 12 }}>

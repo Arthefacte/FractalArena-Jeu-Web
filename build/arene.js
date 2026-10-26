@@ -1,7 +1,7 @@
 /* Généré par tools/precompile.mjs depuis arene.jsx — NE PAS ÉDITER. */
 (function () {
 /* ============================================================
-   FRACTAL ARENA — Écran Arène (PvP classé, ligues)
+   FRACTAL ARENA — Écran Arène (PvP classé)
    ============================================================ */
 const {
   useState,
@@ -150,6 +150,7 @@ function Arene() {
   const defenseReady = g.selected.length === 3;
   const myDefensePosted = !!myDefense;
   const defense = AU.defenseStatus(myDefense, nowTs);
+  const defensePostedDate = AU.defensePostedDate(myDefense && myDefense.posted_at, I18N.getLang());
   const canAttack = myDefensePosted && defense.hpKnown && !defense.down && !defenseError;
   const healCostKnown = pvp.heal_cost != null && Number.isFinite(Number(pvp.heal_cost));
   const refreshCostKnown = pvp.refresh_cost != null && Number.isFinite(Number(pvp.refresh_cost));
@@ -418,6 +419,33 @@ function Arene() {
     disabled: busy || !defenseReady,
     onClick: onSetDefense
   }, I18N.t("AR2_SET_DEFENSE"))), myDefensePosted && /*#__PURE__*/React.createElement("div", {
+    "data-fa": "arene-defense-provenance",
+    style: {
+      marginTop: 10
+    }
+  }, defensePostedDate && /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      color: "var(--text-dim)",
+      fontSize: 11,
+      marginBottom: 6
+    }
+  }, I18N.t("AR2_DEFENSE_POSTED_AT", defensePostedDate)), /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      fontSize: 12,
+      lineHeight: 1.6,
+      overflowWrap: "anywhere"
+    }
+  }, myDefense.team.map(b => D.displayName(b)).join(" · ")), myDefense.stale && /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    role: "status",
+    style: {
+      color: "var(--alert)",
+      fontSize: 11,
+      marginTop: 6
+    }
+  }, I18N.t("AR2_DEFENSE_STALE"))), myDefensePosted && /*#__PURE__*/React.createElement("div", {
     "data-fa": "arene-defense-hp",
     style: {
       marginTop: 14
@@ -468,7 +496,7 @@ function Arene() {
     value: defPosture,
     onChange: setDefPosture,
     disabled: busy
-  })), !defenseReady && /*#__PURE__*/React.createElement("div", {
+  })), !myDefensePosted && /*#__PURE__*/React.createElement("div", {
     className: "mono",
     style: {
       fontSize: 11,
@@ -517,7 +545,36 @@ function Arene() {
         marginRight: 6
       }
     }, s.label, " \xB7 ", s.effect))));
-  })()), myDefensePosted && !defenseError && (sc.prelaunch ? /*#__PURE__*/React.createElement("div", {
+  })()), myDefensePosted && !defenseError && AU.defenseOutdated(myDefense) && /*#__PURE__*/React.createElement("div", {
+    className: "panel oct",
+    "data-fa": "arene-defense-outdated",
+    role: "status",
+    style: {
+      border: "1px solid var(--gold)",
+      padding: 14,
+      marginBottom: 14
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      color: "var(--gold)",
+      fontSize: 12,
+      lineHeight: 1.6
+    }
+  }, I18N.t("AR2_DEFENSE_OUTDATED")), /*#__PURE__*/React.createElement("div", {
+    className: "flex gap8 wrap",
+    style: {
+      marginTop: 10
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "btn btn-elec sm",
+    disabled: busy,
+    onClick: () => actions.setView("team")
+  }, I18N.t("AR2_OPEN_TEAM")), /*#__PURE__*/React.createElement("button", {
+    className: "btn sm",
+    disabled: busy,
+    onClick: () => actions.setView("team")
+  }, I18N.t("AR2_TAKE_TOP_THREE")))), myDefensePosted && !defenseError && (sc.prelaunch ? /*#__PURE__*/React.createElement("div", {
     className: "panel oct",
     style: {
       border: "1px solid var(--line)",
@@ -700,7 +757,7 @@ function Arene() {
       fontSize: 14,
       color: "var(--gold)"
     }
-  }, I18N.t("AR2_LADDER"), " \u2014 ", AU.leagueLabel(pvp.league)), /*#__PURE__*/React.createElement("div", {
+  }, I18N.t("AR2_LADDER")), /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 10,
       display: "flex",
