@@ -16,11 +16,32 @@ const KEYS = [
   "AR2_DEFENSE_DOWN", "AR2_DEFENSE_RAISE", "AR2_DEFENSE_LOADING",
   "AR2_DEFENSE_ERROR", "AR2_DEFENSE_RETRY", "AR2_ERR_NO_DEFENSE",
   "AR2_ERR_DEFENSE_DOWN", "AR2_ERR_PAIR_LIMIT", "AR2_ERR_DEFENSE_FULL",
+  "AR2_DEFENSE_POSTED_AT", "AR2_DEFENSE_STALE", "AR2_DEFENSE_OUTDATED", "AR2_TAKE_TOP_THREE",
 ];
 test("toutes les clés Arène existent dans les 3 langues, non vides", () => {
   for (const k of KEYS) {
     assert.ok(T[k], "clé manquante : " + k);
     for (const lg of LANGS) assert.ok(T[k][lg] && T[k][lg].trim().length > 0, `${k}.${lg} vide`);
+  }
+});
+
+test("Arène V2 : la provenance conserve la date et les mêmes paramètres dans les trois langues", () => {
+  const I = window.FA_I18N;
+  for (const lang of LANGS) {
+    assert.deepStrictEqual(T.AR2_DEFENSE_POSTED_AT[lang].match(/%[sd]/g), ["%s"]);
+    I.setLang(lang);
+    const message = I.t("AR2_DEFENSE_POSTED_AT", "17/10/2026");
+    assert.ok(message.includes("17/10/2026"), `${lang}: la date doit rester lisible`);
+    assert.doesNotMatch(message, /%[sd]/);
+  }
+  I.setLang("FR");
+});
+
+test("Arène V2 : les titres n'annoncent plus un classement par ligue", () => {
+  for (const lang of LANGS) {
+    for (const key of ["AR2_TAG", "AR2_LADDER"]) {
+      assert.doesNotMatch(T[key][lang], /ligue|league|diamant|diamond|联赛|钻石/i);
+    }
   }
 });
 

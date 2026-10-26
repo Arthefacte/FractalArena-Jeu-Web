@@ -42,6 +42,18 @@ test('défense : Bearer, HP et posture cachée préservés, sans posture invent�
   assert.equal(result.hidden, true);
 });
 
+test('défense : provenance facultative transmise sans inventer les champs absents', async () => {
+  const provenance = { posted_at: '2026-10-17T12:00:00.000Z', power: 100, best_power: 126 };
+  for (const fields of [{}, provenance]) {
+    const a = action('pvpDefenseOf', [{ status: 200, body: { ok: true, team: [], ...fields } }]);
+    const result = await a.fn('mine');
+    for (const key of Object.keys(provenance)) {
+      assert.equal(result[key], fields[key]);
+      assert.equal(Object.hasOwn(result, key), Object.hasOwn(fields, key));
+    }
+  }
+});
+
 test('défense : 404 pas_de_fantome distingué des erreurs réseau/serveur', async () => {
   for (const failure of [{ status: 404, body: { error: 'pas_de_fantome' } }, { status: 503, body: {} }, new Error('offline')]) {
     const result = await action('pvpDefenseOf', [failure]).fn('mine');

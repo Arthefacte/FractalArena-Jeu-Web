@@ -144,5 +144,22 @@
     };
   }
 
-  window.FA_ARENE_UI = { leagueLabel, leagueColor, fmtCountdown, fmtCountdownSec, eventLogLines, entryModes, seasonCountdown, computeSynergiesLabels, affinityIndicator, powerGapPct, powerGapTone, powerGapLabel, defenseStatus };
+  // Provenance facultative : une ancienne réponse serveur ne crée ni date ni alerte.
+  // Le fuseau reste celui du joueur, seule la langue fixe l'ordre jour/mois/année.
+  function defensePostedDate(postedAt, lang) {
+    if (typeof postedAt !== "string" || !postedAt.trim()) return null;
+    const date = new Date(postedAt);
+    if (!Number.isFinite(date.getTime())) return null;
+    const locale = { FR: "fr-FR", EN: "en-US", ZH: "zh-CN" }[lang] || "fr-FR";
+    return date.toLocaleDateString(locale, { year: "numeric", month: "2-digit", day: "2-digit" });
+  }
+
+  function defenseOutdated(defense) {
+    if (!defense) return false;
+    const { power, best_power } = defense;
+    return Number.isFinite(power) && power >= 0 && Number.isFinite(best_power)
+      && best_power > power * 1.25;
+  }
+
+  window.FA_ARENE_UI = { leagueLabel, leagueColor, fmtCountdown, fmtCountdownSec, eventLogLines, entryModes, seasonCountdown, computeSynergiesLabels, affinityIndicator, powerGapPct, powerGapTone, powerGapLabel, defenseStatus, defensePostedDate, defenseOutdated };
 })();
