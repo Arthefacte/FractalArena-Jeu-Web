@@ -1796,3 +1796,7 @@ body[data-fond="cite"] .app-bg {
   border:0;opacity:.85;transition:color .2s ease,opacity .2s ease}
 .legal-links a:hover{color:var(--accent);opacity:1}
 .legal-links-sheet{width:100%;margin-top:8px;gap:10px;font-size:10px}
+/* Entrée juridique du bandeau (icône balance) : discrète, mais présente sur tous
+   les écrans et à toutes les tailles — c'est un accès légal, pas une décoration. */
+.hdr-legal{text-decoration:none;font-size:13px;line-height:1;opacity:.7}
+.hdr-legal:hover{opacity:1}
