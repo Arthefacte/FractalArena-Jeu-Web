@@ -2478,11 +2478,9 @@ function Options() {
       {/* Pages légales — atteignables depuis le jeu, desktop ET mobile : l'écran
           Options est le seul point commun aux deux (le tiroir « Plus » n'existe
           qu'en mobile, et l'écran d'entrée disparaît une fois le compte créé). */}
-      <div className="legal-links" style={{ marginTop: 22 }}>
-        <a href="mentions-legales.html">{I18N.t("LEGAL_NOTICE")}</a>
-        <a href="confidentialite.html">{I18N.t("LEGAL_PRIVACY")}</a>
-        <a href="cgu.html">{I18N.t("LEGAL_TERMS")}</a>
-      </div>
+      <a className="legal-hub" href="juridique.html">
+        <span aria-hidden="true">⚖</span> {I18N.t("LEGAL_HUB")}
+      </a>
 
       {confirmDisconnect && (
         <Modal onClose={() => setConfirmDisconnect(false)} accent="var(--alert)">

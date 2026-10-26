@@ -161,6 +161,10 @@
     const out = [res.mode === "claim" ? res.step.view : res.view];
     if (res.mode === "do" && res.target !== "team-grid" && res.step.view !== res.view) out.push(res.step.view);
     if (!out.includes("team")) out.push("team");
+    // Options n'est JAMAIS verrouillée : c'est le seul écran qui porte l'accès
+    // juridique (mentions légales, confidentialité, CGU). Un joueur au milieu du
+    // parcours doit pouvoir lire les conditions du jeu qu'il est en train de jouer.
+    if (!out.includes("options")) out.push("options");
     return out;
   }
 

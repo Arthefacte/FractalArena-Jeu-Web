@@ -204,30 +204,33 @@ test("hors parcours : aucun verrou (un vétéran ne voit aucune différence)", (
 test("équipe incomplète : seule Équipe reste ouverte", () => {
   const r = GU.computeGuide({ disc: etatFor(), g: { ...g0, selected: [] }, view: "team" });
   assert.equal(r.target, "team-grid");
-  assert.deepEqual(GU.allowedViews(r), ["team"], "tant que l'équipe n'est pas posée, la Fosse n'a rien à y faire");
+  // Exception permanente : Options porte l'accès juridique (mentions, confidentialité,
+  // CGU). Un joueur doit pouvoir lire les conditions du jeu qu'il est en train de jouer,
+  // même au milieu du parcours.
+  assert.deepEqual(GU.allowedViews(r), ["team", "options"], "tant que l'équipe n'est pas posée, la Fosse n'a rien à y faire — mais Options reste ouverte");
 });
 
 test("l'étape ouvre SON onglet plus Équipe, et rien d'autre", () => {
   const g = { ...g0, selected: ["a", "b", "c"] };
-  assert.deepEqual(GU.allowedViews(GU.computeGuide({ disc: etatFor(), g, view: "fosse" })), ["fosse", "team"]);
+  assert.deepEqual(GU.allowedViews(GU.computeGuide({ disc: etatFor(), g, view: "fosse" })), ["fosse", "team", "options"]);
   const trois = ["d_win", "d_paid", "d_level"];
   const camp = GU.computeGuide({ disc: etatFor(trois, trois), g, view: "campaign" });
   assert.equal(camp.step.id, "d_camp");
-  assert.deepEqual(GU.allowedViews(camp), ["campaign", "team"]);
+  assert.deepEqual(GU.allowedViews(camp), ["campaign", "team", "options"]);
   const quatre = trois.concat(["d_camp"]);
   const tour = GU.computeGuide({ disc: etatFor(quatre, quatre), g, view: "tour" });
   assert.equal(tour.step.id, "d_tower");
-  assert.deepEqual(GU.allowedViews(tour), ["tour", "team"]);
+  assert.deepEqual(GU.allowedViews(tour), ["tour", "team", "options"]);
   const cinq = quatre.concat(["d_tower"]);
   const arene = GU.computeGuide({ disc: etatFor(cinq, cinq), g, view: "arene" });
   assert.equal(arene.step.id, "d_pvp");
-  assert.deepEqual(GU.allowedViews(arene), ["arene", "team"]);
+  assert.deepEqual(GU.allowedViews(arene), ["arene", "team", "options"]);
 });
 
 test("étape accomplie non réclamée : le rail n'ouvre PAS Quêtes (le guide encaisse)", () => {
   const r = GU.computeGuide({ disc: etatFor(["d_win"]), g: { ...g0, selected: ["a", "b", "c"] }, view: "fosse" });
   assert.equal(r.mode, "claim");
-  assert.deepEqual(GU.allowedViews(r), ["fosse", "team"]);
+  assert.deepEqual(GU.allowedViews(r), ["fosse", "team", "options"]);
 });
 
 test("une étape passée d'office ne bloque plus le rail", () => {

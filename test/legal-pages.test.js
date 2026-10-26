@@ -19,10 +19,7 @@ test("les trois pages légales existent et sont liées depuis l'interface", () =
     // Deux points d'accès : l'écran d'entrée (avant tout compte) et le tiroir « Plus ».
     const liens = app.split(`href="${page}"`).length - 1;
     assert.ok(liens >= 2, `${page} doit être liée depuis l'écran d'entrée ET le tiroir « Plus » (${liens})`);
-    // Troisième point d'accès : l'écran Options, seul commun entre desktop et
-    // mobile une fois le compte créé (le tiroir « Plus » n'existe qu'en mobile).
-    assert.ok(lire("screens.jsx").includes(`href="${page}"`),
-      `${page} doit aussi être liée depuis l'écran Options`);
+
   }
 });
 
@@ -105,13 +102,22 @@ test("aucun marqueur provisoire dans les pages légales", () => {
 // La page-hub est l'entrée permanente du bandeau : elle doit exister et pointer
 // vers les trois documents. Sans elle, un joueur desktop en jeu n'a aucun chemin
 // (le tiroir « Plus » n'existe qu'en mobile, l'écran d'entrée disparaît au 1er compte).
-test("la page-hub juridique est atteignable depuis le bandeau", () => {
-  const app = lire("app.jsx");
+test("la page-hub juridique est atteignable depuis l'écran Options", () => {
   const hub = lire("juridique.html");
-  assert.match(app, /href="juridique\.html"/, "aucun lien vers juridique.html dans le bandeau");
+  assert.match(lire("screens.jsx"), /href="juridique\.html"/, "aucun lien vers juridique.html dans Options");
+  assert.match(lire("screens.jsx"), /legal-hub/, "l'entrée ⚖ a perdu son style/repère");
+  assert.doesNotMatch(lire("app.jsx"), /hdr-legal/, "l'icône ⚖ ne doit plus encombrer le bandeau");
   for (const page of PAGES) assert.ok(hub.includes(`href="${page}"`), `le hub ne renvoie pas vers ${page}`);
   assert.ok(lire("sitemap.xml").includes("juridique.html"), "juridique.html absente du sitemap");
   assert.match(hub, /contact@arthefacte\.com/);
+});
+
+// L'accès juridique ne doit jamais dépendre de la progression : le parcours
+// verrouille les onglets d'un nouveau joueur, et Options est le seul écran qui
+// porte les conditions du jeu qu'il est en train de jouer.
+test("l'écran Options n'est jamais verrouillé par le parcours", () => {
+  const guide = lire("guide-ui.js");
+  assert.match(guide, /out\.push\("options"\)/, "allowedViews doit toujours ouvrir Options");
 });
 
 test("le sitemap déclare les pages légales", () => {

@@ -6088,12 +6088,7 @@ function Header({
     value: g.locked
   }), /*#__PURE__*/React.createElement(ChipDelta, {
     delta: lockedPop.delta
-  })), /*#__PURE__*/React.createElement("a", {
-    className: "hdr-mbtn hdr-legal",
-    href: "juridique.html",
-    "aria-label": I18N.t("LEGAL_HUB"),
-    title: I18N.t("LEGAL_HUB")
-  }, "\u2696"), /*#__PURE__*/React.createElement(LangSwitch, null), /*#__PURE__*/React.createElement("button", {
+  })), "        ", /*#__PURE__*/React.createElement(LangSwitch, null), /*#__PURE__*/React.createElement("button", {
     className: "btn ghost sm tut-help",
     title: I18N.t("TUT_HELP"),
     "aria-label": I18N.t("TUT_HELP"),
