@@ -6336,7 +6336,15 @@ function Nav() {
     }
   }, "\u25BE")), /*#__PURE__*/React.createElement("div", {
     className: "fa-sheet-foot"
-  }, /*#__PURE__*/React.createElement(LangSwitch, null), /*#__PURE__*/React.createElement("button", {
+  }, /*#__PURE__*/React.createElement(LangSwitch, null), /*#__PURE__*/React.createElement("div", {
+    className: "legal-links legal-links-sheet"
+  }, /*#__PURE__*/React.createElement("a", {
+    href: "mentions-legales.html"
+  }, I18N.t("LEGAL_NOTICE")), /*#__PURE__*/React.createElement("a", {
+    href: "confidentialite.html"
+  }, I18N.t("LEGAL_PRIVACY")), /*#__PURE__*/React.createElement("a", {
+    href: "cgu.html"
+  }, I18N.t("LEGAL_TERMS"))), /*#__PURE__*/React.createElement("button", {
     className: "btn ghost sm",
     onClick: () => {
       setSheetOpen(false);
@@ -6609,7 +6617,15 @@ function Onboarding({
     key: code,
     className: I18N.getLang() === code ? "on" : "",
     onClick: () => actions.setLang(code)
-  }, lbl)))), recovering && /*#__PURE__*/React.createElement(window.RecoverScreen, {
+  }, lbl))), /*#__PURE__*/React.createElement("div", {
+    className: "legal-links"
+  }, /*#__PURE__*/React.createElement("a", {
+    href: "mentions-legales.html"
+  }, I18N.t("LEGAL_NOTICE")), /*#__PURE__*/React.createElement("a", {
+    href: "confidentialite.html"
+  }, I18N.t("LEGAL_PRIVACY")), /*#__PURE__*/React.createElement("a", {
+    href: "cgu.html"
+  }, I18N.t("LEGAL_TERMS")))), recovering && /*#__PURE__*/React.createElement(window.RecoverScreen, {
     onClose: () => setRecovering(false)
   }));
 }

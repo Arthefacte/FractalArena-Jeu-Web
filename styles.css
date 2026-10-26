@@ -2,7 +2,14 @@
    FRACTAL ARENA — Cyberpunk crypto theme
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+/* Polices auto-hébergées (vie privée : aucune requête vers Google Fonts).
+   Chakra Petch = statique (un fichier par poids) ; JetBrains Mono = variable (400→700).
+   Subset latin : couvre le français (é à ç œ €). */
+@font-face{font-family:'Chakra Petch';font-style:normal;font-weight:400;font-display:swap;src:url('assets/fonts/chakra-petch-400-latin.woff2') format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}
+@font-face{font-family:'Chakra Petch';font-style:normal;font-weight:500;font-display:swap;src:url('assets/fonts/chakra-petch-500-latin.woff2') format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}
+@font-face{font-family:'Chakra Petch';font-style:normal;font-weight:600;font-display:swap;src:url('assets/fonts/chakra-petch-600-latin.woff2') format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}
+@font-face{font-family:'Chakra Petch';font-style:normal;font-weight:700;font-display:swap;src:url('assets/fonts/chakra-petch-700-latin.woff2') format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}
+@font-face{font-family:'JetBrains Mono';font-style:normal;font-weight:400 700;font-display:swap;src:url('assets/fonts/jetbrains-mono-latin.woff2') format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}
 
 :root {
   /* Backgrounds */
@@ -1780,3 +1787,12 @@ body[data-fond="cite"] .app-bg {
   color: var(--text-dim); font-size: 14px; line-height: 1;
 }
 .maj-bar-x:hover { color: var(--text); }
+
+/* Pages légales (liens vers mentions-legales.html, confidentialite.html, cgu.html).
+   Volontairement discrets : ils doivent être présents sans peser sur l'interface. */
+.legal-links{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:14px;
+  font-family:var(--font-mono);font-size:10.5px;letter-spacing:.4px}
+.legal-links a{color:var(--text-dim);text-decoration:underline;text-underline-offset:2px;
+  border:0;opacity:.85;transition:color .2s ease,opacity .2s ease}
+.legal-links a:hover{color:var(--accent);opacity:1}
+.legal-links-sheet{width:100%;margin-top:8px;gap:10px;font-size:10px}
