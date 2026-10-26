@@ -480,6 +480,12 @@ function PrizeModal({ prizes, onClaim, onClose }) {
               : <div className="mono" style={{ color: AU.leagueColor(p.league), marginBottom: 6, fontWeight: "bold" }}>
                   {I18N.t("PRIZE_SEASON_RANK", p.season, p.rank, AU.leagueLabel(p.league))}
                 </div>}
+            {/* « +186 FA » sans la dotation ne dit rien : le joueur a demandé pourquoi 186 et
+                pas 3 000 (26/10/2026). La dotation de la semaine est archivée avec le paiement ;
+                les lignes d'avant la colonne n'en ont pas → on n'affiche pas de ligne vide. */}
+            {p.dotation != null && (
+              <div className="mono" style={{ fontSize: 13, color: "var(--text-dim)" }}><FaText text={I18N.t("PRIZE_TOWER_DOTATION", p.dotation)} /></div>
+            )}
             <div className="mono" style={{ fontSize: 13 }}><FaText text={I18N.t("PRIZE_BEFORE", p.balance_before)} /></div>
             <div className="mono" style={{ fontSize: 13, color: "var(--success)" }}><FaText text={I18N.t(p.locked ? "PRIZE_REWARD_LOCKED" : "PRIZE_REWARD", p.reward)} /></div>
             <div className="mono" style={{ fontSize: 13 }}><FaText text={I18N.t("PRIZE_AFTER", p.balance_after)} /></div>

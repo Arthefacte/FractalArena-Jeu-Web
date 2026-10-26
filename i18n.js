@@ -509,7 +509,9 @@
     AR2_HIST_NONE:       { FR: "Aucun paiement de saison pour l'instant.", EN: "No season payout yet.", ZH: "暂无赛季奖励。" },
     AR2_HIST_TOTAL:      { FR: "Total reçu : %d FA", EN: "Total received: %d FA", ZH: "累计获得：%d FA" },
     PRIZE_KEEP_HINT:     { FR: "Fermer ne perd rien : le gain reste dans l'historique de l'Arène.", EN: "Closing loses nothing: the reward stays in the Arena history.", ZH: "关闭不会丢失：奖励会保留在竞技场记录中。" },
-    TOUR_LB_DOTATION:    { FR: "Dotation hebdo : jusqu'à 3 000 FA au top 10 — runs payants seulement", EN: "Weekly prize pool: up to 3,000 FA for the top 10 — paid runs only", ZH: "每周奖池：前 10 名最高瓜分 3000 FA — 仅限付费挑战" },
+    TOUR_LB_DOTATION:    { FR: "Dotation : 100 FA par joueur classé (run payant), partagée entre les 10 premiers", EN: "Prize pool: 100 FA per ranked player (paid run), shared by the top 10", ZH: "奖池：每位上榜玩家（付费挑战）贡献 100 FA，由前 10 名瓜分" },
+    TOUR_LB_LIVE:        { FR: "Cette semaine : %d classés → %d FA à partager · le rang 1 touche %d FA", EN: "This week: %d ranked → %d FA to share · rank 1 gets %d FA", ZH: "本周：%d 人上榜 → 共 %d FA · 第 1 名可得 %d FA" },
+    PRIZE_TOWER_DOTATION: { FR: "Dotation de la semaine : %d FA", EN: "Week's prize pool: %d FA", ZH: "本周奖池：%d FA" },
 
     // combat log
     L_START: { FR: "COMBAT LANCÉ", EN: "FIGHT STARTED", ZH: "战斗开始" },

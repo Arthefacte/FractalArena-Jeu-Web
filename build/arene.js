@@ -990,7 +990,15 @@ function PrizeModal({
         marginBottom: 6,
         fontWeight: "bold"
       }
-    }, I18N.t("PRIZE_SEASON_RANK", p.season, p.rank, AU.leagueLabel(p.league))), /*#__PURE__*/React.createElement("div", {
+    }, I18N.t("PRIZE_SEASON_RANK", p.season, p.rank, AU.leagueLabel(p.league))), p.dotation != null && /*#__PURE__*/React.createElement("div", {
+      className: "mono",
+      style: {
+        fontSize: 13,
+        color: "var(--text-dim)"
+      }
+    }, /*#__PURE__*/React.createElement(FaText, {
+      text: I18N.t("PRIZE_TOWER_DOTATION", p.dotation)
+    })), /*#__PURE__*/React.createElement("div", {
       className: "mono",
       style: {
         fontSize: 13

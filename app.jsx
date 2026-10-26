@@ -2838,7 +2838,13 @@ function App() {
         const resp = await fetch(`${API_URL}/tower/leaderboard`);
         const data = await resp.json();
         if (!resp.ok) return { ok: false };
-        return { ok: true, weekKey: data.week_key, weekEndsAt: data.week_ends_at, top: data.top || [] };
+        // ranked / dotation / paid_run_cost / top_n : ce que le champ rapportera vraiment,
+        // calcule par le serveur avec la MÊME fonction que le versement (towerRankPool).
+        return {
+          ok: true, weekKey: data.week_key, weekEndsAt: data.week_ends_at, top: data.top || [],
+          ranked: data.ranked || 0, dotation: data.dotation || 0, rank1: data.rank1 || 0,
+          paidRunCost: data.paid_run_cost || 0, topN: data.top_n || 10,
+        };
       } catch (e) { return { ok: false }; }
     },
 
