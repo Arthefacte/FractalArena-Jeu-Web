@@ -74,3 +74,13 @@ version retenue **v411**. Les cinq marqueurs (`index.html`, `data.js`,
 de `test/account-wiring.test.js` sont alignés. Les fichiers compilés sont inclus.
 L'ajout à l'index suit le build. Le bump accompagne les modifications servies pour
 respecter le contrôle de cache-busting par rapport au commit parent.
+
+- Étape fonctionnelle validée : commit `8900f6c`
+  (`feat(arene): remplacer la formation sur place et choisir le top-3 (v411)`).
+- Contrôle de cache-busting rejoué contre le parent après commit : **2/2 réussis**.
+- `git push -u origin Arthefacte/arene-v2-remplacement` effectué.
+- PR [#316](https://github.com/Arthefacte/FractalArena-Jeu-Web/pull/316), base
+  `main`, état **OPEN**, **isDraft: true**, avec compte avant/après et version.
+- CI du commit fonctionnel : workflow `tests`, job `test` **SUCCESS**
+  ([exécution](https://github.com/Arthefacte/FractalArena-Jeu-Web/actions/runs/40374550940)).
+- Aucune fusion. Seul le brief utilisateur reste non suivi dans le worktree.
