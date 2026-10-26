@@ -4841,18 +4841,12 @@ function Options() {
       flex: 1
     },
     onClick: onDisconnectClick
-  }, I18N.t("OP_DISCONNECT"))), /*#__PURE__*/React.createElement("div", {
-    className: "legal-links",
-    style: {
-      marginTop: 22
-    }
-  }, /*#__PURE__*/React.createElement("a", {
-    href: "mentions-legales.html"
-  }, I18N.t("LEGAL_NOTICE")), /*#__PURE__*/React.createElement("a", {
-    href: "confidentialite.html"
-  }, I18N.t("LEGAL_PRIVACY")), /*#__PURE__*/React.createElement("a", {
-    href: "cgu.html"
-  }, I18N.t("LEGAL_TERMS"))), confirmDisconnect && /*#__PURE__*/React.createElement(Modal, {
+  }, I18N.t("OP_DISCONNECT"))), /*#__PURE__*/React.createElement("a", {
+    className: "legal-hub",
+    href: "juridique.html"
+  }, /*#__PURE__*/React.createElement("span", {
+    "aria-hidden": "true"
+  }, "\u2696"), " ", I18N.t("LEGAL_HUB")), confirmDisconnect && /*#__PURE__*/React.createElement(Modal, {
     onClose: () => setConfirmDisconnect(false),
     accent: "var(--alert)"
   }, /*#__PURE__*/React.createElement("div", {

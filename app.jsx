@@ -3578,12 +3578,7 @@ function Header({ liquidPop, lockedPop }) {
             <ChipAmount value={g.locked} />
             <ChipDelta delta={lockedPop.delta} />
           </span>
-        )}
-        {/* Entrée juridique permanente : le bandeau est monté sur tous les écrans,
-            y compris quand le parcours verrouille les onglets. Sans elle, un joueur
-            desktop en jeu n'avait aucun chemin vers les pages légales. */}
-        <a className="hdr-mbtn hdr-legal" href="juridique.html" aria-label={I18N.t("LEGAL_HUB")} title={I18N.t("LEGAL_HUB")}>⚖</a>
-        <LangSwitch />
+        )}        <LangSwitch />
         <button
           className="btn ghost sm tut-help"
           title={I18N.t("TUT_HELP")}
