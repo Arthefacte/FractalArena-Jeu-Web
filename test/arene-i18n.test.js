@@ -17,11 +17,24 @@ const KEYS = [
   "AR2_DEFENSE_ERROR", "AR2_DEFENSE_RETRY", "AR2_ERR_NO_DEFENSE",
   "AR2_ERR_DEFENSE_DOWN", "AR2_ERR_PAIR_LIMIT", "AR2_ERR_DEFENSE_FULL",
   "AR2_DEFENSE_POSTED_AT", "AR2_DEFENSE_STALE", "AR2_DEFENSE_OUTDATED", "AR2_TAKE_TOP_THREE",
+  "AR2_FORMATION_FRONT", "AR2_FORMATION_MIDDLE", "AR2_FORMATION_BACK", "AR2_FORMATION_HINT",
+  "AR2_SLOT_EMPTY", "AR2_REPLACEMENT_TITLE", "AR2_SELECTION_ADD", "AR2_SLOT_POWER", "AR2_ENTITY_STATS",
+  "AR2_REPLACEMENT_CANCEL", "AR2_REPLACEMENT_NONE", "AR2_MOVE_UP", "AR2_MOVE_DOWN",
 ];
 test("toutes les clés Arène existent dans les 3 langues, non vides", () => {
   for (const k of KEYS) {
     assert.ok(T[k], "clé manquante : " + k);
     for (const lg of LANGS) assert.ok(T[k][lg] && T[k][lg].trim().length > 0, `${k}.${lg} vide`);
+  }
+});
+
+test("Arène : les paramètres de sélection et de remplacement restent identiques en FR/EN/ZH", () => {
+  const expected = {
+    AR2_REPLACEMENT_TITLE: ["%s"], AR2_SLOT_POWER: ["%s"],
+    AR2_ENTITY_STATS: ["%d", "%s", "%d"], AR2_MOVE_UP: ["%s"], AR2_MOVE_DOWN: ["%s"],
+  };
+  for (const [key, parameters] of Object.entries(expected)) {
+    for (const lang of LANGS) assert.deepStrictEqual(T[key][lang].match(/%[sd]/g), parameters, `${key}.${lang}`);
   }
 });
 

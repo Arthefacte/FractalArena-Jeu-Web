@@ -2002,6 +2002,30 @@ function App() {
         };
       });
     },
+    // Remplace exactement un emplacement, sans modifier la défense déjà postée.
+    // Comme dans l'Équipe, seul le roster courant fait foi (les entités fusionnées en sortent).
+    replaceSelected(index, id) {
+      setG(s => {
+        if (!Number.isInteger(index) || index < 0 || index > 2 || index >= s.selected.length || s.selected.includes(id) || !s.roster.some(b => b && b.id === id)) return s;
+        const selected = [...s.selected];
+        selected[index] = id;
+        return {
+          ...s,
+          selected
+        };
+      });
+    },
+    // Une seule mise à jour évite les doublons et les formations intermédiaires.
+    selectTopThree() {
+      setG(s => {
+        const top = window.FA_ARENE_UI.rankedRoster(s.roster).slice(0, 3);
+        if (top.length !== 3) return s;
+        return {
+          ...s,
+          selected: top.map(b => b.id)
+        };
+      });
+    },
     startBet({
       free,
       betTier,

@@ -44,6 +44,7 @@ function Arene() {
   // undefined = lecture en cours ; null = absence explicite (404), jamais une panne réseau.
   const [myDefense, setMyDefense] = useState(undefined);
   const [defenseError, setDefenseError] = useState(null);
+  const [replacementIndex, setReplacementIndex] = useState(null);
   const defenseRequest = useRef(0);
   const defenseLock = useRef(false);
   const recoveryChecked = useRef(null);
@@ -76,6 +77,7 @@ function Arene() {
   useEffect(() => {
     setMyDefense(undefined);
     setDefenseError(null);
+    setReplacementIndex(null);
     recoveryChecked.current = null;
     if (g.wallet) {
       loadMyDefense();
@@ -103,6 +105,11 @@ function Arene() {
   }, [nowTs]);
 
   const defenseReady = g.selected.length === 3;
+  // Comme l'onglet Équipe, partir uniquement du roster actif renvoyé par le serveur.
+  const rankedRoster = AU.rankedRoster(g.roster);
+  const replacements = rankedRoster.filter((b) => !g.selected.includes(b.id));
+  const formationPositions = ["AR2_FORMATION_FRONT", "AR2_FORMATION_MIDDLE", "AR2_FORMATION_BACK"];
+  const currentReplacement = replacementIndex === null ? null : g.roster.find((b) => b.id === g.selected[replacementIndex]);
   const myDefensePosted = !!myDefense;
   const defense = AU.defenseStatus(myDefense, nowTs);
   const defensePostedDate = AU.defensePostedDate(myDefense && myDefense.posted_at, I18N.getLang());
@@ -117,6 +124,19 @@ function Arene() {
     recoveryChecked.current = deadline;
     loadMyDefense();
   }, [nowTs, myDefense && myDefense.down_until]);
+
+  function onChooseReplacement(id) {
+    if (busy || replacementIndex === null || g.selected.includes(id) || !g.roster.some((b) => b.id === id)) return;
+    if (defenseReady) actions.replaceSelected(replacementIndex, id);
+    else actions.toggleSelect(id);
+    setReplacementIndex(null);
+  }
+
+  function onTakeTopThree() {
+    if (busy || rankedRoster.length < 3) return;
+    actions.selectTopThree();
+    setReplacementIndex(null);
+  }
 
   // Rafraîchit la liste d'adversaires : le serveur fait tourner le vivier (un tour gratuit par
   // fenêtre de 24 h, puis payant) et on relit la tranche suivante.
@@ -269,7 +289,7 @@ function Arene() {
           <p style={{ color: "var(--text-dim)", lineHeight: 1.6 }}>{I18N.t("AR2_ENTRY_HINT")}</p>
           <div className="flex gap12 wrap" style={{ marginTop: 16 }}>
             <button className="btn btn-elec" onClick={() => actions.setView("team")}>{I18N.t("AR2_OPEN_TEAM")}</button>
-            <button className="btn" onClick={() => actions.setView("team")}>{I18N.t("AR2_CHOOSE_THREE")}</button>
+            <button className="btn" disabled={busy} onClick={() => setReplacementIndex(0)}>{I18N.t("AR2_CHOOSE_THREE")}</button>
           </div>
         </div>
       ) : null}
@@ -316,23 +336,50 @@ function Arene() {
         {/* Arène V2 : choisir une équipe ne suffit pas, il faut poser la défense côté serveur. */}
         {!myDefensePosted && <div className="mono" style={{ fontSize: 11, color: "var(--alert)", marginTop: 8 }}>{I18N.t("AR2_DEFENSE_HINT")}</div>}
         {/* Formation (Avant/Milieu/Arrière) + synergies actives */}
-        {defenseReady && (() => {
+        {(() => {
           const selTeam = g.selected.map((id) => g.roster.find((b) => b.id === id)).filter(Boolean);
           const syns = AU.computeSynergiesLabels(selTeam);
           return (
             <div className="mono" style={{ fontSize: 11, color: "var(--text-dim)", marginTop: 10 }}>
-              {["Avant", "Milieu", "Arrière"].map((pos, i) => {
+              <div className="flex between center wrap" style={{ gap: 8, marginBottom: 8 }}>
+                <span>{I18N.t("AR2_FORMATION_HINT")}</span>
+                <button className="btn sm" disabled={busy || rankedRoster.length < 3} onClick={onTakeTopThree}>{I18N.t("AR2_TAKE_TOP_THREE")}</button>
+              </div>
+              {formationPositions.map((pos, i) => {
                 const b = g.selected[i] && g.roster.find((x) => x.id === g.selected[i]);
                 return (
-                  <div key={i} className="flex between center" style={{ gap: 8, padding: "2px 0" }}>
-                    <span>{pos} : {b ? (b.custom_name || b.name) : "—"}</span>
+                  <div key={i} className="flex between center" style={{ gap: 8, padding: "4px 0" }}>
+                    <button className="btn sm" data-fa="arene-defense-slot" data-slot={i} disabled={busy}
+                      aria-expanded={replacementIndex === i} aria-controls="arene-defense-replacements"
+                      onClick={() => setReplacementIndex(i)} style={{ flex: 1, minWidth: 0, textAlign: "left", whiteSpace: "normal", overflowWrap: "anywhere" }}>
+                      {I18N.t(pos)} : {b ? D.displayName(b) : I18N.t("AR2_SLOT_EMPTY")}
+                      {b && <span style={{ display: "block", fontSize: 11, color: "var(--text-dim)", marginTop: 4 }}>{I18N.t("AR2_POWER", Math.round(AU.entityPower(b)))}</span>}
+                    </button>
                     <span className="flex gap8">
-                      <button className="btn xs" disabled={busy || i === 0} onClick={() => actions.pvpReorderDefense(i, i - 1)}>↑</button>
-                      <button className="btn xs" disabled={busy || i === 2} onClick={() => actions.pvpReorderDefense(i, i + 1)}>↓</button>
+                      <button className="btn xs" aria-label={I18N.t("AR2_MOVE_UP", I18N.t(pos))} disabled={busy || !defenseReady || i === 0} onClick={() => { actions.pvpReorderDefense(i, i - 1); setReplacementIndex(null); }}>↑</button>
+                      <button className="btn xs" aria-label={I18N.t("AR2_MOVE_DOWN", I18N.t(pos))} disabled={busy || !defenseReady || i === 2} onClick={() => { actions.pvpReorderDefense(i, i + 1); setReplacementIndex(null); }}>↓</button>
                     </span>
                   </div>
                 );
               })}
+              {replacementIndex !== null && <section id="arene-defense-replacements" data-fa="arene-defense-replacements" aria-labelledby="arene-replacement-title"
+                style={{ border: "1px solid var(--elec)", padding: 12, marginTop: 10 }}>
+                <div className="flex between center wrap" style={{ gap: 8 }}>
+                  <h3 id="arene-replacement-title" style={{ fontSize: 13, margin: 0 }}>{defenseReady
+                    ? I18N.t("AR2_REPLACEMENT_TITLE", I18N.t(formationPositions[replacementIndex]))
+                    : I18N.t("AR2_SELECTION_ADD")}</h3>
+                  <button className="btn sm" onClick={() => setReplacementIndex(null)}>{I18N.t("AR2_REPLACEMENT_CANCEL")}</button>
+                </div>
+                <p>{I18N.t("AR2_SLOT_POWER", currentReplacement ? Math.round(AU.entityPower(currentReplacement)) : "—")}</p>
+                <div style={{ display: "grid", gap: 8, maxHeight: 320, overflowY: "auto" }}>
+                  {replacements.map((b) => <button key={b.id} className="btn sm" data-fa="arene-defense-candidate" data-id={b.id} disabled={busy}
+                    onClick={() => onChooseReplacement(b.id)} style={{ display: "block", textAlign: "left", whiteSpace: "normal", overflowWrap: "anywhere" }}>
+                    <span style={{ display: "block" }}>{D.displayName(b)} · {I18N.t("AR2_POWER", Math.round(AU.entityPower(b)))}</span>
+                    <span style={{ display: "block", fontSize: 11, color: "var(--text-dim)", marginTop: 4 }}>{I18N.t("AR2_ENTITY_STATS", b.level, rarityLabel(b.rarity), D.maxHp(b))}</span>
+                  </button>)}
+                  {replacements.length === 0 && <p role="status">{I18N.t("AR2_REPLACEMENT_NONE")}</p>}
+                </div>
+              </section>}
               {syns.length > 0 && (
                 <div style={{ marginTop: 6 }}>
                   {syns.map((s) => <span key={s.key} className="pill" style={{ color: "var(--success)", marginRight: 6 }}>{s.label} · {s.effect}</span>)}
@@ -347,8 +394,7 @@ function Arene() {
         <div className="mono" style={{ color: "var(--gold)", fontSize: 12, lineHeight: 1.6 }}>{I18N.t("AR2_DEFENSE_OUTDATED")}</div>
         <div className="flex gap8 wrap" style={{ marginTop: 10 }}>
           <button className="btn btn-elec sm" disabled={busy} onClick={() => actions.setView("team")}>{I18N.t("AR2_OPEN_TEAM")}</button>
-          {/* Le store ne fournit pas de sélection top-3 : passer par l'Équipe, sans inventer de classement local. */}
-          <button className="btn sm" disabled={busy} onClick={() => actions.setView("team")}>{I18N.t("AR2_TAKE_TOP_THREE")}</button>
+          <button className="btn sm" disabled={busy || rankedRoster.length < 3} onClick={onTakeTopThree}>{I18N.t("AR2_TAKE_TOP_THREE")}</button>
         </div>
       </div>}
 

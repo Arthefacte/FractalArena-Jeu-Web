@@ -8,6 +8,8 @@ const Babel = require("@babel/standalone");
 
 const read = (file) => fs.readFileSync(path.join(__dirname, "..", file), "utf8");
 const helperContext = { window: {} };
+vm.runInNewContext(read("data.js"), helperContext);
+vm.runInNewContext(read("expeditions-ui.js"), helperContext);
 vm.runInNewContext(read("arene-ui.js"), helperContext);
 const U = helperContext.window.FA_ARENE_UI;
 const compiled = Babel.transform(read("arene.jsx"), { presets: ["react"], sourceType: "script" }).code;
@@ -21,7 +23,7 @@ const posted = { team, hp_left: 100, hp_max: 100, power: 100, best_power: 126, p
 
 function render(defense, selected = [], extra = {}) {
   let stateIndex = 0;
-  const views = [], toasts = [];
+  const views = [], toasts = [], selections = [];
   const React = {
     useState: (initial) => {
       const index = stateIndex++;
@@ -33,14 +35,15 @@ function render(defense, selected = [], extra = {}) {
   };
   const win = {
     FA_ARENE_UI: U,
-    FA_DATA: { displayName: (b) => b.custom_name || b.name },
+    FA_DATA: helperContext.window.FA_DATA,
     FA_I18N: { getLang: () => "FR", t: (key, ...args) => [key, ...args].join(" "), localizeServerError: (code) => code },
     useFA: () => ({
       g: { selected, roster: [{ id: "x", name: "Autre équipe" }, { id: "y", name: "Autre deux" }, { id: "z", name: "Autre trois" }], pvp: { league: "diamant" }, ...extra },
-      actions: { setView: (view) => views.push(view) },
+      actions: { setView: (view) => views.push(view), selectTopThree: () => selections.push("top3") },
       toast: (...args) => toasts.push(args),
     }),
     cx: (...names) => names.filter(Boolean).join(" "),
+    rarityLabel: (rarity) => rarity,
     PostureSelect: "PostureSelect", FaText: "FaText",
   };
   vm.runInNewContext(compiled, { window: win, React });
@@ -56,7 +59,7 @@ function render(defense, selected = [], extra = {}) {
   const textOf = (node) => Array.isArray(node) ? node.map(textOf).join("")
     : node && typeof node === "object" ? textOf(node.children)
       : node == null || typeof node === "boolean" ? "" : String(node);
-  return { nodes, text: textOf(tree), textOf, views, toasts };
+  return { nodes, text: textOf(tree), textOf, views, toasts, selections };
 }
 
 test("date posée : formats courts FR/EN/ZH dans le fuseau local", () => {
@@ -118,17 +121,26 @@ test("ancien serveur : noms et PV restent affichés, date et bandeau absents ; s
   assert.doesNotMatch(r.text, /AR2_DEFENSE_POSTED_AT|AR2_DEFENSE_OUTDATED|AR2_DEFENSE_HINT/);
 });
 
-test("bandeau au-dessus des adversaires : les deux boutons ouvrent Équipe sans poser automatiquement", () => {
+test("bandeau au-dessus des adversaires : Équipe navigue et top-3 sélectionne sans poser automatiquement", () => {
   const r = render(posted);
   const banner = r.nodes.find((n) => n.props["data-fa"] === "arene-defense-outdated");
   assert.ok(banner);
   assert.ok(r.text.indexOf("AR2_DEFENSE_OUTDATED") < r.text.indexOf("AR2_OPPONENTS"));
+  const bannerButtons = [];
+  function collectButtons(node) {
+    if (Array.isArray(node)) return node.forEach(collectButtons);
+    if (!node || typeof node !== "object") return;
+    if (node.type === "button") bannerButtons.push(node);
+    node.children.forEach(collectButtons);
+  }
+  collectButtons(banner);
   for (const key of ["AR2_OPEN_TEAM", "AR2_TAKE_TOP_THREE"]) {
-    const button = r.nodes.find((n) => n.type === "button" && r.textOf(n) === key);
+    const button = bannerButtons.find((n) => r.textOf(n) === key);
     assert.ok(button, key);
     button.props.onClick();
   }
-  assert.deepEqual(r.views, ["team", "team"]);
+  assert.deepEqual(r.views, ["team"]);
+  assert.deepEqual(r.selections, ["top3"]);
   assert.deepEqual(r.toasts, []);
   assert.doesNotMatch(render({ ...posted, best_power: 125 }).text, /AR2_DEFENSE_OUTDATED/);
 });
