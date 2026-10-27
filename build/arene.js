@@ -947,7 +947,13 @@ function Arene() {
           fontSize: 12,
           color: gapColor
         }
-      }, I18N.t("AR2_POWER", powerKnown ? o.power : "—"), ecart ? ` · ${I18N.t(ecart)}` : gap !== null && gap !== 0 && ` (${gap > 0 ? "+" : "−"}${Math.abs(gap)} %)`), canRevanche && /*#__PURE__*/React.createElement("span", {
+      }, I18N.t("AR2_POWER", powerKnown ? o.power : "—"), ecart ? ` · ${I18N.t(ecart)}` : gap !== null && gap !== 0 && ` (${gap > 0 ? "+" : "−"}${Math.abs(gap)} %)`), o.out_of_band && /*#__PURE__*/React.createElement("span", {
+        className: "mono",
+        style: {
+          fontSize: 11,
+          color: "var(--gold)"
+        }
+      }, I18N.t("AR2_OUT_OF_BAND")), canRevanche && /*#__PURE__*/React.createElement("span", {
         className: "mono",
         style: {
           fontSize: 11,

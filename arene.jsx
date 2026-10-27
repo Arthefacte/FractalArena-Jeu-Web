@@ -533,6 +533,9 @@ function Arene() {
                       <span className="mono" style={{ fontSize: 12, color: gapColor }}>
                         {I18N.t("AR2_POWER", powerKnown ? o.power : "—")}{ecart ? ` · ${I18N.t(ecart)}` : (gap !== null && gap !== 0 && ` (${gap > 0 ? "+" : "−"}${Math.abs(gap)} %)`)}
                       </span>
+                      {/* Repli du 27/10/2026 : le serveur marque la carte quand la bande de puissance
+                          ne rendait rien. On l'écrit (l'écart est réel), on ne l'habille pas en normal. */}
+                      {o.out_of_band && <span className="mono" style={{ fontSize: 11, color: "var(--gold)" }}>{I18N.t("AR2_OUT_OF_BAND")}</span>}
                       {canRevanche && <span className="mono" style={{ fontSize: 11, color: "var(--success)" }}>🔥 {I18N.t("AR2_REVANCHE")}</span>}
                     </div>
                     <div style={{ marginTop: 6 }}><TeamPreview team={o.team} /></div>
