@@ -188,7 +188,13 @@
     POT_PAY_MODAL_TITLE: { FR: "Paiements de la cagnotte", EN: "Jackpot payouts", ZH: "彩池支付记录" },
     POT_PAY_MODAL_SUB: { FR: "Chaque tirage verse 1 FB, réparti au prorata des jours validés. Le TXID est la preuve on-chain de chaque envoi : l'adresse du gagnant est tronquée, le TXID se vérifie sur UniScan.", EN: "Each draw pays out 1 FB, split in proportion to completed days. The TXID is the on-chain proof of each send: the winner's address is truncated, the TXID can be checked on UniScan.", ZH: "每次开奖发放 1 FB，按完成天数比例分配。TXID 是每笔链上发送的凭证：获奖者地址已截断，可在 UniScan 上核验 TXID。" },
     POT_PAY_TOTALS: { FR: "%s FB versés — %d paiement(s)", EN: "%s FB paid out — %d payment(s)", ZH: "已发放 %s FB — %d 笔" },
-    POT_PAY_PENDING: { FR: "envoi en cours", EN: "send pending", ZH: "正在发送" },
+    // Trois états distincts (27/10/2026) : l'écran disait « envoi en cours » pour une part qui
+    // n'avait même pas encore son tour, ce qui se lisait comme un blocage.
+    POT_PAY_PENDING: { FR: "envoi en cours", EN: "sending now", ZH: "正在发送" },
+    POT_PAY_QUEUED: { FR: "en attente · n°%d · ~%s", EN: "queued · #%d · ~%s", ZH: "排队中 · 第 %d 位 · 约 %s" },
+    POT_PAY_QUEUED_NOWAIT: { FR: "en attente", EN: "queued", ZH: "排队中" },
+    // Résumé de la file, au-dessus de la liste : « N parts en attente, un envoi toutes les X ».
+    POT_PAY_QUEUE_SUB: { FR: "%d part(s) en attente · un envoi toutes les %s · la dernière dans ~%s", EN: "%d payout(s) queued · one send every %s · last one in ~%s", ZH: "%d 笔等待发送 · 每 %s 发送一笔 · 最后一笔约 %s 后" },
     POT_PAY_EMPTY: { FR: "aucun paiement pour l'instant", EN: "no payout yet", ZH: "暂无支付记录" },
 
     // onboarding
