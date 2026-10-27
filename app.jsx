@@ -2473,6 +2473,9 @@ function App() {
         const cur = (st.uiState && typeof st.uiState === "object") ? st.uiState : {};
         const next = { ...cur };
         if (typeof patch.tutorial_seen === "boolean") next.tutorial_seen = cur.tutorial_seen === true || patch.tutorial_seen;
+        // Même OR que tutorial_seen : lire les règles de l'Arène une fois suffit, et un
+        // appareil en retard ne doit pas les rouvrir sur le compte.
+        if (typeof patch.arene_help_seen === "boolean") next.arene_help_seen = cur.arene_help_seen === true || patch.arene_help_seen;
         if (typeof patch.guide_hidden === "boolean") next.guide_hidden = patch.guide_hidden;
         if (patch.room_seen_id != null) next.room_seen_id = Math.max(Number(cur.room_seen_id) || 0, Number(patch.room_seen_id) || 0);
         if (Array.isArray(patch.guide_tabs)) next.guide_tabs = Array.from(new Set([...(cur.guide_tabs || []), ...patch.guide_tabs]));

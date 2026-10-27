@@ -174,7 +174,11 @@
   const FAIL_SKIP = 3;
 
   // Onglets qui méritent une phrase la première fois qu'on les ouvre.
-  const TAB_HINTS = ["team", "fosse", "arene", "campaign", "tour", "expeditions", "quests", "forge", "market", "wallet", "boosts", "perso", "leaderboard"];
+  // « arene » n'y figure plus (27/10/2026) : l'onglet porte désormais son propre bandeau de
+  // règles, fermable et consultable à tout moment (bouton « Règles »). L'astuce d'ouverture
+  // disait la même chose en plus court, empilait un second pavé sur mobile — et annonçait un
+  // « classement par ligue » que l'Arène V2 ne fait plus.
+  const TAB_HINTS = ["team", "fosse", "campaign", "tour", "expeditions", "quests", "forge", "market", "wallet", "boosts", "perso", "leaderboard"];
   function tabHintKey(view) {
     return TAB_HINTS.includes(view) ? "HINT_TAB_" + view.toUpperCase() : null;
   }
