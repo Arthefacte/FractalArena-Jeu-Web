@@ -191,7 +191,9 @@ function Leaderboard() {
           {st.you && (
             <div className="lb-row mine">
               <span className="lb-rank">#{st.you.rank}</span>
-              <span className="lb-name">{I18N.t("LB_YOU")}</span>
+              {/* Sa propre ligne (hors du top affiché) porte le même jeton que les
+                  autres : c'est le palier du compte courant, déjà dans l'état. */}
+              <span className="lb-name"><LpBadge tier={g.lpTier} size={16} flat />{g.lpTier ? " " : ""}{I18N.t("LB_YOU")}</span>
               <span className="lb-val">{st.you.value}</span>
             </div>
           )}

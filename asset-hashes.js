@@ -11,6 +11,7 @@ window.FA_ASSET_HASHES = {
   "assets/fb-badge.webp": "0b3bcb1423",
   "assets/jeton.glb": "0dba0aa8c4",
   "assets/logo3d.glb": "939a8ea4ef",
+  "assets/lp-logo3d-badge.webp": "aa22113ea2",
   "assets/relics/amber_cell.glb": "6874aaf3a8",
   "assets/relics/cobalt_spring.glb": "1735e02360",
   "assets/relics/jade_circuit.glb": "6481215ba6",

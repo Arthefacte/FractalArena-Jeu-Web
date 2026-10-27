@@ -314,7 +314,11 @@ function Leaderboard() {
     className: "lb-rank"
   }, "#", st.you.rank), /*#__PURE__*/React.createElement("span", {
     className: "lb-name"
-  }, I18N.t("LB_YOU")), /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement(LpBadge, {
+    tier: g.lpTier,
+    size: 16,
+    flat: true
+  }), g.lpTier ? " " : "", I18N.t("LB_YOU")), /*#__PURE__*/React.createElement("span", {
     className: "lb-val"
   }, st.you.value))), /*#__PURE__*/React.createElement("div", {
     className: "muted mono",

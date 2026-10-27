@@ -589,10 +589,24 @@ function CoreIcon({
 
 // Badge Liquidity Guardian : le logo du jeu à côté du pseudo quand le joueur
 // tient un palier LP VERROUILLÉE sur InSwap (server-owned, null sous 50k FA).
-// G1 = rendu 2D (assets/LOGO_cut.webp), G2 = logo 3D animé (window.Emblem3D,
-// même GLB que le header) avec repli 2D silencieux si la 3D n'est pas montée.
-// `flat` force le 2D même pour G2 : une liste (leaderboard) ne doit pas empiler
-// des canvas WebGL. Tooltip : titre + montant LP quand il est connu.
+// G1 = emblème 2D (assets/LOGO_cut.webp) ; G2 = le JETON 3D du jeu, jamais
+// l'emblème 2D :
+//   - hors liste : canvas live (window.Emblem3D, même GLB que le header) ;
+//   - en liste (`flat`) : le même jeton rendu une fois en image
+//     (assets/lp-logo3d-badge.webp, 64 px, 2 Ko). Un canvas WebGL par ligne
+//     ferait tomber le framerate du classement, et à 20-24 px la rotation ne se
+//     lit de toute façon pas : c'est la FACE du jeton qui distingue le badge,
+//     pas son animation.
+// Tooltip : titre + montant LP quand il est connu.
+// URL résolue au premier usage (FA_ASSET_URL vit dans data.js, chargé avant
+// components.jsx — mais on ne parie pas sur l'ordre : on résout à l'affichage).
+let _lpBadge3dUrl = null;
+function lpBadge3dUrl() {
+  if (!_lpBadge3dUrl) {
+    _lpBadge3dUrl = window.FA_ASSET_URL && window.FA_ASSET_URL("assets/lp-logo3d-badge.webp") || "assets/lp-logo3d-badge.webp";
+  }
+  return _lpBadge3dUrl;
+}
 function LpBadge({
   tier,
   fa,
@@ -601,22 +615,42 @@ function LpBadge({
 }) {
   if (tier !== "G1" && tier !== "G2") return null;
   const tip = I18N.t(tier === "G2" ? "LP_TIER_G2" : "LP_TIER_G1") + (fa > 0 ? ` · ${fmt(fa)} FA` : "");
-  if (tier === "G2" && !flat && window.Emblem3D) {
-    // Plancher 28px pour le canvas WebGL : sous ça le jeton 3D n'est qu'une
-    // tache de pixels (le user le prenait pour le 2D) — mieux vaut un badge un
-    // peu plus grand que le nom qu'un logo 3D illisible.
-    const s3d = Math.max(size, 28);
-    return /*#__PURE__*/React.createElement("span", {
+  if (tier === "G2") {
+    if (!flat && window.Emblem3D) {
+      // Plancher 28px pour le canvas WebGL : sous ça le jeton 3D n'est qu'une
+      // tache de pixels (le user le prenait pour le 2D) — mieux vaut un badge un
+      // peu plus grand que le nom qu'un logo 3D illisible.
+      const s3d = Math.max(size, 28);
+      return /*#__PURE__*/React.createElement("span", {
+        className: "lp-badge",
+        title: tip,
+        "aria-label": tip,
+        style: {
+          display: "inline-block",
+          width: s3d,
+          height: s3d,
+          verticalAlign: "middle"
+        }
+      }, /*#__PURE__*/React.createElement(window.Emblem3D, null));
+    }
+    // Image du jeton : plancher 20px (le fichier est rendu en 64 px, il reste
+    // net en dessous de sa taille native).
+    const s3i = Math.max(size, 20);
+    return /*#__PURE__*/React.createElement("img", {
       className: "lp-badge",
+      src: lpBadge3dUrl(),
+      alt: "",
       title: tip,
       "aria-label": tip,
+      width: s3i,
+      height: s3i,
+      draggable: "false",
       style: {
         display: "inline-block",
-        width: s3d,
-        height: s3d,
-        verticalAlign: "middle"
+        verticalAlign: "middle",
+        objectFit: "contain"
       }
-    }, /*#__PURE__*/React.createElement(window.Emblem3D, null));
+    });
   }
   return /*#__PURE__*/React.createElement("img", {
     className: "lp-badge",
