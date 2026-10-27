@@ -52,9 +52,13 @@ test("app.jsx : fetchLpLeaderboard lit /lp/leaderboard et distingue le 503 (InSw
 test("components.jsx : LpBadge — 2D pour G1, Emblem3D pour G2, rien sans tier, tooltip titré", () => {
   const b = bloc(components, "function LpBadge", 2200);
   assert.match(b, /tier !== "G1" && tier !== "G2"/, "sans palier, aucun badge (return null)");
-  assert.match(b, /LOGO_cut\.webp/, "logo 2D manquant (G1 + repli G2)");
+  assert.match(b, /LOGO_cut\.webp/, "emblème 2D manquant pour G1");
   assert.match(b, /window\.Emblem3D/, "logo 3D manquant pour G2");
-  assert.match(b, /tier === "G2" && !flat && window\.Emblem3D/, "la 3D doit exiger G2 ET la dispo du composant (repli 2D silencieux)");
+  assert.match(b, /if \(!flat && window\.Emblem3D\)/, "la 3D live doit exiger G2 ET la dispo du composant");
+  // G2 ne retombe JAMAIS sur l'emblème 2D : dans une liste (flat) c'est le jeton 3D
+  // rendu en image, sinon un joueur G2 verrait deux logos différents selon l'écran.
+  assert.match(b, /src=\{lpBadge3dUrl\(\)\}/, "la branche G2 en liste doit servir le jeton 3D");
+  assert.match(components, /lp-logo3d-badge\.webp/, "le jeton 3D en image manque (G2 en liste)");
   assert.match(b, /LP_TIER_G2/, "titre du tooltip manquant");
   assert.match(b, /title=\{tip\}/, "tooltip au survol manquant");
   assert.match(components, /Object\.assign\(window, \{[^}]*LpBadge/, "LpBadge doit être exporté sur window");
