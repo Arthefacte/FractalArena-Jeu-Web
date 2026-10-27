@@ -520,10 +520,17 @@ function PanneauPaiements({
     FP = window.FA_POT;
   const liste = hist && hist.payments || [];
   const sats = n => FP ? FP.fbTexte(n) : String(n);
+  // File d'envoi (27/10/2026). L'écran disait « envoi en cours » pour toute part sans txid, y
+  // compris celles qui n'avaient pas encore leur tour : le joueur lisait « bloqué » là où le
+  // serveur disait « dans la file ». `pending_count` inclut les `sending` — on isole les parts
+  // qui attendent VRAIMENT, et on annonce le rythme publié par le serveur (jamais un 5 min
+  // recodé ici).
   const quand = iso => {
     const d = new Date(iso);
     return isNaN(d.getTime()) ? "" : d.toLocaleString();
   };
+  const cadence = hist && hist.payout_interval_ms || 5 * 60 * 1000;
+  const enFile = Math.max(0, (hist && hist.pending_count || 0) - (hist && hist.sending_count || 0));
   return /*#__PURE__*/React.createElement(Modal, {
     onClose: onClose
   }, /*#__PURE__*/React.createElement("div", {
@@ -548,7 +555,16 @@ function PanneauPaiements({
   }, /*#__PURE__*/React.createElement(FaText, {
     text: I.t("POT_PAY_TOTALS", sats(hist && hist.paid_sats || 0), hist && hist.paid_count || 0),
     s: 12
-  })), /*#__PURE__*/React.createElement("div", {
+  })), enFile > 0 && /*#__PURE__*/React.createElement("div", {
+    className: "muted",
+    style: {
+      fontSize: 11,
+      textAlign: "center",
+      marginBottom: 10,
+      lineHeight: 1.4
+    },
+    "data-fa": "pot-file"
+  }, I.t("POT_PAY_QUEUE_SUB", enFile, I.dur(cadence), I.dur(enFile * cadence))), /*#__PURE__*/React.createElement("div", {
     className: "bb-dex-liste"
   }, liste.length === 0 && /*#__PURE__*/React.createElement("div", {
     className: "muted",
@@ -572,9 +588,17 @@ function PanneauPaiements({
     href: "https://uniscan.cc/fractal/tx/" + p.txid,
     target: "_blank",
     rel: "noreferrer"
-  }, p.txid.slice(0, 8), "\u2026", p.txid.slice(-6), " \u2197") : /*#__PURE__*/React.createElement("span", {
+  }, p.txid.slice(0, 8), "\u2026", p.txid.slice(-6), " \u2197")
+  // Trois états réels, trois mots : la tx est partie (`sending`), la part attend son
+  // tour (`pending`, avec son rang et son délai), ou le serveur ne dit rien d'utile.
+  : p.status === "sending" ? /*#__PURE__*/React.createElement("span", {
     className: "muted"
-  }, I.t("POT_PAY_PENDING"))))));
+  }, I.t("POT_PAY_PENDING")) : p.queue_rank ? /*#__PURE__*/React.createElement("span", {
+    className: "muted",
+    "data-fa": "pot-rang"
+  }, I.t("POT_PAY_QUEUED", p.queue_rank, I.dur(p.queue_rank * cadence))) : /*#__PURE__*/React.createElement("span", {
+    className: "muted"
+  }, I.t("POT_PAY_QUEUED_NOWAIT"))))));
 }
 function BuybackTicker() {
   // Cagnotte : « où j'en suis » (150 combats payants le jour du tirage). Le bandeau est le

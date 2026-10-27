@@ -367,10 +367,17 @@ function PanneauPaiements({ hist, onClose }) {
   const I = window.FA_I18N, FP = window.FA_POT;
   const liste = (hist && hist.payments) || [];
   const sats = (n) => (FP ? FP.fbTexte(n) : String(n));
+  // File d'envoi (27/10/2026). L'écran disait « envoi en cours » pour toute part sans txid, y
+  // compris celles qui n'avaient pas encore leur tour : le joueur lisait « bloqué » là où le
+  // serveur disait « dans la file ». `pending_count` inclut les `sending` — on isole les parts
+  // qui attendent VRAIMENT, et on annonce le rythme publié par le serveur (jamais un 5 min
+  // recodé ici).
   const quand = (iso) => {
     const d = new Date(iso);
     return isNaN(d.getTime()) ? "" : d.toLocaleString();
   };
+  const cadence = (hist && hist.payout_interval_ms) || 5 * 60 * 1000;
+  const enFile = Math.max(0, ((hist && hist.pending_count) || 0) - ((hist && hist.sending_count) || 0));
   return (
     <Modal onClose={onClose}>
       <div className="h2" style={{ fontSize: 14, marginBottom: 6, textAlign: "center" }}>{I.t("POT_PAY_MODAL_TITLE")}</div>
@@ -378,6 +385,13 @@ function PanneauPaiements({ hist, onClose }) {
       <div className="mono" style={{ marginBottom: 10, textAlign: "center" }}>
         <FaText text={I.t("POT_PAY_TOTALS", sats((hist && hist.paid_sats) || 0), (hist && hist.paid_count) || 0)} s={12} />
       </div>
+      {/* Combien de parts attendent, à quel rythme elles partent, et quand la dernière passera :
+          une attente annoncée vaut mieux qu'un « en cours » sans fin. */}
+      {enFile > 0 && (
+        <div className="muted" style={{ fontSize: 11, textAlign: "center", marginBottom: 10, lineHeight: 1.4 }} data-fa="pot-file">
+          {I.t("POT_PAY_QUEUE_SUB", enFile, I.dur(cadence), I.dur(enFile * cadence))}
+        </div>
+      )}
       <div className="bb-dex-liste">
         {liste.length === 0 && <div className="muted" style={{ fontSize: 12 }}>{I.t("POT_PAY_EMPTY")}</div>}
         {liste.map((p) => (
@@ -390,7 +404,13 @@ function PanneauPaiements({ hist, onClose }) {
               // UniScan réseau Fractal (`/fractal/tx/`), pas `/tx/` : le second cherche sur Bitcoin.
               ? <a className="bb-burn-lien" href={"https://uniscan.cc/fractal/tx/" + p.txid}
                    target="_blank" rel="noreferrer">{p.txid.slice(0, 8)}…{p.txid.slice(-6)} ↗</a>
-              : <span className="muted">{I.t("POT_PAY_PENDING")}</span>}
+              // Trois états réels, trois mots : la tx est partie (`sending`), la part attend son
+              // tour (`pending`, avec son rang et son délai), ou le serveur ne dit rien d'utile.
+              : p.status === "sending"
+                ? <span className="muted">{I.t("POT_PAY_PENDING")}</span>
+                : p.queue_rank
+                  ? <span className="muted" data-fa="pot-rang">{I.t("POT_PAY_QUEUED", p.queue_rank, I.dur(p.queue_rank * cadence))}</span>
+                  : <span className="muted">{I.t("POT_PAY_QUEUED_NOWAIT")}</span>}
           </div>
         ))}
       </div>
