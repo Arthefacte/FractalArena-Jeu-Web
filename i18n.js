@@ -514,6 +514,9 @@
     AR2_GAP_FAR_WEAKER: { FR: "bien plus faible", EN: "far weaker", ZH: "远弱于你" },
     AR2_NO_ELO: { FR: "aucun ELO — combat hors classement", EN: "no rating change — unranked battle", ZH: "不改变积分 — 非排位战斗" },
     AR2_GAP_FAR_STRONGER: { FR: "bien plus fort", EN: "far stronger", ZH: "远强于你" },
+    // Carte servie quand la bande de puissance ne rendait RIEN (repli du 27/10/2026) :
+    // le joueur doit savoir que l'écart est hors bande, pas que le calcul a échoué.
+    AR2_OUT_OF_BAND: { FR: "hors bande", EN: "out of band", ZH: "超出战力区间" },
     AR2_RANK: { FR: "Rang", EN: "Rank", ZH: "排名" },
     AR2_REFRESH: { FR: "Rafraîchir", EN: "Refresh", ZH: "刷新" },
     AR2_REFRESH_FREE: { FR: "gratuit", EN: "free", ZH: "免费" },
@@ -552,6 +555,27 @@
     PRIZE_TOWER_RANK:    { FR: "Semaine %s — Rang %d · Étage %d", EN: "Week %s — Rank %d · Floor %d", ZH: "第 %s 周 — 第 %d 名 · 第 %d 层" },
     PRIZE_REWARD_LOCKED: { FR: "Récompense : +%d FA 🔒", EN: "Reward: +%d FA 🔒", ZH: "奖励：+%d FA 🔒" },
     AR2_PRIZE_FLAT:      { FR: "Rangs 11-50 : +25 FA 🔒 chacun (min. 3 combats)", EN: "Ranks 11-50: +25 FA 🔒 each (min. 3 fights)", ZH: "第 11-50 名：每人 +25 FA 🔒（至少 3 场战斗）" },
+    // Bandeau « Comment marche l'Arène » (27/10/2026). Le fonctionnement n'était écrit
+    // nulle part : un joueur à 14-3 et 1 029 d'ELO demandait pourquoi il était 6e. Aucun
+    // nombre en dur dans ces phrases — ils viennent tous du serveur (/pvp/season, /pvp/cadence).
+    AR2_HELP_TITLE:      { FR: "Comment marche l'Arène", EN: "How the Arena works", ZH: "竞技场怎么玩" },
+    AR2_HELP_CLOSE:      { FR: "J'ai compris", EN: "Got it", ZH: "明白了" },
+    AR2_HELP_SHOW:       { FR: "Règles", EN: "Rules", ZH: "规则" },
+    AR2_HELP_DEFENSE:    { FR: "Défense : 3 entités. C'est ton ticket d'entrée et ce que les autres attaquent. À 0 PV elle tombe pendant 1 h — soin : %d FA.",
+                           EN: "Defense: 3 entities. It's your entry ticket and what others attack. At 0 HP it falls for 1 h — heal: %d FA.",
+                           ZH: "防守：3 个实体，这是你的入场券，也是别人的攻击目标。生命值归零后倒下 1 小时 — 治疗：%d FA。" },
+    AR2_HELP_ATTACKS:    { FR: "Attaques : %d gratuites par 24 h, puis %d FA. Deux combats maximum contre le même joueur dans une journée.",
+                           EN: "Attacks: %d free per 24 h, then %d FA. Two fights maximum against the same player in a day.",
+                           ZH: "进攻：每 24 小时 %d 次免费，之后每次 %d FA。同一玩家每天最多 2 场。" },
+    AR2_HELP_POOL:       { FR: "Adversaires : 6 défenses à ta portée, les plus proches de ta puissance d'abord — et si personne n'est à ta portée, les plus proches disponibles, marquées « hors bande ». Un rafraîchissement gratuit par 24 h, ensuite %d FA.",
+                           EN: "Opponents: 6 defenses within reach, the closest to your power first — and if nobody is within reach, the closest available, marked \"out of band\". One free refresh per 24 h, then %d FA.",
+                           ZH: "对手：6 个与你战力接近的防守，最接近的排在前面 — 若无人处于你的区间，则提供最接近的对手并标注「超出战力区间」。每 24 小时可免费刷新一次，之后 %d FA。" },
+    AR2_HELP_ELO:        { FR: "ELO : il ne compte pas tes victoires, il compte QUI tu bats. Battre plus fort rapporte, battre bien plus faible presque rien — et gains comme pertes sont plafonnés à %d points par 24 h.",
+                           EN: "ELO: it doesn't count your wins, it counts WHO you beat. Beating someone stronger pays, beating someone far weaker pays almost nothing — and both gains and losses are capped at %d points per 24 h.",
+                           ZH: "ELO：不计你赢了多少场，只看你赢了谁。击败更强的对手收益高，击败远弱于自己的几乎不涨 — 并且每 24 小时输赢都最多 %d 分。" },
+    AR2_HELP_LADDER:     { FR: "Classement : il suit ton ELO et repart à %d au début de chaque saison. Les prix de la semaine sont répartis par palier, du Bronze au Diamant : plus tu finis haut, plus ta part est grosse.",
+                           EN: "Ladder: it follows your ELO and restarts at %d at the beginning of every season. Weekly prizes are split by tier, Bronze to Diamond: the higher you finish, the bigger your share.",
+                           ZH: "排行榜：按 ELO 排序，每赛季开始时重置为 %d。每周奖励按段位（青铜到钻石）分配：名次越高，分得越多。" },
     TOWER_HIST_TITLE:    { FR: "Historique des récompenses", EN: "Reward history", ZH: "奖励记录" },
     TOWER_HIST_NONE:     { FR: "Aucune récompense de Tour pour l'instant.", EN: "No Tower reward yet.", ZH: "暂无高塔奖励。" },
     AR2_HIST_TITLE:      { FR: "Historique des paiements", EN: "Payment history", ZH: "奖励记录" },
@@ -1835,7 +1859,6 @@
     // Une phrase par onglet, à sa première ouverture : à quoi ça sert, ce que ça coûte, ce que ça rapporte.
     HINT_TAB_TEAM:        { FR: "Équipe : ta collection. Sélectionne 3 entités ; elles gagnent de l'XP à chaque victoire. Le Capitaine (totem) est un bonus passif lié à ton wallet.", EN: "Team: your collection. Select 3 entities; they gain XP every win. The Captain (totem) is a passive bonus tied to your wallet.", ZH: "队伍：你的收藏。选择 3 个实体；每次胜利它们获得 XP。队长（图腾）是与钱包绑定的被动加成。" },
     HINT_TAB_FOSSE:       { FR: "La Fosse : combats contre des entités d'entraînement. 5 gratuits par jour (gains verrouillés), puis des mises Bronze 10 · Argent 25 · Or 50 payées ×1,7 en cas de victoire.", EN: "The Pit: fights against training entities. 5 free a day (locked winnings), then Bronze 10 · Silver 25 · Gold 50 stakes paid ×1.7 on a win.", ZH: "深坑：对战训练实体。每天 5 场免费（收益锁定），之后可下注青铜 10 · 白银 25 · 黄金 50，胜利赔率 ×1.7。" },
-    HINT_TAB_ARENE:       { FR: "Arène : PvP asynchrone. Enregistre une défense (équipe + posture), attaque les autres (5 gratuites/jour, puis 50 FA ou 1 ticket Argent). Classement par ligue, dotation chaque saison.", EN: "Arena: asynchronous PvP. Save a defense (team + posture), attack others (5 free a day, then 50 FA or 1 Silver ticket). League ranking, prize pool every season.", ZH: "竞技场：异步 PvP。保存防守（队伍 + 姿态），攻击他人（每天 5 次免费，之后 50 FA 或 1 张白银票）。按联赛排名，每赛季有奖池。" },
     HINT_TAB_CAMPAIGN:    { FR: "Campagne : 6 mondes × 10 étages contre des entités d'entraînement, jusqu'à 3 étoiles par étage. Entrée gratuite une fois par jour, puis 1 ticket Argent. Les étoiles débloquent les mondes suivants.", EN: "Campaign: 6 worlds × 10 floors against training entities, up to 3 stars per floor. Free entry once a day, then 1 Silver ticket. Stars unlock the next worlds.", ZH: "战役：6 个世界 × 10 层对战训练实体，每层最多 3 星。每天首次免费，之后 1 张白银票。星星解锁后续世界。" },
     HINT_TAB_TOUR:        { FR: "Tour infinie : grimpe avec tout ton roster, les PV persistent entre les étages. 1 run gratuit par semaine, puis 100 FA. Paliers de FA à chaque étage clé, top 10 hebdo doté.", EN: "Infinite Tower: climb with your whole roster, HP persists between floors. 1 free run a week, then 100 FA. FA tiers at key floors, weekly top 10 rewarded.", ZH: "无尽之塔：带全部阵容攀登，层间不回血。每周 1 次免费，之后 100 FA。关键层有 FA 奖励，每周前 10 名有奖。" },
     HINT_TAB_EXPEDITIONS: { FR: "Expéditions : envoie 3 entités explorer 1 à 12 h. Elles reviennent avec FA, XP et fragments de reliques. Pendant ce temps elles ne peuvent pas combattre.", EN: "Expeditions: send 3 entities exploring for 1 to 12 h. They come back with FA, XP and relic fragments. Meanwhile they can't fight.", ZH: "远征：派 3 个实体探索 1 至 12 小时。它们带回 FA、XP 和遗物碎片。期间无法参战。" },

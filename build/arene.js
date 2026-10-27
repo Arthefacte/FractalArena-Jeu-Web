@@ -22,6 +22,82 @@ const {
 } = window;
 const AU = window.FA_ARENE_UI;
 
+/* ---- Aide de l'Arène : le bandeau de règles -------------------------------
+   Pourquoi (27/10/2026). L'Arène a été livrée sans mode d'emploi. Un joueur
+   arrivé à 14 victoires / 3 défaites demandait pourquoi il n'était que 6e avec
+   1 029 d'ELO : rien à l'écran ne dit que l'ELO paie selon l'adversaire et non
+   selon le nombre de victoires, ni qu'il repart à 1 000 chaque semaine. Le
+   bandeau dit ces règles une fois, puis se ferme pour de bon.
+   Fermeture retenue sur le COMPTE (ui_state.arene_help_seen, OR côté serveur) :
+   lire les règles sur son ordinateur ne doit pas les faire réapparaître sur le
+   téléphone. Repli localStorage uniquement pour la seconde où l'état du compte
+   n'est pas encore arrivé — même schéma que guide.jsx.
+   Les NOMBRES cités viennent tous du serveur (jamais en dur ici) : un prix
+   recopié dans le client ment dès qu'on le règle côté serveur. */
+const HELP_SEEN_KEY = "fractal_arena_arene_help_v1";
+function helpLsGet(k, dflt) {
+  try {
+    const v = localStorage.getItem(k);
+    return v == null ? dflt : JSON.parse(v);
+  } catch (e) {
+    return dflt;
+  }
+}
+function helpLsSet(k, v) {
+  try {
+    localStorage.setItem(k, JSON.stringify(v));
+  } catch (e) {}
+}
+function AreneHelp({
+  pvp,
+  onClose
+}) {
+  const s = pvp.season || {};
+  // Un serveur d'avant cette livraison ne connaît pas encore ces champs : mieux vaut
+  // un tiret qu'un « undefined » ou un chiffre inventé par le client.
+  const num = v => v == null || !Number.isFinite(Number(v)) ? "—" : Number(v);
+  const lines = [I18N.t("AR2_HELP_DEFENSE", num(pvp.heal_cost)), I18N.t("AR2_HELP_ATTACKS", num(s.free_per_day), num(pvp.fa_cost)), I18N.t("AR2_HELP_POOL", num(pvp.refresh_cost)), I18N.t("AR2_HELP_ELO", num(s.elo_daily_limit)), I18N.t("AR2_HELP_LADDER", num(s.elo_start))];
+  return /*#__PURE__*/React.createElement("section", {
+    className: "panel oct",
+    "data-fa": "arene-aide",
+    role: "region",
+    "aria-label": I18N.t("AR2_HELP_TITLE"),
+    style: {
+      border: "1px solid var(--elec)",
+      padding: 16,
+      marginBottom: 14
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex between center wrap",
+    style: {
+      gap: 10
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "h2",
+    style: {
+      fontSize: 14,
+      color: "var(--elec)"
+    }
+  }, I18N.t("AR2_HELP_TITLE")), /*#__PURE__*/React.createElement("button", {
+    className: "btn sm",
+    "data-fa": "arene-aide-close",
+    onClick: onClose
+  }, I18N.t("AR2_HELP_CLOSE"))), /*#__PURE__*/React.createElement("ul", {
+    style: {
+      margin: "10px 0 0",
+      paddingLeft: 18,
+      fontSize: 12,
+      lineHeight: 1.6,
+      color: "var(--text-dim)"
+    }
+  }, lines.map((line, i) => /*#__PURE__*/React.createElement("li", {
+    key: i,
+    style: {
+      marginBottom: 4
+    }
+  }, line))));
+}
+
 // E3 (clôture de l'audit complet 2026-09, D10/M4, emplacement 5) : « c'est toi » se décide sur
 // l'identifiant OPAQUE, avec repli sur l'adresse tant que le serveur sert les deux (phase 1). Une
 // seule fonction, pour que l'arène et son classement répondent la même chose.
@@ -92,6 +168,29 @@ function Arene() {
   // la liste étalée repoussait le classement hors de l'écran.
   const [combatsOpen, setCombatsOpen] = useState(false);
   const [replacementIndex, setReplacementIndex] = useState(null);
+  // Aide de l'Arène : ouverte tant que le compte ne l'a pas fermée (cf. AreneHelp).
+  // Déclarée EN DERNIER, après tous les états existants : le harnais des tests Arène
+  // (test/arene-provenance.test.js) injecte la défense par POSITION dans la liste des
+  // useState — glisser un état au milieu décale l'injection et casse des tests qui n'ont
+  // rien à voir. Ajouter ici, jamais avant.
+  const [helpSeen, setHelpSeen] = useState(() => helpLsGet(HELP_SEEN_KEY, false) === true);
+  const helpFromAccount = useRef(false);
+  // L'état du COMPTE ne s'applique qu'une fois — sinon « Règles » se refermerait tout
+  // seul au prochain re-render de g.uiState.
+  useEffect(() => {
+    if (helpFromAccount.current) return;
+    if (g.uiState && g.uiState.arene_help_seen === true) {
+      helpFromAccount.current = true;
+      setHelpSeen(true);
+    }
+  }, [g.uiState]);
+  function closeHelp() {
+    setHelpSeen(true);
+    helpLsSet(HELP_SEEN_KEY, true);
+    actions.pushUiState({
+      arene_help_seen: true
+    });
+  }
   const defenseRequest = useRef(0);
   const defenseLock = useRef(false);
   const recoveryChecked = useRef(null);
@@ -368,7 +467,14 @@ function Arene() {
     "data-guide": "arene-refresh",
     disabled: busy || !!defenseError || !(pvp.refresh_free > 0) && !refreshCostKnown,
     onClick: onRefreshList
-  }, I18N.t("AR2_REFRESH"), " \xB7 ", (pvp.refresh_free || 0) > 0 ? I18N.t("AR2_REFRESH_FREE") : refreshCostKnown ? `${pvp.refresh_cost} FA` : "—"))), defenseError ? /*#__PURE__*/React.createElement("div", {
+  }, I18N.t("AR2_REFRESH"), " \xB7 ", (pvp.refresh_free || 0) > 0 ? I18N.t("AR2_REFRESH_FREE") : refreshCostKnown ? `${pvp.refresh_cost} FA` : "—"), helpSeen && /*#__PURE__*/React.createElement("button", {
+    className: "btn sm",
+    "data-fa": "arene-aide-open",
+    onClick: () => setHelpSeen(false)
+  }, I18N.t("AR2_HELP_SHOW")))), !helpSeen && /*#__PURE__*/React.createElement(AreneHelp, {
+    pvp: pvp,
+    onClose: closeHelp
+  }), defenseError ? /*#__PURE__*/React.createElement("div", {
     className: "panel oct",
     role: "alert",
     style: {
@@ -841,7 +947,13 @@ function Arene() {
           fontSize: 12,
           color: gapColor
         }
-      }, I18N.t("AR2_POWER", powerKnown ? o.power : "—"), ecart ? ` · ${I18N.t(ecart)}` : gap !== null && gap !== 0 && ` (${gap > 0 ? "+" : "−"}${Math.abs(gap)} %)`), canRevanche && /*#__PURE__*/React.createElement("span", {
+      }, I18N.t("AR2_POWER", powerKnown ? o.power : "—"), ecart ? ` · ${I18N.t(ecart)}` : gap !== null && gap !== 0 && ` (${gap > 0 ? "+" : "−"}${Math.abs(gap)} %)`), o.out_of_band && /*#__PURE__*/React.createElement("span", {
+        className: "mono",
+        style: {
+          fontSize: 11,
+          color: "var(--gold)"
+        }
+      }, I18N.t("AR2_OUT_OF_BAND")), canRevanche && /*#__PURE__*/React.createElement("span", {
         className: "mono",
         style: {
           fontSize: 11,
