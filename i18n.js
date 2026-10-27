@@ -514,6 +514,9 @@
     AR2_GAP_FAR_WEAKER: { FR: "bien plus faible", EN: "far weaker", ZH: "远弱于你" },
     AR2_NO_ELO: { FR: "aucun ELO — combat hors classement", EN: "no rating change — unranked battle", ZH: "不改变积分 — 非排位战斗" },
     AR2_GAP_FAR_STRONGER: { FR: "bien plus fort", EN: "far stronger", ZH: "远强于你" },
+    // Carte servie quand la bande de puissance ne rendait RIEN (repli du 27/10/2026) :
+    // le joueur doit savoir que l'écart est hors bande, pas que le calcul a échoué.
+    AR2_OUT_OF_BAND: { FR: "hors bande", EN: "out of band", ZH: "超出战力区间" },
     AR2_RANK: { FR: "Rang", EN: "Rank", ZH: "排名" },
     AR2_REFRESH: { FR: "Rafraîchir", EN: "Refresh", ZH: "刷新" },
     AR2_REFRESH_FREE: { FR: "gratuit", EN: "free", ZH: "免费" },
@@ -564,9 +567,9 @@
     AR2_HELP_ATTACKS:    { FR: "Attaques : %d gratuites par 24 h, puis %d FA. Deux combats maximum contre le même joueur dans une journée.",
                            EN: "Attacks: %d free per 24 h, then %d FA. Two fights maximum against the same player in a day.",
                            ZH: "进攻：每 24 小时 %d 次免费，之后每次 %d FA。同一玩家每天最多 2 场。" },
-    AR2_HELP_POOL:       { FR: "Adversaires : 6 défenses à ta portée, les plus proches de ta puissance d'abord. Un rafraîchissement gratuit par 24 h, ensuite %d FA.",
-                           EN: "Opponents: 6 defenses within reach, the closest to your power first. One free refresh per 24 h, then %d FA.",
-                           ZH: "对手：6 个与你战力接近的防守，最接近的排在前面。每 24 小时可免费刷新一次，之后 %d FA。" },
+    AR2_HELP_POOL:       { FR: "Adversaires : 6 défenses à ta portée, les plus proches de ta puissance d'abord — et si personne n'est à ta portée, les plus proches disponibles, marquées « hors bande ». Un rafraîchissement gratuit par 24 h, ensuite %d FA.",
+                           EN: "Opponents: 6 defenses within reach, the closest to your power first — and if nobody is within reach, the closest available, marked \"out of band\". One free refresh per 24 h, then %d FA.",
+                           ZH: "对手：6 个与你战力接近的防守，最接近的排在前面 — 若无人处于你的区间，则提供最接近的对手并标注「超出战力区间」。每 24 小时可免费刷新一次，之后 %d FA。" },
     AR2_HELP_ELO:        { FR: "ELO : il ne compte pas tes victoires, il compte QUI tu bats. Battre plus fort rapporte, battre bien plus faible presque rien — et gains comme pertes sont plafonnés à %d points par 24 h.",
                            EN: "ELO: it doesn't count your wins, it counts WHO you beat. Beating someone stronger pays, beating someone far weaker pays almost nothing — and both gains and losses are capped at %d points per 24 h.",
                            ZH: "ELO：不计你赢了多少场，只看你赢了谁。击败更强的对手收益高，击败远弱于自己的几乎不涨 — 并且每 24 小时输赢都最多 %d 分。" },

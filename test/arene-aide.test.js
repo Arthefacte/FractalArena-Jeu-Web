@@ -29,6 +29,8 @@ const APP = fs.readFileSync(path.join(__dirname, "..", "app.jsx"), "utf8");
 const KEYS = [
   "AR2_HELP_TITLE", "AR2_HELP_CLOSE", "AR2_HELP_SHOW", "AR2_HELP_DEFENSE",
   "AR2_HELP_ATTACKS", "AR2_HELP_POOL", "AR2_HELP_ELO", "AR2_HELP_LADDER",
+  // Carte servie hors bande (repli du 27/10/2026) : l'étiquette est visible par le joueur.
+  "AR2_OUT_OF_BAND",
 ];
 
 test("bandeau Arène : les clés existent dans les 3 langues, non vides", () => {
@@ -87,6 +89,14 @@ test("bandeau Arène : la fermeture est retenue sur le COMPTE, pas seulement en 
     "repli localStorage pour la seconde où l'état du compte n'est pas arrivé");
   assert.match(APP, /next\.arene_help_seen = cur\.arene_help_seen === true \|\| patch\.arene_help_seen/,
     "app.jsx doit fusionner arene_help_seen en OR, comme tutorial_seen");
+});
+
+test("carte hors bande : le repli du serveur est étiqueté à l'écran, jamais déguisé en normal", () => {
+  // Sans étiquette, un combat contre une défense très inférieure passerait pour un
+  // appariement normal — c'est exactement ce que le joueur doit pouvoir juger.
+  assert.match(SRC, /\{o\.out_of_band && <span[^>]*>\{I18N\.t\("AR2_OUT_OF_BAND"\)\}<\/span>\}/,
+    "arene.jsx doit afficher AR2_OUT_OF_BAND quand le serveur marque la carte");
+  assert.ok(T.AR2_OUT_OF_BAND && T.AR2_OUT_OF_BAND.FR && T.AR2_OUT_OF_BAND.EN && T.AR2_OUT_OF_BAND.ZH);
 });
 
 test("bandeau Arène : l'état du compte ne referme pas un bandeau rouvert à la main", () => {
