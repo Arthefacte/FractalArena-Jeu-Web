@@ -14,7 +14,8 @@ const {
 const {
   useFA,
   cx,
-  FaText
+  FaText,
+  TokenIcon
 } = window;
 const I18N = window.FA_I18N;
 const QUIZ = window.FA_QUIZ_UI;
@@ -289,7 +290,9 @@ function QuizToast() {
   })), /*#__PURE__*/React.createElement("button", {
     className: "quiz-choice",
     onClick: offrir
-  }, I18N.t("QUIZ_GIVE"))), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement(TokenIcon, {
+    s: 12
+  }), " ", I18N.t("QUIZ_GIVE"))), /*#__PURE__*/React.createElement("div", {
     className: "quiz-timeout"
   }, I18N.t("QUIZ_TIMEOUT")))));
 }
