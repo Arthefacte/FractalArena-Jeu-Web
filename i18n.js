@@ -1582,6 +1582,7 @@
     // Pli des pools depuis le tiroir « Plus » (mobile, v402) : le caret a quitté
     // le bandeau pour laisser la place au logo et au nom du jeu.
     POOLS_FOLD_LABEL: { FR: "Plier ou déplier les pools", EN: "Fold or unfold the pools", ZH: "折叠或展开池" },
+    POOLS_OPEN_LABEL:  { FR: "Voir les jauges", EN: "Show the gauges", ZH: "查看进度条" },
     ROOM_EMPTY: { FR: "Aucun message. Lance la conversation !", EN: "No messages yet. Start the conversation!", ZH: "还没有消息，来开启对话吧！" },
     ROOM_MUTE: { FR: "Masquer", EN: "Mute", ZH: "屏蔽" },
     ROOM_MUTED: { FR: "Joueur masqué", EN: "Player muted", ZH: "已屏蔽该玩家" },

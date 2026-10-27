@@ -6319,6 +6319,34 @@ function Nav() {
   }, []);
   // Mobile : 4 onglets principaux + « Plus » (bottom sheet avec le reste).
   const [sheetOpen, setSheetOpen] = useState(false);
+  // Chiffres du bouton « jauges » du tiroir (25/10/2026) : rachat en cours / plafond et
+  // cagnotte à pourvoir. Lus sur les mêmes routes publiques que le bandeau, à son ouverture
+  // seulement — le tiroir est un geste rare, deux requêtes ne pèsent rien.
+  const [nums, setNums] = useState(null);
+  useEffect(() => {
+    if (!sheetOpen) return;
+    let vivant = true;
+    (async () => {
+      const [rb, ph] = await Promise.all([fetch(API_URL + "/buyback/status").then(r => r.ok ? r.json() : null).catch(() => null), fetch(API_URL + "/pot/history?instance=human&limit=1").then(r => r.ok ? r.json() : null).catch(() => null)]);
+      if (!vivant) return;
+      const hum = rb && rb.buyback && rb.buyback.pools && rb.buyback.pools.human || {};
+      const cap = Number(hum.buyback && hum.buyback.threshold || 0);
+      const r = Number(hum.buyback && hum.buyback.total || 0);
+      // Cagnotte = ce qui n'a pas encore été tiré : plafond de la semaine × jours restants.
+      const p = Number(hum.pot && hum.pot.total || 0);
+      const pcap = Number(hum.pot && hum.pot.threshold || 0);
+      if (!cap && !p) return;
+      setNums({
+        r,
+        cap: cap || pcap,
+        pot: p,
+        k: x => x >= 1000 ? (x / 1000).toFixed(x >= 10000 ? 0 : 1) + " k" : String(x)
+      });
+    })();
+    return () => {
+      vivant = false;
+    };
+  }, [sheetOpen]);
   const tabs = [["team", "NAV_TEAM"], ["fosse", "NAV_FOSSE"], ["arene", "NAV_ARENE"], ["campaign", "NAV_CAMPAIGN"], ["tour", "NAV_TOUR"], ["expeditions", "NAV_EXPEDITIONS"], ["quests", "NAV_QUESTS"], ["forge", "NAV_FORGE"], ["market", "NAV_MARKET"], ["wallet", "NAV_WALLET"], ["boosts", "NAV_BOOSTS"], ["perso", "NAV_PERSO"], ["leaderboard", "NAV_LEADERBOARD"], ["options", "NAV_OPTIONS"]];
   const MAIN = ["team", "fosse", "arene", "campaign"];
   const more = tabs.filter(([k]) => !MAIN.includes(k));
@@ -6480,7 +6508,17 @@ function Nav() {
       setSheetOpen(false);
       window.dispatchEvent(new Event("fa:toggle-pools"));
     }
-  }, "\u25BE")), /*#__PURE__*/React.createElement("div", {
+  }, "\u25BE")), /*#__PURE__*/React.createElement("button", {
+    className: "btn block fa-sheet-pools",
+    "data-fa": "pools-open-sheet",
+    onClick: () => {
+      setSheetOpen(false);
+      window.dispatchEvent(new Event("fa:toggle-pools"));
+    }
+  }, I18N.t("POOLS_OPEN_LABEL"), /*#__PURE__*/React.createElement("span", {
+    className: "mono fa-sheet-pools-n",
+    "data-fa": "pools-sheet-nums"
+  }, nums ? (nums.cap ? nums.k(nums.r) + " / " + nums.k(nums.cap) : "") + (nums.cap && nums.pot ? " · " : "") + (nums.pot ? nums.k(nums.pot) + " FA" : "") : "")), /*#__PURE__*/React.createElement("div", {
     className: "fa-sheet-foot"
   }, /*#__PURE__*/React.createElement(LangSwitch, null), /*#__PURE__*/React.createElement("div", {
     className: "legal-links legal-links-sheet"
