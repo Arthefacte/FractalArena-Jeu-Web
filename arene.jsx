@@ -48,6 +48,9 @@ function Arene() {
   // saisons : le fondateur a tranché — « pas très joli, étalé là comme ça, ça serait mieux
   // que ce soit un truc que tu cliques et qu'après tu scroll pour regarder ».
   const [histOpen, setHistOpen] = useState(false);
+  // Combats subis (25/10/2026) : même traitement que l'historique des paiements —
+  // la liste étalée repoussait le classement hors de l'écran.
+  const [combatsOpen, setCombatsOpen] = useState(false);
   const [replacementIndex, setReplacementIndex] = useState(null);
   const defenseRequest = useRef(0);
   const defenseLock = useRef(false);
@@ -499,11 +502,28 @@ function Arene() {
       </div>
       ))}
 
-      <div className="card" style={{ marginTop: 14 }}>
+      {/* Combats subis : derrière un bouton (25/10/2026). La liste étalée poussait le
+          classement hors de l'écran ; même présentation que l'historique des paiements. */}
+      <button
+        className="btn block"
+        style={{ marginTop: 14 }}
+        data-fa="combats-open"
+        onClick={() => setCombatsOpen(true)}
+      >
+        {I18N.t("AR2_ATTACKS_TITLE")}
+        {pvp.attacks && pvp.attacks.length > 0 && (
+          <span className="mono" style={{ opacity: .7 }}> · {pvp.attacks.length}</span>
+        )}
+      </button>
+
+      {combatsOpen && (
+      <Modal onClose={() => setCombatsOpen(false)} accent="var(--alert)">
+        <div className="card">
           <h3 style={{ margin: "0 0 8px" }}>{I18N.t("AR2_ATTACKS_TITLE")}</h3>
           {(!pvp.attacks || pvp.attacks.length === 0)
             ? <div style={{ color: "var(--text-dim)", fontSize: 12 }}>{I18N.t("AR2_ATTACKS_NONE")}</div>
-            : pvp.attacks.map((a, i) => (
+            : <div data-fa="combats" style={{ maxHeight: "55vh", overflowY: "auto", WebkitOverflowScrolling: "touch" }}>
+            {pvp.attacks.map((a, i) => (
               <div key={i} style={{ borderTop: i ? "1px solid var(--line,#1c2740)" : "none", padding: "8px 0" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
                   {/* Phase 2 : l'adresse de l'attaquant ne sort plus du serveur. On affiche son
@@ -527,7 +547,13 @@ function Arene() {
                 </div>
               </div>
             ))}
+            </div>}
+          <button className="btn block" style={{ marginTop: 14 }} onClick={() => setCombatsOpen(false)}>
+            {I18N.t("CLOSE")}
+          </button>
         </div>
+        </Modal>
+      )}
 
       {/* Historique des paiements : derrière un bouton, dans une fenêtre défilante.
           La liste était étalée sous les saisons et mangeait la page — le fondateur a tranché

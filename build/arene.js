@@ -88,6 +88,9 @@ function Arene() {
   // saisons : le fondateur a tranché — « pas très joli, étalé là comme ça, ça serait mieux
   // que ce soit un truc que tu cliques et qu'après tu scroll pour regarder ».
   const [histOpen, setHistOpen] = useState(false);
+  // Combats subis (25/10/2026) : même traitement que l'historique des paiements —
+  // la liste étalée repoussait le classement hors de l'écran.
+  const [combatsOpen, setCombatsOpen] = useState(false);
   const [replacementIndex, setReplacementIndex] = useState(null);
   const defenseRequest = useRef(0);
   const defenseLock = useRef(false);
@@ -922,11 +925,23 @@ function Arene() {
   }, /*#__PURE__*/React.createElement(FaText, {
     text: I18N.t("AR2_PRIZE_FLAT"),
     s: 11
-  }))))), /*#__PURE__*/React.createElement("div", {
-    className: "card",
+  }))))), /*#__PURE__*/React.createElement("button", {
+    className: "btn block",
     style: {
       marginTop: 14
+    },
+    "data-fa": "combats-open",
+    onClick: () => setCombatsOpen(true)
+  }, I18N.t("AR2_ATTACKS_TITLE"), pvp.attacks && pvp.attacks.length > 0 && /*#__PURE__*/React.createElement("span", {
+    className: "mono",
+    style: {
+      opacity: .7
     }
+  }, " \xB7 ", pvp.attacks.length)), combatsOpen && /*#__PURE__*/React.createElement(Modal, {
+    onClose: () => setCombatsOpen(false),
+    accent: "var(--alert)"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "card"
   }, /*#__PURE__*/React.createElement("h3", {
     style: {
       margin: "0 0 8px"
@@ -936,7 +951,14 @@ function Arene() {
       color: "var(--text-dim)",
       fontSize: 12
     }
-  }, I18N.t("AR2_ATTACKS_NONE")) : pvp.attacks.map((a, i) => /*#__PURE__*/React.createElement("div", {
+  }, I18N.t("AR2_ATTACKS_NONE")) : /*#__PURE__*/React.createElement("div", {
+    "data-fa": "combats",
+    style: {
+      maxHeight: "55vh",
+      overflowY: "auto",
+      WebkitOverflowScrolling: "touch"
+    }
+  }, pvp.attacks.map((a, i) => /*#__PURE__*/React.createElement("div", {
     key: i,
     style: {
       borderTop: i ? "1px solid var(--line,#1c2740)" : "none",
@@ -1001,6 +1023,12 @@ function Arene() {
       textOverflow: "ellipsis"
     }
   }, D.displayName(b)), /*#__PURE__*/React.createElement("div", null, I18N.t("LINK_TIER"), b.level, " \xB7 ", D.fmtStat(D.eff(b, "atk")), "/", D.fmtStat(D.eff(b, "def"))))))))), /*#__PURE__*/React.createElement("button", {
+    className: "btn block",
+    style: {
+      marginTop: 14
+    },
+    onClick: () => setCombatsOpen(false)
+  }, I18N.t("CLOSE")))), /*#__PURE__*/React.createElement("button", {
     className: "btn block",
     style: {
       marginTop: 14
