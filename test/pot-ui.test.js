@@ -181,6 +181,15 @@ test("partAffichage : part unique quand les parts sont égales, fourchette sinon
 
   assert.strictEqual(FA_POT.partAffichage(null), null, "aucun tirage : rien à afficher");
   assert.strictEqual(FA_POT.partAffichage({ recipients: 2 }), null, "part inconnue : on n'invente pas 0 FB");
+  // « 0 FB pour 0 gagnant(s) » (prod 27/10/2026) : le serveur ne retrouvait plus les parts du
+  // tirage (regroupement par horodatage, microsecondes perdues). Un tirage sans gagnant n'en
+  // est pas un : la ligne se masque au lieu d'annoncer un montant nul.
+  assert.strictEqual(FA_POT.partAffichage({ share_sats: 0, recipients: 0, at: "2026-10-27T11:03:02.070Z" }), null,
+    "zéro gagnant : ligne masquée, jamais « 0 FB pour 0 gagnant(s) »");
+  assert.strictEqual(FA_POT.partAffichage({ share_sats: null, share_min_sats: 0, share_max_sats: 0, recipients: 0 }), null,
+    "fourchette à zéro gagnant : masquée aussi");
+  assert.strictEqual(FA_POT.partAffichage({ share_sats: 15277778, recipients: 1 }).args[1], 1,
+    "un seul gagnant reste un tirage valide");
 });
 
 test("resumePot : la fenêtre de comptage et la règle remontent au client", () => {
