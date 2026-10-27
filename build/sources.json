@@ -4,7 +4,7 @@
   "cinematique.jsx": "e26e458853ee13026ec92a0c8c7128669ca5f11d636fd525f472c4e96f063e8b",
   "fosse.jsx": "755f5390feec9a3a17e792ad6b977dfe4f6bb74fe22af4fa78b06cfdd3caf1b0",
   "arene-battle.jsx": "4de4b442dde6d0fc5dca6c39e5823a41ba28a9060cc6e3a0b725f9cbbdecb3ae",
-  "arene.jsx": "6830b9f27df473880cd255af8c3fdccb6ec4a9832203be7c3bf50304f61b8bf9",
+  "arene.jsx": "084f68a99415d3030cfbec3579555c9f0f1ac5a00b8cb381ea4e080144e4f000",
   "market.jsx": "9dee7a22e2d2d269225b69a1c9d05001ef63b3f6d7f6b56b4da0d7c93a4c16f0",
   "screens.jsx": "6b6d19f36fb7c1e0eafc3238edb6958d1cf180ac5af217412aa13681e8bd7dc3",
   "chat.jsx": "7a851fe2b27a68c4ccd56ba368ab5e89b09ec43b65e1425fe7b6d3c10efb3fbe",
@@ -15,7 +15,7 @@
   "tutorial.jsx": "d527c8d5900563f8a80632cbe8b517ed3f542e8c268746eaa4586c1b6286b1aa",
   "guide.jsx": "23360463c1f991310e2d623a402ce3a535c3dae5324f4efef5edb27a05c75cff",
   "campaign.jsx": "450b0b1c5b2cb6dc8f158b57e1630f3de949cf6f02d07619c55da413fc577a46",
-  "tour.jsx": "25aaf446ed498e8c331f2ab7a8dbbe8e23c83b96d49c0ba94faedb291da76457",
+  "tour.jsx": "38eb92d0392f46fea62c6ed137a8bc4547aa5262467646372b8aee0eb991944e",
   "champion.jsx": "98116a27205b9165b62a9a3fc418860f1e35874b9627f9c89723899d05fe66f7",
   "expeditions.jsx": "1edbe415882b67ad90cb1830af911edec44dfa5aa2620d66f9a535b0f7f843df",
   "relic-viewer.jsx": "a0e5ce9e2bab8ab22acec6a8da283b86965ad449e376b3b7c8dbe4aeeb2fc6a1",
@@ -26,5 +26,5 @@
   "quiz.jsx": "b1bd81e0d8be9eb14bdc849bdbf62a8063c93401a26c0cd543b373c3b397d10c",
   "pwa.jsx": "4784c7c790ca516da106605b1fa579f93329899a0d6b0d62d9f40c719d828c2d",
   "maj.jsx": "39cbd36a7ff9938a89c82173fea02b3ad4b64fff785e93f0b8940c566b9f6666",
-  "app.jsx": "a4f91be7cda7af3121d6e571afa05596c12cc188b94bb182417921f4c5dab2bd"
+  "app.jsx": "a132aadef62e02d3910957fb70a0b3bc4e49eabb3557c9f82037232c03dc8311"
 }

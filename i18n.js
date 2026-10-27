@@ -528,6 +528,8 @@
     PRIZE_TOWER_RANK:    { FR: "Semaine %s — Rang %d · Étage %d", EN: "Week %s — Rank %d · Floor %d", ZH: "第 %s 周 — 第 %d 名 · 第 %d 层" },
     PRIZE_REWARD_LOCKED: { FR: "Récompense : +%d FA 🔒", EN: "Reward: +%d FA 🔒", ZH: "奖励：+%d FA 🔒" },
     AR2_PRIZE_FLAT:      { FR: "Rangs 11-50 : +25 FA 🔒 chacun (min. 3 combats)", EN: "Ranks 11-50: +25 FA 🔒 each (min. 3 fights)", ZH: "第 11-50 名：每人 +25 FA 🔒（至少 3 场战斗）" },
+    TOWER_HIST_TITLE:    { FR: "Historique des récompenses", EN: "Reward history", ZH: "奖励记录" },
+    TOWER_HIST_NONE:     { FR: "Aucune récompense de Tour pour l'instant.", EN: "No Tower reward yet.", ZH: "暂无高塔奖励。" },
     AR2_HIST_TITLE:      { FR: "Historique des paiements", EN: "Payment history", ZH: "奖励记录" },
     AR2_HIST_NONE:       { FR: "Aucun paiement de saison pour l'instant.", EN: "No season payout yet.", ZH: "暂无赛季奖励。" },
     AR2_HIST_TOTAL:      { FR: "Total reçu : %d FA", EN: "Total received: %d FA", ZH: "累计获得：%d FA" },

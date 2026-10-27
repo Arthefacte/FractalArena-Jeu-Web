@@ -610,6 +610,10 @@ function Tour() {
   const [posture, setPosture] = useState("equilibre");
   const [showStart, setShowStart] = useState(false);
   const [showAbandon, setShowAbandon] = useState(false);
+  // Historique des récompenses de Tour (25/10/2026) : le popup de fin de semaine disparaît à la
+  // fermeture et le joueur ne pouvait plus revoir ses gains — l'Arène a ce bloc, la Tour non.
+  // Même présentation que l'Arène : un bouton, une fenêtre qui défile.
+  const [histOpen, setHistOpen] = useState(false);
   const [battle, setBattle] = useState(null); // { events, p1Team, p2Team, won, floorFought }
   const [result, setResult] = useState(null); // TourResultModal (affichée à la fermeture du rejeu)
   const [, setTick] = useState(0);
@@ -655,6 +659,11 @@ function Tour() {
   useEffect(() => {
     actions.championsList();
   }, []);
+  // Historique des récompenses de Tour (25/10/2026) : la route /tower/prizes ne renvoie que
+  // les prix NON VUS, donc le bouton n'aurait aucun compteur sans ce chargement.
+  useEffect(() => {
+    actions.towerPrizesHistory();
+  }, [g.authToken]);
   // Démontage : l'auto-combat s'arrête. Sans ce cleanup la boucle `while (!stopRef.current)`
   // d'onAuto continuait ses POST /tower/fight (et ses setState) sur un composant mort.
   useEffect(() => () => {
@@ -1128,7 +1137,89 @@ function Tour() {
       fontSize: 12,
       color: "var(--alert)"
     }
-  }, I18N.t(champ ? "CHAMP_NEED2" : "TOUR_NEED3"))))), /*#__PURE__*/React.createElement(TourLeaderboard, null), showStart && /*#__PURE__*/React.createElement(TourStartModal, {
+  }, I18N.t(champ ? "CHAMP_NEED2" : "TOUR_NEED3"))))), /*#__PURE__*/React.createElement(TourLeaderboard, null), /*#__PURE__*/React.createElement("button", {
+    className: "btn block",
+    style: {
+      marginTop: 14
+    },
+    "data-fa": "tour-hist-open",
+    onClick: () => setHistOpen(true)
+  }, I18N.t("TOWER_HIST_TITLE"), (g.towerPrizesHistory || []).length > 0 && /*#__PURE__*/React.createElement("span", {
+    className: "mono",
+    style: {
+      opacity: .7
+    }
+  }, " \xB7 ", g.towerPrizesHistory.length)), histOpen && (() => {
+    const hist = Array.isArray(g.towerPrizesHistory) ? g.towerPrizesHistory : [];
+    const total = hist.reduce((s, h) => s + (h.reward || 0), 0);
+    return /*#__PURE__*/React.createElement(Modal, {
+      onClose: () => setHistOpen(false),
+      accent: "var(--gold)"
+    }, /*#__PURE__*/React.createElement("h3", {
+      style: {
+        margin: "0 0 10px"
+      }
+    }, I18N.t("TOWER_HIST_TITLE")), hist.length === 0 ? /*#__PURE__*/React.createElement("div", {
+      style: {
+        color: "var(--text-dim)",
+        fontSize: 12
+      }
+    }, I18N.t("TOWER_HIST_NONE")) : /*#__PURE__*/React.createElement("div", {
+      style: {
+        maxHeight: "55vh",
+        overflowY: "auto",
+        WebkitOverflowScrolling: "touch"
+      },
+      "data-fa": "tour-hist"
+    }, hist.map((h, i) => /*#__PURE__*/React.createElement("div", {
+      key: h.week_key + "-" + i,
+      style: {
+        borderTop: i ? "1px solid var(--line,#1c2740)" : "none",
+        padding: "8px 0"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex between",
+      style: {
+        fontSize: 12,
+        gap: 8
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "mono"
+    }, I18N.t("PRIZE_TOWER_RANK", h.week_key, h.rank, h.best_floor)), /*#__PURE__*/React.createElement("span", {
+      className: "mono",
+      style: {
+        color: "var(--success)",
+        whiteSpace: "nowrap"
+      }
+    }, /*#__PURE__*/React.createElement(FaText, {
+      text: "+" + (h.reward || 0) + " FA",
+      s: 12
+    }))), h.dotation != null && /*#__PURE__*/React.createElement("div", {
+      className: "mono",
+      style: {
+        fontSize: 10,
+        color: "var(--text-dim)",
+        marginTop: 2
+      }
+    }, I18N.t("PRIZE_TOWER_DOTATION", h.dotation))))), /*#__PURE__*/React.createElement("div", {
+      className: "mono",
+      style: {
+        marginTop: 10,
+        fontSize: 11,
+        color: "var(--text-dim)",
+        textAlign: "right"
+      }
+    }, /*#__PURE__*/React.createElement(FaText, {
+      text: I18N.t("AR2_HIST_TOTAL", total),
+      s: 11
+    })), /*#__PURE__*/React.createElement("button", {
+      className: "btn block",
+      style: {
+        marginTop: 14
+      },
+      onClick: () => setHistOpen(false)
+    }, I18N.t("CLOSE")));
+  })(), showStart && /*#__PURE__*/React.createElement(TourStartModal, {
     state: st,
     score: st.score,
     balance: g.liquid + g.locked,

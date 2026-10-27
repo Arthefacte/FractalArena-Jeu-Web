@@ -244,6 +244,10 @@ function Tour() {
   const [posture, setPosture] = useState("equilibre");
   const [showStart, setShowStart] = useState(false);
   const [showAbandon, setShowAbandon] = useState(false);
+  // Historique des récompenses de Tour (25/10/2026) : le popup de fin de semaine disparaît à la
+  // fermeture et le joueur ne pouvait plus revoir ses gains — l'Arène a ce bloc, la Tour non.
+  // Même présentation que l'Arène : un bouton, une fenêtre qui défile.
+  const [histOpen, setHistOpen] = useState(false);
   const [battle, setBattle] = useState(null);   // { events, p1Team, p2Team, won, floorFought }
   const [result, setResult] = useState(null);   // TourResultModal (affichée à la fermeture du rejeu)
   const [, setTick] = useState(0);
@@ -266,6 +270,9 @@ function Tour() {
   useEffect(() => { const id = setInterval(() => setTick((t) => t + 1), 30000); return () => clearInterval(id); }, []);
   // Champion de soutien : la liste d'emprunt se charge en entrant dans la Tour.
   useEffect(() => { actions.championsList(); }, []);
+  // Historique des récompenses de Tour (25/10/2026) : la route /tower/prizes ne renvoie que
+  // les prix NON VUS, donc le bouton n'aurait aucun compteur sans ce chargement.
+  useEffect(() => { actions.towerPrizesHistory(); }, [g.authToken]);
   // Démontage : l'auto-combat s'arrête. Sans ce cleanup la boucle `while (!stopRef.current)`
   // d'onAuto continuait ses POST /tower/fight (et ses setState) sur un composant mort.
   useEffect(() => () => { stopRef.current = true; mountedRef.current = false; }, []);
@@ -544,6 +551,58 @@ function Tour() {
       )}
 
       <TourLeaderboard />
+
+      {/* Historique des récompenses de Tour : derrière un bouton (25/10/2026). Le popup de fin
+          de semaine ne revient pas une fois fermé ; sans ça le joueur n'avait aucun moyen de
+          revoir ce qu'il avait touché. Lecture seule, du plus récent au plus ancien. */}
+      <button
+        className="btn block"
+        style={{ marginTop: 14 }}
+        data-fa="tour-hist-open"
+        onClick={() => setHistOpen(true)}
+      >
+        {I18N.t("TOWER_HIST_TITLE")}
+        {(g.towerPrizesHistory || []).length > 0 && (
+          <span className="mono" style={{ opacity: .7 }}> · {g.towerPrizesHistory.length}</span>
+        )}
+      </button>
+
+      {histOpen && (() => {
+        const hist = Array.isArray(g.towerPrizesHistory) ? g.towerPrizesHistory : [];
+        const total = hist.reduce((s, h) => s + (h.reward || 0), 0);
+        return (
+          <Modal onClose={() => setHistOpen(false)} accent="var(--gold)">
+            <h3 style={{ margin: "0 0 10px" }}>{I18N.t("TOWER_HIST_TITLE")}</h3>
+            {hist.length === 0
+              ? <div style={{ color: "var(--text-dim)", fontSize: 12 }}>{I18N.t("TOWER_HIST_NONE")}</div>
+              : (
+                <div style={{ maxHeight: "55vh", overflowY: "auto", WebkitOverflowScrolling: "touch" }} data-fa="tour-hist">
+                  {hist.map((h, i) => (
+                    <div key={h.week_key + "-" + i} style={{ borderTop: i ? "1px solid var(--line,#1c2740)" : "none", padding: "8px 0" }}>
+                      <div className="flex between" style={{ fontSize: 12, gap: 8 }}>
+                        <span className="mono">{I18N.t("PRIZE_TOWER_RANK", h.week_key, h.rank, h.best_floor)}</span>
+                        <span className="mono" style={{ color: "var(--success)", whiteSpace: "nowrap" }}>
+                          <FaText text={"+" + (h.reward || 0) + " FA"} s={12} />
+                        </span>
+                      </div>
+                      {h.dotation != null && (
+                        <div className="mono" style={{ fontSize: 10, color: "var(--text-dim)", marginTop: 2 }}>
+                          {I18N.t("PRIZE_TOWER_DOTATION", h.dotation)}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            <div className="mono" style={{ marginTop: 10, fontSize: 11, color: "var(--text-dim)", textAlign: "right" }}>
+              <FaText text={I18N.t("AR2_HIST_TOTAL", total)} s={11} />
+            </div>
+            <button className="btn block" style={{ marginTop: 14 }} onClick={() => setHistOpen(false)}>
+              {I18N.t("CLOSE")}
+            </button>
+          </Modal>
+        );
+      })()}
 
       {showStart && (
         <TourStartModal state={st} score={st.score} balance={g.liquid + g.locked} busy={busy}

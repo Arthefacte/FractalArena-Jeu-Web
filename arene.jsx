@@ -44,6 +44,10 @@ function Arene() {
   // undefined = lecture en cours ; null = absence explicite (404), jamais une panne réseau.
   const [myDefense, setMyDefense] = useState(undefined);
   const [defenseError, setDefenseError] = useState(null);
+  // Fenêtre de l'historique des paiements (25/10/2026). La liste était étalée sous les
+  // saisons : le fondateur a tranché — « pas très joli, étalé là comme ça, ça serait mieux
+  // que ce soit un truc que tu cliques et qu'après tu scroll pour regarder ».
+  const [histOpen, setHistOpen] = useState(false);
   const [replacementIndex, setReplacementIndex] = useState(null);
   const defenseRequest = useRef(0);
   const defenseLock = useRef(false);
@@ -88,6 +92,9 @@ function Arene() {
   // Historique des paiements de saison : la donnée vit dans pvp_season_archive, elle
   // n'était visible nulle part. Lue avec l'écran, indépendamment du popup.
   useEffect(() => { if (g.wallet) actions.pvpPrizesHistory(); }, [g.wallet]);
+  // Historique de la Tour : même logique, lu à l'ouverture de l'écran pour que le bouton
+  // affiche son compteur sans attendre un clic.
+  useEffect(() => { if (g.authToken) actions.towerPrizesHistory(); }, [g.authToken]);
   useEffect(() => {
     const id = setInterval(() => setNowTs(Date.now()), 1000);
     return () => clearInterval(id);
@@ -522,22 +529,36 @@ function Arene() {
             ))}
         </div>
 
-      {(() => {
-        /* Historique des paiements (26/10/2026). Le popup ne revient qu'une fois et
-           disparaissait sur une fermeture ; le joueur n'avait alors plus aucun moyen de
-           revoir ce qu'il avait touché (« j'ai rien reçu » alors que 492 FA étaient
-           crédités). Lecture seule, du plus récent au plus ancien. */
+      {/* Historique des paiements : derrière un bouton, dans une fenêtre défilante.
+          La liste était étalée sous les saisons et mangeait la page — le fondateur a tranché
+          (25/10/2026) : « pas très joli, étalé là comme ça, ça serait mieux que ce soit un
+          truc que tu cliques et qu'après tu scroll pour regarder ». Lecture seule. */}
+      <button
+        className="btn block"
+        style={{ marginTop: 14 }}
+        data-fa="hist-prix-open"
+        onClick={() => setHistOpen(true)}
+      >
+        {I18N.t("AR2_HIST_TITLE")}
+        {(Array.isArray(g.pvpPrizesHistory) ? g.pvpPrizesHistory.length : 0) > 0 && (
+          <span className="mono" style={{ opacity: .7 }}> · {g.pvpPrizesHistory.length}</span>
+        )}
+      </button>
+
+      {histOpen && (() => {
         const hist = Array.isArray(g.pvpPrizesHistory) ? g.pvpPrizesHistory : [];
         const totalHist = hist.reduce((s, h) => s + (h.reward || 0), 0);
         return (
-          <div className="card" style={{ marginTop: 14 }} data-fa="hist-prix">
-            <h3 style={{ margin: "0 0 8px" }}>{I18N.t("AR2_HIST_TITLE")}</h3>
+          <Modal onClose={() => setHistOpen(false)} accent="var(--gold)">
+            <h3 style={{ margin: "0 0 10px" }}>{I18N.t("AR2_HIST_TITLE")}</h3>
             {hist.length === 0
               ? <div style={{ color: "var(--text-dim)", fontSize: 12 }}>{I18N.t("AR2_HIST_NONE")}</div>
               : (
-                <div>
+                /* La fenêtre défile : une saison par ligne, la plus récente en haut. Le plafond
+                   de hauteur garde le bouton de fermeture accessible sur un petit écran. */
+                <div style={{ maxHeight: "55vh", overflowY: "auto", WebkitOverflowScrolling: "touch" }} data-fa="hist-prix">
                   {hist.map((h, i) => (
-                    <div key={h.season + "-" + i} className="flex between" style={{ borderTop: i ? "1px solid var(--line,#1c2740)" : "none", padding: "7px 0", fontSize: 12, gap: 8 }}>
+                    <div key={h.season + "-" + i} className="flex between" style={{ borderTop: i ? "1px solid var(--line,#1c2740)" : "none", padding: "8px 0", fontSize: 12, gap: 8 }}>
                       <span className="mono" style={{ color: AU.leagueColor(h.league) }}>
                         {I18N.t("PRIZE_SEASON_RANK", h.season, h.rank, AU.leagueLabel(h.league))}
                       </span>
@@ -546,12 +567,15 @@ function Arene() {
                       </span>
                     </div>
                   ))}
-                  <div className="mono" style={{ marginTop: 8, fontSize: 11, color: "var(--text-dim)", textAlign: "right" }}>
-                    <FaText text={I18N.t("AR2_HIST_TOTAL", totalHist)} s={11} />
-                  </div>
                 </div>
               )}
-          </div>
+            <div className="mono" style={{ marginTop: 10, fontSize: 11, color: "var(--text-dim)", textAlign: "right" }}>
+              <FaText text={I18N.t("AR2_HIST_TOTAL", totalHist)} s={11} />
+            </div>
+            <button className="btn block" style={{ marginTop: 14 }} onClick={() => setHistOpen(false)}>
+              {I18N.t("CLOSE")}
+            </button>
+          </Modal>
         );
       })()}
 
