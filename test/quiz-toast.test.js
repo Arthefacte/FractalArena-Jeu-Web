@@ -25,6 +25,17 @@ test("les deux boutons partagent la meme classe CSS (poids visuel identique)", (
   assert.ok(boutons.length >= 2, "les deux boutons doivent porter la meme classe");
 });
 
+// « Garder » montrait le jeton devant son montant (FaText), « Offrir au rachat »
+// n'avait aucun signe : cote a cote, la destination qui ne rapporte rien au
+// joueur paraissait plus pauvre que l'autre. Les deux montrent le meme jeton —
+// c'est le meme FA, il change seulement de camp.
+test("le bouton Offrir porte le logo du token, comme Garder", () => {
+  assert.match(src, /const \{[^}]*\bTokenIcon\b[^}]*\} = window;/, "TokenIcon non importe");
+  const bouton = src.match(/<button className="quiz-choice" onClick=\{(offrir)\}>[\s\S]{0,200}?<\/button>/);
+  assert.ok(bouton, "bouton Offrir introuvable");
+  assert.match(bouton[0], /<TokenIcon/, "le bouton Offrir doit montrer le logo du token");
+});
+
 test("la classe du toast existe dans styles.css", () => {
   assert.match(css, /\.quiz-toast/);
 });

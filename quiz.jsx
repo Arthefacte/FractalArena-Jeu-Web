@@ -5,7 +5,7 @@
    Spec : repo serveur, docs/superpowers/specs/2026-08-06-quiz-educatif-design.md
    ============================================================ */
 const { useState, useEffect, useRef } = React;
-const { useFA, cx, FaText } = window;
+const { useFA, cx, FaText, TokenIcon } = window;
 const I18N = window.FA_I18N;
 const QUIZ = window.FA_QUIZ_UI;
 
@@ -269,7 +269,7 @@ function QuizToast() {
                   <FaText text={I18N.t("QUIZ_KEEP", verdict.reward)} s={12} />
                 </button>
                 <button className="quiz-choice" onClick={offrir}>
-                  {I18N.t("QUIZ_GIVE")}
+                  <TokenIcon s={12} /> {I18N.t("QUIZ_GIVE")}
                 </button>
               </div>
               {/* Ce qui se passe si le joueur ne tranche pas : dit d'avance, en
