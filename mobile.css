@@ -234,6 +234,10 @@
      de base reste dans styles.css, une seule fois — garde de test). */
   .fa-sheet-tools { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 4px 0 12px; }
   .fa-sheet-tools button { width: 42px; height: 42px; font-size: 16px; }
+  /* Bouton nommé des jauges (25/10/2026) : le caret ▾ seul ne disait rien au joueur,
+     qui cherchait « où sont les jauges de pools ». Il porte son nom et ses chiffres. */
+  .fa-sheet-pools { margin: 2px 0 10px; width: 100%; justify-content: center; font-size: 13px; }
+  .fa-sheet-pools-n { margin-left: 8px; font-size: 11px; opacity: .75; }
 
   /* ---- vh → dvh : la barre d'URL mobile ne fait plus sauter les listes ---- */
   .app-shell { min-height: 100dvh; }
