@@ -1149,7 +1149,18 @@ function ResultModal({
       marginTop: 20
     },
     onClick: onClose
-  }, I18N.t("RES_CONTINUE")));
+  }, I18N.t("RES_CONTINUE")), /*#__PURE__*/React.createElement("button", {
+    className: "btn ghost sm block",
+    style: {
+      marginTop: 8,
+      opacity: .75
+    },
+    "data-fa": "result-howto",
+    onClick: () => {
+      onClose();
+      window.dispatchEvent(new Event("fa-open-tutorial"));
+    }
+  }, I18N.t("TUT_TITLE")));
 }
 function ResRow({
   label,

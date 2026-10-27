@@ -87,6 +87,24 @@
       EN: "Forge to fuse and upgrade your entities, Campaign for starred PvE challenges, Quests and the daily gift for rewards. Now it's your turn!",
       ZH: "在熔炉中融合并强化实体，战役挑战星级 PvE，任务和每日礼物赢取奖励。现在轮到你了！",
     },
+    // Aide « Comment jouer » (25/10/2026) : les deux blocs qu'aucun écran ne
+    // montrait — le déroulé d'un combat, et les trois chiffres du résultat. Les
+    // faits viennent du code : décision aux PV au plafond de rounds (L_TIMEOUT),
+    // 50 XP par victoire et 10 par défaite (GUIDE_D_LEVEL), +3 % de stats par
+    // niveau (idem), gain = mise ×1,7 à la Fosse (HINT_TAB_FOSSE).
+    HOWTO_COMBAT_T: { FR: "Le combat, concrètement", EN: "How a fight plays out", ZH: "战斗是怎么打的" },
+    HOWTO_COMBAT_B: {
+      FR: "Trois entités contre trois, tour par tour, et tu n'as rien à cliquer : le jeu résout les échanges jusqu'à ce qu'une équipe tombe. Si le plafond de rounds est atteint, la décision se prend aux PV restants. Les niveaux pèsent : chaque niveau ajoute 3 % aux stats de l'entité, en attaque comme en défense.",
+      EN: "Three entities against three, round by round, and there is nothing to click: the game resolves the exchanges until one team falls. If the round cap is reached, the decision goes to remaining HP. Levels matter: each level adds 3% to the entity's stats, attack and defence alike.",
+      ZH: "3 个实体对 3 个，逐回合自动进行，你无需点击：游戏会一直结算交锋，直到一队倒下。达到回合上限时按剩余血量判定。等级很关键：每升一级，实体的攻击和防御属性都提升 3%。",
+    },
+    HOWTO_RESULT_T: { FR: "Les trois chiffres du résultat", EN: "The three numbers on the result screen", ZH: "结算界面的三个数字" },
+    HOWTO_RESULT_B: {
+      FR: "Gain : ce que ta mise rapporte quand tu gagnes (×1,7 à la Fosse). Net : ce qu'il te reste une fois la mise retirée — c'est le chiffre qui compte vraiment. XP par entité : l'expérience que gagne chacune de tes trois entités à ce combat.",
+      EN: "Payout: what your stake returns when you win (×1.7 in The Pit). Net: what is left once the stake is taken out — this is the number that really counts. XP per entity: the experience each of your three entities earns from that fight.",
+      ZH: "收益：胜利时下注的回报（深坑 ×1.7）。净值：扣掉下注后真正剩下的部分——这才是关键数字。每实体经验：你的三个实体各自从这场战斗获得的经验。",
+    },
+    HOWTO_MODES_T: { FR: "Les cinq modes", EN: "The five modes", ZH: "五种模式" },
     LB_TITLE: { FR: "Classement des joueurs", EN: "Players ranking", ZH: "玩家排行榜" },
     LB_TAB_WINS: { FR: "Victoires", EN: "Wins", ZH: "胜场" },
     LB_TAB_POWER: { FR: "Puissance", EN: "Power", ZH: "战力" },
@@ -1801,7 +1819,7 @@
     GUIDE_FIN_CRYPTO_LINK: { FR: "Il te reste une chose : relier un portefeuille à toi (Quêtes → Débloquer tes gains), c'est là que partiront tes retraits. Un portefeuille tout neuf suffit, on t'envoie nous-mêmes de quoi l'amorcer.", EN: "One thing left: link a wallet of your own (Quests → Unlock your earnings) — that's where your withdrawals will go. A brand-new wallet is enough, we send you the first coins ourselves.", ZH: "还剩一件事：绑定一个你自己的钱包（任务 → 解锁收益），提现将发往该地址。全新的空钱包即可，首笔资金由我们发送。" },
     GUIDE_FIN_CRYPTO_DUST: { FR: "Il te reste une chose : la poussière de Fractal Bitcoin part vers ton portefeuille. Quand elle arrive, colle son txid dans Quêtes → Débloquer tes gains (100 FA à la clé).", EN: "One thing left: the Fractal Bitcoin dust is on its way to your wallet. When it arrives, paste its txid in Quests → Unlock your earnings (100 FA on top).", ZH: "还剩一件事：Fractal Bitcoin 微额转账正在发往你的钱包。到账后，把它的 txid 粘贴到 任务 → 解锁收益（额外 100 FA）。" },
     GUIDE_FIN_CRYPTO_TXID: { FR: "Il te reste une chose : colle le txid de la poussière reçue dans Quêtes → Débloquer tes gains — 100 FA à la clé.", EN: "One thing left: paste the txid of the dust you received in Quests → Unlock your earnings — 100 FA on top.", ZH: "还剩一件事：把你收到的微额转账 txid 粘贴到 任务 → 解锁收益 —— 额外 100 FA。" },
-    GUIDE_DONE:        { FR: "Parcours terminé — tu connais tous les modes et tous les onglets sont ouverts. Le bouton ? du haut ré-affiche l'aide à tout moment.", EN: "Journey complete — you know every mode and every tab is open now. The ? button at the top brings help back anytime.", ZH: "新手之路完成——你已了解所有模式，所有标签均已解锁。顶部的 ? 按钮随时可再次显示帮助。" },
+    GUIDE_DONE:        { FR: "Parcours terminé — tu connais tous les modes et tous les onglets sont ouverts. Le ? du bandeau (dans le tiroir Plus sur mobile) rouvre l'aide à tout moment.", EN: "Journey complete — you know every mode and every tab is open now. The ? in the header (in the More drawer on mobile) brings help back anytime.", ZH: "新手之路完成——你已了解所有模式，所有标签均已解锁。顶部栏的 ?（手机端在「更多」抽屉里）随时可再次显示帮助。" },
     // Une phrase par onglet, à sa première ouverture : à quoi ça sert, ce que ça coûte, ce que ça rapporte.
     HINT_TAB_TEAM:        { FR: "Équipe : ta collection. Sélectionne 3 entités ; elles gagnent de l'XP à chaque victoire. Le Capitaine (totem) est un bonus passif lié à ton wallet.", EN: "Team: your collection. Select 3 entities; they gain XP every win. The Captain (totem) is a passive bonus tied to your wallet.", ZH: "队伍：你的收藏。选择 3 个实体；每次胜利它们获得 XP。队长（图腾）是与钱包绑定的被动加成。" },
     HINT_TAB_FOSSE:       { FR: "La Fosse : combats contre des entités d'entraînement. 5 gratuits par jour (gains verrouillés), puis des mises Bronze 10 · Argent 25 · Or 50 payées ×1,7 en cas de victoire.", EN: "The Pit: fights against training entities. 5 free a day (locked winnings), then Bronze 10 · Silver 25 · Gold 50 stakes paid ×1.7 on a win.", ZH: "深坑：对战训练实体。每天 5 场免费（收益锁定），之后可下注青铜 10 · 白银 25 · 黄金 50，胜利赔率 ×1.7。" },

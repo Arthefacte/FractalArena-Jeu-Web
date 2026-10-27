@@ -1,7 +1,26 @@
 /* Généré par tools/precompile.mjs depuis tutorial.jsx — NE PAS ÉDITER. */
 (function () {
 /* ============================================================
-   FRACTAL ARENA — Tutoriel onboarding « Comment jouer »
+   FRACTAL ARENA — « Comment jouer »
+   ============================================================
+   Une seule surface d'aide, qui répond au retour d'un joueur (25/10/2026) :
+   « un guide étape par étape expliquant comment commencer, comment fonctionnent
+   les combats et les différents modes de jeu ». Trois constats l'ont déclenché :
+
+   1. Ce panneau ne montrait plus qu'UNE diapositive (« Bienvenue ») : les quatre
+      autres avaient été retirées le 15/10 au motif que le rail les racontait.
+      Le rail dit quoi FAIRE, il n'explique pas ce qui se passe dans un combat.
+   2. Il n'était atteignable que par le « ? » du bandeau, or `.hdr .tut-help`
+      est en `display: none` en mobile (mobile.css) et le tiroir « Plus » n'en
+      portait pas de copie : sur téléphone, l'aide n'avait AUCUNE entrée.
+   3. Rien n'expliquait les trois chiffres de l'écran de résultat (Gain, Net,
+      XP par entité) — le joueur les voyait sans savoir d'où ils sortent.
+
+   Le contenu est fait de textes du jeu, pas de paraphrase : les modes reprennent
+   mot pour mot les HINT_TAB_* d'i18n.js (les mêmes phrases que l'astuce
+   d'onglet), et le bloc argent est HINT_TAB_WALLET. Ce qui est nouveau vient des
+   règles réellement appliquées : le déroulé d'un combat (L_TIMEOUT), l'XP
+   (50/10, cf. GUIDE_D_LEVEL) et la marge par niveau (3 %, idem).
    ============================================================ */
 const {
   useState,
@@ -22,21 +41,29 @@ const I18N = window.FA_I18N;
 // donnait l'impression d'un jeu « pas à jour ».
 const TUT_KEY = "fractal_arena_tutorial_v1";
 
-// Chaque icône doit illustrer le PROPOS du slide, pas un détail (retour user
-// 2026-08-22 : le homard d'« équipe » et la cible de « combats » perdaient tout
-// le monde).
-// UNE diapositive (15/10/2026). Il en restait trois — le cadeau, le verrouillé
-// contre le disponible, le guide. Les deux dernières racontaient ce que le
-// RAIL fait maintenant à l'écran : la barre dit l'étape et surligne le bouton
-// (plus besoin de l'annoncer), et le verrou d'onglets rend « verrouillé contre
-// disponible » visible par le joueur lui-même. Ce qui reste ici est ce qu'aucun
-// écran ne peut montrer avant le premier clic : le cadeau de bienvenue, et le
-// fait qu'on l'accompagne de bout en bout. Le « Passer » a disparu avec les
-// diapositives qu'il servait à sauter : il ne reste qu'un seul bouton.
-const SLIDES = [{
-  icon: "⚔️",
-  t: "TUT_S1_T",
-  b: "TUT_S1_B"
+// Les blocs, dans l'ordre où on les lit. `lines` = clés i18n rendues en puces
+// (les modes) ; `b` = un seul paragraphe.
+const SECTIONS = [{
+  t: "TUT_S2_T",
+  b: "TUT_S2_B"
+}, {
+  t: "HOWTO_COMBAT_T",
+  b: "HOWTO_COMBAT_B"
+}, {
+  t: "HOWTO_RESULT_T",
+  b: "HOWTO_RESULT_B"
+}, {
+  t: "TUT_S3_T",
+  b: "TUT_S3_B"
+}, {
+  t: "HOWTO_MODES_T",
+  lines: ["HINT_TAB_FOSSE", "HINT_TAB_CAMPAIGN", "HINT_TAB_TOUR", "HINT_TAB_ARENE", "HINT_TAB_EXPEDITIONS"]
+}, {
+  t: "TUT_S4_T",
+  b: "TUT_S4_B"
+}, {
+  t: "TUT_S5_T",
+  b: "TUT_S5_B"
 }];
 function tutSeen() {
   // Le drapeau du compte d'abord : il suit le joueur d'un appareil à l'autre.
@@ -70,44 +97,38 @@ function TutorialGate({
     actions
   } = useFA();
   const [open, setOpen] = useState(false);
-  const [step, setStep] = useState(0);
 
   // Auto-ouverture unique après la 1ère connexion (flag absent).
   useEffect(() => {
-    if (g.wallet && !blocked && !tutSeen()) {
-      setStep(0);
-      setOpen(true);
-    }
+    if (g.wallet && !blocked && !tutSeen()) setOpen(true);
   }, [g.wallet, blocked]);
 
-  // Ouverture forcée via le bouton « ? » du header (ne touche pas au flag).
+  // Ouverture depuis le « ? » du bandeau (desktop) et depuis sa copie du tiroir
+  // « Plus » (mobile) — le même événement, deux points d'entrée.
   useEffect(() => {
-    const onOpen = () => {
-      setStep(0);
-      setOpen(true);
-    };
+    const onOpen = () => setOpen(true);
     window.addEventListener("fa-open-tutorial", onOpen);
     return () => window.removeEventListener("fa-open-tutorial", onOpen);
   }, []);
   if (!open) return null;
   function close() {
-    markTutSeen();
-    // Le compte retient le tutoriel vu : les autres navigateurs (navigateur
-    // intégré d'UniSat, PWA, autre ordinateur) ne le rouvriront plus.
-    actions.pushUiState({
-      tutorial_seen: true
-    });
+    // Vu une fois = vu. Le panneau rouvert par le « ? » ne rejoue pas la
+    // cérémonie du premier lancement (drapeau, cadeau, retour du guide) : celle
+    // d'un joueur qui consulte l'aide au bout d'un mois n'a rien à annoncer.
+    if (!tutSeen()) {
+      markTutSeen();
+      // Le compte retient le tutoriel vu : les autres navigateurs (navigateur
+      // intégré d'UniSat, PWA, autre ordinateur) ne le rouvriront plus.
+      actions.pushUiState({
+        tutorial_seen: true
+      });
+      // Signale au cadeau de connexion qu'il peut s'ouvrir (cohabitation 1er login).
+      window.dispatchEvent(new Event("fa-tutorial-closed"));
+      // Revoir le tutoriel = vouloir de l'aide : le guide masqué revient.
+      if (window.FA_GUIDE_SHOW) window.FA_GUIDE_SHOW();
+    }
     setOpen(false);
-    // Signale au cadeau de connexion qu'il peut s'ouvrir (cohabitation 1er login).
-    window.dispatchEvent(new Event("fa-tutorial-closed"));
-    // Revoir le tutoriel = vouloir de l'aide : le guide masqué revient.
-    if (window.FA_GUIDE_SHOW) window.FA_GUIDE_SHOW();
   }
-  function next() {
-    if (step >= SLIDES.length - 1) close();else setStep(s => s + 1);
-  }
-  const slide = SLIDES[step];
-  const last = step === SLIDES.length - 1;
   return /*#__PURE__*/React.createElement(Modal, {
     onClose: close,
     accent: "var(--fire)"
@@ -117,21 +138,61 @@ function TutorialGate({
       textAlign: "center"
     }
   }, I18N.t("TUT_TITLE")), /*#__PURE__*/React.createElement("div", {
-    className: "tut-icon"
-  }, slide.icon), /*#__PURE__*/React.createElement("div", {
     className: "h1",
     style: {
-      textAlign: "center"
+      textAlign: "center",
+      fontSize: 22,
+      margin: "4px 0 2px"
     }
-  }, I18N.t(slide.t)), /*#__PURE__*/React.createElement("div", {
-    className: "tut-body muted"
-  }, I18N.t(slide.b)), SLIDES.length > 1 && /*#__PURE__*/React.createElement("div", {
-    className: "tut-dots"
-  }, SLIDES.map((_, i) => /*#__PURE__*/React.createElement("span", {
-    key: i,
-    className: cx("tut-dot", i === step && "on"),
-    onClick: () => setStep(i)
-  }))), /*#__PURE__*/React.createElement("div", {
+  }, I18N.t("TUT_S1_T")), /*#__PURE__*/React.createElement("div", {
+    "data-fa": "howto-body",
+    style: {
+      maxHeight: "58vh",
+      overflowY: "auto",
+      WebkitOverflowScrolling: "touch",
+      marginTop: 10,
+      paddingRight: 4
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "tut-body muted",
+    style: {
+      marginBottom: 14
+    }
+  }, I18N.t("TUT_S1_B")), SECTIONS.map((s, i) => /*#__PURE__*/React.createElement("div", {
+    key: s.t,
+    style: {
+      marginBottom: 16
+    },
+    "data-fa": "howto-" + s.t
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      fontSize: 12,
+      letterSpacing: 1,
+      color: "var(--gold)",
+      textTransform: "uppercase",
+      marginBottom: 4,
+      textAlign: "left"
+    }
+  }, i + 1, " \xB7 ", I18N.t(s.t)), s.b && /*#__PURE__*/React.createElement("div", {
+    className: "tut-body muted",
+    style: {
+      margin: 0,
+      textAlign: "left"
+    }
+  }, I18N.t(s.b)), s.lines && /*#__PURE__*/React.createElement("ul", {
+    style: {
+      margin: "2px 0 0",
+      paddingLeft: 16
+    }
+  }, s.lines.map(k => /*#__PURE__*/React.createElement("li", {
+    key: k,
+    className: "tut-body muted",
+    style: {
+      marginBottom: 6,
+      textAlign: "left"
+    }
+  }, I18N.t(k))))))), /*#__PURE__*/React.createElement("div", {
     className: "flex between center",
     style: {
       marginTop: 16,
@@ -142,8 +203,9 @@ function TutorialGate({
     style: {
       flex: 1
     },
-    onClick: next
-  }, last ? I18N.t("TUT_START") : I18N.t("TUT_NEXT"))));
+    onClick: close,
+    "data-fa": "howto-close"
+  }, I18N.t("TUT_START"))));
 }
 Object.assign(window, {
   TutorialGate

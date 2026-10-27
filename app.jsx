@@ -3864,6 +3864,15 @@ function Nav() {
                 <span aria-hidden="true">👥</span>
                 {roomUnread > 0 && <span className="hdr-mbadge">{roomUnread > 9 ? "9+" : roomUnread}</span>}
               </button>
+              {/* Aide : `.hdr .tut-help` est en `display:none` en mobile, et sa
+                  copie promise ici n'existait pas — l'aide n'avait donc AUCUNE
+                  entrée sur téléphone (retour joueur, 25/10/2026). */}
+              <button
+                className="hdr-mbtn"
+                aria-label={I18N.t("TUT_HELP")}
+                data-fa="howto-open-sheet"
+                onClick={() => { setSheetOpen(false); window.dispatchEvent(new Event("fa-open-tutorial")); }}
+              >?</button>
               <button
                 className={cx("hdr-mbtn", "hdr-mcaret", poolsOpen && "on")}
                 aria-label={I18N.t("POOLS_FOLD_LABEL")}
