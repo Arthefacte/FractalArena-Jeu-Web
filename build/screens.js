@@ -3504,6 +3504,11 @@ const WL_H_STATUS = {
   completed: "WL_H_SENT",
   failed: "WL_H_FAILED"
 };
+
+// Les parts de cagnotte sont stockées en SATS (partage_sats) : les afficher avec `fmt`, qui
+// rend un entier brut, donnerait « 2 777 777 » pour 0,0278 FB. Les montants FA du ledger
+// (dépôts/retraits) restent en unités entières, inchangés.
+const fbFB = sats => (Number(sats || 0) / 1e8).toFixed(4) + " FB";
 function HistoryModal({
   onClose
 }) {
@@ -3512,14 +3517,16 @@ function HistoryModal({
   } = useFA();
   const [st, setSt] = useState({
     loading: true,
-    entries: null
+    entries: null,
+    pot: null
   });
   useEffect(() => {
     let vivant = true;
     actions.fetchWalletHistory().then(r => {
       if (vivant) setSt({
         loading: false,
-        entries: r.ok ? r.entries : null
+        entries: r.ok ? r.entries : null,
+        pot: r && r.pot || null
       });
     });
     return () => {
@@ -3532,7 +3539,28 @@ function HistoryModal({
   }, /*#__PURE__*/React.createElement(SectionHead, {
     eyebrow: "\uD83E\uDDFE LEDGER",
     title: I18N.t("WL_HISTORY")
-  }), st.loading && /*#__PURE__*/React.createElement("div", {
+  }), st.pot && (st.pot.paid_count > 0 || st.pot.pending_count > 0) && /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    "data-fa": "wl-pot-sum",
+    style: {
+      fontSize: 11,
+      lineHeight: 1.5,
+      textAlign: "center",
+      margin: "0 0 10px",
+      padding: "7px 8px",
+      border: "1px solid var(--line)",
+      borderRadius: 6
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: "var(--success)"
+    }
+  }, I18N.t("WL_POT_SUM", fbFB(st.pot.paid_sats), st.pot.paid_count)), st.pot.pending_count > 0 && /*#__PURE__*/React.createElement("div", {
+    className: "muted",
+    style: {
+      marginTop: 2
+    }
+  }, I18N.t("WL_POT_PENDING", fbFB(st.pot.pending_sats), st.pot.pending_count))), st.loading && /*#__PURE__*/React.createElement("div", {
     className: "muted",
     style: {
       textAlign: "center",
@@ -3559,6 +3587,7 @@ function HistoryModal({
     }
   }, st.entries.map((e, i) => {
     const retrait = e.type === "withdraw";
+    const gain = e.type === "pot"; // part de cagnotte versée : entrant, comme un dépôt
     const echoue = e.status === "failed";
     return /*#__PURE__*/React.createElement("div", {
       key: i,
@@ -3576,12 +3605,19 @@ function HistoryModal({
       style: {
         fontSize: 13,
         fontWeight: 700,
-        color: retrait ? "var(--gold)" : "var(--elec)",
+        color: retrait ? "var(--gold)" : gain ? "var(--success)" : "var(--elec)",
         textDecoration: echoue ? "line-through" : "none"
       }
-    }, retrait ? "↑ −" : "↓ +", fmt(e.amount), " ", /*#__PURE__*/React.createElement(TokenIcon, {
+    }, retrait ? "↑ −" : "↓ +", gain ? fbFB(e.amount) : fmt(e.amount), !gain && /*#__PURE__*/React.createElement(React.Fragment, null, " ", /*#__PURE__*/React.createElement(TokenIcon, {
       s: 11
-    })), retrait && /*#__PURE__*/React.createElement("span", {
+    })), gain && /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 10,
+        marginLeft: 6,
+        opacity: .8,
+        fontWeight: 400
+      }
+    }, I18N.t("WL_POT_ROW"))), retrait && /*#__PURE__*/React.createElement("span", {
       className: "mono",
       style: {
         fontSize: 11,

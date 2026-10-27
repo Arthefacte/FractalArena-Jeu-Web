@@ -1717,9 +1717,12 @@ function App() {
           ok: false
         };
         const d = await r.json();
+        // `pot` : résumé de SES gains de cagnotte (reçus / en attente), publié par la même
+        // requête depuis le 27/10/2026. Absent (null) sur une base sans cagnotte.
         return {
           ok: true,
-          entries: d.entries || []
+          entries: d.entries || [],
+          pot: d.pot || null
         };
       } catch (e) {
         return {

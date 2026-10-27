@@ -1775,19 +1775,39 @@ function Wallet() {
 const UNISCAN_TX = "https://uniscan.cc/fractal/tx/"; // le réseau Fractal, PAS /tx/ (qui cherche sur Bitcoin)
 const WL_H_STATUS = { pending: "WL_H_PENDING", pending_send: "WL_H_PENDING", completed: "WL_H_SENT", failed: "WL_H_FAILED" };
 
+// Les parts de cagnotte sont stockées en SATS (partage_sats) : les afficher avec `fmt`, qui
+// rend un entier brut, donnerait « 2 777 777 » pour 0,0278 FB. Les montants FA du ledger
+// (dépôts/retraits) restent en unités entières, inchangés.
+const fbFB = (sats) => (Number(sats || 0) / 1e8).toFixed(4) + " FB";
+
 function HistoryModal({ onClose }) {
   const { actions } = useFA();
-  const [st, setSt] = useState({ loading: true, entries: null });
+  const [st, setSt] = useState({ loading: true, entries: null, pot: null });
   useEffect(() => {
     let vivant = true;
     actions.fetchWalletHistory().then((r) => {
-      if (vivant) setSt({ loading: false, entries: r.ok ? r.entries : null });
+      if (vivant) setSt({ loading: false, entries: r.ok ? r.entries : null, pot: (r && r.pot) || null });
     });
     return () => { vivant = false; };
   }, []);
   return (
     <Modal onClose={onClose} accent="var(--elec)">
       <SectionHead eyebrow="🧾 LEDGER" title={I18N.t("WL_HISTORY")} />
+      {/* Ses gains de cagnotte, en tête : c'est la ligne que le joueur cherchait ailleurs.
+          Le détail des montants reçus est dans la liste dessous, ligne par ligne. */}
+      {st.pot && (st.pot.paid_count > 0 || st.pot.pending_count > 0) && (
+        <div className="mono" data-fa="wl-pot-sum"
+             style={{ fontSize: 11, lineHeight: 1.5, textAlign: "center", margin: "0 0 10px", padding: "7px 8px", border: "1px solid var(--line)", borderRadius: 6 }}>
+          <span style={{ color: "var(--success)" }}>
+            {I18N.t("WL_POT_SUM", fbFB(st.pot.paid_sats), st.pot.paid_count)}
+          </span>
+          {st.pot.pending_count > 0 && (
+            <div className="muted" style={{ marginTop: 2 }}>
+              {I18N.t("WL_POT_PENDING", fbFB(st.pot.pending_sats), st.pot.pending_count)}
+            </div>
+          )}
+        </div>
+      )}
       {st.loading && <div className="muted" style={{ textAlign: "center", padding: 18 }}>…</div>}
       {!st.loading && !st.entries && (
         <div className="muted" style={{ fontSize: 12, textAlign: "center", padding: 18 }}>{I18N.t("WL_H_ERROR")}</div>
@@ -1799,12 +1819,14 @@ function HistoryModal({ onClose }) {
         <div style={{ maxHeight: "55vh", overflowY: "auto" }}>
           {st.entries.map((e, i) => {
             const retrait = e.type === "withdraw";
+            const gain = e.type === "pot";   // part de cagnotte versée : entrant, comme un dépôt
             const echoue = e.status === "failed";
             return (
               <div key={i} style={{ borderBottom: "1px solid var(--line)", padding: "9px 2px" }}>
                 <div className="flex between center" style={{ gap: 8 }}>
-                  <span className="mono" style={{ fontSize: 13, fontWeight: 700, color: retrait ? "var(--gold)" : "var(--elec)", textDecoration: echoue ? "line-through" : "none" }}>
-                    {retrait ? "↑ −" : "↓ +"}{fmt(e.amount)} <TokenIcon s={11} />
+                  <span className="mono" style={{ fontSize: 13, fontWeight: 700, color: retrait ? "var(--gold)" : gain ? "var(--success)" : "var(--elec)", textDecoration: echoue ? "line-through" : "none" }}>
+                    {retrait ? "↑ −" : "↓ +"}{gain ? fbFB(e.amount) : fmt(e.amount)}{!gain && <> <TokenIcon s={11} /></>}
+                    {gain && <span style={{ fontSize: 10, marginLeft: 6, opacity: .8, fontWeight: 400 }}>{I18N.t("WL_POT_ROW")}</span>}
                   </span>
                   {/* Le statut d'un dépôt est constant (une ligne n'existe que
                       vérifiée on-chain) : on ne l'affiche que pour les retraits. */}
