@@ -361,6 +361,7 @@ function freshState() {
     pvpPrizes: [],
     pvpPrizesHistory: [],   // paiements de saison passés (écran Arène), vus ou non
     towerPrizes: [],
+    towerPrizesHistory: [],   // historique complet (fenêtre Tour, 25/10/2026)
     // Champion de soutien (location de puissance)
     championBeastId: null,          // ma designation (badge Equipe)
     championsList: [],              // liste d'emprunt (GET /champions)
@@ -2944,6 +2945,18 @@ function App() {
         const r = await fetch(`${API_URL}/tower/prizes`, { headers: { "Authorization": "Bearer " + gRef.current.authToken } });
         const data = await r.json().catch(() => ({}));
         if (data.ok) setG((s) => ({ ...s, towerPrizes: data.prizes || [] }));
+      } catch (e) { /* silencieux */ }
+    },
+    // Historique complet des récompenses de Tour (25/10/2026). `/tower/prizes` ci-dessus ne
+    // renvoie que les prix NON VUS : une fois le popup fermé, le joueur ne pouvait plus revoir
+    // ce qu'il avait touché, alors que l'Arène expose cet historique depuis le 26/10. Lecture
+    // seule, servie par la même table sans le filtre `seen`. Aucun crédit n'est fait ici.
+    async towerPrizesHistory() {
+      if (!gRef.current.authToken) return;
+      try {
+        const r = await fetch(`${API_URL}/tower/prizes/history`, { headers: { "Authorization": "Bearer " + gRef.current.authToken } });
+        const data = await r.json().catch(() => ({}));
+        if (data.ok) setG((s) => ({ ...s, towerPrizesHistory: data.history || [] }));
       } catch (e) { /* silencieux */ }
     },
     async towerPrizesSeen() {
