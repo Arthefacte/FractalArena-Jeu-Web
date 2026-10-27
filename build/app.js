@@ -6502,6 +6502,14 @@ function Nav() {
   }, "\uD83D\uDC65"), roomUnread > 0 && /*#__PURE__*/React.createElement("span", {
     className: "hdr-mbadge"
   }, roomUnread > 9 ? "9+" : roomUnread)), /*#__PURE__*/React.createElement("button", {
+    className: "hdr-mbtn",
+    "aria-label": I18N.t("TUT_HELP"),
+    "data-fa": "howto-open-sheet",
+    onClick: () => {
+      setSheetOpen(false);
+      window.dispatchEvent(new Event("fa-open-tutorial"));
+    }
+  }, "?"), /*#__PURE__*/React.createElement("button", {
     className: cx("hdr-mbtn", "hdr-mcaret", poolsOpen && "on"),
     "aria-label": I18N.t("POOLS_FOLD_LABEL"),
     onClick: () => {

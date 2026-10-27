@@ -590,6 +590,15 @@ function ResultModal({ data, onClose }) {
         )}
       </div>
       <button className={cx("btn block lg", win ? "btn-success" : "btn-elec")} style={{ marginTop: 20 }} onClick={onClose}>{I18N.t("RES_CONTINUE")}</button>
+      {/* Le joueur sort d'un combat et voit trois chiffres qu'il ne comprend pas
+          toujours : la porte de l'aide est ici, à l'endroit exact du doute
+          (retour joueur, 25/10/2026). */}
+      <button
+        className="btn ghost sm block"
+        style={{ marginTop: 8, opacity: .75 }}
+        data-fa="result-howto"
+        onClick={() => { onClose(); window.dispatchEvent(new Event("fa-open-tutorial")); }}
+      >{I18N.t("TUT_TITLE")}</button>
     </Modal>
   );
 }
