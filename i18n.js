@@ -800,6 +800,12 @@
     // Historique des mouvements on-chain : montant, date, statut, txid → Uniscan.
     WL_HISTORY: { FR: "Historique", EN: "History", ZH: "历史记录" },
     WL_H_EMPTY: { FR: "Aucun dépôt ni retrait pour l'instant.", EN: "No deposits or withdrawals yet.", ZH: "暂无充值或提现记录。" },
+    // Gains de cagnotte dans le ledger du joueur (27/10/2026) : ses petits montants FB
+    // n'apparaissaient que dans la liste PUBLIQUE des paiements, adresse tronquée à retrouver
+    // à la main. Ils sont maintenant ses lignes, à son nom.
+    WL_POT_ROW: { FR: "gain cagnotte", EN: "jackpot payout", ZH: "彩池收益" },
+    WL_POT_SUM: { FR: "Gains de cagnotte : %s reçus · %d versement(s)", EN: "Jackpot payouts: %s received · %d payout(s)", ZH: "彩池收益：已收到 %s · %d 笔" },
+    WL_POT_PENDING: { FR: "%s encore en attente · %d part(s) dans la file", EN: "%s still queued · %d payout(s) in line", ZH: "另有 %s 等待发送 · 排队 %d 笔" },
     WL_H_ERROR: { FR: "Historique indisponible. Réessaie dans un moment.", EN: "History unavailable. Try again shortly.", ZH: "历史记录暂不可用，请稍后再试。" },
     WL_H_PENDING: { FR: "en cours", EN: "in progress", ZH: "处理中" },
     WL_H_SENT: { FR: "envoyé ✓", EN: "sent ✓", ZH: "已发送 ✓" },
