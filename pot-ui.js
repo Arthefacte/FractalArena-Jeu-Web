@@ -140,6 +140,11 @@
   // plutôt qu'un « 0 FB » faux. La date reste à la charge de la surface (dernier argument).
   function partAffichage(d) {
     if (!d) return null;
+    // Zéro gagnant n'est pas un tirage : c'était le symptôme d'un serveur qui ne retrouvait
+    // plus les parts du tirage (regroupement par horodatage, microsecondes perdues — prod
+    // 27/10/2026), et la ligne se lisait « 0 FB pour 0 gagnant(s) » alors que 28 comptes
+    // avaient réellement été payés. Un tirage sans gagnant ne se dit pas : la ligne se masque.
+    if ((entier(d.recipients) || 0) < 1) return null;
     if (d.share_sats != null) {
       return { cle: "POT_LAST_DRAW", args: [fbTexte(d.share_sats), entier(d.recipients) || 0] };
     }
