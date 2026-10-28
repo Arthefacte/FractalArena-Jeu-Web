@@ -512,6 +512,8 @@ function freshState() {
     },
     expFaWeek: null,
     // { granted, cap, week_ends_in_s }
+    expDust: null,
+    // règle et compteur reçus de /expeditions/state
     expNowOffset: 0,
     // horloge serveur - horloge locale (compte à rebours honnêtes)
     expExhausted: [] // [{ ids, until }] — épuisement post-échec Risquée (serveur, epoch ms)
@@ -555,6 +557,8 @@ function loadState() {
       // sera écrasé par le nom serveur à la connexion (branche 200)
       serverFight: null,
       // un replay ne survit jamais au rechargement (blobs antérieurs à l'exclusion)
+      expDust: null,
+      // attendre la règle et la semaine courantes du serveur
       options: Object.assign(freshState().options, s.options || {}, {
         speed: 1
       }),
@@ -3255,6 +3259,7 @@ function App() {
             S: 0
           },
           expFaWeek: data.fa_week || null,
+          expDust: window.FA_EXPEDITIONS_UI.readDustState(data),
           expNowOffset: (data.now || Date.now()) - Date.now(),
           expExhausted: Array.isArray(data.exhausted) ? data.exhausted : []
         }));
@@ -3382,7 +3387,8 @@ function App() {
         if (gRef.current.authToken === s.authToken) {
           setG(st => ({
             ...st,
-            expeditions: (st.expeditions || []).filter(e => e.id !== id)
+            expeditions: (st.expeditions || []).filter(e => e.id !== id),
+            expDust: window.FA_EXPEDITIONS_UI.updateDustWeek(st.expDust, data.dust_week)
           }));
         }
         try {

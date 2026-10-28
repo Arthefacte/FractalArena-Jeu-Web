@@ -24,12 +24,6 @@
   var XP_PER_H = 25, FA_PER_H = 10;
   var FRAG_PER_H = { C: 2, B: 0.9, A: 0.75, S: 0.5 };
   var RISK_MULT = 1.3, FAIL_MULT = 0.35, TICKET_MULT = 1.5;
-  var DUST_MIN_H = 8;
-  // Rang MINIMUM des trois entités pour la poussière de FB : miroir du serveur
-  // (expeditions.js, DUST_MIN_RARITY). Épique OU PLUS — une équipe 100 %
-  // Légendaire y a droit aussi. Sert à l'AFFICHAGE seulement : la trouvaille
-  // est tirée et créditée côté serveur.
-  var DUST_MIN_RARITY = "Epic";
   var RARITY_ORDER = { Common: 0, Rare: 1, Epic: 2, Legendary: 3 };
   var FRAGMENT_COSTS = { C: 100, B: 250, A: 600, S: 1000 };
   // Fragments de CORE (BRIEF_CORES_FRAGMENTS_SERVER) : MÊME rythme que les
@@ -135,19 +129,47 @@
     return s === k ? I.t("EXP_ERR_generic") : s;
   }
 
-  // Équipe ÉLIGIBLE à la poussière de FB : exactement 3 entités, toutes d'une
-  // rareté >= Epic. Rang inconnu = sous le seuil (jamais une exception).
-  function isDustTeam(team) {
+  // Aucune règle poussière de repli : le bloc attend un état serveur complet.
+  function readDustState(data) {
+    if (!data || !Number.isSafeInteger(data.dust_sats) || data.dust_sats <= 0
+        || !Number.isFinite(data.dust_p) || data.dust_p < 0 || data.dust_p > 1
+        || !Number.isFinite(data.dust_min_h) || data.dust_min_h <= 0
+        || !Object.hasOwn(RARITY_ORDER, data.dust_min_rarity)
+        || !Number.isSafeInteger(data.dust_weekly_cap) || data.dust_weekly_cap < 0) return null;
+    return updateDustWeek({ sats: data.dust_sats, probability: data.dust_p,
+      minHours: data.dust_min_h, minRarity: data.dust_min_rarity,
+      cap: data.dust_weekly_cap }, data.dust_week);
+  }
+
+  // Le claim publie aussi le compteur : l'appliquer même si le GET suivant échoue.
+  function updateDustWeek(dust, week) {
+    if (!dust || !week || !Number.isSafeInteger(week.used) || week.used < 0
+        || !Number.isSafeInteger(week.left) || week.left < 0) return null;
+    return Object.assign({}, dust, { used: week.used, left: week.left });
+  }
+
+  function formatDustFB(sats, lang) {
+    if (!Number.isSafeInteger(sats) || sats <= 0) return null;
+    return (sats / 100000000).toLocaleString(
+      lang === "FR" ? "fr-FR" : lang === "ZH" ? "zh-CN" : "en-US",
+      { maximumFractionDigits: 8 });
+  }
+
+  // Exactement 3 entités, toutes au rang minimum reçu du serveur ou au-dessus.
+  // Rang inconnu = inéligible (jamais une exception).
+  function isDustTeam(team, minRarity) {
     if (!Array.isArray(team) || team.length !== 3) return false;
-    var min = RARITY_ORDER[DUST_MIN_RARITY];
-    return team.every(function (b) { return b && (RARITY_ORDER[b.rarity] == null ? -1 : RARITY_ORDER[b.rarity]) >= min; });
+    if (!Object.hasOwn(RARITY_ORDER, minRarity)) return false;
+    var min = RARITY_ORDER[minRarity];
+    return team.every(function (b) { return b && Object.hasOwn(RARITY_ORDER, b.rarity) && RARITY_ORDER[b.rarity] >= min; });
   }
 
   window.FA_EXPEDITIONS_UI = {
     WORLDS: WORLDS, FRAGMENT_COSTS: FRAGMENT_COSTS,
     CORE_FRAG_PER_H: CORE_FRAG_PER_H, CORE_FRAGMENT_COSTS: CORE_FRAGMENT_COSTS,
-    DURATION_MIN_H: DURATION_MIN_H, DURATION_MAX_H: DURATION_MAX_H, DUST_MIN_H: DUST_MIN_H,
-    DUST_MIN_RARITY: DUST_MIN_RARITY, isDustTeam: isDustTeam,
+    DURATION_MIN_H: DURATION_MIN_H, DURATION_MAX_H: DURATION_MAX_H,
+    isDustTeam: isDustTeam, readDustState: readDustState,
+    updateDustWeek: updateDustWeek, formatDustFB: formatDustFB,
     XP_PER_H: XP_PER_H, FA_PER_H: FA_PER_H, FRAG_PER_H: FRAG_PER_H,
     RISK_MULT: RISK_MULT, FAIL_MULT: FAIL_MULT, TICKET_MULT: TICKET_MULT,
     RATE_MIN: RATE_MIN, RATE_CAP: RATE_CAP,

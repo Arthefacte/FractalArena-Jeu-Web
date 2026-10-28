@@ -117,36 +117,75 @@ test("FRAGMENT_COSTS : seuils du serveur", () => {
 });
 
 // ---- Poussière de FB : la condition affichée doit être la VRAIE ----
-// Miroir du serveur (DUST_MIN_RARITY = "Epic") : Épique OU PLUS, la Légendaire
-// compte. Un désaccord ici n'envoie pas d'argent au mauvais joueur (le serveur
+// Seuil fourni par le serveur : Épique OU PLUS, la Légendaire compte.
+// Un désaccord ici n'envoie pas d'argent au mauvais joueur (le serveur
 // décide), il MENT au joueur sur ses chances — c'est ce qu'on interdit.
-test("isDustTeam : Epic ou plus, exactement 3 entités", () => {
+test("isDustTeam : seuil serveur ou plus, exactement 3 entités", () => {
   const t = (...r) => r.map((rarity) => beast("HASH", rarity, 10));
-  assert.equal(XU.DUST_MIN_RARITY, "Epic", "seuil aligné sur le serveur");
-  assert.equal(XU.isDustTeam(t("Epic", "Epic", "Epic")), true);
-  assert.equal(XU.isDustTeam(t("Legendary", "Legendary", "Legendary")), true,
+  assert.equal(XU.isDustTeam(t("Epic", "Epic", "Epic"), "Epic"), true);
+  assert.equal(XU.isDustTeam(t("Legendary", "Legendary", "Legendary"), "Epic"), true,
     "une équipe 100 % Légendaire y a droit");
-  assert.equal(XU.isDustTeam(t("Epic", "Legendary", "Epic")), true, "mélange : oui");
-  assert.equal(XU.isDustTeam(t("Epic", "Epic", "Rare")), false, "un Rare exclut");
-  assert.equal(XU.isDustTeam(t("Legendary", "Legendary", "Common")), false, "un Common exclut");
-  assert.equal(XU.isDustTeam(t("Epic", "Epic")), false, "deux entités : jamais");
-  assert.equal(XU.isDustTeam(t("Epic", "Epic", "Epic", "Epic")), false, "quatre : jamais");
-  assert.equal(XU.isDustTeam([]), false, "équipe vide : jamais");
-  assert.equal(XU.isDustTeam([t("Epic")[0], null, t("Epic")[0]]), false, "entité absente : jamais");
-  assert.equal(XU.isDustTeam(t("Mythique", "Mythique", "Mythique")), false,
+  assert.equal(XU.isDustTeam(t("Epic", "Legendary", "Epic"), "Epic"), true, "mélange : oui");
+  assert.equal(XU.isDustTeam(t("Epic", "Epic", "Rare"), "Epic"), false, "un Rare exclut");
+  assert.equal(XU.isDustTeam(t("Legendary", "Legendary", "Common"), "Epic"), false, "un Common exclut");
+  assert.equal(XU.isDustTeam(t("Epic", "Epic"), "Epic"), false, "deux entités : jamais");
+  assert.equal(XU.isDustTeam(t("Epic", "Epic", "Epic", "Epic"), "Epic"), false, "quatre : jamais");
+  assert.equal(XU.isDustTeam([], "Epic"), false, "équipe vide : jamais");
+  assert.equal(XU.isDustTeam([t("Epic")[0], null, t("Epic")[0]], "Epic"), false, "entité absente : jamais");
+  assert.equal(XU.isDustTeam(t("Mythique", "Mythique", "Mythique"), "Epic"), false,
     "rang inconnu = sous le seuil, jamais une exception");
+  assert.equal(XU.isDustTeam(t("Epic", "Legendary", "Epic"), "Legendary"), false,
+    "un changement du seuil serveur doit changer l'éligibilité");
+  assert.equal(XU.isDustTeam(t("Rare", "Rare", "Rare"), "Rare"), true);
+  for (const min of [undefined, null, "", "Mythique"]) {
+    assert.equal(XU.isDustTeam(t("Legendary", "Legendary", "Legendary"), min), false,
+      "un seuil absent ou inconnu n'autorise aucune promesse");
+  }
 });
 
-test("l'écran affiche les trois états de la poussière, jamais un quatrième muet", () => {
-  const fs = require("node:fs");
-  const path = require("node:path");
-  const src = fs.readFileSync(path.join(__dirname, "..", "expeditions.jsx"), "utf8");
-  assert.match(src, /XU\.isDustTeam\(team\)/, "l'écran doit utiliser le miroir, pas sa propre règle");
-  assert.doesNotMatch(src, /rarity === "Epic"/, "plus de comparaison « Epic exactement »");
-  for (const cle of ["EXP_DUST", "EXP_DUST_RULE", "EXP_DUST_NEEDS_8H", "EXP_DUST_NEEDS_ONCHAIN", "EXP_DUST_NEEDS_EPIC"]) {
-    assert.ok(src.includes(cle), `l'écran doit afficher ${cle}`);
+const dustPayload = () => ({ dust_sats: 1000000, dust_p: 0.05, dust_min_h: 12,
+  dust_min_rarity: "Epic", dust_weekly_cap: 5, dust_week: { used: 2, left: 3 } });
+
+test("readDustState : les six champs viennent du serveur, sans seuil local", () => {
+  assert.deepEqual(XU.readDustState(dustPayload()), {
+    sats: 1000000, probability: 0.05, minHours: 12, minRarity: "Epic", cap: 5, used: 2, left: 3,
+  });
+  assert.deepEqual(XU.readDustState({ dust_sats: 2500000, dust_p: 0.125, dust_min_h: 10,
+    dust_min_rarity: "Legendary", dust_weekly_cap: 7, dust_week: { used: 1, left: 6 } }), {
+    sats: 2500000, probability: 0.125, minHours: 10, minRarity: "Legendary", cap: 7, used: 1, left: 6,
+  });
+  assert.equal(XU.DUST_MIN_H, undefined);
+  assert.equal(XU.DUST_MIN_RARITY, undefined);
+});
+
+test("readDustState : payload absent, incomplet ou invalide = aucune règle inventée", () => {
+  for (const payload of [undefined, null, {}]) assert.equal(XU.readDustState(payload), null);
+  for (const field of Object.keys(dustPayload())) {
+    const payload = dustPayload();
+    delete payload[field];
+    assert.equal(XU.readDustState(payload), null, field + " absent");
+    assert.equal(XU.readDustState({ ...dustPayload(), [field]: null }), null, field + " null");
   }
-  // Le cas qui manquait : équipe en dessous du rang -> le joueur apprend la règle.
-  assert.match(src, /sel\.length > 0 && !dustTeamOk[\s\S]{0,200}EXP_DUST_NEEDS_EPIC/,
-    "une équipe sous Épique doit lire la condition, pas le silence");
+  for (const field of ["dust_sats", "dust_p", "dust_min_h", "dust_weekly_cap"]) {
+    for (const value of ["12", NaN, Infinity, -1]) {
+      assert.equal(XU.readDustState({ ...dustPayload(), [field]: value }), null, field + " invalide");
+    }
+  }
+  assert.equal(XU.readDustState({ ...dustPayload(), dust_p: 1.1 }), null);
+  assert.equal(XU.readDustState({ ...dustPayload(), dust_min_rarity: "Mythique" }), null);
+  for (const field of ["used", "left"]) {
+    for (const value of [undefined, null, "2", -1, 0.5, Infinity]) {
+      const payload = dustPayload();
+      payload.dust_week[field] = value;
+      assert.equal(XU.readDustState(payload), null, "dust_week." + field + " invalide");
+    }
+  }
+});
+
+test("formatDustFB : montant localisé en FB, jusqu'au satoshi", () => {
+  assert.equal(XU.formatDustFB(1000000, "FR"), "0,01");
+  assert.equal(XU.formatDustFB(1000000, "EN"), "0.01");
+  assert.equal(XU.formatDustFB(1000000, "ZH"), "0.01");
+  assert.equal(XU.formatDustFB(1, "FR"), "0,00000001");
+  assert.equal(XU.formatDustFB(2500000, "EN"), "0.025");
 });

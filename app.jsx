@@ -374,6 +374,7 @@ function freshState() {
     expFragments: { C: 0, B: 0, A: 0, S: 0 },
     expCoreFragments: { C: 0, B: 0, A: 0, S: 0 },
     expFaWeek: null,       // { granted, cap, week_ends_in_s }
+    expDust: null,         // règle et compteur reçus de /expeditions/state
     expNowOffset: 0,       // horloge serveur - horloge locale (compte à rebours honnêtes)
     expExhausted: [],      // [{ ids, until }] — épuisement post-échec Risquée (serveur, epoch ms)
   };
@@ -412,6 +413,7 @@ function loadState() {
         (Array.isArray(s.roster) ? s.roster : []).some((b) => b && b.id === id)),
       ordinalName: "",  // sera écrasé par le nom serveur à la connexion (branche 200)
       serverFight: null, // un replay ne survit jamais au rechargement (blobs antérieurs à l'exclusion)
+      expDust: null,     // attendre la règle et la semaine courantes du serveur
       options: Object.assign(freshState().options, s.options || {}, { speed: 1 }),
       session: Object.assign({ wins: 0, losses: 0, net: 0 }, s.session || {}),
       boosts: Object.assign({ xp_boost: 0, lucky_strike: 0, momentum: 0, catalyst: 0 }, s.boosts || {}),
@@ -1988,6 +1990,7 @@ function App() {
           expFragments: data.fragments || { C: 0, B: 0, A: 0, S: 0 },
           expCoreFragments: data.core_fragments || { C: 0, B: 0, A: 0, S: 0 },
           expFaWeek: data.fa_week || null,
+          expDust: window.FA_EXPEDITIONS_UI.readDustState(data),
           expNowOffset: (data.now || Date.now()) - Date.now(),
           expExhausted: Array.isArray(data.exhausted) ? data.exhausted : [],
         }));
@@ -2050,7 +2053,10 @@ function App() {
         // rafraîchissement ci-dessous échoue (sinon carte « prête » fantôme
         // → second claim → deja_reclame).
         if (gRef.current.authToken === s.authToken) {
-          setG((st) => ({ ...st, expeditions: (st.expeditions || []).filter((e) => e.id !== id) }));
+          setG((st) => ({ ...st,
+            expeditions: (st.expeditions || []).filter((e) => e.id !== id),
+            expDust: window.FA_EXPEDITIONS_UI.updateDustWeek(st.expDust, data.dust_week),
+          }));
         }
         try {
           // Les deux GET sont indépendants : en parallèle (latence mobile ÷ 2).
