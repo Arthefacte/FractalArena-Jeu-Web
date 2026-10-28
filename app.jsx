@@ -3258,6 +3258,10 @@ function App() {
           {/* Les dons du quiz alimentent les mêmes pools : le bandeau se lit juste
               sous les jauges de rachat, là où le joueur regarde déjà. */}
           <window.QuizTicker />
+          {/* Les ACHATS sur le DEX, juste sous les dons : même bandeau, en orange
+              (styles .dex-buys) — la preuve que le jeton se trade, à l'endroit où
+              le joueur regarde déjà. */}
+          <window.DexBuysTicker />
         </PoolsFold>
         <Nav />
         {/* Guide de la première session : prochaine étape + élément surligné. */}

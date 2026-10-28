@@ -1407,6 +1407,30 @@ body[data-fond="cite"] .app-bg {
   .fa-tape.toujours { display: block; }
 }
 
+/* ——— Bandeau des ACHATS DEX (orange) ————————————————————————————————
+   Même mécanique que la tape (piste dupliquée, couture invisible) mais EN ORANGE
+   et plus gros : c'est une preuve sociale, elle doit se lire d'un coup d'œil sans
+   crier. Un achat = un événement rare ; le bandeau n'existe que s'il y en a. */
+.dex-buys {
+  --dex-orange: #f7931a;
+  padding: 5px 14px;
+  background: rgba(247, 147, 26, 0.10);
+  border-bottom: 1px solid rgba(247, 147, 26, 0.32);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--dex-orange);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.dex-buys .fa-tape { margin-top: 0; opacity: 1; }
+.dex-buys .fa-tape-item { font-size: 12px; font-weight: 700; letter-spacing: 0.04em; color: var(--dex-orange); }
+.dex-buys .fa-tape-item::after { color: var(--dex-orange); opacity: 0.55; }
+@media (max-width: 640px), ((max-height: 500px) and (orientation: landscape) and (pointer: coarse)) {
+  /* Le bandeau EST le contenu : la règle mobile de .fa-tape ne doit pas l'éteindre. */
+  .dex-buys .fa-tape.toujours { display: block; }
+  .dex-buys { font-size: 11px; padding: 4px 10px; }
+  .dex-buys .fa-tape-item { font-size: 11px; }
+}
+
 /* ============================================================
    Coquille mobile (v151) — les éléments sont rendus partout mais
    n'existent visuellement qu'en ≤640px (mobile.css). En desktop :

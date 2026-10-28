@@ -799,6 +799,71 @@ function BuybackTicker() {
     onClose: () => setVoirPaiements(false)
   }));
 }
+
+// ——— Bandeau des ACHATS DEX ————————————————————————————————————————
+// « X a acheté N FA sur InSwap », juste sous le bandeau des dons du quiz, mais en
+// orange et plus lisible : c'est la preuve que le jeton se trade vraiment. Le
+// serveur ne renvoie que de VRAIS achats récents (wallets de rachat du studio
+// exclus en amont, poussière sous le plancher écartée). Aucun achat récent → aucun
+// bandeau : une barre qui invente du trafic se repère tout de suite.
+// Cadence 30 s : le serveur cache déjà sa réponse, et rien ne presse — un achat
+// n'est pas une alerte.
+const DEX_BUYS_MS = 30_000;
+function DexBuysTicker() {
+  const I = window.FA_I18N;
+  const [data, setData] = React.useState(null);
+  React.useEffect(() => {
+    let vivant = true;
+    async function charger() {
+      try {
+        const r = await fetch(API_URL + "/dex/buys");
+        if (!r.ok) return; // 503 (DEX indisponible) : on garde le dernier état connu
+        const d = await r.json();
+        if (vivant) setData(d);
+      } catch (e) {/* réseau : on garde le dernier état connu, jamais un état fabriqué */}
+    }
+    charger();
+    const id = setInterval(charger, DEX_BUYS_MS);
+    return () => {
+      vivant = false;
+      clearInterval(id);
+    };
+  }, []);
+  const items = window.FA_TAPE.itemsAchats(data);
+  if (!items.length) return null;
+
+  // Le montant est formaté ici (fmt : « 14 000 ») pour que FaText pose l'icône FA
+  // devant le nombre, comme partout ailleurs dans le jeu.
+  const texte = it => I.t("DEX_BUYS_ONE", it.nom, fmt(it.fa));
+
+  // Un seul acheteur : une ligne fixe. Une piste qui défile pour un seul item
+  // tournerait dans le vide.
+  if (items.length === 1) {
+    return /*#__PURE__*/React.createElement("div", {
+      className: "dex-buys"
+    }, /*#__PURE__*/React.createElement(FaText, {
+      text: texte(items[0]),
+      s: 11
+    }));
+  }
+  const piste = cle => /*#__PURE__*/React.createElement("span", {
+    className: "fa-tape-run",
+    "aria-hidden": cle === "b" ? "true" : undefined
+  }, items.map((it, i) => /*#__PURE__*/React.createElement("span", {
+    className: "fa-tape-item",
+    key: cle + i
+  }, /*#__PURE__*/React.createElement(FaText, {
+    text: texte(it),
+    s: 11
+  }))));
+  return /*#__PURE__*/React.createElement("div", {
+    className: "dex-buys"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "fa-tape toujours"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "fa-tape-track"
+  }, piste("a"), piste("b"))));
+}
 Object.assign(window, {
   BuybackTicker,
   buybackFraction,
@@ -810,6 +875,7 @@ Object.assign(window, {
   lireCumulOnChain,
   ecrireCumulOnChain,
   BB_CUMUL_KEY,
-  PanneauPaiements
+  PanneauPaiements,
+  DexBuysTicker
 });
 })();

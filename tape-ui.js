@@ -86,5 +86,23 @@
     return rachats;
   }
 
-  window.FA_TAPE = { composerTape, rachatsDetectes, tempsRelatif };
+  // ---- Bandeau des ACHATS DEX ----
+  // Le serveur agrège déjà par acheteur et ne renvoie QUE de vrais achats récents
+  // (wallets de rachat du studio exclus en amont). Ici on ne fait que jeter ce qui
+  // n'est pas affichable (nom vide, montant nul) et borner le nombre de lignes :
+  // jamais de faux acheteur pour remplir la barre.
+  function itemsAchats(data, max = 8) {
+    if (!data || !Array.isArray(data.achats)) return [];
+    const items = [];
+    for (const a of data.achats) {
+      const nom = a && typeof a.nom === "string" ? a.nom.trim() : "";
+      const fa = Number(a && a.fa);
+      if (!nom || !Number.isFinite(fa) || fa <= 0) continue;
+      items.push({ nom, fa: Math.round(fa) });
+      if (items.length >= max) break;
+    }
+    return items;
+  }
+
+  window.FA_TAPE = { composerTape, rachatsDetectes, tempsRelatif, itemsAchats };
 })();
