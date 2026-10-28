@@ -120,6 +120,18 @@ function Leaderboard() {
   const myShort = g.wallet ? g.wallet.slice(0, 6) + "…" + g.wallet.slice(-4) : "";
   const estMoi = (row) => (g.publicId && row.player_id) ? row.player_id === g.publicId : row.wallet_short === myShort;
 
+  /* Combien de jetons 3D ANIMÉS (un canvas WebGL chacun) une liste peut porter.
+     Les onglets Victoires / Puissance / Gains / Buyback affichaient le jeton en
+     image alors que l'onglet LP l'anime : le même palier avait deux aspects selon
+     l'onglet. On anime donc partout, mais sous plafond : au-delà, le navigateur
+     lâche des contextes WebGL (le plus ancien est perdu, le badge devient noir) —
+     les G2 en trop gardent le jeton, en image fixe. */
+  const LIVE_3D_MAX = 8;
+  const live3d = new Set();
+  for (const r of (st.top || [])) {
+    if (r.tier === "G2" && live3d.size < LIVE_3D_MAX) live3d.add(LU.rowKey(r));
+  }
+
   return (
     <div className="container" style={{ maxWidth: 640 }}>
       <SectionHead eyebrow="🏆 LEADERBOARD" title={I18N.t("LB_TITLE")} />
@@ -182,7 +194,7 @@ function Leaderboard() {
                 })()}
                 {/* Badge LP (logo seul, 2D G1 / 3D G2) — le titre texte reste
                     strippé du nom côté serveur, on n'ajoute que le logo. */}
-                {row.tier && <LpBadge tier={row.tier} size={16} flat />}
+                {row.tier && <LpBadge tier={row.tier} size={16} flat={!live3d.has(LU.rowKey(row))} />}
                 <MarqueeName>{row.name}</MarqueeName>
               </span>
               <span className="lb-val">{row.value}</span>
@@ -193,7 +205,7 @@ function Leaderboard() {
               <span className="lb-rank">#{st.you.rank}</span>
               {/* Sa propre ligne (hors du top affiché) porte le même jeton que les
                   autres : c'est le palier du compte courant, déjà dans l'état. */}
-              <span className="lb-name"><LpBadge tier={g.lpTier} size={16} flat />{g.lpTier ? " " : ""}{I18N.t("LB_YOU")}</span>
+              <span className="lb-name"><LpBadge tier={g.lpTier} size={16} />{g.lpTier ? " " : ""}{I18N.t("LB_YOU")}</span>
               <span className="lb-val">{st.you.value}</span>
             </div>
           )}
