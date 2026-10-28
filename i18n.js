@@ -487,6 +487,8 @@
     AR2_DEFENSE_ERROR: { FR: "Impossible de charger ta défense. Réessaie.", EN: "Couldn't load your defense. Please try again.", ZH: "无法加载你的防守，请重试。" },
     AR2_OPPONENTS: { FR: "Adversaires", EN: "Opponents", ZH: "对手" },
     AR2_LADDER: { FR: "Classement", EN: "Ladder", ZH: "排行榜" },
+    AR2_LADDER_LEAGUE: { FR: " · Ligue %s", EN: " · %s League", ZH: " · %s 联赛" },
+    AR2_LADDER_POSITION: { FR: "Rang %d sur %d en Ligue %s", EN: "Rank %d of %d in %s League", ZH: "第 %d 名 / 共 %d 名 · %s 联赛" },
     AR2_ATTACK: { FR: "Attaquer", EN: "Attack", ZH: "进攻" },
     // Manquante jusqu'au 2026-07-30 : la modale d'attaque affichait la clé brute
     // « AR2_DEFENDER_EDGE_HINT » au joueur (vu en jouant, en production).

@@ -155,9 +155,44 @@ test("poser la défense continue d'exiger trois entités sélectionnées", async
   }
 });
 
-test("classement générique : la ligue reste une information du bandeau", () => {
+test("classement : le titre nomme la ligue dans sa couleur", () => {
   const r = render(posted);
   const heading = r.nodes.find((n) => n.type === "span" && n.props.className === "h2" && r.textOf(n).startsWith("AR2_LADDER"));
-  assert.equal(r.textOf(heading), "AR2_LADDER");
-  assert.match(r.text, /Diamant/);
+  assert.equal(r.textOf(heading), "AR2_LADDERAR2_LADDER_LEAGUE Diamant");
+  const league = heading.children.find((n) => n && n.type === "span");
+  assert.equal(league.props.style.color, U.leagueColor("diamant"));
+});
+
+test("classement : rang serveur, effectif, identité prioritaire et pastilles de ligue", () => {
+  const ladder = Array.from({ length: 14 }, (_, i) => ({ rank: i + 1, player_id: "p" + i, name: "Joueur " + i, rating: 1051 }));
+  ladder[0].wallet = "mon-wallet"; // L'adresse ne doit pas primer sur l'identifiant opaque.
+  ladder[3].player_id = "moi";
+  ladder.reverse(); // Le rang ne doit pas être recalculé depuis l'index client.
+  const r = render(posted, [], { publicId: "moi", wallet: "mon-wallet", pvp: { league: "argent", ladder } });
+  assert.match(r.text, /AR2_LADDER_POSITION 4 14 Argent/);
+  const rows = r.nodes.filter((n) => n.type === "div" && n.props.className === "flex between" && ladder.some((row) => row.player_id === n.props.key));
+  assert.equal(rows.length, 14);
+  const highlighted = rows.filter((n) => n.props.style.background !== "transparent");
+  assert.equal(highlighted.length, 1);
+  assert.match(r.textOf(highlighted[0]), /^4\. ➔ Joueur 3/);
+  for (const row of rows) {
+    const label = row.children.find((n) => n && n.type === "span");
+    const dot = label.children[0];
+    assert.equal(dot.props["aria-hidden"], "true");
+    assert.equal(dot.props.style.background, U.leagueColor("argent"));
+    assert.equal(typeof label.children[1], "number", "la pastille précède le rang");
+  }
+});
+
+test("classement : repli wallet, aucun rang inventé si joueur absent, liste vide ou ligue inconnue", () => {
+  const row = { rank: 7, wallet: "mon-wallet", name: "Moi", rating: 1051 };
+  const r = render(posted, [], { wallet: "mon-wallet", pvp: { league: "bronze", ladder: [row] } });
+  assert.match(r.text, /AR2_LADDER_POSITION 7 1 Bronze/);
+  assert.match(r.text, /7\. ➔ Moi/);
+  for (const pvp of [{ league: "bronze", ladder: [row] }, { league: "bronze", ladder: [] }, { ladder: [row] }]) {
+    const absent = render(posted, [], { wallet: "autre-wallet", pvp });
+    assert.doesNotMatch(absent.text, /AR2_LADDER_POSITION/);
+  }
+  const unknown = render(posted, [], { wallet: "mon-wallet", pvp: { ladder: [row] } });
+  assert.doesNotMatch(unknown.text, /AR2_LADDER_POSITION|AR2_LADDER_LEAGUE/);
 });

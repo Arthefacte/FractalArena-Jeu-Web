@@ -75,6 +75,8 @@ function TeamPreview({ team }) {
 function Arene() {
   const { g, actions, toast } = useFA();
   const pvp = g.pvp || {};
+  const ladder = pvp.ladder || [];
+  const myLadderRow = ladder.find((row) => estMoi(row, g));
   const [entry, setEntry] = useState("free");
   const [busy, setBusy] = useState(false);
   const attackLock = useRef(false); // verrou synchrone anti double-clic (le state `busy` ne se met à jour qu'au re-render)
@@ -586,14 +588,20 @@ function Arene() {
 
         {/* Classement */}
         <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 16 }}>
-          <span className="h2" style={{ fontSize: 14, color: "var(--gold)" }}>{I18N.t("AR2_LADDER")}</span>
+          <span className="h2" style={{ fontSize: 14, color: "var(--gold)" }}>
+            {I18N.t("AR2_LADDER")}
+            {pvp.league && <span style={{ color: AU.leagueColor(pvp.league) }}>{I18N.t("AR2_LADDER_LEAGUE", AU.leagueLabel(pvp.league))}</span>}
+          </span>
+          {myLadderRow && pvp.league && <div className="mono" style={{ fontSize: 12, color: "var(--text-dim)", marginTop: 6 }}>
+            {I18N.t("AR2_LADDER_POSITION", myLadderRow.rank, ladder.length, AU.leagueLabel(pvp.league))}
+          </div>}
           <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 4 }}>
-            {(pvp.ladder || []).map((row) => (
+            {ladder.map((row) => (
               <div key={row.player_id || row.wallet} className="flex between" style={{ padding: "5px 8px", background: estMoi(row, g) ? "rgba(0,240,255,0.08)" : "transparent", fontSize: 12 }}>
                 {/* 24 : les noms composés du serveur dépassent les 14 caractères de l'ancienne
                     coupe (« Le Grand Arthefacte.fb » = 22) — à 14, un joueur ne se
                     reconnaissait plus dans sa propre ligne. Ellipse si ça dépasse. */}
-                <span className="mono">{row.rank}. {estMoi(row, g) ? "➔ " : ""}{(row.name || "").slice(0, 24)}{(row.name || "").length > 24 ? "…" : ""}</span>
+                <span className="mono"><span aria-hidden="true" style={{ display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: AU.leagueColor(pvp.league), marginRight: 6, verticalAlign: "middle" }} />{row.rank}. {estMoi(row, g) ? "➔ " : ""}{(row.name || "").slice(0, 24)}{(row.name || "").length > 24 ? "…" : ""}</span>
                 <span className="mono" style={{ color: "var(--elec)" }}>{row.rating} · {row.wins || 0}-{row.losses || 0}</span>
               </div>
             ))}
