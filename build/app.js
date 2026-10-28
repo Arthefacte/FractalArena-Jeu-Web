@@ -5447,6 +5447,12 @@ function App() {
       }
     },
     async pvpAttack(target, entry, attackers, posture) {
+      // `target` est indifféremment un identifiant public d'humain ou l'UUID D'UN AGENT
+      // (ladder unifié, 27/10/2026) : /pvp/attack reconnaît les deux et délègue lui-même au
+      // chemin croisé. Le client n'appelle JAMAIS /pvp/attack-agent — deux chemins pour un
+      // même combat, c'est deux façons de diverger. Les refus du chemin croisé
+      // (agent_introuvable, cooldown_couple, defense_modifiee…) remontent par `error`, que
+      // SERVER_ERROR_KEYS traduit en phrases (i18n.js).
       const authHeaders = () => ({
         "Authorization": "Bearer " + gRef.current.authToken
       });

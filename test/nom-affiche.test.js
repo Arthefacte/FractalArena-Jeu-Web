@@ -106,6 +106,6 @@ test("matchmaking : la carte adversaire affiche le nom composé serveur", () => 
   // groupe d'adversaires (la liste est rendue par groupes, plus par un map direct).
   const i = ARENE.indexOf("const carte = (o) =>");
   assert.ok(i > 0, "carte adversaire introuvable dans arene.jsx");
-  const bloc = ARENE.slice(i, i + 2600); // 2600 : la carte porte le commentaire E3, l'écart, puis le nom
+  const bloc = ARENE.slice(i, i + 4000); // 4000 : la carte porte le commentaire E3, l'étiquette d'agent (ladder unifié), l'écart, puis le nom
   assert.match(bloc, /o\.name/, "la carte ne montre que la puissance — le nom manque");
 });

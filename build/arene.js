@@ -364,6 +364,14 @@ function Arene() {
       setBusy(false);
     }
   }
+
+  // Une carte d'AGENT (ladder unifié, 27/10/2026) se reconnaît à `opponent_kind`
+  // (`attack_path` est le miroir résolu par le serveur, `agent` reste là pour un serveur
+  // qui ne publierait que l'ancien marqueur). Une seule fonction : la carte et le clic
+  // doivent répondre la même chose.
+  function estAgent(o) {
+    return !!o && (o.opponent_kind === "agent" || o.attack_path === "agent" || o.agent === true);
+  }
   async function onPickOpponent(o, revanche) {
     if (busy || attackLock.current || defenseLock.current || !canAttack) return;
     attackLock.current = true;
@@ -371,6 +379,24 @@ function Arene() {
     const request = defenseRequest.current;
     try {
       const ref = o.opponent_id || o.wallet;
+      const agent = estAgent(o);
+      // Carte d'agent : l'équipe de la carte est DÉJÀ résolue par le serveur, et
+      // `/pvp/defense/:ref` ne connaît que les humains (`resoudreRef` rend null sur un
+      // uuid → 400 wallet_invalide). Sans ce raccourci, une carte d'agent affichait
+      // « Adversaire invalide. » et le combat était impossible. La posture d'un agent
+      // reste inconnue : le serveur ne l'expose jamais (c'est son pari caché).
+      if (agent) {
+        setPick({
+          target: ref,
+          revanche: false,
+          agent: true,
+          ids: [...g.selected],
+          oppTeam: o.team || [],
+          posture: "equilibre",
+          oppPosture: null
+        });
+        return;
+      }
       const r = await actions.pvpDefenseOf(ref);
       if (request !== defenseRequest.current) return;
       if (!r || !r.ok) {
@@ -891,7 +917,15 @@ function Arene() {
       // `player_id` ici envoyait `target: undefined` ; le serveur répondait alors
       // `cible_invalide` (« 对手无效 ») à CHAQUE attaque d'Arène (panne du 01/10/2026).
       const oId = o.opponent_id || o.wallet;
-      const canRevanche = Array.isArray(pvp.revanches) && (pvp.revanches.includes(oId) || o.opponent_id && pvp.revanches.includes(o.wallet));
+      // LADDER UNIFIÉ (27/10/2026) : le vivier mêle des défenses d'AGENT aux défenses
+      // humaines — parité complète (un agent est un joueur, mêmes règles). Deux
+      // différences que le joueur doit voir : la carte est ÉTIQUETÉE (« Agent IA »),
+      // et un agent n'a PAS de revanche — il ne choisit pas ses adversaires, donc
+      // aucune liste locale (même avec une vieille adresse qui traîne) ne peut lui
+      // en accorder une. `target` reste `opponent_id` : /pvp/attack délègue tout seul
+      // au chemin croisé, on n'appelle jamais /pvp/attack-agent depuis le client.
+      const agent = estAgent(o);
+      const canRevanche = !agent && Array.isArray(pvp.revanches) && (pvp.revanches.includes(oId) || o.opponent_id && pvp.revanches.includes(o.wallet));
       // L'appariement se fait sur la puissance : c'est l'écart qui dit si le
       // combat est jouable, pas l'ELO (tout le monde y démarre à 1000).
       // Le contrat V2 ne garantit pas `power` sur une carte : son absence ne vaut pas zéro.
@@ -905,6 +939,7 @@ function Arene() {
       return /*#__PURE__*/React.createElement("div", {
         key: oId,
         className: "oct-sm",
+        "data-opponent-kind": agent ? "agent" : "human",
         style: {
           border: "1px solid var(--line-soft)",
           padding: 10,
@@ -929,7 +964,15 @@ function Arene() {
         }
       }, o.name || oId), /*#__PURE__*/React.createElement("div", {
         className: "flex gap8 center"
-      }, /*#__PURE__*/React.createElement("span", {
+      }, agent && /*#__PURE__*/React.createElement("span", {
+        className: "pill mono",
+        "data-fa": "arene-card-agent",
+        style: {
+          fontSize: 10,
+          padding: "1px 6px",
+          color: "var(--elec)"
+        }
+      }, I18N.t("AR2_AGENT_TAG")), !agent && /*#__PURE__*/React.createElement("span", {
         className: "mono",
         style: {
           fontSize: 12,
@@ -1294,7 +1337,16 @@ function Arene() {
         color: "var(--text-dim)",
         marginBottom: 4
       }
-    }, I18N.t("AR2_OPPONENTS"), " :"), /*#__PURE__*/React.createElement("div", {
+    }, I18N.t("AR2_OPPONENTS"), " :", pick.agent && /*#__PURE__*/React.createElement("span", {
+      className: "pill mono",
+      "data-fa": "arene-pick-agent",
+      style: {
+        fontSize: 10,
+        padding: "1px 6px",
+        marginLeft: 6,
+        color: "var(--elec)"
+      }
+    }, I18N.t("AR2_AGENT_TAG"))), /*#__PURE__*/React.createElement("div", {
       className: "flex gap8",
       style: {
         marginBottom: 4
