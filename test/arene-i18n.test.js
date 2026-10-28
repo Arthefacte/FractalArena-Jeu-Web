@@ -7,6 +7,7 @@ const LANGS = ["FR", "EN", "ZH"];
 const KEYS = [
   "NAV_ARENE", "AR2_TITLE", "AR2_TAG", "AR2_MY_DEFENSE", "AR2_SET_DEFENSE",
   "AR2_OPPONENTS", "AR2_LADDER", "AR2_ATTACK", "AR2_REVANCHE", "AR2_ENTRY",
+  "AR2_LADDER_LEAGUE", "AR2_LADDER_POSITION",
   "AR2_FREE", "AR2_FA", "AR2_TICKET", "AR2_NO_DEFENSE", "AR2_SEASON",
   "AR2_ENDS_IN", "AR2_PRIZE", "AR2_WIN", "AR2_LOSE", "AR2_ELO_DELTA",
   // Arène V2 : les entrées implicites et leur étiquette non classée ont disparu.
@@ -53,12 +54,26 @@ test("Arène V2 : la provenance conserve la date et les mêmes paramètres dans 
   I.setLang("FR");
 });
 
-test("Arène V2 : les titres n'annoncent plus un classement par ligue", () => {
+test("Arène : les titres génériques restent disponibles sans ligue", () => {
   for (const lang of LANGS) {
     for (const key of ["AR2_TAG", "AR2_LADDER"]) {
       assert.doesNotMatch(T[key][lang], /ligue|league|diamant|diamond|联赛|钻石/i);
     }
   }
+});
+
+test("classement : ligue, rang et effectif sont traduits dans les trois langues", () => {
+  const I = window.FA_I18N;
+  for (const lang of LANGS) {
+    I.setLang(lang);
+    assert.deepStrictEqual(T.AR2_LADDER_LEAGUE[lang].match(/%[sd]/g), ["%s"]);
+    assert.deepStrictEqual(T.AR2_LADDER_POSITION[lang].match(/%[sd]/g), ["%d", "%d", "%s"]);
+    assert.ok(I.t("AR2_LADDER_LEAGUE", "Argent").includes("Argent"));
+    const position = I.t("AR2_LADDER_POSITION", 4, 14, "Argent");
+    assert.match(position, /4.*14.*Argent/);
+    assert.doesNotMatch(position, /%[sd]/);
+  }
+  I.setLang("FR");
 });
 
 test("Arène V2 : les refus serveur sont lisibles dans les trois langues", () => {
