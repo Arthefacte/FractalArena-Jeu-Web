@@ -1339,15 +1339,15 @@
     EXP_LOOT_WIN: { FR: "SI ÇA RÉUSSIT", EN: "IF IT SUCCEEDS", ZH: "成功时" },
     EXP_LOOT_LOSE: { FR: "SI ÇA RATE", EN: "IF IT FAILS", ZH: "失败时" },
     EXP_FRAG: { FR: "fragment", EN: "fragment", ZH: "碎片" },
-    EXP_DUST_NEEDS_8H: {
-      FR: "Poussière de FB : à partir de 8 h seulement.",
-      EN: "FB Dust: 8h expeditions and longer only.",
-      ZH: "FB尘埃：仅限8小时及以上的远征。",
+    EXP_DUST_NEEDS_H: {
+      FR: "Poussière de FB : à partir de %s h seulement.",
+      EN: "FB Dust: expeditions of %s hours or longer only.",
+      ZH: "FB尘埃：仅限%s小时及以上的远征。",
     },
-    EXP_DUST_NEEDS_EPIC: {
-      FR: "Poussière de FB : réservée à une équipe d'Épiques ou de Légendaires (aucune en dessous d'Épique).",
-      EN: "FB Dust: Epic or Legendary team only (nothing below Epic).",
-      ZH: "FB尘埃：仅限史诗或传说实体组成的阵容（不得低于史诗）。",
+    EXP_DUST_NEEDS_RARITY: {
+      FR: "Poussière de FB : les 3 entités doivent être de rang %s minimum.",
+      EN: "FB Dust: all 3 entities must be %s or higher.",
+      ZH: "FB尘埃：3只实体的稀有度均须达到%s或以上。",
     },
     EXP_DUST_NEEDS_ONCHAIN: {
       FR: "Poussière de FB : ton compte doit être vérifié on-chain.",
@@ -1355,9 +1355,34 @@
       ZH: "FB尘埃：账户必须完成链上验证。",
     },
     EXP_DUST_RULE: {
-      FR: "1 % · 8 h et plus · une par semaine",
-      EN: "1% · 8h and longer · one per week",
-      ZH: "1% · 8小时及以上 · 每周一次",
+      FR: "%s FB · %s %% de chance · expéditions de %s h · %d par joueur et par semaine UTC",
+      EN: "%s FB · %s%% chance · %s-hour expeditions · %d per player per UTC week",
+      ZH: "%s FB · %s%%概率 · %s小时远征 · 每位玩家每UTC周最多%d次",
+    },
+    EXP_DUST_DESTINATION: {
+      FR: "Envoyée directement sur ton wallet lié, on-chain — pas dans le bandeau FB.",
+      EN: "Sent directly to your linked wallet, on-chain — not to the FB balance in the header.",
+      ZH: "直接通过链上转账发送到你绑定的钱包——不会计入顶部栏的FB余额。",
+    },
+    EXP_DUST_CONDITIONS: {
+      FR: "Expédition réussie · 3 entités, chacune de rang %s minimum · compte vérifié on-chain.",
+      EN: "Successful expedition · all 3 entities %s or higher · account verified on-chain.",
+      ZH: "远征成功 · 3只实体均达到%s或以上 · 账户已完成链上验证。",
+    },
+    EXP_DUST_WEEK: {
+      FR: "%d / %d cette semaine UTC",
+      EN: "%d / %d this UTC week",
+      ZH: "本UTC周：%d / %d",
+    },
+    EXP_DUST_LEFT: {
+      FR: "Trouvailles restantes : %d",
+      EN: "Finds remaining: %d",
+      ZH: "剩余发现次数：%d",
+    },
+    EXP_DUST_CAPPED: {
+      FR: "Plafond atteint, ça repart la semaine prochaine (UTC).",
+      EN: "Cap reached, resets next week (UTC).",
+      ZH: "已达上限，下周重置（UTC）。",
     },
     EXP_STATUS_FREE: { FR: "Disponible", EN: "Available", ZH: "可派遣" },
     EXP_STATUS_RUNNING: { FR: "En cours", EN: "In progress", ZH: "进行中" },
@@ -1400,7 +1425,8 @@
     EXP_FRAG_CORE: { FR: "fragment de core", EN: "core fragment", ZH: "核心碎片" },
     EXP_FRAG_CORE_LINE: { FR: "Fragments de core %s ×%d", EN: "%s core fragments ×%d", ZH: "%s核心碎片×%d" },
     EXP_TICKET: { FR: "TICKET OR — fusion garantie", EN: "GOLD TICKET — guaranteed fusion", ZH: "金券——保底融合" },
-    EXP_DUST: { FR: "POUSSIÈRE DE FB — vrais sats on-chain", EN: "FB DUST — real on-chain sats", ZH: "FB尘埃——真实链上聪" },
+    EXP_DUST: { FR: "POUSSIÈRE DE FB", EN: "FB DUST", ZH: "FB尘埃" },
+    EXP_DUST_GAIN: { FR: "+%s FB", EN: "+%s FB", ZH: "+%s FB" },
     EXP_EXHAUSTED_TAG: { FR: "Épuisée · 30 min", EN: "Exhausted · 30 min", ZH: "力竭·30分钟" },
     EXP_EXHAUSTED: {
       FR: "Entités épuisées — indisponibles jusqu'à 30 min après l'heure de retour.",

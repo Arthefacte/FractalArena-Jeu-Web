@@ -267,8 +267,11 @@ function Expeditions() {
     const warnTeam = sel.some((id) => (g.selected || []).includes(id));
     // Poussière de FB : la condition est AFFICHÉE, pas devinée (elle ne
     // dépend pas que de l'équipe — durée et compte vérifié on-chain aussi).
-    const dustTeamOk = ready3 && XU.isDustTeam(team);
-    const dustAccountOk = g.onchainVerified !== false;
+    const dust = g.expDust;
+    const dustTeamOk = !!dust && ready3 && XU.isDustTeam(team, dust.minRarity);
+    const dustAccountOk = g.onchainVerified === true;
+    const dustCapped = !!dust && (dust.left === 0 || dust.used >= dust.cap);
+    const dustEligible = !!dust && !dustCapped && dustTeamOk && dustAccountOk && durH >= dust.minHours;
     // Aperçu du butin dans les deux issues — c'est ce qui rend le choix de mode
     // lisible sans calcul : à droite, ce que la Risquée abandonne.
     const win = ready3 ? XU.previewLoot(selWorld, durH, mode, ticket, true) : null;
@@ -399,26 +402,40 @@ function Expeditions() {
               </div>
             </div>
           )}
-          {/* Poussière de FB — trois états explicites. Le quatrième cas (équipe
-              en dessous du rang) n'existait pas : un joueur qui n'a jamais monté
-              d'Épique n'apprenait nulle part que la mécanique existe. */}
-          {dustTeamOk && dustAccountOk && durH >= XU.DUST_MIN_H && (
-            <div className="exq-epicbox">
-              <span style={{ color: "var(--gold)", fontSize: 15, flex: "none" }}>◈</span>
+          {/* La règle et le compteur viennent du serveur ; aucun chiffre avant chargement. */}
+          {dust && (
+            <div className={dustEligible ? "exq-epicbox" : "exq-mono exq-dustnote"}>
+              {dustEligible && <span style={{ color: "var(--gold)", fontSize: 15, flex: "none" }}>◈</span>}
               <div style={{ minWidth: 0 }}>
-                <span style={{ fontSize: 11, lineHeight: 1.4 }}>{I18N.t("EXP_DUST")}</span>
-                <div className="exq-mono" style={{ fontSize: 9, color: "var(--text-dim)", marginTop: 3 }}>{I18N.t("EXP_DUST_RULE")}</div>
+                <b style={{ fontSize: 11, lineHeight: 1.4 }}>{I18N.t("EXP_DUST")}</b>
+                <div className="exq-mono" style={{ fontSize: 11, marginTop: 4 }}>
+                  {I18N.t("EXP_DUST_WEEK", dust.used, dust.cap)}
+                </div>
+                <div style={{ fontSize: 11, marginTop: 3, color: dustCapped ? "var(--alert)" : "var(--text-dim)" }}>
+                  {dustCapped ? I18N.t("EXP_DUST_CAPPED") : I18N.t("EXP_DUST_LEFT", dust.left)}
+                </div>
+                <div className="exq-mono" style={{ fontSize: 11, lineHeight: 1.5, marginTop: 6 }}>
+                  {I18N.t("EXP_DUST_RULE", XU.formatDustFB(dust.sats, I18N.getLang()),
+                    Number((dust.probability * 100).toFixed(8)).toLocaleString(I18N.getLang().toLowerCase(), { maximumFractionDigits: 8 }),
+                    dust.minHours, dust.cap)}
+                </div>
+                <div style={{ fontSize: 11, lineHeight: 1.5, color: "var(--text-dim)", marginTop: 4 }}>
+                  {I18N.t("EXP_DUST_CONDITIONS", I18N.t(dust.minRarity))}
+                </div>
+                <div style={{ fontSize: 11, lineHeight: 1.5, color: "var(--text-dim)", marginTop: 4 }}>
+                  {I18N.t("EXP_DUST_DESTINATION")}
+                </div>
+                {!dustCapped && durH < dust.minHours && (
+                  <div style={{ marginTop: 4 }}>{I18N.t("EXP_DUST_NEEDS_H", dust.minHours)}</div>
+                )}
+                {!dustCapped && !dustAccountOk && (
+                  <div style={{ marginTop: 4 }}>{I18N.t("EXP_DUST_NEEDS_ONCHAIN")}</div>
+                )}
+                {!dustCapped && sel.length > 0 && !dustTeamOk && (
+                  <div style={{ marginTop: 4 }}>{I18N.t("EXP_DUST_NEEDS_RARITY", I18N.t(dust.minRarity))}</div>
+                )}
               </div>
             </div>
-          )}
-          {dustTeamOk && dustAccountOk && durH < XU.DUST_MIN_H && (
-            <div className="exq-mono exq-dustnote">{I18N.t("EXP_DUST_NEEDS_8H")}</div>
-          )}
-          {dustTeamOk && !dustAccountOk && durH >= XU.DUST_MIN_H && (
-            <div className="exq-mono exq-dustnote">{I18N.t("EXP_DUST_NEEDS_ONCHAIN")}</div>
-          )}
-          {sel.length > 0 && !dustTeamOk && (
-            <div className="exq-mono exq-dustnote">{I18N.t("EXP_DUST_NEEDS_EPIC")}</div>
           )}
         </div>
         <button className="exq-launch" disabled={!ready3 || busyCall} onClick={launch}
@@ -527,6 +544,10 @@ function Expeditions() {
               <span className="exq-mono" style={{ fontSize: 9, letterSpacing: 1, color: "var(--gold)", opacity: 0.85 }}>ON-CHAIN</span>
             </div>
             <b style={{ fontSize: 19, color: "#ffe6a8", textShadow: "0 0 16px rgba(255,230,0,.5)" }}>{I18N.t("EXP_DUST")}</b>
+            {XU.formatDustFB(rw.dust_sats, I18N.getLang()) && (
+              <b className="exq-mono">{I18N.t("EXP_DUST_GAIN", XU.formatDustFB(rw.dust_sats, I18N.getLang()))}</b>
+            )}
+            <span style={{ fontSize: 11, lineHeight: 1.5 }}>{I18N.t("EXP_DUST_DESTINATION")}</span>
           </div>
         )}
         {rw.ticket && (
