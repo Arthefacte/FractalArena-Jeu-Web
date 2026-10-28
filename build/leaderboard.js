@@ -202,6 +202,18 @@ function Leaderboard() {
   // où personne n'est jamais soi.
   const myShort = g.wallet ? g.wallet.slice(0, 6) + "…" + g.wallet.slice(-4) : "";
   const estMoi = row => g.publicId && row.player_id ? row.player_id === g.publicId : row.wallet_short === myShort;
+
+  /* Combien de jetons 3D ANIMÉS (un canvas WebGL chacun) une liste peut porter.
+     Les onglets Victoires / Puissance / Gains / Buyback affichaient le jeton en
+     image alors que l'onglet LP l'anime : le même palier avait deux aspects selon
+     l'onglet. On anime donc partout, mais sous plafond : au-delà, le navigateur
+     lâche des contextes WebGL (le plus ancien est perdu, le badge devient noir) —
+     les G2 en trop gardent le jeton, en image fixe. */
+  const LIVE_3D_MAX = 8;
+  const live3d = new Set();
+  for (const r of st.top || []) {
+    if (r.tier === "G2" && live3d.size < LIVE_3D_MAX) live3d.add(LU.rowKey(r));
+  }
   return /*#__PURE__*/React.createElement("div", {
     className: "container",
     style: {
@@ -305,7 +317,7 @@ function Leaderboard() {
   })(), row.tier && /*#__PURE__*/React.createElement(LpBadge, {
     tier: row.tier,
     size: 16,
-    flat: true
+    flat: !live3d.has(LU.rowKey(row))
   }), /*#__PURE__*/React.createElement(MarqueeName, null, row.name)), /*#__PURE__*/React.createElement("span", {
     className: "lb-val"
   }, row.value))), st.you && /*#__PURE__*/React.createElement("div", {
@@ -316,8 +328,7 @@ function Leaderboard() {
     className: "lb-name"
   }, /*#__PURE__*/React.createElement(LpBadge, {
     tier: g.lpTier,
-    size: 16,
-    flat: true
+    size: 16
   }), g.lpTier ? " " : "", I18N.t("LB_YOU")), /*#__PURE__*/React.createElement("span", {
     className: "lb-val"
   }, st.you.value))), /*#__PURE__*/React.createElement("div", {
