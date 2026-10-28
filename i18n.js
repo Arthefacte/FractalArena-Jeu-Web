@@ -517,6 +517,11 @@
     // Carte servie quand la bande de puissance ne rendait RIEN (repli du 27/10/2026) :
     // le joueur doit savoir que l'écart est hors bande, pas que le calcul a échoué.
     AR2_OUT_OF_BAND: { FR: "hors bande", EN: "out of band", ZH: "超出战力区间" },
+    // LADDER UNIFIÉ (27/10/2026) : /pvp/opponents mêle les défenses d'AGENT aux défenses
+    // humaines. Un agent est un joueur (parité complète) — la carte le DIT, parce que le
+    // joueur doit savoir contre qui il se bat : ce n'est pas une personne, et il n'a pas
+    // de revanche à lui accorder.
+    AR2_AGENT_TAG: { FR: "Agent IA", EN: "AI agent", ZH: "AI 智能体" },
     AR2_RANK: { FR: "Rang", EN: "Rank", ZH: "排名" },
     AR2_REFRESH: { FR: "Rafraîchir", EN: "Refresh", ZH: "刷新" },
     AR2_REFRESH_FREE: { FR: "gratuit", EN: "free", ZH: "免费" },
@@ -1891,6 +1896,12 @@
     AR2_ERR_DEFENSE_FULL: { FR: "Ta défense est déjà à PV pleins.", EN: "Your defense is already at full HP.", ZH: "你的防守生命值已经全满。" },
     AR2_ERR_NO_REMATCH:  { FR: "Plus de revanche disponible contre cet adversaire.", EN: "No rematch left against this opponent.", ZH: "对该对手已无复仇机会。" },
     AR2_ERR_QUOTA:       { FR: "Quota de combats atteint pour aujourd'hui.", EN: "Today's fight quota is used up.", ZH: "今日战斗次数已用完。" },
+    // Chemin CROISÉ (ladder unifié, 27/10/2026) : trois refus qui n'existaient pas tant que
+    // l'Arène ne comptait que des humains. Sans ces phrases, le joueur lisait le code brut
+    // ou « Une erreur est survenue » alors que le serveur lui dit quoi faire.
+    AR2_ERR_AGENT_GONE:  { FR: "Cet agent n'est plus dans l'Arène — rafraîchis la liste des adversaires.", EN: "This agent is no longer in the Arena — refresh the opponent list.", ZH: "该智能体已不在竞技场——请刷新对手列表。" },
+    AR2_ERR_PAIR_COOLDOWN: { FR: "Ce couple s'est déjà rencontré dans les 48 dernières heures — choisis un autre adversaire.", EN: "This pair already met in the last 48 hours — pick another opponent.", ZH: "这对组合在 48 小时内已经交手过——请选择其他对手。" },
+    AR2_ERR_DEFENSE_CHANGED: { FR: "La défense de cet adversaire a changé entre-temps — relance le combat.", EN: "The opponent's defense changed in the meantime — start the fight again.", ZH: "对手的防守在此期间已改变——请重新发起战斗。" },
     AR2_POS_UNKNOWN:     { FR: "Posture inconnue", EN: "Posture unknown", ZH: "姿态未知" },
   };
 
@@ -2018,10 +2029,20 @@
     defense_pleine: "AR2_ERR_DEFENSE_FULL",
     pas_de_fantome: "AR2_ERR_NO_GHOST",
     cible_sans_fantome: "AR2_ERR_NO_GHOST",
+    // Chemin croisé : l'agent visé n'a plus d'équipe posée (404 côté ladder-cross), le
+    // pendant exact de `cible_sans_fantome` pour un humain.
+    cible_sans_equipe: "AR2_ERR_NO_GHOST",
     fantome_corrompu: "AR2_ERR_GHOST_BROKEN",
     defense_corrompue: "AR2_ERR_DEF_BROKEN",
     pas_de_revanche: "AR2_ERR_NO_REMATCH",
     quota_epuise: "AR2_ERR_QUOTA",
+    // Chemin croisé (ladder unifié, 27/10/2026) : un agent visé par /pvp/attack peut
+    // disparaître (agent_introuvable), avoir déjà rencontré ce joueur dans les 48 h
+    // (cooldown_couple) ou avoir reposé sa défense entre la lecture et le combat
+    // (defense_modifiee). Trois refus expliqués, jamais un « error » nu.
+    agent_introuvable: "AR2_ERR_AGENT_GONE",
+    cooldown_couple: "AR2_ERR_PAIR_COOLDOWN",
+    defense_modifiee: "AR2_ERR_DEFENSE_CHANGED",
     session_expiree: "ERR_SESSION",
     cooldown: "WL_WD_COOLDOWN",
     portefeuille_non_lie: "WL_WD_NOT_LINKED",

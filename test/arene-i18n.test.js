@@ -20,6 +20,9 @@ const KEYS = [
   "AR2_FORMATION_FRONT", "AR2_FORMATION_MIDDLE", "AR2_FORMATION_BACK", "AR2_FORMATION_HINT",
   "AR2_SLOT_EMPTY", "AR2_REPLACEMENT_TITLE", "AR2_SELECTION_ADD", "AR2_SLOT_POWER", "AR2_ENTITY_STATS",
   "AR2_REPLACEMENT_CANCEL", "AR2_REPLACEMENT_NONE", "AR2_MOVE_UP", "AR2_MOVE_DOWN",
+  // Lot « Arène unifiée » (27/10/2026) : l'étiquette de carte d'agent et les refus du
+  // chemin croisé, qui arrivent avec la même livraison que le serveur.
+  "AR2_AGENT_TAG", "AR2_ERR_AGENT_GONE", "AR2_ERR_PAIR_COOLDOWN", "AR2_ERR_DEFENSE_CHANGED",
 ];
 test("toutes les clés Arène existent dans les 3 langues, non vides", () => {
   for (const k of KEYS) {
@@ -62,7 +65,9 @@ test("Arène V2 : les refus serveur sont lisibles dans les trois langues", () =>
   const I = window.FA_I18N;
   for (const lang of LANGS) {
     I.setLang(lang);
-    for (const code of ["pas_de_defense", "defense_tombee", "plafond_couple", "defense_pleine", "solde_insuffisant", "cible_sans_fantome"]) {
+    for (const code of ["pas_de_defense", "defense_tombee", "plafond_couple", "defense_pleine", "solde_insuffisant", "cible_sans_fantome",
+      // Chemin croisé (agent) : mêmes exigences, aucun code laissé brut.
+      "agent_introuvable", "cooldown_couple", "defense_modifiee", "cible_sans_equipe", "auto_attaque_interdite"]) {
       const message = I.localizeServerError(code, { pair_limit: 7 });
       assert.notStrictEqual(message, code);
       assert.notStrictEqual(message, I.t("ERR_GENERIC"), `${lang}: ${code} doit avoir son message`);

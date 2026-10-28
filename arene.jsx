@@ -273,6 +273,14 @@ function Arene() {
     }
   }
 
+  // Une carte d'AGENT (ladder unifié, 27/10/2026) se reconnaît à `opponent_kind`
+  // (`attack_path` est le miroir résolu par le serveur, `agent` reste là pour un serveur
+  // qui ne publierait que l'ancien marqueur). Une seule fonction : la carte et le clic
+  // doivent répondre la même chose.
+  function estAgent(o) {
+    return !!o && (o.opponent_kind === "agent" || o.attack_path === "agent" || o.agent === true);
+  }
+
   async function onPickOpponent(o, revanche) {
     if (busy || attackLock.current || defenseLock.current || !canAttack) return;
     attackLock.current = true;
@@ -280,6 +288,16 @@ function Arene() {
     const request = defenseRequest.current;
     try {
       const ref = o.opponent_id || o.wallet;
+      const agent = estAgent(o);
+      // Carte d'agent : l'équipe de la carte est DÉJÀ résolue par le serveur, et
+      // `/pvp/defense/:ref` ne connaît que les humains (`resoudreRef` rend null sur un
+      // uuid → 400 wallet_invalide). Sans ce raccourci, une carte d'agent affichait
+      // « Adversaire invalide. » et le combat était impossible. La posture d'un agent
+      // reste inconnue : le serveur ne l'expose jamais (c'est son pari caché).
+      if (agent) {
+        setPick({ target: ref, revanche: false, agent: true, ids: [...g.selected], oppTeam: o.team || [], posture: "equilibre", oppPosture: null });
+        return;
+      }
       const r = await actions.pvpDefenseOf(ref);
       if (request !== defenseRequest.current) return;
       if (!r || !r.ok) {
@@ -507,7 +525,15 @@ function Arene() {
               // `player_id` ici envoyait `target: undefined` ; le serveur répondait alors
               // `cible_invalide` (« 对手无效 ») à CHAQUE attaque d'Arène (panne du 01/10/2026).
               const oId = o.opponent_id || o.wallet;
-              const canRevanche = Array.isArray(pvp.revanches) &&
+              // LADDER UNIFIÉ (27/10/2026) : le vivier mêle des défenses d'AGENT aux défenses
+              // humaines — parité complète (un agent est un joueur, mêmes règles). Deux
+              // différences que le joueur doit voir : la carte est ÉTIQUETÉE (« Agent IA »),
+              // et un agent n'a PAS de revanche — il ne choisit pas ses adversaires, donc
+              // aucune liste locale (même avec une vieille adresse qui traîne) ne peut lui
+              // en accorder une. `target` reste `opponent_id` : /pvp/attack délègue tout seul
+              // au chemin croisé, on n'appelle jamais /pvp/attack-agent depuis le client.
+              const agent = estAgent(o);
+              const canRevanche = !agent && Array.isArray(pvp.revanches) &&
                 (pvp.revanches.includes(oId) || (o.opponent_id && pvp.revanches.includes(o.wallet)));
               // L'appariement se fait sur la puissance : c'est l'écart qui dit si le
               // combat est jouable, pas l'ELO (tout le monde y démarre à 1000).
@@ -520,15 +546,23 @@ function Arene() {
               // nomme l'écart au lieu de le chiffrer.
               const ecart = gap === null ? null : AU.powerGapLabel(gap);
               return (
-                <div key={oId} className="oct-sm" style={{ border: "1px solid var(--line-soft)", padding: 10, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
+                <div key={oId} className="oct-sm" data-opponent-kind={agent ? "agent" : "human"} style={{ border: "1px solid var(--line-soft)", padding: 10, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
                   <div style={{ minWidth: 0 }}>
                     {/* Nom composé serveur (décision user 2026-08-22) ; repli sur l'identifiant
-                        opaque si un vieux serveur ne l'envoie pas encore — plus d'adresse ici. */}
+                        opaque si un vieux serveur ne l'envoie pas encore — plus d'adresse ici.
+                        Pour un agent, ce nom est son nom d'agent (jamais un wallet). */}
                     <div className="mono" style={{ fontWeight: 700, fontSize: 13, marginBottom: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                       {o.name || oId}
                     </div>
                     <div className="flex gap8 center">
-                      <span className="mono" style={{ fontSize: 12, color: AU.leagueColor(o.league) }}>{AU.leagueLabel(o.league)}</span>
+                      {/* Étiquette du lot « Arène unifiée » : le joueur voit qu'il se bat contre
+                          une équipe d'agent, pas contre une personne. */}
+                      {agent && <span className="pill mono" data-fa="arene-card-agent" style={{ fontSize: 10, padding: "1px 6px", color: "var(--elec)" }}>{I18N.t("AR2_AGENT_TAG")}</span>}
+                      {/* Un agent n'a pas de ligue au sens humain : le serveur envoie `league: null`
+                          sur sa carte. Afficher le tiret de repli donnait « — ELO 1240 », une donnée
+                          manquante à côté d'un chiffre certain. L'étiquette ci-dessus dit déjà ce
+                          qu'il faut savoir ; on n'affiche donc pas de ligue du tout. */}
+                      {!agent && <span className="mono" style={{ fontSize: 12, color: AU.leagueColor(o.league) }}>{AU.leagueLabel(o.league)}</span>}
                       <span className="mono" style={{ fontSize: 12, color: "var(--elec)" }}>ELO {o.rating}</span>
                       <span className="mono" style={{ fontSize: 12, color: gapColor }}>
                         {I18N.t("AR2_POWER", powerKnown ? o.power : "—")}{ecart ? ` · ${I18N.t(ecart)}` : (gap !== null && gap !== 0 && ` (${gap > 0 ? "+" : "−"}${Math.abs(gap)} %)`)}
@@ -698,7 +732,12 @@ function Arene() {
             <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 16, maxWidth: 560, width: "100%", maxHeight: "90vh", overflow: "auto", background: "var(--bg)" }} onClick={(e) => e.stopPropagation()}>
               <div className="h2" style={{ fontSize: 14, color: "var(--fire)", marginBottom: 8 }}>{I18N.t("AR2_ATTACK")}</div>
               {/* Compo adverse + types */}
-              <div className="mono" style={{ fontSize: 11, color: "var(--text-dim)", marginBottom: 4 }}>{I18N.t("AR2_OPPONENTS")} :</div>
+              <div className="mono" style={{ fontSize: 11, color: "var(--text-dim)", marginBottom: 4 }}>
+                {I18N.t("AR2_OPPONENTS")} :
+                {/* Carte d'agent : l'étiquette suit jusqu'à la confirmation du combat — le
+                    joueur ne doit pas découvrir APRÈS coup qu'il a attaqué une IA. */}
+                {pick.agent && <span className="pill mono" data-fa="arene-pick-agent" style={{ fontSize: 10, padding: "1px 6px", marginLeft: 6, color: "var(--elec)" }}>{I18N.t("AR2_AGENT_TAG")}</span>}
+              </div>
               <div className="flex gap8" style={{ marginBottom: 4 }}>
                 {(pick.oppTeam || []).slice(0, 3).map((b, i) => (
                   <span key={i} className="pill" style={{ color: "var(--fire)" }}>{D.TYPE_LABEL ? (D.TYPE_LABEL[b.type] || b.type) : b.type}</span>
