@@ -176,6 +176,7 @@ function Arene() {
   // useState — glisser un état au milieu décale l'injection et casse des tests qui n'ont
   // rien à voir. Ajouter ici, jamais avant.
   const [helpSeen, setHelpSeen] = useState(() => helpLsGet(HELP_SEEN_KEY, false) === true);
+  const [ticketPaid, setTicketPaid] = useState(false);
   const helpFromAccount = useRef(false);
   // L'état du COMPTE ne s'applique qu'une fois — sinon « Règles » se refermerait tout
   // seul au prochain re-render de g.uiState.
@@ -227,6 +228,7 @@ function Arene() {
   useEffect(() => {
     setMyDefense(undefined);
     setDefenseError(null);
+    setTicketPaid(false);
     setReplacementIndex(null);
     recoveryChecked.current = null;
     if (g.wallet) {
@@ -427,8 +429,10 @@ function Arene() {
   }
   async function onAttack(target, useRevanche, attackers, myPosture, enemyPosture) {
     if (attackLock.current || defenseLock.current || busy || !canAttack) return; // bloque aussi une défense tombée pendant la sélection
+    if (!useRevanche && entry === "ticket" && !ticketMode.available) return;
     attackLock.current = true;
     setBusy(true);
+    setTicketPaid(false);
     try {
       const prev = g.pvp && typeof g.pvp.rating === "number" ? g.pvp.rating : null;
       const r = await actions.pvpAttack(target, useRevanche ? "revanche" : entry, attackers, myPosture);
@@ -457,7 +461,8 @@ function Arene() {
     }
   }
   const seasonMs = pvp.season ? Number(pvp.season.ends_at) - Date.now() : 0;
-  const modes = AU.entryModes(pvp);
+  const modes = AU.entryModes(pvp, g);
+  const ticketMode = modes.find(m => m.key === "ticket");
   return /*#__PURE__*/React.createElement("div", {
     className: "container wide"
   }, /*#__PURE__*/React.createElement("div", {
@@ -507,7 +512,18 @@ function Arene() {
   }, I18N.t("AR2_HELP_SHOW")))), !helpSeen && /*#__PURE__*/React.createElement(AreneHelp, {
     pvp: pvp,
     onClose: closeHelp
-  }), defenseError ? /*#__PURE__*/React.createElement("div", {
+  }), ticketPaid && /*#__PURE__*/React.createElement("div", {
+    className: "panel oct mono",
+    "data-fa": "arene-entry-paid",
+    role: "status",
+    style: {
+      border: "1px solid var(--success)",
+      color: "var(--success)",
+      padding: 14,
+      marginBottom: 14,
+      fontSize: 12
+    }
+  }, I18N.t("AR2_TICKET_PAID", ticketMode.count)), defenseError ? /*#__PURE__*/React.createElement("div", {
     className: "panel oct",
     role: "alert",
     style: {
@@ -890,9 +906,10 @@ function Arene() {
       padding: 16
     }
   }, /*#__PURE__*/React.createElement("div", {
-    className: "flex between center",
+    className: "flex between center wrap",
     style: {
-      marginBottom: 10
+      marginBottom: 10,
+      gap: 8
     }
   }, /*#__PURE__*/React.createElement("span", {
     className: "h2",
@@ -901,7 +918,7 @@ function Arene() {
       color: "var(--fire)"
     }
   }, I18N.t("AR2_OPPONENTS")), /*#__PURE__*/React.createElement("div", {
-    className: "flex gap8"
+    className: "flex gap8 wrap"
   }, /*#__PURE__*/React.createElement("span", {
     className: "mono",
     style: {
@@ -911,13 +928,16 @@ function Arene() {
     }
   }, I18N.t("AR2_ENTRY"), " :"), modes.map(m => /*#__PURE__*/React.createElement("button", {
     key: m.key,
-    className: cx("btn sm", entry === m.key && "on"),
+    className: cx("btn sm arene-entry-mode", m.available && entry === m.key && "on"),
+    "data-fa": `arene-entry-${m.key}`,
+    title: m.key === "ticket" ? `${I18N.t("AR2_TICKET")} ×${m.count}` : undefined,
+    "aria-label": m.key === "ticket" ? `${I18N.t("AR2_TICKET")} ×${m.count}` : undefined,
     disabled: !m.available,
     onClick: () => setEntry(m.key)
   }, m.key === "free" ? I18N.t("AR2_FREE") : m.key === "fa" ? /*#__PURE__*/React.createElement(FaText, {
     text: I18N.t("AR2_FA", pvp.fa_cost ?? "—"),
     s: 12
-  }) : I18N.t("AR2_TICKET"))))), (!pvp.opponents || pvp.opponents.length === 0) && /*#__PURE__*/React.createElement("div", {
+  }) : `🎟 ×${m.count}`)))), (!pvp.opponents || pvp.opponents.length === 0) && /*#__PURE__*/React.createElement("div", {
     className: "mono",
     style: {
       color: "var(--text-dim)",
@@ -1102,10 +1122,12 @@ function Arene() {
       color: "var(--elec)"
     }
   }, row.rating, " \xB7 ", row.wins || 0, "-", row.losses || 0), row.attack_block !== "toi" && (row.can_attack === true ? /*#__PURE__*/React.createElement("button", {
-    className: "btn btn-elec sm",
+    className: "btn arene-ladder-attack",
     disabled: busy || attackLock.current || defenseLock.current || !canAttack,
     onClick: () => onPickOpponent(row, false)
-  }, I18N.t("AR2_ATTACK")) : row.attack_block === "defense_tombee" ? /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
+    "aria-hidden": "true"
+  }, "\u2694"), I18N.t("AR2_ATTACK")) : row.attack_block === "defense_tombee" ? /*#__PURE__*/React.createElement("span", {
     className: "mono",
     style: {
       fontSize: 11,
@@ -1495,7 +1517,7 @@ function Arene() {
       onClick: () => setPick(null)
     }, I18N.t("CANCEL")), /*#__PURE__*/React.createElement("button", {
       className: "btn btn-elec sm",
-      disabled: !ready || busy || !canAttack,
+      disabled: !ready || busy || !canAttack || !pick.revanche && entry === "ticket" && !ticketMode.available,
       onClick: () => {
         const ids = [...pick.ids];
         const t = pick.target,
@@ -1517,6 +1539,9 @@ function Arene() {
     p1Posture: result.p1Posture,
     p2Posture: result.p2Posture,
     onClose: () => {
+      // Le serveur confirme le moyen réellement débité ; app.jsx a déjà mis à jour g.
+      // Attendre la fermeture du rejeu pour que le paiement soit visible au retour.
+      setTicketPaid(result.entry === "ticket");
       setResult(null);
       actions.pvpRefresh();
       loadMyDefense();
