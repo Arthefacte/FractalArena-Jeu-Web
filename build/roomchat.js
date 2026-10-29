@@ -18,6 +18,18 @@ const I18N = window.FA_I18N;
 const ROOM_MAXLEN = 280;
 const ROOM_POLL_MS = 4000;
 const ROOM_BG_POLL_MS = 30000;
+// Étiquette des messages d'agent dans la pièce commune : la seule information
+// qu'un joueur doit voir d'un coup d'œil, c'est QU'IL PARLE À UNE IA.
+const AGENT_TAG = {
+  fontSize: 9,
+  letterSpacing: ".08em",
+  textTransform: "uppercase",
+  padding: "1px 5px",
+  borderRadius: 3,
+  marginLeft: 6,
+  border: "1px solid currentColor",
+  opacity: .7
+};
 // Le serveur détecte la langue et traduit APRÈS l'insertion (DeepSeek, 1-3 s) :
 // une ligne déjà reçue peut donc gagner sa traduction plus tard. Fenêtre pendant
 // laquelle on relit la liste complète pour la rattraper (au-delà, on n'insiste plus :
@@ -89,7 +101,12 @@ function mutedDepuis(g) {
 // phase : on accepte donc les DEUX formes partout, sinon un joueur verrait réapparaître les messages
 // qu'il avait tus (et le compteur de non-lus se remettrait à clignoter pour eux).
 function idDe(m) {
-  return m && (m.player_id || m.wallet) || "";
+  if (!m) return "";
+  // Salon COMMUN (29/10/2026) : un agent n'a pas de wallet — son identité de
+  // sourdine est son uuid public, jamais `undefined` (qui aurait masqué TOUS les
+  // messages d'agents d'un seul coup).
+  if (m.kind === "agent") return "agent:" + (m.agent_id || m.name || "?");
+  return m.player_id || m.wallet || "";
 }
 function estMute(m, muted) {
   if (!m) return false;
@@ -98,6 +115,9 @@ function estMute(m, muted) {
 }
 function estMoi(m, myId, myWallet) {
   if (!m) return false;
+  // Un message d'agent porte `mine` calculé par le serveur (il n'a ni wallet ni
+  // player_id à comparer). Un joueur, lui, se reconnaît à son identifiant opaque.
+  if (m.kind === "agent") return m.mine === true;
   if (myId && m.player_id) return m.player_id === myId;
   return !!m.wallet && m.wallet === myWallet;
 }
@@ -128,6 +148,28 @@ function pickRoomText(m, lang) {
   if (!m) return "";
   if (!m.src_lang || m.src_lang === lang) return m.content || "";
   return m.tr && m.tr[lang] || m.content || "";
+}
+
+/* ---- Salon COMMUN (29/10/2026) : agents + humains dans la même pièce ----
+   Trois conséquences côté client :
+   1. l'ORDRE ne peut plus venir de `id` — les deux tables ont chacune leur
+      BIGSERIAL et se recouvrent. C'est `seq`, une séquence commune côté serveur,
+      qui ordonne et sert de curseur (`after`) ;
+   2. une ligne dit sa famille (`kind`), et un agent n'a PAS de wallet : muter par
+      wallet aurait comparé `undefined` et masqué tous les agents d'un coup ;
+   3. `ref` ('agent:12') est la clé sans collision entre les deux tables. */
+
+// Curseur de lecture : `seq` s'il existe (pièce commune), sinon `id` (anciens
+// messages mis en cache, ou serveur pas encore déployé).
+function msgCursor(m) {
+  const s = Number(m && m.seq);
+  if (Number.isFinite(s) && s > 0) return s;
+  const i = Number(m && m.id);
+  return Number.isFinite(i) ? i : 0;
+}
+function msgKey(m) {
+  if (m && m.ref) return m.ref;
+  return (m && m.kind ? m.kind : "h") + ":" + msgCursor(m);
 }
 function RoomPanel({
   messages,
@@ -179,11 +221,13 @@ function RoomPanel({
   }, I18N.t("ROOM_EMPTY")), visible.map(m => {
     const mine = estMoi(m, myId, myWallet);
     return /*#__PURE__*/React.createElement("div", {
-      key: m.id,
+      key: msgKey(m),
       className: cx("room-msg", mine && "mine")
     }, /*#__PURE__*/React.createElement("div", {
       className: "meta"
-    }, /*#__PURE__*/React.createElement("span", null, safeName(m)), /*#__PURE__*/React.createElement("span", null, hhmm(m.created_at)), !mine && /*#__PURE__*/React.createElement("button", {
+    }, /*#__PURE__*/React.createElement("span", null, safeName(m)), m.kind === "agent" && /*#__PURE__*/React.createElement("span", {
+      style: AGENT_TAG
+    }, I18N.t("ROOM_AGENT_TAG")), /*#__PURE__*/React.createElement("span", null, hhmm(m.created_at)), !mine && /*#__PURE__*/React.createElement("button", {
       className: "mute-btn",
       onClick: () => onMute(idDe(m))
     }, I18N.t("ROOM_MUTE"))), /*#__PURE__*/React.createElement("div", {
@@ -215,7 +259,7 @@ function RoomFab() {
   const [messages, setMessages] = useState([]);
   const [muted, setMuted] = useState(() => mutedDepuis(g));
   const [unread, setUnread] = useState(0);
-  const lastIdRef = useRef(0);
+  const lastSeqRef = useRef(0);
   const timerRef = useRef(null);
   const seenIdRef = useRef(seenIdDepuis(g));
   // ids reçus sans traduction alors que le lecteur en a besoin → à relire.
@@ -253,36 +297,42 @@ function RoomFab() {
   const ingest = useCallback(incoming => {
     if (!incoming || incoming.length === 0) return;
     setMessages(prev => {
-      const byId = new Map(prev.map(m => [m.id, m]));
+      // Clé = `ref` ('agent:12' / 'human:12') : les ids des deux tables se
+      // recouvrent, une Map sur `id` mélangerait un message d'agent et un message
+      // de joueur portant le même numéro.
+      const byKey = new Map(prev.map(m => [msgKey(m), m]));
       let changed = false;
       for (const m of incoming) {
-        const old = byId.get(m.id);
+        const k = msgKey(m);
+        const old = byKey.get(k);
         if (!old) {
-          byId.set(m.id, m);
+          byKey.set(k, m);
           changed = true;
           continue;
         }
         if (m.tr !== old.tr || m.src_lang !== old.src_lang) {
-          byId.set(m.id, m);
+          byKey.set(k, m);
           changed = true;
         }
       }
       if (!changed) return prev;
-      const merged = Array.from(byId.values());
-      merged.sort((a, b) => a.id - b.id);
+      const merged = Array.from(byKey.values());
+      merged.sort((a, b) => msgCursor(a) - msgCursor(b));
       return merged.slice(-200);
     });
     const now = Date.now();
     for (const m of incoming) {
-      if (m.tr) pendingTrRef.current.delete(m.id);else if (m.src_lang !== I18N.getLang() && !pendingTrRef.current.has(m.id)) pendingTrRef.current.set(m.id, now);
+      const k = msgKey(m);
+      if (m.tr) pendingTrRef.current.delete(k);else if (m.src_lang !== I18N.getLang() && !pendingTrRef.current.has(k)) pendingTrRef.current.set(k, now);
     }
     for (const [id, t] of pendingTrRef.current) if (now - t > ROOM_TR_PENDING_MS) pendingTrRef.current.delete(id);
-    const maxId = incoming.reduce((mx, m) => Math.max(mx, m.id), lastIdRef.current);
-    lastIdRef.current = maxId;
+    // Curseur : `seq` de la pièce commune, plus l'id d'une seule table.
+    const maxSeq = incoming.reduce((mx, m) => Math.max(mx, msgCursor(m)), lastSeqRef.current);
+    lastSeqRef.current = maxSeq;
   }, []);
   const poll = useCallback(async () => {
     try {
-      const res = await actions.fetchRoomMessages(lastIdRef.current || undefined);
+      const res = await actions.fetchRoomMessages(lastSeqRef.current || undefined);
       if (!res.ok) return;
       ingest(res.messages);
       // Rattrapage : tant qu'un message attend sa traduction, on relit la liste
@@ -310,13 +360,13 @@ function RoomFab() {
   // Compteur de non-lus : panneau ouvert = tout est vu ; fermé = messages
   // plus récents que le dernier vu, hors les miens et les wallets mutés.
   useEffect(() => {
-    const maxId = messages.reduce((mx, m) => Math.max(mx, m.id), 0);
+    const maxSeq = messages.reduce((mx, m) => Math.max(mx, msgCursor(m)), 0);
     if (open) {
-      if (maxId > seenIdRef.current) {
-        seenIdRef.current = maxId;
-        saveSeenId(g.wallet, maxId); // cache de ce navigateur
+      if (maxSeq > seenIdRef.current) {
+        seenIdRef.current = maxSeq;
+        saveSeenId(g.wallet, maxSeq); // cache de ce navigateur
         actions.pushUiState({
-          room_seen_id: maxId
+          room_seen_id: maxSeq
         }); // et le compte, pour les autres
       }
       setUnread(0);
@@ -325,7 +375,7 @@ function RoomFab() {
     // E3 (D10/M4, emplacement 6) : « pas les miens » et « pas les tus » se décident sur l'identifiant
     // opaque, avec repli sur l'adresse (phase 1) — la même règle que dans le panneau, sinon le
     // compteur et la liste ne diraient pas la même chose.
-    setUnread(messages.filter(m => m.id > seenIdRef.current && !estMoi(m, g.publicId, g.wallet) && !estMute(m, muted)).length);
+    setUnread(messages.filter(m => msgCursor(m) > seenIdRef.current && !estMoi(m, g.publicId, g.wallet) && !estMute(m, muted)).length);
   }, [messages, muted, open, g.wallet, g.publicId]);
 
   // Phase 2 : les sourdines écrites AVANT cette phase sont des adresses. Le serveur va cesser

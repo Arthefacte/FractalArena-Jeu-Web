@@ -25,7 +25,7 @@ function bloc(nom, suivant) {
 
 test("ingest remplace une ligne connue devenue plus riche (traduction, langue détectée)", () => {
   const bloc_ = bloc("const ingest = useCallback(", "const poll = useCallback(");
-  assert.match(bloc_, /new Map\(prev\.map\(\(m\) => \[m\.id, m\]\)\)/, "l'ancienne version est indexée par id");
+  assert.match(bloc_, /new Map\(prev\.map\(\(m\) => \[msgKey\(m\), m\]\)\)/, "l'ancienne version est indexée par la clé sans collision (`ref`)");
   assert.match(bloc_, /if \(m\.tr !== old\.tr \|\| m\.src_lang !== old\.src_lang\)/, "la ligne est remplacée quand tr/src_lang change");
   assert.ok(!/incoming\.filter\(\(m\) => !known\.has\(m\.id\)\)/.test(bloc_),
     "l'ancien filtre qui JETAIT les ids connus ne doit pas revenir");
@@ -41,5 +41,5 @@ test("le poll relit la liste complète tant qu'une traduction manque, et pas au-
 test("un message déjà dans la langue du lecteur n'entre pas en attente de traduction", () => {
   const bloc_ = bloc("const ingest = useCallback(", "const poll = useCallback(");
   assert.match(bloc_, /m\.src_lang !== I18N\.getLang\(\)/, "inutile d'attendre une traduction pour sa propre langue");
-  assert.match(bloc_, /if \(m\.tr\) pendingTrRef\.current\.delete\(m\.id\)/, "l'arrivée de la traduction solde l'attente");
+  assert.match(bloc_, /if \(m\.tr\) pendingTrRef\.current\.delete\(k\)/, "l'arrivée de la traduction solde l'attente");
 });
