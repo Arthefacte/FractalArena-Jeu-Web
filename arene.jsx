@@ -185,7 +185,7 @@ function Arene() {
   const myDefensePosted = !!myDefense;
   const defense = AU.defenseStatus(myDefense, nowTs);
   const defensePostedDate = AU.defensePostedDate(myDefense && myDefense.posted_at, I18N.getLang());
-  const canAttack = myDefensePosted && defense.hpKnown && !defense.down && !defenseError;
+  const canAttack = myDefensePosted && defense.hpKnown && !defense.down && !defenseError && !pvp.me_defense_down;
   const healCostKnown = pvp.heal_cost != null && Number.isFinite(Number(pvp.heal_cost));
   const refreshCostKnown = pvp.refresh_cost != null && Number.isFinite(Number(pvp.refresh_cost));
   const sc = AU.seasonCountdown(pvp.season, nowTs);
@@ -196,6 +196,11 @@ function Arene() {
     recoveryChecked.current = deadline;
     loadMyDefense();
   }, [nowTs, myDefense && myDefense.down_until]);
+  // La lecture de défense peut confirmer une relève après celle du classement.
+  // Relire alors son blocage global pour ne pas garder les attaques verrouillées.
+  useEffect(() => {
+    if (pvp.me_defense_down && defense.hpKnown && !defense.down) actions.pvpRefresh();
+  }, [pvp.me_defense_down, myDefense]);
 
   function onChooseReplacement(id) {
     if (busy || replacementIndex === null || g.selected.includes(id) || !g.roster.some((b) => b.id === id)) return;
@@ -289,7 +294,7 @@ function Arene() {
     setBusy(true);
     const request = defenseRequest.current;
     try {
-      const ref = o.opponent_id || o.wallet;
+      const ref = o.opponent_id || o.player_id || o.wallet;
       const agent = estAgent(o);
       // Carte d'agent : l'équipe de la carte est DÉJÀ résolue par le serveur, et
       // `/pvp/defense/:ref` ne connaît que les humains (`resoudreRef` rend null sur un
@@ -493,6 +498,10 @@ function Arene() {
         </div>
       </div>}
 
+      {pvp.me_defense_down && <div className="panel oct mono" data-fa="arene-ladder-defense-down" role="status" style={{ border: "1px solid var(--alert)", color: "var(--alert)", padding: 14, marginBottom: 14, fontSize: 12 }}>
+        {I18N.t("AR2_ERR_DEFENSE_DOWN")}
+      </div>}
+
       {myDefensePosted && !defenseError && (sc.prelaunch ? (
         <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 24, textAlign: "center" }}>
           <div className="h1" style={{ color: "var(--elec)", marginBottom: 8 }}>{I18N.t("AR2_PRELAUNCH_TITLE")}</div>
@@ -597,12 +606,19 @@ function Arene() {
           </div>}
           <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 4 }}>
             {ladder.map((row) => (
-              <div key={row.player_id || row.wallet} className="flex between" style={{ padding: "5px 8px", background: estMoi(row, g) ? "rgba(0,240,255,0.08)" : "transparent", fontSize: 12 }}>
+              <div key={row.player_id || row.wallet} className="flex between center wrap" style={{ padding: "5px 8px", gap: 6, background: estMoi(row, g) ? "rgba(0,240,255,0.08)" : "transparent", fontSize: 12 }}>
                 {/* 24 : les noms composés du serveur dépassent les 14 caractères de l'ancienne
                     coupe (« Le Grand Arthefacte.fb » = 22) — à 14, un joueur ne se
                     reconnaissait plus dans sa propre ligne. Ellipse si ça dépasse. */}
                 <span className="mono"><span aria-hidden="true" style={{ display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: AU.leagueColor(pvp.league), marginRight: 6, verticalAlign: "middle" }} />{row.rank}. {estMoi(row, g) ? "➔ " : ""}{(row.name || "").slice(0, 24)}{(row.name || "").length > 24 ? "…" : ""}</span>
                 <span className="mono" style={{ color: "var(--elec)" }}>{row.rating} · {row.wins || 0}-{row.losses || 0}</span>
+                {row.attack_block !== "toi" && (row.can_attack === true
+                  ? <button className="btn btn-elec sm" disabled={busy || attackLock.current || defenseLock.current || !canAttack} onClick={() => onPickOpponent(row, false)}>{I18N.t("AR2_ATTACK")}</button>
+                  : row.attack_block === "defense_tombee"
+                    ? <span className="mono" style={{ fontSize: 11, color: "var(--text-dim)" }}>{I18N.t("AR2_LADDER_DEFENSE_DOWN")}</span>
+                    : row.attack_block === "plafond_couple"
+                      ? <span className="mono" style={{ fontSize: 11, color: "var(--text-dim)" }}>{I18N.t("AR2_LADDER_PAIR_LIMIT", pvp.pair_limit ?? "—")}</span>
+                      : null)}
               </div>
             ))}
           </div>

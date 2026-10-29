@@ -271,7 +271,7 @@ function Arene() {
   const myDefensePosted = !!myDefense;
   const defense = AU.defenseStatus(myDefense, nowTs);
   const defensePostedDate = AU.defensePostedDate(myDefense && myDefense.posted_at, I18N.getLang());
-  const canAttack = myDefensePosted && defense.hpKnown && !defense.down && !defenseError;
+  const canAttack = myDefensePosted && defense.hpKnown && !defense.down && !defenseError && !pvp.me_defense_down;
   const healCostKnown = pvp.heal_cost != null && Number.isFinite(Number(pvp.heal_cost));
   const refreshCostKnown = pvp.refresh_cost != null && Number.isFinite(Number(pvp.refresh_cost));
   const sc = AU.seasonCountdown(pvp.season, nowTs);
@@ -282,6 +282,11 @@ function Arene() {
     recoveryChecked.current = deadline;
     loadMyDefense();
   }, [nowTs, myDefense && myDefense.down_until]);
+  // La lecture de défense peut confirmer une relève après celle du classement.
+  // Relire alors son blocage global pour ne pas garder les attaques verrouillées.
+  useEffect(() => {
+    if (pvp.me_defense_down && defense.hpKnown && !defense.down) actions.pvpRefresh();
+  }, [pvp.me_defense_down, myDefense]);
   function onChooseReplacement(id) {
     if (busy || replacementIndex === null || g.selected.includes(id) || !g.roster.some(b => b.id === id)) return;
     if (defenseReady) actions.replaceSelected(replacementIndex, id);else actions.toggleSelect(id);
@@ -380,7 +385,7 @@ function Arene() {
     setBusy(true);
     const request = defenseRequest.current;
     try {
-      const ref = o.opponent_id || o.wallet;
+      const ref = o.opponent_id || o.player_id || o.wallet;
       const agent = estAgent(o);
       // Carte d'agent : l'équipe de la carte est DÉJÀ résolue par le serveur, et
       // `/pvp/defense/:ref` ne connaît que les humains (`resoudreRef` rend null sur un
@@ -834,7 +839,18 @@ function Arene() {
     className: "btn sm",
     disabled: busy || rankedRoster.length < 3,
     onClick: onTakeTopThree
-  }, I18N.t("AR2_TAKE_TOP_THREE")))), myDefensePosted && !defenseError && (sc.prelaunch ? /*#__PURE__*/React.createElement("div", {
+  }, I18N.t("AR2_TAKE_TOP_THREE")))), pvp.me_defense_down && /*#__PURE__*/React.createElement("div", {
+    className: "panel oct mono",
+    "data-fa": "arene-ladder-defense-down",
+    role: "status",
+    style: {
+      border: "1px solid var(--alert)",
+      color: "var(--alert)",
+      padding: 14,
+      marginBottom: 14,
+      fontSize: 12
+    }
+  }, I18N.t("AR2_ERR_DEFENSE_DOWN")), myDefensePosted && !defenseError && (sc.prelaunch ? /*#__PURE__*/React.createElement("div", {
     className: "panel oct",
     style: {
       border: "1px solid var(--line)",
@@ -1060,9 +1076,10 @@ function Arene() {
     }
   }, ladder.map(row => /*#__PURE__*/React.createElement("div", {
     key: row.player_id || row.wallet,
-    className: "flex between",
+    className: "flex between center wrap",
     style: {
       padding: "5px 8px",
+      gap: 6,
       background: estMoi(row, g) ? "rgba(0,240,255,0.08)" : "transparent",
       fontSize: 12
     }
@@ -1084,7 +1101,23 @@ function Arene() {
     style: {
       color: "var(--elec)"
     }
-  }, row.rating, " \xB7 ", row.wins || 0, "-", row.losses || 0)))), pvp.season && /*#__PURE__*/React.createElement("div", {
+  }, row.rating, " \xB7 ", row.wins || 0, "-", row.losses || 0), row.attack_block !== "toi" && (row.can_attack === true ? /*#__PURE__*/React.createElement("button", {
+    className: "btn btn-elec sm",
+    disabled: busy || attackLock.current || defenseLock.current || !canAttack,
+    onClick: () => onPickOpponent(row, false)
+  }, I18N.t("AR2_ATTACK")) : row.attack_block === "defense_tombee" ? /*#__PURE__*/React.createElement("span", {
+    className: "mono",
+    style: {
+      fontSize: 11,
+      color: "var(--text-dim)"
+    }
+  }, I18N.t("AR2_LADDER_DEFENSE_DOWN")) : row.attack_block === "plafond_couple" ? /*#__PURE__*/React.createElement("span", {
+    className: "mono",
+    style: {
+      fontSize: 11,
+      color: "var(--text-dim)"
+    }
+  }, I18N.t("AR2_LADDER_PAIR_LIMIT", pvp.pair_limit ?? "—")) : null)))), pvp.season && /*#__PURE__*/React.createElement("div", {
     className: "mono",
     style: {
       fontSize: 11,

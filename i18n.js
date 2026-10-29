@@ -489,6 +489,8 @@
     AR2_LADDER: { FR: "Classement", EN: "Ladder", ZH: "排行榜" },
     AR2_LADDER_LEAGUE: { FR: " · Ligue %s", EN: " · %s League", ZH: " · %s 联赛" },
     AR2_LADDER_POSITION: { FR: "Rang %d sur %d en Ligue %s", EN: "Rank %d of %d in %s League", ZH: "第 %d 名 / 共 %d 名 · %s 联赛" },
+    AR2_LADDER_DEFENSE_DOWN: { FR: "Défense à terre", EN: "Defense down", ZH: "防守已倒下" },
+    AR2_LADDER_PAIR_LIMIT: { FR: "%d combats déjà faits en 24 h", EN: "%d fights already fought in 24 h", ZH: "24 小时内已交战 %d 次" },
     AR2_ATTACK: { FR: "Attaquer", EN: "Attack", ZH: "进攻" },
     // Manquante jusqu'au 2026-07-30 : la modale d'attaque affichait la clé brute
     // « AR2_DEFENDER_EDGE_HINT » au joueur (vu en jouant, en production).

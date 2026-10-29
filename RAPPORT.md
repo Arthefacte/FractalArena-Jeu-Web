@@ -1,73 +1,42 @@
-# Rapport — la vraie règle de la poussière de FB
+# Rapport — attaquer depuis le classement de l’Arène
 
-Branche : `Arthefacte/dust-ui-publie-la-regle` — PR vers `main`, sans fusion.
+Branche : `Arthefacte/classement-bouton-attaquer` — livraison vers `main`, sans fusion.
 
-## Constat vérifié avant modification
+## Contrat serveur vérifié
 
-Dans le client au commit `ff7b9cc` :
+Lecture de `C:/Users/PC/orca/workspaces/fractal-arena-server/classement-attaquable/pvp.js`, commit `52a1955` :
 
-- `i18n.js:1357` (`EXP_DUST_RULE`) annonce « 1 % · 8 h et plus · une par semaine ».
-- `i18n.js:1342` (`EXP_DUST_NEEDS_8H`) annonce « à partir de 8 h seulement ».
-- `expeditions-ui.js:27` fixe localement `DUST_MIN_H = 8`.
+- `/pvp/ladder`, lignes 829–836 : chaque ligne publie `can_attack`, `attack_block` et l’identifiant public `player_id`, sans wallet.
+- Raisons publiées : `toi`, `defense_tombee`, `plafond_couple`, sinon `null`.
+- Racine, lignes 843–844 : `me_defense_down` et `pair_limit` (actuellement 2).
+- `/pvp/defense/:wallet` et `/pvp/attack` résolvent déjà cet identifiant public avec `resoudreRef`.
 
-Lecture du dépôt serveur local, fichier
-`C:/Users/PC/orca/workspaces/fractal-arena-server/dust-etat-expose/expeditions.js` :
-la route `GET /expeditions/state` (ligne 556) renvoie les six champs attendus
-aux lignes 593–601 : `dust_sats`, `dust_p`, `dust_min_h`, `dust_min_rarity`,
-`dust_weekly_cap` et `dust_week` (`used`, `left`). Les constantes serveur valent
-respectivement 1 000 000 sats, 0,05, 12 h, Epic et 5 trouvailles par semaine UTC.
-Le versement utilise le wallet lié (lignes 291–308). Le claim publie son montant
-réel dans `rewards.dust_sats` et son nouveau compteur dans `dust_week`.
-Aucun fichier serveur modifié ; vérification du code de la route, sans appel
-authentifié au compte d'un joueur en production.
+Aucun fichier serveur modifié, aucun combat lancé en production.
 
-## Avant / après visible
+## Avant / après
 
-- Avant : « 1 % · 8 h et plus · une par semaine ».
-- Après : « 0,01 FB · 5 % de chance · expéditions de 12 h · 5 par joueur et par semaine UTC ».
-- Durée insuffisante : « Poussière de FB : à partir de 12 h seulement. »
-- Conditions : expédition réussie, chacune des trois entités au rang minimum
-  reçu du serveur, compte vérifié on-chain.
-- Destination : « Envoyée directement sur ton wallet lié, on-chain — pas dans le bandeau FB. »
-- Exemple de compteur : « 2 / 5 cette semaine UTC », « Trouvailles restantes : 3 ».
-- Au plafond : « Plafond atteint, ça repart la semaine prochaine (UTC). »
-  La mise en avant du gain et les invitations à changer la durée, le rang ou
-  la vérification disparaissent ; la règle reste consultable.
+Avant : les 14 joueurs du classement de ligue étaient visibles, sans action permettant de les affronter.
 
-Tous ces textes sont traduits en FR / EN / ZH et paramétrés. Les nombres de
-l'exemple viennent du serveur ; aucune nouvelle règle numérique n'est copiée
-dans le client. La conversion d'un FB en 100 000 000 sats sert uniquement au formatage.
+Après :
 
-## Implémentation
+- Chaque ligne `can_attack === true` propose **Attaquer** par le sélecteur commun `onPickOpponent(row, false)` ; aucun bouton sur la ligne `toi`.
+- Une cible indisponible affiche **Défense à terre** ou **2 combats déjà faits en 24 h**, traduit en FR / EN / ZH. Le nombre provient de `pair_limit`, sans règle numérique recopiée dans le client.
+- Si ma défense est tombée, le message existant explique le blocage global ; les verrous de sélection et d’attaque restent actifs.
+- À la fermeture du rejeu, le rechargement commun existant actualise rangs et raisons de blocage. Aucune requête de classement dupliquée pendant le combat.
+- Une défense relevée et confirmée entraîne la relecture du classement si son ancien drapeau global bloquait encore les attaques, sans boucle sur le timer.
 
-- `expeditions-ui.js` : suppression des seuils locaux de durée et de rareté ;
-  validation du payload complet, comparaison au rang serveur et formatage FB localisé.
-- `app.jsx` : transporte la règle et le compteur dans `g.expDust`. État initial
-  et rechargement à `null` ; la règle n'est pas restaurée depuis une ancienne
-  sauvegarde locale. Les réponses d'un ancien compte restent écartées.
-- Le claim applique immédiatement son compteur serveur, même si le GET de
-  rafraîchissement échoue. Aucun calcul local du nombre de trouvailles.
-- `expeditions.jsx` : bloc absent avant réception de données complètes et valides,
-  compteur et conditions explicites, plafond prioritaire. Le butin affiche le
-  montant réel du claim en FB, sans lui substituer le montant de la règle courante.
-- `i18n.js` : clés génériques `EXP_DUST_NEEDS_H` et `EXP_DUST_NEEDS_RARITY`,
-  règle et nouveaux textes dans les trois langues.
+`app.jsx` conserve les champs racine nécessaires ; le plafond du classement est prioritaire, avec repli sur cadence. Les cartes du panneau Adversaires, `/pvp/opponents` et les règles de ligue restent inchangées. Les lignes du classement peuvent revenir à la ligne pour accueillir l’action sur petit écran.
 
 ## Build et validation
 
-- `npm ci --no-audit --no-fund` réussi ; aucune dépendance ajoutée.
-- `npm run build` réussi : 28 écrans régénérés par le pipeline, dont
-  `build/expeditions.js` et `build/app.js`, avec `build/sources.json`.
-  `asset-hashes.js` régénéré à contenu identique ; aucun build édité à la main.
-- Version de cache 426 → 427 dans `index.html`, `data.js`, `sw-policy.js`,
-  `manifest.webmanifest`, `version.json` et les deux assertions correspondantes.
-- Tests ciblés : 63/63 réussis. Les tests existants de rareté conservent leurs cas
-  Épique/Légendaire, équipe incomplète et rang inconnu avec un seuil serveur injecté.
-- Nouveau test de rendu JSX et des actions : FR/EN/ZH, valeurs serveur alternatives,
-  champs manquants, 8/12 h, rang, vérification, plafond, montant réel du claim,
-  compteur après échec réseau, garde de session et rechargement.
-- `npm test` : **1 353 tests, 1 347 réussis, 6 ignorés, 0 échec**.
-  Aucun faux rouge SRI rencontré ; aucun fichier `vendor/` modifié.
-- `git diff --check` propre ; revue indépendante des sources sans anomalie relevée.
+- Aucune dépendance ajoutée ; `npm ci --no-audit --no-fund` réussi.
+- `npm run build` réussi : 28 écrans régénérés ; modifications utiles dans `build/arene.js`, `build/app.js` et `build/sources.json`. Aucun fichier build édité à la main.
+- `asset-hashes.js` régénéré à contenu identique ; `node tools/asset-hashes.mjs --check` réussi.
+- Version de cache 427 → 428 dans les fichiers de livraison et les deux assertions de version existantes.
+- Les autres adaptations de tests concernent uniquement les textes de source épinglés qui ont changé : résolution d’identifiant, origine du plafond et classe CSS des lignes.
+- `npm test` : **1 353 tests, 1 347 réussis, 6 ignorés, 0 échec**. Aucun faux rouge SRI rencontré.
+- **21 cas comportementaux supplémentaires** exécutés dans un harnais temporaire, sans ajout de test au dépôt : états du classement, sept blocages, double clic, parcours `player_id` jusqu’à l’attaque, rafraîchissement après rejeu, traductions avec plafond alternatif 7, relève et absence de boucle, transport des champs et garde de session.
+- Ces vérifications comportementales utilisent un rendu React simulé, sans test navigateur.
+- Revue indépendante terminée sans anomalie restante ; `git diff --check` propre.
 
-`BRIEF.md`, déjà modifié à l'arrivée, est conservé hors commit.
+Les modifications préexistantes de `BRIEF.md` et le dossier non suivi `mcp/` sont conservés hors commit.
