@@ -38,14 +38,22 @@ test("eventLogLines : tableau de chaînes, tolère vide", () => {
   assert.ok(lines.length >= 1);
 });
 
-test("entryModes : free dispo si free_remaining>0, fa toujours, ticket toujours", () => {
-  const m = U.entryModes({ free_remaining: 2, fa_cost: 50 });
+test("entryModes : quota gratuit préservé, FA disponible et stock Argent explicite", () => {
+  const m = U.entryModes({ free_remaining: 2, fa_cost: 50 }, { ticketsSilver: 3 });
   const free = m.find((x) => x.key === "free");
   assert.strictEqual(free.available, true);
-  assert.ok(m.find((x) => x.key === "fa"));
-  assert.ok(m.find((x) => x.key === "ticket"));
-  const m0 = U.entryModes({ free_remaining: 0, fa_cost: 50 });
+  assert.strictEqual(m.find((x) => x.key === "fa").available, true);
+  assert.deepStrictEqual(m.find((x) => x.key === "ticket"), { key: "ticket", available: true, count: 3 });
+  const m0 = U.entryModes({ free_remaining: 0, fa_cost: 50 }, { ticketsSilver: 0 });
   assert.strictEqual(m0.find((x) => x.key === "free").available, false);
+  assert.deepStrictEqual(m0.find((x) => x.key === "ticket"), { key: "ticket", available: false, count: 0 });
+});
+
+test("entryModes : un stock absent ou invalide ne propose pas de ticket", () => {
+  for (const tickets of [undefined, null, {}, { ticketsSilver: -1 }, { ticketsSilver: NaN }, { ticketsSilver: Infinity }]) {
+    assert.deepStrictEqual(U.entryModes(null, tickets).find((x) => x.key === "ticket"),
+      { key: "ticket", available: false, count: 0 });
+  }
 });
 
 test("seasonCountdown : live===false → prelaunch + ms restant jusqu'à starts_at", () => {

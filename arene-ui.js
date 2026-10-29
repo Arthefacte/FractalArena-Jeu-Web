@@ -42,12 +42,16 @@
     return out;
   }
 
-  function entryModes(cadence) {
+  function entryModes(cadence, tickets) {
     const c = cadence || {};
+    // Stock unique : g.ticketsSilver, déjà synchronisé et débité par app.jsx.
+    // Le sélecteur et la notice lisent ce compte, sans copie ni requête réseau.
+    const count = tickets && Number.isFinite(tickets.ticketsSilver)
+      ? Math.max(0, Math.floor(tickets.ticketsSilver)) : 0;
     return [
       { key: "free", available: (c.free_remaining | 0) > 0 },
       { key: "fa", available: true },
-      { key: "ticket", available: true },
+      { key: "ticket", available: count > 0, count },
     ];
   }
 

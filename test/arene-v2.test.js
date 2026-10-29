@@ -85,7 +85,7 @@ test("attaque et soin sont verrouillés par l'état serveur de la défense", () 
   assert.match(heal, /if \([^\n]*!canAttack[^\n]*defense\.full[^\n]*!healCostKnown\) return/);
   assert.match(heal, /actions\.pvpHeal\(\)/);
   assert.match(heal, /hp_left: r\.hp_left, hp_max: r\.hp_max/);
-  assert.match(UI, /disabled=\{!ready \|\| busy \|\| !canAttack\}/);
+  assert.match(UI, /disabled=\{!ready \|\| busy \|\| !canAttack \|\| \(!pick\.revanche && entry === "ticket" && !ticketMode\.available\)\}/);
   assert.match(UI, /disabled=\{busy \|\| !canAttack \|\| defense\.full \|\| !healCostKnown\}/);
   assert.match(UI, /defense\.full \? I18N\.t\("AR2_DEFENSE_FULL"\)/);
   assert.match(UI, /role="progressbar"/);

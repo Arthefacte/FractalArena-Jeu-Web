@@ -102,6 +102,7 @@ function Arene() {
   // useState — glisser un état au milieu décale l'injection et casse des tests qui n'ont
   // rien à voir. Ajouter ici, jamais avant.
   const [helpSeen, setHelpSeen] = useState(() => helpLsGet(HELP_SEEN_KEY, false) === true);
+  const [ticketPaid, setTicketPaid] = useState(false);
   const helpFromAccount = useRef(false);
   // L'état du COMPTE ne s'applique qu'une fois — sinon « Règles » se refermerait tout
   // seul au prochain re-render de g.uiState.
@@ -146,6 +147,7 @@ function Arene() {
   useEffect(() => {
     setMyDefense(undefined);
     setDefenseError(null);
+    setTicketPaid(false);
     setReplacementIndex(null);
     recoveryChecked.current = null;
     if (g.wallet) {
@@ -322,8 +324,10 @@ function Arene() {
 
   async function onAttack(target, useRevanche, attackers, myPosture, enemyPosture) {
     if (attackLock.current || defenseLock.current || busy || !canAttack) return; // bloque aussi une défense tombée pendant la sélection
+    if (!useRevanche && entry === "ticket" && !ticketMode.available) return;
     attackLock.current = true;
     setBusy(true);
+    setTicketPaid(false);
     try {
       const prev = (g.pvp && typeof g.pvp.rating === "number") ? g.pvp.rating : null;
       const r = await actions.pvpAttack(target, useRevanche ? "revanche" : entry, attackers, myPosture);
@@ -346,7 +350,8 @@ function Arene() {
   }
 
   const seasonMs = pvp.season ? (Number(pvp.season.ends_at) - Date.now()) : 0;
-  const modes = AU.entryModes(pvp);
+  const modes = AU.entryModes(pvp, g);
+  const ticketMode = modes.find((m) => m.key === "ticket");
 
   return (
     <div className="container wide">
@@ -374,6 +379,10 @@ function Arene() {
       </div>
 
       {!helpSeen && <AreneHelp pvp={pvp} onClose={closeHelp} />}
+
+      {ticketPaid && <div className="panel oct mono" data-fa="arene-entry-paid" role="status" style={{ border: "1px solid var(--success)", color: "var(--success)", padding: 14, marginBottom: 14, fontSize: 12 }}>
+        {I18N.t("AR2_TICKET_PAID", ticketMode.count)}
+      </div>}
 
       {defenseError ? (
         <div className="panel oct" role="alert" style={{ border: "1px solid var(--alert)", padding: 20, marginBottom: 14 }}>
@@ -512,13 +521,16 @@ function Arene() {
       <div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.8fr", gap: 16 }} className="arena-lower">
         {/* Adversaires */}
         <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 16 }}>
-          <div className="flex between center" style={{ marginBottom: 10 }}>
+          <div className="flex between center wrap" style={{ marginBottom: 10, gap: 8 }}>
             <span className="h2" style={{ fontSize: 14, color: "var(--fire)" }}>{I18N.t("AR2_OPPONENTS")}</span>
-            <div className="flex gap8">
+            <div className="flex gap8 wrap">
               <span className="mono" style={{ fontSize: 11, color: "var(--text-dim)", alignSelf: "center" }}>{I18N.t("AR2_ENTRY")} :</span>
               {modes.map((m) => (
-                <button key={m.key} className={cx("btn sm", entry === m.key && "on")} disabled={!m.available} onClick={() => setEntry(m.key)}>
-                  {m.key === "free" ? I18N.t("AR2_FREE") : m.key === "fa" ? <FaText text={I18N.t("AR2_FA", pvp.fa_cost ?? "—")} s={12} /> : I18N.t("AR2_TICKET")}
+                <button key={m.key} className={cx("btn sm arene-entry-mode", m.available && entry === m.key && "on")} data-fa={`arene-entry-${m.key}`}
+                  title={m.key === "ticket" ? `${I18N.t("AR2_TICKET")} ×${m.count}` : undefined}
+                  aria-label={m.key === "ticket" ? `${I18N.t("AR2_TICKET")} ×${m.count}` : undefined}
+                  disabled={!m.available} onClick={() => setEntry(m.key)}>
+                  {m.key === "free" ? I18N.t("AR2_FREE") : m.key === "fa" ? <FaText text={I18N.t("AR2_FA", pvp.fa_cost ?? "—")} s={12} /> : `🎟 ×${m.count}`}
                 </button>
               ))}
             </div>
@@ -613,7 +625,7 @@ function Arene() {
                 <span className="mono"><span aria-hidden="true" style={{ display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: AU.leagueColor(pvp.league), marginRight: 6, verticalAlign: "middle" }} />{row.rank}. {estMoi(row, g) ? "➔ " : ""}{(row.name || "").slice(0, 24)}{(row.name || "").length > 24 ? "…" : ""}</span>
                 <span className="mono" style={{ color: "var(--elec)" }}>{row.rating} · {row.wins || 0}-{row.losses || 0}</span>
                 {row.attack_block !== "toi" && (row.can_attack === true
-                  ? <button className="btn btn-elec sm" disabled={busy || attackLock.current || defenseLock.current || !canAttack} onClick={() => onPickOpponent(row, false)}>{I18N.t("AR2_ATTACK")}</button>
+                  ? <button className="btn arene-ladder-attack" disabled={busy || attackLock.current || defenseLock.current || !canAttack} onClick={() => onPickOpponent(row, false)}><span aria-hidden="true">⚔</span>{I18N.t("AR2_ATTACK")}</button>
                   : row.attack_block === "defense_tombee"
                     ? <span className="mono" style={{ fontSize: 11, color: "var(--text-dim)" }}>{I18N.t("AR2_LADDER_DEFENSE_DOWN")}</span>
                     : row.attack_block === "plafond_couple"
@@ -799,7 +811,7 @@ function Arene() {
               </div>
               <div className="flex gap8" style={{ marginTop: 12, justifyContent: "flex-end" }}>
                 <button className="btn sm" onClick={() => setPick(null)}>{I18N.t("CANCEL")}</button>
-                <button className="btn btn-elec sm" disabled={!ready || busy || !canAttack} onClick={() => { const ids = [...pick.ids]; const t = pick.target, rv = pick.revanche, myPosture = pick.posture || "equilibre", oppPosture = pick.oppPosture || null; setPick(null); onAttack(t, rv, ids, myPosture, oppPosture); }}>{I18N.t("AR2_ATTACK")}</button>
+                <button className="btn btn-elec sm" disabled={!ready || busy || !canAttack || (!pick.revanche && entry === "ticket" && !ticketMode.available)} onClick={() => { const ids = [...pick.ids]; const t = pick.target, rv = pick.revanche, myPosture = pick.posture || "equilibre", oppPosture = pick.oppPosture || null; setPick(null); onAttack(t, rv, ids, myPosture, oppPosture); }}>{I18N.t("AR2_ATTACK")}</button>
               </div>
             </div>
           </div>
@@ -816,7 +828,12 @@ function Arene() {
         opponentName={result.opponent_name}
         p1Posture={result.p1Posture}
         p2Posture={result.p2Posture}
-        onClose={() => { setResult(null); actions.pvpRefresh(); loadMyDefense(); }} />}
+        onClose={() => {
+          // Le serveur confirme le moyen réellement débité ; app.jsx a déjà mis à jour g.
+          // Attendre la fermeture du rejeu pour que le paiement soit visible au retour.
+          setTicketPaid(result.entry === "ticket");
+          setResult(null); actions.pvpRefresh(); loadMyDefense();
+        }} />}
     </div>
   );
 }

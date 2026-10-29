@@ -426,6 +426,24 @@ body[data-fond="cite"] .app-bg {
 .btn-alert { --c: var(--alert); }
 .btn-gold { --c: var(--gold); }
 
+/* Action du classement : aplat électrique, compact et lisible sur mobile. */
+.btn.arene-ladder-attack {
+  background: var(--elec); color: #06101a; border-color: var(--elec);
+  font-size: 12px; font-weight: 800; letter-spacing: .5px;
+  border-radius: 3px; padding: 6px 12px; clip-path: none;
+  box-shadow: 0 0 12px rgba(0,240,255,.35);
+  white-space: nowrap; flex-shrink: 0; cursor: pointer;
+}
+.btn.arene-ladder-attack:hover { background: var(--elec); }
+.btn.arene-ladder-attack:disabled {
+  opacity: .5; cursor: default; pointer-events: auto;
+  filter: grayscale(1); box-shadow: none; transform: none;
+}
+.btn.arene-entry-mode:disabled {
+  color: var(--text-dim); background: var(--bg-panel); box-shadow: none;
+  cursor: default;
+}
+
 /* ---- Creature card ---- */
 .card {
   --rc: var(--r-common);

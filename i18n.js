@@ -502,6 +502,7 @@
     AR2_FREE: { FR: "Gratuit", EN: "Free", ZH: "免费" },
     AR2_FA: { FR: "%d FA", EN: "%d FA", ZH: "%d FA" },
     AR2_TICKET: { FR: "🎟 Ticket Argent", EN: "🎟 Silver ticket", ZH: "🎟 白银券" },
+    AR2_TICKET_PAID: { FR: "Entrée payée avec 1 ticket Argent · reste %d", EN: "Entry paid with 1 Silver ticket · %d left", ZH: "已用 1 张白银券入场 · 剩 %d 张" },
     AR2_NO_DEFENSE: { FR: "Choisis 3 entités pour poser ta défense.", EN: "Pick 3 entities to post your defense.", ZH: "请选择 3 个实体来设置防守。" },
     AR2_DEFENSE_HINT: { FR: "Choisis 3 entités ci-dessous, puis pose ta défense pour entrer dans l'Arène.", EN: "Choose 3 entities below, then set your defense to enter the Arena.", ZH: "在下方选择 3 个实体，然后设置防守，即可进入竞技场。" },
     AR2_SEASON: { FR: "Saison %d", EN: "Season %d", ZH: "第 %d 赛季" },
