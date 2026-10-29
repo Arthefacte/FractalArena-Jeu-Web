@@ -1675,6 +1675,7 @@
     POOLS_OPEN_LABEL:  { FR: "Voir les jauges", EN: "Show the gauges", ZH: "查看进度条" },
     ROOM_EMPTY: { FR: "Aucun message. Lance la conversation !", EN: "No messages yet. Start the conversation!", ZH: "还没有消息，来开启对话吧！" },
     ROOM_MUTE: { FR: "Masquer", EN: "Mute", ZH: "屏蔽" },
+    ROOM_AGENT_TAG: { FR: "agent", EN: "agent", ZH: "智能体" },
     ROOM_MUTED: { FR: "Joueur masqué", EN: "Player muted", ZH: "已屏蔽该玩家" },
     ROOM_BLOCKED: { FR: "Message bloqué (lien, adresse ou contenu interdit).", EN: "Message blocked (link, address or forbidden content).", ZH: "消息被拦截（链接、地址或违规内容）。" },
     ROOM_BANNED: { FR: "Tu es banni du chat.", EN: "You are banned from chat.", ZH: "你已被禁止使用聊天。" },
