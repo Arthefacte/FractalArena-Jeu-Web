@@ -61,16 +61,17 @@ test("les boutons Attaquer et Revanche partagent la même résolution de cible",
   assert.match(ARENE, /onPickOpponent\(o, true\)/);
   assert.match(ARENE, /onPickOpponent\(o, false\)/);
   const pick = ARENE.slice(ARENE.indexOf("async function onPickOpponent"), ARENE.indexOf("async function onAttack"));
-  assert.match(pick, /const ref = o\.opponent_id \|\| o\.wallet;/);
+  assert.match(pick, /const ref = o\.opponent_id \|\| o\.player_id \|\| o\.wallet;/);
   assert.match(pick, /actions\.pvpDefenseOf\(ref\)/);
   assert.match(pick, /setPick\(\{ target: ref,/);
   assert.match(pick, /cible_sans_fantome/);
 });
 
 test("aucun champ que /pvp/opponents ne publie n'est lu comme cible", () => {
-  // `player_id` est le champ du CLASSEMENT (/pvp/ladder) et des autres surfaces
-  // publiques ; l'écrire sur un adversaire de la liste est exactement l'erreur d'origine.
-  assert.ok(!/\bo\.player_id\b/.test(ARENE),
+  // Les cartes restent sur `opponent_id` ; le sélecteur commun accepte aussi
+  // `player_id` pour les lignes du classement (/pvp/ladder).
+  const cartes = ARENE.slice(ARENE.indexOf("const carte ="), ARENE.indexOf("{/* Classement */}"));
+  assert.ok(!/\bo\.player_id\b/.test(cartes),
     "`o.player_id` n'existe pas dans /pvp/opponents — la cible serait `undefined`");
   assert.ok(!/const ref = o\.wallet/.test(ARENE),
     "`wallet` est sorti du payload public des adversaires (phase 2) : repli mort");

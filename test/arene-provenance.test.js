@@ -170,7 +170,7 @@ test("classement : rang serveur, effectif, identité prioritaire et pastilles de
   ladder.reverse(); // Le rang ne doit pas être recalculé depuis l'index client.
   const r = render(posted, [], { publicId: "moi", wallet: "mon-wallet", pvp: { league: "argent", ladder } });
   assert.match(r.text, /AR2_LADDER_POSITION 4 14 Argent/);
-  const rows = r.nodes.filter((n) => n.type === "div" && n.props.className === "flex between" && ladder.some((row) => row.player_id === n.props.key));
+  const rows = r.nodes.filter((n) => n.type === "div" && n.props.className === "flex between center wrap" && ladder.some((row) => row.player_id === n.props.key));
   assert.equal(rows.length, 14);
   const highlighted = rows.filter((n) => n.props.style.background !== "transparent");
   assert.equal(highlighted.length, 1);

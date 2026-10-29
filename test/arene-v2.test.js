@@ -98,9 +98,9 @@ test("le timer relit la défense à l'échéance et ne recrée pas de PV", () =>
   assert.match(UI, /AR2_DEFENSE_DOWN/);
 });
 
-test("prix et plafond sont câblés depuis cadence et passés au message d'erreur", () => {
+test("prix et plafond viennent du serveur et sont passés au message d'erreur", () => {
   assert.match(APP, /heal_cost: cad\.heal_cost/);
-  assert.match(APP, /pair_limit: cad\.pair_limit/);
+  assert.match(APP, /pair_limit: ladder\.pair_limit \?\? cad\.pair_limit/);
   assert.match(UI, /pair_limit: pvp\.pair_limit/);
   assert.doesNotMatch(UI, /(?:heal_cost|pair_limit)\s*(?:\|\||\?\?)\s*\d/);
 });
