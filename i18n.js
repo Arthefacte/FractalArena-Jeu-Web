@@ -178,6 +178,8 @@
     POT_LAST_DRAW_RANGE: { FR: "dernier tirage : %s à %s FB par gagnant (parts pondérées par les jours validés), %d gagnant(s), le %s", EN: "last draw: %s to %s FB per winner (shares weighted by completed days), %d winner(s), on %s", ZH: "上次抽奖：每位获奖者 %s 至 %s FB（按完成天数加权），%d 位获奖者，%s" },
     POT_WINDOW: { FR: "jours comptés du %s au %s (le jour du seuil compte, les suivants non)", EN: "days counted from %s to %s (the threshold day counts, the ones after do not)", ZH: "计天区间：%s 至 %s（达到阈值当天计入，之后不计）" },
     POT_WINDOW_OPEN: { FR: "jours validés comptés depuis le %s, jusqu'au jour où la cagnotte atteint son seuil", EN: "completed days counted since %s, up to the day the jackpot reaches its threshold", ZH: "自 %s 起计天，直到彩池达到阈值当天" },
+    POT_CYCLE_CLOSED: { FR: "Cycle clôturé le %s — ta part est figée sur %d jour(s) validé(s), tirage en attente", EN: "Cycle closed on %s — your share is locked at %d qualified day(s), draw pending", ZH: "周期已于 %s 结束 — 你的份额锁定在 %d 个有效天，等待开奖" },
+    POT_CYCLE_PAID_OUT: { FR: "Tirage effectué · part envoyée — un nouveau cycle repart au prochain FA versé", EN: "Draw completed · share sent — a new cycle starts with the next FA contribution", ZH: "开奖完成 · 份额已发送 — 下一笔 FA 注入时开启新周期" },
     POT_NONE_YET: { FR: "aucun tirage pour l'instant : la cagnotte attend ses %d FA", EN: "no draw yet: the jackpot is waiting for its %d FA", ZH: "尚无抽奖：彩池等待达到 %d FA" },
     POT_WL_DEST: { FR: "éligibilité liée à", EN: "eligibility tied to", ZH: "资格关联至" },
     // ——— Historique des paiements de la cagnotte (`GET /pot/history`) ———
