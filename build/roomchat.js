@@ -61,8 +61,11 @@ function saveSeenId(wallet, id) {
     localStorage.setItem(seenKey(wallet), String(id));
   } catch (e) {}
 }
-// Maximum des deux sources : le compte fait autorité (il a vu ce que les autres
-// appareils ont lu), le local couvre la lecture faite ici juste avant.
+// Maximum des deux sources au DÉMARRAGE : le compte a vu ce que les autres appareils
+// ont lu, le local couvre la lecture faite ici juste avant.
+// Ensuite, seul le LOCAL fait avancer le curseur (cf. RoomFab) : un `room_seen_id`
+// serveur plus haut que ce qui a été affiché ICI éteignait la pastille pour des
+// messages jamais vus sur cet écran (constat fondateur 30/10).
 function seenIdDepuis(g) {
   const ui = g && g.uiState || {};
   const serveur = parseInt(ui.room_seen_id, 10) || 0;
@@ -271,10 +274,16 @@ function RoomFab() {
   useEffect(() => {
     setMuted(mutedDepuis(g));
   }, [g.wallet, g.uiState]);
+  // Le curseur « vu » ne DESCEND jamais sous celui du compte (lu sur un autre
+  // appareil), mais il ne s'y aligne plus d'office : un `seq` sauté — message
+  // supprimé par la modération, ou envoyé pendant une reconnexion — laissait
+  // `seen_id` au-dessus de messages jamais affichés, et la pastille restait
+  // éteinte pour eux (constat fondateur 30/10 : « la pastille n'apparaît plus »).
+  // Le curseur propage donc la valeur LOCALE la plus haute, pas celle du compte.
   useEffect(() => {
-    const serveur = seenIdDepuis(g);
-    if (serveur > seenIdRef.current) seenIdRef.current = serveur;
-  }, [g.wallet, g.uiState]);
+    const local = loadSeenId(g.wallet);
+    if (local > seenIdRef.current) seenIdRef.current = local;
+  }, [g.wallet]);
 
   // Coquille mobile : la bulle flottante disparaît, un bouton du header ouvre
   // le panneau via cet événement ; le badge de non-lus lui est renvoyé.
@@ -360,7 +369,9 @@ function RoomFab() {
   // Compteur de non-lus : panneau ouvert = tout est vu ; fermé = messages
   // plus récents que le dernier vu, hors les miens et les wallets mutés.
   useEffect(() => {
-    const maxSeq = messages.reduce((mx, m) => Math.max(mx, msgCursor(m)), 0);
+    // Seuls les messages RÉELLEMENT affichés font avancer le curseur : un message tu
+    // ne doit pas servir de borne (sinon les suivants, jamais vus, passent pour lus).
+    const maxSeq = messages.reduce((mx, m) => estMute(m, muted) ? mx : Math.max(mx, msgCursor(m)), 0);
     if (open) {
       if (maxSeq > seenIdRef.current) {
         seenIdRef.current = maxSeq;
@@ -375,7 +386,10 @@ function RoomFab() {
     // E3 (D10/M4, emplacement 6) : « pas les miens » et « pas les tus » se décident sur l'identifiant
     // opaque, avec repli sur l'adresse (phase 1) — la même règle que dans le panneau, sinon le
     // compteur et la liste ne diraient pas la même chose.
-    setUnread(messages.filter(m => msgCursor(m) > seenIdRef.current && !estMoi(m, g.publicId, g.wallet) && !estMute(m, muted)).length);
+    // Les messages d'AGENTS (Omni) comptent : un agent n'est « moi » que si le serveur le dit
+    // (`mine`), donc la conversation avec lui rallume la pastille comme celle d'un joueur.
+    const nonVus = messages.filter(m => msgCursor(m) > seenIdRef.current && !estMoi(m, g.publicId, g.wallet) && !estMute(m, muted));
+    setUnread(nonVus.length);
   }, [messages, muted, open, g.wallet, g.publicId]);
 
   // Phase 2 : les sourdines écrites AVANT cette phase sont des adresses. Le serveur va cesser
