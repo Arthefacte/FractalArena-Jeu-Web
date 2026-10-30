@@ -46,6 +46,16 @@ test("les messages d'agents comptent dans la pastille", () => {
     "aucune exclusion spécifique aux agents dans le compteur");
 });
 
+test("un curseur plus haut que la pièce est ramené à ce qui existe", () => {
+  // `room_seen_id` a gardé un `id` de table (728) d'avant la pièce commune, où la salle
+  // s'arrête à `seq` 610 : aucun message ne peut être « plus récent » que 728, donc la
+  // pastille restait éteinte pour toujours. Le curseur doit se recaler sur la salle.
+  const garde = bloc("if (maxSeq > 0 && seenIdRef.current > maxSeq) {", "if (open) {");
+  assert.match(garde, /seenIdRef\.current = maxSeq/);
+  assert.match(garde, /saveSeenId\(g\.wallet, maxSeq\)/, "le cache local est recalé aussi");
+  assert.match(garde, /room_seen_id: maxSeq/, "et le compte, sinon le prochain chargement le remet");
+});
+
 test("le compteur publie le NOMBRE de non-lus, pas seulement une position", () => {
   assert.match(SRC, /setUnread\(nonVus\.length\)/);
   assert.match(SRC, /fa:room-unread/);

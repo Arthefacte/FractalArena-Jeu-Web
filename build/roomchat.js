@@ -372,6 +372,18 @@ function RoomFab() {
     // Seuls les messages RÉELLEMENT affichés font avancer le curseur : un message tu
     // ne doit pas servir de borne (sinon les suivants, jamais vus, passent pour lus).
     const maxSeq = messages.reduce((mx, m) => estMute(m, muted) ? mx : Math.max(mx, msgCursor(m)), 0);
+    // Un curseur plus HAUT que le dernier message de la pièce ne peut désigner aucun message :
+    // c'est un reste d'une numérotation précédente (les `id` de table, avant que la pièce
+    // devienne commune et numérotée par `seq`). Laissé tel quel, il éteint la pastille pour
+    // toujours — c'est le cas constaté le 30/10/2026 sur un compte dont `room_seen_id` valait
+    // 728 alors que la pièce s'arrêtait à 610. On le ramène à ce qui existe vraiment.
+    if (maxSeq > 0 && seenIdRef.current > maxSeq) {
+      seenIdRef.current = maxSeq;
+      saveSeenId(g.wallet, maxSeq);
+      actions.pushUiState({
+        room_seen_id: maxSeq
+      });
+    }
     if (open) {
       if (maxSeq > seenIdRef.current) {
         seenIdRef.current = maxSeq;
