@@ -3227,9 +3227,14 @@ function Wallet() {
   // diffèrent (c'est le cas normal depuis la pondération). null = rien à afficher, jamais un
   // « 0 FB » inventé.
   const potPart = potR && potR.pot ? window.FA_POT.partAffichage(potR.pot.dernier) : null;
+  // Le serveur fige la part à la clôture. Sans ces champs (ancien serveur), on garde
+  // la fenêtre historique ; surtout, un nombre de jours absent ne devient pas zéro.
+  const potElig = pot && pot.eligibility;
+  const potPaye = potElig && potElig.paid_out === true;
+  const potClos = potElig && potElig.cycle_closed === true && potElig.paid_out === false && typeof potElig.cycle_closed_at === "string" && Number.isFinite(Date.parse(potElig.cycle_closed_at)) && Number.isInteger(potElig.days_qualified) && potElig.days_qualified >= 0;
   // Fenêtre de comptage des jours de tâche. `fin` est EXCLUSIVE (minuit UTC du lendemain du
   // jour du seuil) : on affiche le dernier jour compté, pas le lendemain.
-  const potFenetre = potR && potR.pot && potR.pot.debut ? potR.pot.fin ? I18N.t("POT_WINDOW", new Date(potR.pot.debut).toLocaleDateString(), new Date(Date.parse(potR.pot.fin) - 86400000).toLocaleDateString()) : I18N.t("POT_WINDOW_OPEN", new Date(potR.pot.debut).toLocaleDateString()) : null;
+  const potFenetre = potPaye ? null : potClos ? I18N.t("POT_CYCLE_CLOSED", new Date(potElig.cycle_closed_at).toLocaleDateString(), potElig.days_qualified) : potR && potR.pot && potR.pot.debut ? potR.pot.fin ? I18N.t("POT_WINDOW", new Date(potR.pot.debut).toLocaleDateString(), new Date(Date.parse(potR.pot.fin) - 86400000).toLocaleDateString()) : I18N.t("POT_WINDOW_OPEN", new Date(potR.pot.debut).toLocaleDateString()) : null;
   return /*#__PURE__*/React.createElement("div", {
     className: "container"
   }, /*#__PURE__*/React.createElement(SectionHead, {
@@ -3442,7 +3447,13 @@ function Wallet() {
       marginTop: 8,
       color: "var(--text-dim)"
     }
-  }, potFenetre), potR.pot && /*#__PURE__*/React.createElement("div", {
+  }, potFenetre), potPaye && /*#__PURE__*/React.createElement("div", {
+    className: "mono muted",
+    style: {
+      fontSize: 11,
+      marginTop: 8
+    }
+  }, I18N.t("POT_CYCLE_PAID_OUT")), potR.pot && /*#__PURE__*/React.createElement("div", {
     className: "mono",
     style: {
       fontSize: 12,
