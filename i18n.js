@@ -446,6 +446,8 @@
     AR_LOOP_CAP: { FR: "Limite loop atteinte — repli sur Bronze", EN: "Loop cap reached — falling back to Bronze", ZH: "循环已达上限 — 回退至青铜" },
     AR_LOOP_END_GOLD: { FR: "Loops Or épuisés — boucle arrêtée", EN: "Gold loops used up — loop stopped", ZH: "黄金循环已用尽 — 已停止循环" },
     AR_LOOP_END_SILVER: { FR: "Loops Argent épuisés — boucle arrêtée", EN: "Silver loops used up — loop stopped", ZH: "白银循环已用尽 — 已停止循环" },
+    AR_LOOP_TIME_END: { FR: "Boucle : session terminée (1 h). Relance-la quand tu veux.", EN: "Loop: session over (1 h). Restart it whenever you like.", ZH: "循环：本轮结束（1 小时）。随时可重新开启。" },
+    AR_LOOP_SESSION: { FR: "⏱ Boucle — %s restant", EN: "⏱ Loop — %s left", ZH: "⏱ 循环 — 剩余 %s" },
     AR_LOOPS_LEFT: { FR: "🔁 Loops Argent %d/%d · Or %d/%d", EN: "🔁 Loops Silver %d/%d · Gold %d/%d", ZH: "🔁 循环 白银 %d/%d · 黄金 %d/%d" },
     AR_ROUND: { FR: "Round %d", EN: "Round %d", ZH: "回合 %d" },
     AR_TYPE_ADV: { FR: "%s › %s : +25% dégâts", EN: "%s › %s: +25% damage", ZH: "%s › %s：+25% 伤害" },
