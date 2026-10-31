@@ -2111,16 +2111,21 @@ function Perso() {
   // (un seul nom s'affiche — le nom ordinal est retiré par le serveur).
   const [confirmTitre, setConfirmTitre] = useState(false);
 
-  // Re-vérification LP à la demande : le serveur seul décide du palier (il
-  // monte ET descend) — ici on ne fait que déclencher et raconter le résultat.
-  async function doLpRefresh() {
+  // Lecture du dossier LP : le serveur seul décide du palier (il monte ET descend) —
+  // ici on ne fait que déclencher et raconter le résultat.
+  // Referme le trou constaté le 31/10/2026 : le montant n'arrivait QUE par ce POST, donc un
+  // joueur qui n'appuyait jamais restait devant un « — » alors qu'il tenait de la LP, et son
+  // solde figé d'il y a deux mois continuait de s'afficher. On interroge le serveur à
+  // l'ouverture du panneau et on rafraîchit la ligne de temps.
+  async function doLpRefresh(silencieux) {
     if (lpBusy) return;
     setLpBusy(true);
     const r = await actions.refreshLp();
     setLpBusy(false);
-    if (!r.ok) { toast(I18N.t("LP_REFRESH_ERR"), "bad"); return; }
-    toast(I18N.t("LP_REFRESH_OK"), "good");
+    if (!r.ok) { if (!silencieux) toast(I18N.t("LP_REFRESH_ERR"), "bad"); return; }
+    if (!silencieux) toast(I18N.t("LP_REFRESH_OK"), "good");
   }
+  useEffect(() => { doLpRefresh(true); }, []);
 
   async function doRename() {
     if (!sel || !name.trim() || busy) return;
@@ -2199,7 +2204,9 @@ function Perso() {
               <div className="muted mono" style={{ fontSize: 12, marginTop: 8 }}><TokenIcon s={13} /> {fmt(g.lpFa)}</div>
             )}
             {!g.lpTier && <div className="muted mono" style={{ fontSize: 11, marginTop: 8 }}>{I18N.t("LP_STATUS_NONE")}</div>}
-            <button className="btn btn-elec block" style={{ marginTop: 12 }} disabled={lpBusy} onClick={doLpRefresh}>{lpBusy ? "…" : "↻ " + I18N.t("LP_REFRESH_BTN")}</button>
+            {/* La règle du balayage, dite ici : personne n'a à deviner quand le logo tombe. */}
+            <div className="muted mono" style={{ fontSize: 10, marginTop: 8, lineHeight: 1.5 }}>{I18N.t("LP_SWEEP_HINT")}</div>
+            <button className="btn btn-elec block" style={{ marginTop: 12 }} disabled={lpBusy} onClick={() => doLpRefresh(false)}>{lpBusy ? "…" : "↻ " + I18N.t("LP_REFRESH_BTN")}</button>
           </div>
           {/* Champion de soutien : points de lien — affichage seul en v1 (aucun
               achat par points ; ils se gagnent quand le champion sert). */}
