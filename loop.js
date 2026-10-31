@@ -60,7 +60,36 @@
     };
   }
 
-  const api = { loopDecision, resolveDaily };
+  // ── Durée d'une session de boucle ─────────────────────────────────────────
+  // La boucle n'est PAS un pilote automatique permanent : c'est une session d'une
+  // heure. Au bout des 60 minutes, elle ne relance plus de combat (le combat en cours
+  // va au bout), et le joueur doit REVENIR appuyer sur « Boucle : ON » pour repartir
+  // pour une heure. Le chrono vit côté client et n'est pas une ressource : le serveur
+  // ne le connaît pas et ne le paie pas — ce qu'il faut freiner, c'est l'attention
+  // laissée sans surveillance, pas la triche (chaque combat reste payé et plafonné
+  // par les quotas quotidiens, inchangés).
+  const LOOP_SESSION_MS = 60 * 60_000;
+
+  // Reste-t-il du temps dans la session ouverte à `startedAt` ?
+  // → { open:true, msLeft, endsAt } | { open:false, msLeft:0, endsAt }
+  function loopSession(startedAt, now) {
+    const start = Number(startedAt) || 0;
+    if (!start) return { open: false, msLeft: 0, endsAt: 0 };
+    const endsAt = start + LOOP_SESSION_MS;
+    const msLeft = Math.max(0, endsAt - (Number(now) || 0));
+    return { open: msLeft > 0, msLeft, endsAt };
+  }
+
+  // « 59:59 » / « 1:00:00 » — affichage du chrono, jamais une règle de jeu.
+  function loopClock(msLeft) {
+    const s = Math.max(0, Math.ceil((Number(msLeft) || 0) / 1000));
+    const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
+    const two = (n) => String(n).padStart(2, "0");
+    return h > 0 ? `${h}:${two(m)}:${two(sec)}` : `${m}:${two(sec)}`;
+  }
+
+  const api = { loopDecision, resolveDaily, loopSession, loopClock, LOOP_SESSION_MS };
+
   if (typeof window !== "undefined") window.FA_LOOP = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })();

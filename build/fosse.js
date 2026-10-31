@@ -26,7 +26,9 @@ const {
   cosmeticEnemyScale
 } = window.FA_COSMETIC;
 const {
-  loopDecision
+  loopDecision,
+  loopSession,
+  loopClock
 } = window.FA_LOOP;
 
 // Formate une durée en ms vers HH:MM:SS (borné à 0).
@@ -312,6 +314,10 @@ function Fosse() {
   const [betTier, setBetTier] = useState("");
   const [playing, setPlaying] = useState(false);
   const [loop, setLoop] = useState(false);
+  // Session de boucle : une heure, pas une de plus. `loopStart` est l'instant où le
+  // joueur a appuyé sur « Boucle : ON » ; `loopLeft` est le chrono visible.
+  const [loopStart, setLoopStart] = useState(0);
+  const [loopLeft, setLoopLeft] = useState(0);
   const [p1Live, setP1Live] = useState(null);
   const [p2Live, setP2Live] = useState(null);
   const [p1Meta, setP1Meta] = useState(selectedBeasts.map(beastMeta));
@@ -321,6 +327,7 @@ function Fosse() {
   const [result, setResult] = useState(null);
   const [round, setRound] = useState(0);
   const loopRef = useRef(false);
+  const loopEndRef = useRef(0);
   const runIdRef = useRef(0);
   const stepRef = useRef(null);
   const battleRef = useRef(null);
@@ -615,6 +622,18 @@ function Fosse() {
     if (loopRef.current) {
       // Décision pure sur l'état FRAIS (gRef.current) — la closure de la boucle fige
       // `g`, donc lire `g` ici raterait la montée des compteurs de loop et du solde.
+      // L'heure de session est passée : on ne relance pas (le combat qui vient de
+      // finir va au bout), et le joueur doit revenir pour repartir. Priorité sur la
+      // décision de quota — c'est la règle qu'on veut faire respecter.
+      if (!loopSession(loopEndRef.current - window.FA_LOOP.LOOP_SESSION_MS, Date.now()).open) {
+        loopRef.current = false;
+        setLoop(false);
+        setLoopStart(0);
+        setLoopLeft(0);
+        loopEndRef.current = 0;
+        toast(I18N.t("AR_LOOP_TIME_END"), "info");
+        return;
+      }
       const dec = loopDecision(gRef.current, betTier, D.ECON);
       if (dec.go) {
         stepRef.current = setTimeout(() => {
@@ -647,6 +666,27 @@ function Fosse() {
       });else showResult();
     }
   }
+
+  // Chrono de session : un tic par seconde, qui ferme la boucle si l'heure est
+  // écoulée. Le combat en cours va au bout (c'est settleBattle qui décide de la suite) ;
+  // ici on n'éteint que l'intention de relancer.
+  useEffect(() => {
+    if (!loop || !loopStart) return undefined;
+    const tic = () => {
+      const sess = loopSession(loopStart, Date.now());
+      setLoopLeft(sess.msLeft);
+      if (!sess.open && loopRef.current) {
+        loopRef.current = false;
+        setLoop(false);
+        setLoopStart(0);
+        loopEndRef.current = 0;
+        toast(I18N.t("AR_LOOP_TIME_END"), "info");
+      }
+    };
+    tic();
+    const id = setInterval(tic, 1000);
+    return () => clearInterval(id);
+  }, [loop, loopStart]);
   function onFight() {
     if (playing) return;
     setResult(null);
@@ -656,6 +696,9 @@ function Fosse() {
     if (loop) {
       loopRef.current = false;
       setLoop(false);
+      setLoopStart(0);
+      setLoopLeft(0);
+      loopEndRef.current = 0;
       return;
     }
     if (!ready) {
@@ -671,6 +714,12 @@ function Fosse() {
       if (dec.reason === "cap") toast(I18N.t(dec.tier === "gold" ? "AR_LOOP_END_GOLD" : "AR_LOOP_END_SILVER"), "info");else if (dec.reason === "free") toast(I18N.t("AR_FREE_EMPTY"), "bad");else toast(I18N.t("AR_INSUFF"), "bad");
       return;
     }
+    // Session d'une heure : on l'ouvre maintenant. Elle se ferme d'elle-même au bout
+    // de 60 minutes ; repasser par ce bouton en ouvre une neuve.
+    const now = Date.now();
+    loopEndRef.current = now + window.FA_LOOP.LOOP_SESSION_MS;
+    setLoopStart(now);
+    setLoopLeft(window.FA_LOOP.LOOP_SESSION_MS);
     loopRef.current = true;
     setLoop(true);
     if (!playing) playFight(true);
@@ -1039,7 +1088,18 @@ function Fosse() {
     },
     disabled: !ready,
     onClick: onLoop
-  }, loop ? I18N.t("AR_LOOP_ON") : I18N.t("AR_LOOP_OFF"))), !ready && /*#__PURE__*/React.createElement("div", {
+  }, loop ? I18N.t("AR_LOOP_ON") : I18N.t("AR_LOOP_OFF"))), loop && loopStart > 0 && /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      fontSize: 12,
+      textAlign: "center",
+      color: loopLeft < 5 * 60_000 ? "var(--alert)" : "var(--gold)"
+    }
+  }, I18N.t("AR_LOOP_SESSION", loopClock(loopLeft))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "none"
+    }
+  }), !ready && /*#__PURE__*/React.createElement("div", {
     className: "mono",
     style: {
       fontSize: 11,
