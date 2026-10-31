@@ -3719,7 +3719,9 @@ function MnavSlot({ active, icon, glyph, label, badge, onClick, locked }) {
         {icon
           ? <img className="fa-mnav-ico" src={icon} alt="" aria-hidden="true" draggable="false" />
           : <span className="fa-mnav-glyph" aria-hidden="true">{glyph}</span>}
-        {badge > 0 && <span className="fa-mnav-badge">{badge}</span>}
+        {/* Le badge peut être un NOMBRE (« 3 ») ou un texte déjà borné (« 9+ ») :
+            comparer au sens numérique l'aurait effacé dans le second cas. */}
+        {badge ? <span className="fa-mnav-badge">{badge}</span> : null}
       </span>
       <span className="fa-mnav-label">{label}</span>
     </button>
@@ -3844,7 +3846,12 @@ function Nav() {
           active={more.some(([k]) => g.view === k)}
           glyph="☰"
           label={I18N.t("NAV_MORE")}
-          badge={expReady}
+          /* Deux signaux, un seul logement. Sur téléphone, la rangée d'outils du
+             header (et donc sa pastille) vit DANS ce tiroir : sans ce badge, un
+             message non lu ne s'annonçait nulle part avant d'ouvrir « Plus » —
+             constat fondateur 31/10/2026. Un message est plus urgent qu'une
+             expédition prête : il prend la place, sinon on montre les expéditions. */
+          badge={roomUnread > 0 ? (roomUnread > 9 ? "9+" : roomUnread) : expReady}
           onClick={() => { if (window.FA_SFX) window.FA_SFX.play("tab"); setSheetOpen(true); }}
           locked={more.every(([k]) => bloque(k))}
         />
