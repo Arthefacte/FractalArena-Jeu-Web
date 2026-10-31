@@ -1946,11 +1946,26 @@ function FbShopPanel() {
       </div>
 
       <div className="eyebrow" style={{ color: "var(--gold)", margin: "20px 0 8px" }}>{I18N.t("FB_SHOP")}</div>
-      {(info && info.items ? info.items : []).map((it) => (
+      {(info && info.items ? info.items : []).map((it) => {
+        // Chaque objet a SON texte. Le 31/10/2026 la boutique affichait « XP ×2 permanent »
+        // sur les DEUX lignes (libellé codé en dur, catalogue à un seul objet à l'époque) :
+        // le joueur voyait deux fois le même article à 4 FB et à 10 FB, sans savoir ce qu'il
+        // achetait. Le nom vient du serveur (`label`), la description d'ici, par identifiant.
+        const T = {
+          xp2_30d: { name: I18N.t("FB_ITEM_XP2_30D"), desc: I18N.t("FB_ITEM_XP2_30D_DESC") },
+          fosse_team2_30d: { name: I18N.t("FB_ITEM_TEAM2"), desc: I18N.t("FB_ITEM_TEAM2_DESC") },
+        }[it.id] || { name: it.label || it.id, desc: I18N.t("FB_ITEM_GENERIC_DESC") };
+        const fin = it.expires_at ? new Date(it.expires_at) : null;
+        return (
         <div key={it.id} className="panel oct flex between center" style={{ border: "1px solid var(--line)", padding: "12px 14px", gap: 12 }}>
           <div>
-            <div style={{ fontSize: 13 }}>{I18N.t("FB_ITEM_XP2")}</div>
-            <div className="muted" style={{ fontSize: 11, lineHeight: 1.4 }}>{I18N.t("FB_ITEM_XP2_DESC")}</div>
+            <div style={{ fontSize: 13 }}>{T.name}</div>
+            <div className="muted" style={{ fontSize: 11, lineHeight: 1.4 }}>{T.desc}</div>
+            {it.owned && fin && (
+              <div className="mono" style={{ fontSize: 10, color: "var(--success)", marginTop: 4 }}>
+                {I18N.t("FB_UNTIL", fin.toLocaleDateString("fr-FR"))}
+              </div>
+            )}
           </div>
           {it.owned
             ? <span className="mono muted" style={{ fontSize: 11, whiteSpace: "nowrap" }}>{I18N.t("FB_OWNED")}</span>
@@ -1959,7 +1974,8 @@ function FbShopPanel() {
                 {I18N.t("FB_BUY", fb(it.price_sats))}
               </button>}
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

@@ -3797,38 +3797,65 @@ function FbShopPanel() {
       color: "var(--gold)",
       margin: "20px 0 8px"
     }
-  }, I18N.t("FB_SHOP")), (info && info.items ? info.items : []).map(it => /*#__PURE__*/React.createElement("div", {
-    key: it.id,
-    className: "panel oct flex between center",
-    style: {
-      border: "1px solid var(--line)",
-      padding: "12px 14px",
-      gap: 12
-    }
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 13
-    }
-  }, I18N.t("FB_ITEM_XP2")), /*#__PURE__*/React.createElement("div", {
-    className: "muted",
-    style: {
-      fontSize: 11,
-      lineHeight: 1.4
-    }
-  }, I18N.t("FB_ITEM_XP2_DESC"))), it.owned ? /*#__PURE__*/React.createElement("span", {
-    className: "mono muted",
-    style: {
-      fontSize: 11,
-      whiteSpace: "nowrap"
-    }
-  }, I18N.t("FB_OWNED")) : /*#__PURE__*/React.createElement("button", {
-    className: "btn btn-elec sm",
-    style: {
-      whiteSpace: "nowrap"
-    },
-    disabled: achat !== null || info && info.fb_sats < it.price_sats,
-    onClick: () => acheter(it)
-  }, I18N.t("FB_BUY", fb(it.price_sats))))));
+  }, I18N.t("FB_SHOP")), (info && info.items ? info.items : []).map(it => {
+    // Chaque objet a SON texte. Le 31/10/2026 la boutique affichait « XP ×2 permanent »
+    // sur les DEUX lignes (libellé codé en dur, catalogue à un seul objet à l'époque) :
+    // le joueur voyait deux fois le même article à 4 FB et à 10 FB, sans savoir ce qu'il
+    // achetait. Le nom vient du serveur (`label`), la description d'ici, par identifiant.
+    const T = {
+      xp2_30d: {
+        name: I18N.t("FB_ITEM_XP2_30D"),
+        desc: I18N.t("FB_ITEM_XP2_30D_DESC")
+      },
+      fosse_team2_30d: {
+        name: I18N.t("FB_ITEM_TEAM2"),
+        desc: I18N.t("FB_ITEM_TEAM2_DESC")
+      }
+    }[it.id] || {
+      name: it.label || it.id,
+      desc: I18N.t("FB_ITEM_GENERIC_DESC")
+    };
+    const fin = it.expires_at ? new Date(it.expires_at) : null;
+    return /*#__PURE__*/React.createElement("div", {
+      key: it.id,
+      className: "panel oct flex between center",
+      style: {
+        border: "1px solid var(--line)",
+        padding: "12px 14px",
+        gap: 12
+      }
+    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13
+      }
+    }, T.name), /*#__PURE__*/React.createElement("div", {
+      className: "muted",
+      style: {
+        fontSize: 11,
+        lineHeight: 1.4
+      }
+    }, T.desc), it.owned && fin && /*#__PURE__*/React.createElement("div", {
+      className: "mono",
+      style: {
+        fontSize: 10,
+        color: "var(--success)",
+        marginTop: 4
+      }
+    }, I18N.t("FB_UNTIL", fin.toLocaleDateString("fr-FR")))), it.owned ? /*#__PURE__*/React.createElement("span", {
+      className: "mono muted",
+      style: {
+        fontSize: 11,
+        whiteSpace: "nowrap"
+      }
+    }, I18N.t("FB_OWNED")) : /*#__PURE__*/React.createElement("button", {
+      className: "btn btn-elec sm",
+      style: {
+        whiteSpace: "nowrap"
+      },
+      disabled: achat !== null || info && info.fb_sats < it.price_sats,
+      onClick: () => acheter(it)
+    }, I18N.t("FB_BUY", fb(it.price_sats))));
+  }));
 }
 function DepositModal({
   onClose

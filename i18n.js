@@ -887,6 +887,13 @@
     FB_DEP_MIN: { FR: "Dépôt minimum : %s", EN: "Minimum deposit: %s", ZH: "最低充值：%s" },
     FB_DEP_OK: { FR: "FB crédité — +%s sur ta liquidité FB", EN: "FB credited — +%s to your FB funds", ZH: "FB 已到账 — +%s" },
     FB_SHOP: { FR: "Boutique FB", EN: "FB shop", ZH: "FB 商店" },
+    // Boutique FB du 31/10/2026 : DEUX objets à 30 jours, chacun son texte (voir FbShopPanel).
+    FB_ITEM_XP2_30D: { FR: "XP ×2 — 30 jours", EN: "XP ×2 — 30 days", ZH: "双倍经验 — 30 天" },
+    FB_ITEM_XP2_30D_DESC: { FR: "L'XP de tes victoires est doublée pendant 30 jours. Cumulable avec une charge du pack XP ×2 : quand tu l'armes, les deux ×2 s'additionnent (×4 tant qu'il te reste des charges).", EN: "Victory XP is doubled for 30 days. Stacks with an XP ×2 pack charge: arm one and both ×2 apply (×4 while charges last).", ZH: "30 天内胜场经验翻倍。可与经验卡叠加：启用一张卡时两个 ×2 同时生效（有卡时 ×4）。" },
+    FB_ITEM_TEAM2: { FR: "2e équipe de Fosse — 30 jours", EN: "2nd Fosse team — 30 days", ZH: "第二支角斗队 — 30 天" },
+    FB_ITEM_TEAM2_DESC: { FR: "Un 2e emplacement dans la Fosse, sans mise : ses 3 entités ne gagnent que de l'XP, aucun FA. Elles tournent même quand tu changes d'écran, et restent indisponibles ailleurs (expédition, Arène, Campagne, Tour) tant que tu n'appuies pas sur Arrêter.", EN: "A second Fosse slot, no stake: its 3 entities earn XP only, no FA. It keeps running when you switch screens, and those entities stay unavailable elsewhere (expedition, Arena, Campaign, Tower) until you press Stop.", ZH: "角斗场第二个位置，无需下注：3 个实体只获得经验，不得 FA。切换界面时仍在运行，在按下停止前这些实体不能用于远征、竞技场、战役或高塔。" },
+    FB_ITEM_GENERIC_DESC: { FR: "Objet de la boutique FB.", EN: "FB shop item.", ZH: "FB 商店物品。" },
+    FB_UNTIL: { FR: "actif jusqu'au %s", EN: "active until %s", ZH: "有效期至 %s" },
     FB_ITEM_XP2: { FR: "XP ×2 permanent", EN: "Permanent XP ×2", ZH: "永久双倍经验" },
     FB_ITEM_XP2_DESC: { FR: "Le même bonus que le pack de charges XP ×2, mais à vie. Cumulable : quand tu actives une charge du pack, les deux ×2 s'additionnent (×4 au total tant qu'il te reste des charges).", EN: "The same bonus as the XP ×2 charge pack, but for life. Stackable: when you arm a pack charge, both ×2 apply together (×4 total while you still have charges).", ZH: "与 XP ×2 充能包相同的加成，但永久有效。可叠加：激活充能包后两个 ×2 同时生效（仍有充能期间总计 ×4）。" },
     FB_BUY: { FR: "Acheter (%s)", EN: "Buy (%s)", ZH: "购买（%s）" },
