@@ -146,6 +146,12 @@
       ZH: `在 InSwap 上锁定 FA 流动性：锁定达到 ${lpSeuil(LP_TIER_MIN.G1, ",")} FA 即可佩戴游戏徽标（2D）和做市商称号，达到 ${lpSeuil(LP_TIER_MIN.G2, ",")} FA 则为 3D 徽标和首席做市商称号。`,
     },
     LP_STATUS_NONE: { FR: `Aucun palier LP pour l'instant — il faut au moins ${lpSeuil(LP_TIER_MIN.G1, " ")} FA en liquidité verrouillée.`, EN: `No LP tier yet — at least ${lpSeuil(LP_TIER_MIN.G1, ",")} FA in locked liquidity required.`, ZH: `尚无 LP 等级——需要至少 ${lpSeuil(LP_TIER_MIN.G1, ",")} FA 的锁定流动性。` },
+    // Le balayage du serveur passe toutes les 6 h ; le bouton sert à ne pas attendre.
+    LP_SWEEP_HINT: {
+      FR: "Ton dossier est relu tout seul toutes les 6 heures. Pas envie d'attendre ? Appuie sur le bouton.",
+      EN: "Your file is re-checked on its own every 6 hours. Don't want to wait? Press the button.",
+      ZH: "你的档案每 6 小时自动复查一次。不想等？点按钮即可。",
+    },
     LP_REFRESH_BTN: { FR: "Rafraîchir mon statut LP", EN: "Refresh my LP status", ZH: "刷新我的 LP 状态" },
     LP_REFRESH_OK: { FR: "Statut LP mis à jour", EN: "LP status updated", ZH: "LP 状态已更新" },
     LP_REFRESH_ERR: { FR: "Vérification LP indisponible, réessaie.", EN: "LP check unavailable, try again.", ZH: "LP 验证不可用，请重试。" },
