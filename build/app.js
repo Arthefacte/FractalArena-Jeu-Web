@@ -6133,11 +6133,18 @@ function Header({
   useEffect(() => {
     const h = e => setRoomUnread(e.detail || 0);
     window.addEventListener("fa:room-unread", h);
+    // Le compteur est calculé APRÈS le montage du header (premier poll) : on le
+    // réclame, sinon la pastille n'apparaît qu'au message suivant.
+    window.dispatchEvent(new CustomEvent("fa:room-unread-ask"));
+    const ask = setInterval(() => window.dispatchEvent(new CustomEvent("fa:room-unread-ask")), 2000);
+    const stopAsk = setTimeout(() => clearInterval(ask), 6000);
     const q = e => setQuizReady(!!e.detail);
     window.addEventListener("fa:quiz-ready", q);
     return () => {
       window.removeEventListener("fa:room-unread", h);
       window.removeEventListener("fa:quiz-ready", q);
+      clearInterval(ask);
+      clearTimeout(stopAsk);
     };
   }, []);
   const togglePools = () => setPoolsOpen(o => {

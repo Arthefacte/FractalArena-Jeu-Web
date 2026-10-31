@@ -185,11 +185,30 @@ function RoomPanel({
   const [input, setInput] = useState("");
   const listRef = useRef(null);
   const inputRef = useRef(null);
+  // Le joueur a-t-il remonté la conversation pour lire ? Tant qu'il est remonté,
+  // un message qui arrive ne doit PAS le renvoyer en bas : il perdait sa lecture
+  // toutes les 4 secondes (le poll). « En bas » = à moins de 40 px du bas.
+  const enBasRef = useRef(true);
   const visible = messages.filter(m => !estMute(m, muted));
+  function onScroll() {
+    const el = listRef.current;
+    if (!el) return;
+    enBasRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
+  }
   useEffect(() => {
-    if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
+    const el = listRef.current;
+    if (!el) return;
+    // Ne descendre QUE si le lecteur était déjà en bas (nouveau message naturel),
+    // ou pendant la première seconde d'ouverture (on le pose sur le plus récent).
+    if (enBasRef.current) el.scrollTop = el.scrollHeight;
   }, [messages, muted]);
   useEffect(() => {
+    // À l'ouverture du panneau : on part du bas, puis on laisse le joueur libre.
+    const el = listRef.current;
+    if (el) {
+      el.scrollTop = el.scrollHeight;
+      enBasRef.current = true;
+    }
     if (inputRef.current) inputRef.current.focus();
   }, []);
   function submit() {
@@ -217,7 +236,8 @@ function RoomPanel({
     className: "room-warning"
   }, I18N.t("ROOM_WARNING")), /*#__PURE__*/React.createElement("div", {
     className: "room-list",
-    ref: listRef
+    ref: listRef,
+    onScroll: onScroll
   }, visible.length === 0 && /*#__PURE__*/React.createElement("div", {
     className: "room-empty"
   }, I18N.t("ROOM_EMPTY")), visible.map(m => {
@@ -261,6 +281,7 @@ function RoomFab() {
   const [messages, setMessages] = useState([]);
   const [muted, setMuted] = useState(() => mutedDepuis(g));
   const [unread, setUnread] = useState(0);
+  const unreadRef = useRef(0);
   const lastSeqRef = useRef(0);
   const timerRef = useRef(null);
   const seenIdRef = useRef(seenIdDepuis(g));
@@ -290,10 +311,22 @@ function RoomFab() {
     return () => window.removeEventListener("fa:open-room", h);
   }, []);
   useEffect(() => {
+    unreadRef.current = unread;
     window.dispatchEvent(new CustomEvent("fa:room-unread", {
       detail: unread
     }));
   }, [unread]);
+  // Au DÉMARRAGE, le header peut avoir manqué l'émission ci-dessus : il montait
+  // avant que le premier poll ne donne une liste. On lui rend donc la valeur à la
+  // demande — c'est ce qui manquait pour voir la pastille dès l'ouverture du jeu,
+  // sans attendre qu'un nouveau message arrive (constat fondateur 31/10).
+  useEffect(() => {
+    const h = () => window.dispatchEvent(new CustomEvent("fa:room-unread", {
+      detail: unreadRef.current
+    }));
+    window.addEventListener("fa:room-unread-ask", h);
+    return () => window.removeEventListener("fa:room-unread-ask", h);
+  }, []);
 
   // `?after=` ne renvoie JAMAIS un message déjà reçu : une ligne connue ne peut
   // revenir que par la liste complète. On la REMPLACE donc dès que le serveur en
@@ -363,6 +396,9 @@ function RoomFab() {
   useEffect(() => {
     // Seuls les messages RÉELLEMENT affichés font avancer le curseur : un message tu
     // ne doit pas servir de borne (sinon les suivants, jamais vus, passent pour lus).
+    // Les refs d'AGENT (/chat-room/messages) peuvent arriver sans `seq` : on accepte
+    // donc les deux formes, sinon un message d'agent venu après coup ne faisait pas
+    // avancer le curseur et la pastille restait allumée sur des messages déjà lus.
     const maxSeq = messages.reduce((mx, m) => estMute(m, muted) ? mx : Math.max(mx, msgCursor(m)), 0);
     // Un curseur plus HAUT que le dernier message de la pièce ne peut désigner aucun message :
     // c'est un reste d'une numérotation précédente (les `id` de table, avant que la pièce
