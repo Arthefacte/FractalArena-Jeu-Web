@@ -60,3 +60,17 @@ test("le compteur publie le NOMBRE de non-lus, pas seulement une position", () =
   assert.match(SRC, /setUnread\(nonVus\.length\)/);
   assert.match(SRC, /fa:room-unread/);
 });
+
+
+test("la pastille lit la LISTE COMPLÈTE, pas seulement les nouveautés", () => {
+  // Le compteur vit dans ce navigateur : il lui faut les 50 derniers messages à chaque
+  // tour. En `?after=`, un simple rechargement de page repartait d'une pièce quasi vide
+  // et la pastille ne comptait que ce qui arrivait ensuite — donc rien, quand on venait
+  // de recharger. Constat fondateur 31/10/2026 : « on dirait qu'il n'y a jamais de rouge ».
+  const poll = bloc("const poll = useCallback(async () => {", "}, [actions, ingest]);");
+  assert.match(poll, /fetchRoomMessages\(\)/, "le poll relit la liste complète");
+  assert.doesNotMatch(poll, /fetchRoomMessages\(lastSeqRef/, "plus de `?after=` pour le compteur");
+  // Un seul appel par tour : le second (rattrapage de traduction) n'a plus lieu d'être.
+  assert.strictEqual((poll.match(/fetchRoomMessages\(/g) || []).length, 1,
+    "un seul appel par tour");
+});
