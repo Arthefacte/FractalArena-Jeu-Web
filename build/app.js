@@ -6301,9 +6301,9 @@ function MnavSlot({
   }) : /*#__PURE__*/React.createElement("span", {
     className: "fa-mnav-glyph",
     "aria-hidden": "true"
-  }, glyph), badge > 0 && /*#__PURE__*/React.createElement("span", {
+  }, glyph), badge ? /*#__PURE__*/React.createElement("span", {
     className: "fa-mnav-badge"
-  }, badge)), /*#__PURE__*/React.createElement("span", {
+  }, badge) : null), /*#__PURE__*/React.createElement("span", {
     className: "fa-mnav-label"
   }, label));
 }
@@ -6450,8 +6450,13 @@ function Nav() {
   }), /*#__PURE__*/React.createElement(MnavSlot, {
     active: more.some(([k]) => g.view === k),
     glyph: "\u2630",
-    label: I18N.t("NAV_MORE"),
-    badge: expReady,
+    label: I18N.t("NAV_MORE")
+    /* Deux signaux, un seul logement. Sur téléphone, la rangée d'outils du
+       header (et donc sa pastille) vit DANS ce tiroir : sans ce badge, un
+       message non lu ne s'annonçait nulle part avant d'ouvrir « Plus » —
+       constat fondateur 31/10/2026. Un message est plus urgent qu'une
+       expédition prête : il prend la place, sinon on montre les expéditions. */,
+    badge: roomUnread > 0 ? roomUnread > 9 ? "9+" : roomUnread : expReady,
     onClick: () => {
       if (window.FA_SFX) window.FA_SFX.play("tab");
       setSheetOpen(true);
