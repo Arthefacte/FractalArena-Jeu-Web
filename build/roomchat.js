@@ -31,10 +31,9 @@ const AGENT_TAG = {
   opacity: .7
 };
 // Le serveur détecte la langue et traduit APRÈS l'insertion (DeepSeek, 1-3 s) :
-// une ligne déjà reçue peut donc gagner sa traduction plus tard. Fenêtre pendant
-// laquelle on relit la liste complète pour la rattraper (au-delà, on n'insiste plus :
-// un message écrit hors FR/EN/ZH n'aura jamais de traduction).
-const ROOM_TR_PENDING_MS = 60000;
+// une ligne déjà reçue peut donc gagner sa traduction plus tard. Comme chaque tour
+// relit la liste complète, la fusion remplace la ligne et la traduction arrive toute
+// seule — plus besoin de fenêtre de rattrapage ni de second appel.
 
 /* ---- Ce qui est LU et MUTÉ vit sur le COMPTE, plus dans le navigateur ----
    Le dernier message vu et la liste des wallets mutés partaient dans le
@@ -265,8 +264,6 @@ function RoomFab() {
   const lastSeqRef = useRef(0);
   const timerRef = useRef(null);
   const seenIdRef = useRef(seenIdDepuis(g));
-  // ids reçus sans traduction alors que le lecteur en a besoin → à relire.
-  const pendingTrRef = useRef(new Map());
 
   // Recharge quand le compte change — et quand sa sauvegarde arrive, puisqu'elle
   // apporte ui_state (dernier id vu, mutés) : c'est elle qui porte l'état lu
@@ -329,27 +326,22 @@ function RoomFab() {
       merged.sort((a, b) => msgCursor(a) - msgCursor(b));
       return merged.slice(-200);
     });
-    const now = Date.now();
-    for (const m of incoming) {
-      const k = msgKey(m);
-      if (m.tr) pendingTrRef.current.delete(k);else if (m.src_lang !== I18N.getLang() && !pendingTrRef.current.has(k)) pendingTrRef.current.set(k, now);
-    }
-    for (const [id, t] of pendingTrRef.current) if (now - t > ROOM_TR_PENDING_MS) pendingTrRef.current.delete(id);
     // Curseur : `seq` de la pièce commune, plus l'id d'une seule table.
     const maxSeq = incoming.reduce((mx, m) => Math.max(mx, msgCursor(m)), lastSeqRef.current);
     lastSeqRef.current = maxSeq;
   }, []);
   const poll = useCallback(async () => {
     try {
-      const res = await actions.fetchRoomMessages(lastSeqRef.current || undefined);
+      // On relit la LISTE COMPLÈTE, jamais `?after=`. Le compteur vit dans ce
+      // navigateur : il lui faut donc les 50 derniers messages à chaque tour, sinon
+      // un rechargement de page — ou un premier montage après avoir changé de vue —
+      // repart d'une pièce quasi vide et la pastille ne compte que ce qui arrive
+      // après. `?after=` reste faux ici pour une autre raison : il renvoie les
+      // `ref` d'AGENT sans préfixe, que la fusion prend alors pour des messages
+      // de joueur (les mêmes numéros existent dans les deux tables).
+      const res = await actions.fetchRoomMessages();
       if (!res.ok) return;
       ingest(res.messages);
-      // Rattrapage : tant qu'un message attend sa traduction, on relit la liste
-      // complète (les 50 derniers, seuls à porter `tr`) — `?after=` ne la rendrait pas.
-      if (pendingTrRef.current.size) {
-        const full = await actions.fetchRoomMessages();
-        if (full.ok) ingest(full.messages);
-      }
     } catch (e) {/* réseau : on réessaiera au prochain poll */}
   }, [actions, ingest]);
 
