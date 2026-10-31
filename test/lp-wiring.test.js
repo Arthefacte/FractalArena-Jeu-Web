@@ -70,6 +70,12 @@ test("screens.jsx : le badge est à côté du pseudo (profil) et le panneau LP a
   assert.match(b, /actions\.refreshLp\(\)/, "le bouton doit appeler refreshLp");
   assert.match(b, /LP_REFRESH_ERR/, "l'échec doit être annoncé");
   assert.match(screens, /LP_REFRESH_BTN/, "libellé du bouton manquant");
+  // Le montant LP n'arrive QUE par ce POST : sans lecture à l'ouverture, un joueur qui
+  // n'appuie jamais voit « — » et un solde figé (constat fondateur 31/10/2026).
+  assert.match(screens, /useEffect\(\(\) => \{ doLpRefresh\(true\); \}, \[\]\)/,
+    "le panneau doit lire le dossier LP à l'ouverture");
+  // Le rythme du balayage est dit au joueur, il n'a pas à le deviner.
+  assert.match(screens, /LP_SWEEP_HINT/, "la règle du balayage 6 h est annoncée à l'écran");
   assert.match(screens, /LP_PANEL_HINT/, "texte d'aide (seuils) manquant");
 });
 
