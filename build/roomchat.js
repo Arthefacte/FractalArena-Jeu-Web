@@ -46,7 +46,7 @@ const AGENT_TAG = {
    Le localStorage reste un CACHE : il tient la valeur pendant la seconde qui
    précède l'arrivée de la sauvegarde, et sert de repli hors ligne. */
 function seenKey(wallet) {
-  return "fa_room_seen:" + (wallet || "anon");
+  return "fa_room_seq_seen:" + (wallet || "anon");
 }
 function loadSeenId(wallet) {
   try {
@@ -60,14 +60,22 @@ function saveSeenId(wallet, id) {
     localStorage.setItem(seenKey(wallet), String(id));
   } catch (e) {}
 }
-// Maximum des deux sources au DÉMARRAGE : le compte a vu ce que les autres appareils
-// ont lu, le local couvre la lecture faite ici juste avant.
-// Ensuite, seul le LOCAL fait avancer le curseur (cf. RoomFab) : un `room_seen_id`
-// serveur plus haut que ce qui a été affiché ICI éteignait la pastille pour des
-// messages jamais vus sur cet écran (constat fondateur 30/10).
+// Curseur de lecture, en `seq` UNIQUEMENT (pièce commune du 29/10/2026).
+//
+// Pourquoi une clé NEUVE (`fa_room_seq_seen` / `ui_state.room_seen_seq`) au lieu
+// de réutiliser `room_seen_id` : cette dernière a reçu des `id` de table avant la
+// pièce commune (728, 770…) qui sont SANS RAPPORT avec les `seq` (610, 655…).
+// Or la fusion serveur de `room_seen_id` est un MAX : une valeur d'id une fois
+// écrite ne peut plus jamais redescendre. Un compte resté à 770 sur une pièce à
+// 655 voyait donc TOUT comme déjà lu à chaque ouverture — les messages arrivés
+// pendant que le jeu était fermé étaient comptés « vus » avant d'être affichés,
+// et la pastille ne se rallumait que pour un message reçu page ouverte.
+// Un curseur neuf repart de la pièce telle qu'elle est (voir le recalage dans
+// RoomFab), donc « tout est lu » à l'instant du déploiement, et le message
+// suivant rallume. `room_seen_id` n'est plus lu nulle part.
 function seenIdDepuis(g) {
   const ui = g && g.uiState || {};
-  const serveur = parseInt(ui.room_seen_id, 10) || 0;
+  const serveur = parseInt(ui.room_seen_seq, 10) || 0;
   return Math.max(loadSeenId(g && g.wallet), serveur);
 }
 function mutedKey(wallet) {
@@ -400,16 +408,14 @@ function RoomFab() {
     // donc les deux formes, sinon un message d'agent venu après coup ne faisait pas
     // avancer le curseur et la pastille restait allumée sur des messages déjà lus.
     const maxSeq = messages.reduce((mx, m) => estMute(m, muted) ? mx : Math.max(mx, msgCursor(m)), 0);
-    // Un curseur plus HAUT que le dernier message de la pièce ne peut désigner aucun message :
-    // c'est un reste d'une numérotation précédente (les `id` de table, avant que la pièce
-    // devienne commune et numérotée par `seq`). Laissé tel quel, il éteint la pastille pour
-    // toujours — c'est le cas constaté le 30/10/2026 sur un compte dont `room_seen_id` valait
-    // 728 alors que la pièce s'arrêtait à 610. On le ramène à ce qui existe vraiment.
-    if (maxSeq > 0 && seenIdRef.current > maxSeq) {
+    // Premier démarrage sur le curseur `seq` (bascule du 01/11/2026) : la pièce
+    // telle qu'elle est devient « lue ». Sans ce recalage, le salon entier
+    // s'afficherait d'un coup en non-lus au premier chargement après déploiement.
+    if (maxSeq > 0 && seenIdRef.current === 0) {
       seenIdRef.current = maxSeq;
       saveSeenId(g.wallet, maxSeq);
       actions.pushUiState({
-        room_seen_id: maxSeq
+        room_seen_seq: maxSeq
       });
     }
     if (open) {
@@ -417,7 +423,7 @@ function RoomFab() {
         seenIdRef.current = maxSeq;
         saveSeenId(g.wallet, maxSeq); // cache de ce navigateur
         actions.pushUiState({
-          room_seen_id: maxSeq
+          room_seen_seq: maxSeq
         }); // et le compte, pour les autres
       }
       setUnread(0);

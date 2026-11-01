@@ -4194,6 +4194,12 @@ function App() {
         if (typeof patch.arene_help_seen === "boolean") next.arene_help_seen = cur.arene_help_seen === true || patch.arene_help_seen;
         if (typeof patch.guide_hidden === "boolean") next.guide_hidden = patch.guide_hidden;
         if (patch.room_seen_id != null) next.room_seen_id = Math.max(Number(cur.room_seen_id) || 0, Number(patch.room_seen_id) || 0);
+        // Curseur du salon en `seq` (pièce commune). Clé distincte de
+        // `room_seen_id`, qui a reçu des `id` de table avant la fusion : ces
+        // numéros n'ont aucun rapport avec les `seq`, et la fusion serveur étant
+        // un MAX, une valeur d'id y restait à jamais — la pastille ne se rallumait
+        // plus pour les messages arrivés jeu fermé.
+        if (patch.room_seen_seq != null) next.room_seen_seq = Math.max(Number(cur.room_seen_seq) || 0, Number(patch.room_seen_seq) || 0);
         if (Array.isArray(patch.guide_tabs)) next.guide_tabs = Array.from(new Set([...(cur.guide_tabs || []), ...patch.guide_tabs]));
         if (Array.isArray(patch.room_muted)) next.room_muted = patch.room_muted.slice();
         return {

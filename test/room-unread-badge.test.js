@@ -46,14 +46,28 @@ test("les messages d'agents comptent dans la pastille", () => {
     "aucune exclusion spécifique aux agents dans le compteur");
 });
 
-test("un curseur plus haut que la pièce est ramené à ce qui existe", () => {
-  // `room_seen_id` a gardé un `id` de table (728) d'avant la pièce commune, où la salle
-  // s'arrête à `seq` 610 : aucun message ne peut être « plus récent » que 728, donc la
-  // pastille restait éteinte pour toujours. Le curseur doit se recaler sur la salle.
-  const garde = bloc("if (maxSeq > 0 && seenIdRef.current > maxSeq) {", "if (open) {");
-  assert.match(garde, /seenIdRef\.current = maxSeq/);
-  assert.match(garde, /saveSeenId\(g\.wallet, maxSeq\)/, "le cache local est recalé aussi");
-  assert.match(garde, /room_seen_id: maxSeq/, "et le compte, sinon le prochain chargement le remet");
+test("un curseur venu de l'ancienne numérotation (id de table) n'éteint plus la pastille", () => {
+  // `room_seen_id` a reçu des `id` de table (728, 770…) avant la pièce commune :
+  // ces nombres n'ont aucun rapport avec les `seq` (610, 655…) et la fusion
+  // serveur en est un MAX, donc ils ne redescendaient jamais. Un compte resté
+  // au-dessus de la pièce voyait TOUT comme lu à chaque ouverture.
+  // Le curseur vit désormais dans une clé neuve, en `seq` uniquement.
+  assert.doesNotMatch(SRC, /ui\.room_seen_id/,
+    "l'ancien curseur (id de table) n'est plus lu");
+  assert.doesNotMatch(SRC, /pushUiState\(\{ room_seen_id/,
+    "on n'écrit plus dans l'ancienne clé");
+  assert.match(SRC, /room_seq_seen:/, "cache local sur une clé neuve");
+  assert.match(SRC, /ui\.room_seen_seq/, "et sur le compte, en `seq`");
+  assert.match(SRC, /pushUiState\(\{ room_seen_seq: maxSeq \}\)/);
+});
+
+test("le premier chargement sur le curseur `seq` ne rallume pas tout le salon", () => {
+  // Curseur neuf = 0 pour tout le monde au déploiement : sans recalage, les 50
+  // derniers messages compteraient comme non lus (« 9+ » gratuit).
+  const seed = bloc("if (maxSeq > 0 && seenIdRef.current === 0) {", "if (open) {");
+  assert.match(seed, /seenIdRef\.current = maxSeq/);
+  assert.match(seed, /saveSeenId\(g\.wallet, maxSeq\)/);
+  assert.match(seed, /room_seen_seq: maxSeq/, "le compte est recalé aussi");
 });
 
 test("le compteur publie le NOMBRE de non-lus, pas seulement une position", () => {
