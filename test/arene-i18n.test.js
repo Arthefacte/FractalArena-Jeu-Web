@@ -24,6 +24,9 @@ const KEYS = [
   // Lot « Arène unifiée » (27/10/2026) : l'étiquette de carte d'agent et les refus du
   // chemin croisé, qui arrivent avec la même livraison que le serveur.
   "AR2_AGENT_TAG", "AR2_ERR_AGENT_GONE", "AR2_ERR_PAIR_COOLDOWN", "AR2_ERR_DEFENSE_CHANGED",
+  // 01/11/2026 : six cartes et six boutons « Attaquer » grisés, sans un mot pour dire
+  // pourquoi (aucune attaque sans défense posée, Arène V2 D1).
+  "AR2_NEED_DEFENSE", "AR2_NEED_DEFENSE_TIP",
 ];
 test("toutes les clés Arène existent dans les 3 langues, non vides", () => {
   for (const k of KEYS) {

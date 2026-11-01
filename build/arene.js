@@ -943,7 +943,16 @@ function Arene() {
       color: "var(--text-dim)",
       fontSize: 13
     }
-  }, I18N.t("AR2_NO_OPPONENTS")), (() => {
+  }, I18N.t("AR2_NO_OPPONENTS")), !myDefensePosted && (pvp.opponents || []).length > 0 && /*#__PURE__*/React.createElement("div", {
+    "data-fa": "arene-need-defense",
+    className: "mono",
+    style: {
+      fontSize: 12,
+      color: "var(--alert)",
+      marginBottom: 10,
+      lineHeight: 1.5
+    }
+  }, I18N.t("AR2_NEED_DEFENSE")), (() => {
     // Arène V2 : un seul vivier de défenses posées, six cartes au maximum.
     const carte = o => {
       // E3 (D10/M4, emplacements 2 et 3) : l'identifiant opaque de l'adversaire devient la
@@ -1049,11 +1058,13 @@ function Arene() {
       }))), canRevanche ? /*#__PURE__*/React.createElement("button", {
         className: "btn btn-success sm",
         disabled: busy || !canAttack,
+        title: canAttack ? undefined : I18N.t("AR2_NEED_DEFENSE_TIP"),
         onClick: () => onPickOpponent(o, true)
       }, I18N.t("AR2_REVANCHE")) : /*#__PURE__*/React.createElement("button", {
         className: "btn btn-elec sm",
         "data-guide": "arene-attack",
         disabled: busy || !canAttack,
+        title: canAttack ? undefined : I18N.t("AR2_NEED_DEFENSE_TIP"),
         onClick: () => onPickOpponent(o, false)
       }, I18N.t("AR2_ATTACK")));
     };

@@ -536,6 +536,19 @@ function Arene() {
             </div>
           </div>
           {(!pvp.opponents || pvp.opponents.length === 0) && <div className="mono" style={{ color: "var(--text-dim)", fontSize: 13 }}>{I18N.t("AR2_NO_OPPONENTS")}</div>}
+          {/* Arène V2, D1 : aucun combat sans défense posée, et c'est VOULU — on se bat toujours
+              contre une défense, la sienne comme celle d'en face. Mais tant que rien ne le dit,
+              le joueur voit six cartes dont chaque bouton « Attaquer » est grisé : l'écran laisse
+              croire que la liste est morte (constat du fondateur, 01/11/2026 : « je ne vois pas
+              d'ennemis pour la bagarre »). La consigne vivait dans le bloc « Ma défense », plus
+              haut, hors du regard quand on lit les adversaires. On la remet ici, et sur les
+              boutons. */}
+          {!myDefensePosted && (pvp.opponents || []).length > 0 && (
+            <div data-fa="arene-need-defense" className="mono"
+              style={{ fontSize: 12, color: "var(--alert)", marginBottom: 10, lineHeight: 1.5 }}>
+              {I18N.t("AR2_NEED_DEFENSE")}
+            </div>
+          )}
           {(() => {
             // Arène V2 : un seul vivier de défenses posées, six cartes au maximum.
             const carte = (o) => {
@@ -598,8 +611,8 @@ function Arene() {
                     <div style={{ marginTop: 6 }}><TeamPreview team={o.team} /></div>
                   </div>
                   {canRevanche
-                    ? <button className="btn btn-success sm" disabled={busy || !canAttack} onClick={() => onPickOpponent(o, true)}>{I18N.t("AR2_REVANCHE")}</button>
-                    : <button className="btn btn-elec sm" data-guide="arene-attack" disabled={busy || !canAttack} onClick={() => onPickOpponent(o, false)}>{I18N.t("AR2_ATTACK")}</button>}
+                    ? <button className="btn btn-success sm" disabled={busy || !canAttack} title={canAttack ? undefined : I18N.t("AR2_NEED_DEFENSE_TIP")} onClick={() => onPickOpponent(o, true)}>{I18N.t("AR2_REVANCHE")}</button>
+                    : <button className="btn btn-elec sm" data-guide="arene-attack" disabled={busy || !canAttack} title={canAttack ? undefined : I18N.t("AR2_NEED_DEFENSE_TIP")} onClick={() => onPickOpponent(o, false)}>{I18N.t("AR2_ATTACK")}</button>}
                 </div>
               );
             };
