@@ -513,6 +513,11 @@
     AR2_TICKET_PAID: { FR: "Entrée payée avec 1 ticket Argent · reste %d", EN: "Entry paid with 1 Silver ticket · %d left", ZH: "已用 1 张白银券入场 · 剩 %d 张" },
     AR2_NO_DEFENSE: { FR: "Choisis 3 entités pour poser ta défense.", EN: "Pick 3 entities to post your defense.", ZH: "请选择 3 个实体来设置防守。" },
     AR2_DEFENSE_HINT: { FR: "Choisis 3 entités ci-dessous, puis pose ta défense pour entrer dans l'Arène.", EN: "Choose 3 entities below, then set your defense to enter the Arena.", ZH: "在下方选择 3 个实体，然后设置防守，即可进入竞技场。" },
+    // Les adversaires sont servis même sans défense posée, mais l'attaque est refusée par le
+    // serveur (Arène V2, D1) : les boutons restent donc grisés. Sans ce texte, six cartes et
+    // six boutons morts (constat du fondateur, 01/11/2026).
+    AR2_NEED_DEFENSE: { FR: "Pose d'abord ta défense : dans l'Arène, on attaque TOUJOURS une défense (la tienne comme celle d'en face). Choisis 3 entités dans « Ma défense », puis « Poser ma défense » — les boutons Attaquer s'ouvrent juste après.", EN: "Set your defense first: in the Arena you always attack a *defense* (yours as much as theirs). Pick 3 entities under \"My defense\", then \"Set my defense\" — the Attack buttons unlock right after.", ZH: "请先设置防守：竞技场中你攻击的始终是一支*防守队伍*（双方都是）。在「我的防守」中选择 3 个实体，然后点「设置防守」，之后「进攻」按钮即可使用。" },
+    AR2_NEED_DEFENSE_TIP: { FR: "Pose ta défense d'abord (3 entités, bouton « Poser ma défense »).", EN: "Set your defense first (3 entities, \"Set my defense\").", ZH: "请先设置防守（3 个实体，点「设置防守」）。" },
     AR2_SEASON: { FR: "Saison %d", EN: "Season %d", ZH: "第 %d 赛季" },
     AR2_ENDS_IN: { FR: "finit dans %s", EN: "ends in %s", ZH: "%s 后结束" },
     AR2_PRIZE: { FR: "Prize pool %d FA", EN: "Prize pool %d FA", ZH: "奖池 %d FA" },
