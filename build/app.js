@@ -6673,17 +6673,19 @@ function Onboarding({
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       textAlign: "center",
+      width: "100%",
       maxWidth: 540,
-      padding: 28,
+      padding: "clamp(16px, 5vw, 28px)",
+      boxSizing: "border-box",
       position: "relative"
     }
   }, /*#__PURE__*/React.createElement("div", {
     className: "ob-logo",
     style: {
       position: "relative",
-      width: 168,
-      height: 168,
-      margin: "0 auto 26px",
+      width: "clamp(104px, 30vw, 168px)",
+      height: "clamp(104px, 30vw, 168px)",
+      margin: "0 auto clamp(14px, 4vw, 26px)",
       animation: "obFloat 4.5s ease-in-out infinite"
     }
   }, window.Emblem3D ? /*#__PURE__*/React.createElement(window.Emblem3D, {
@@ -6705,8 +6707,8 @@ function Onboarding({
   }, I18N.t("OB_TAG")), /*#__PURE__*/React.createElement("div", {
     className: "hdr-title",
     style: {
-      fontSize: 40,
-      letterSpacing: 6,
+      fontSize: "clamp(23px, 7.6vw, 40px)",
+      letterSpacing: "clamp(1.5px, 1.1vw, 6px)",
       display: "block",
       margin: "8px 0 18px"
     }
