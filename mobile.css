@@ -344,6 +344,9 @@
   .quiz-explain { gap: 6px; }
   .quiz-why { font-size: 11.5px; }
   .quiz-choice { padding: 7px 5px; font-size: 11.5px; }
+  /* Même raison que sur desktop : ligne pleine largeur et 34 px de haut, sinon
+     le pouce rate le lien et croit que le bouton ne fait rien. */
+  .quiz-to-lesson { padding: 9px 0; font-size: 11.5px; }
   .quiz-timeout { font-size: 10px; }
 }
 
