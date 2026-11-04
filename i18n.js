@@ -692,7 +692,10 @@
     BURN_POOL_LABEL: { FR: "Burn", EN: "Burn", ZH: "销毁" },
     BURN_ROW:   { FR: "%s FA brûlés à jamais", EN: "%s FA burned forever", ZH: "已永久销毁 %s FA" },
     BURN_PROOF: { FR: "preuve", EN: "proof", ZH: "证明" },
-    BURN_SUB:   { FR: "chaque FA dépensé en jeu → 1/3 brûlé (taux ×%s) · halving à %s brûlés", EN: "each FA spent in game → 1/3 burned (rate ×%s) · halving at %s burned", ZH: "游戏内每消耗 1 FA → 销毁 1/3（倍率 ×%s）· 销毁达 %s 时减半" },
+    // La part brûlée vient de /buyback/status → split.burn_bp (répartition dynamique : elle
+    // bouge toutes les 5 min, et le halving la réduit). Plus jamais un « 1/3 » codé en dur.
+    BURN_SUB:   { FR: "chaque FA dépensé en jeu → ≈%s brûlé (taux ×%s) · halving à %s brûlés", EN: "each FA spent in game → ≈%s burned (rate ×%s) · halving at %s burned", ZH: "游戏内每消耗 1 FA → 约 %s 用于销毁（倍率 ×%s）· 销毁达 %s 时减半" },
+    BURN_SUB_NOPART: { FR: "chaque FA dépensé en jeu → taux ×%s · halving à %s brûlés", EN: "each FA spent in game → rate ×%s · halving at %s burned", ZH: "游戏内每消耗 1 FA → 倍率 ×%s · 销毁达 %s 时减半" },
     BURN_MODAL_TITLE: { FR: "Burns vérifiés on-chain", EN: "On-chain verified burns", ZH: "链上已验证销毁" },
     BURN_MODAL_SUB:   { FR: "Chaque cérémonie envoie les FA à l'adresse de burn — détruits à jamais, vérifiables par n'importe qui sur la chaîne.",
                         EN: "Each ceremony sends the FA to the burn address — destroyed forever, verifiable by anyone on-chain.",
