@@ -350,3 +350,30 @@ test("garde anti-contenu : pas de longs littéraux ni de paragraphes locaux", ()
   assert.match(academy, /lesson\.body\.map\(\(paragraph, i\) => <p key=\{i\}>\{paragraph\}<\/p>\)/);
   assert.doesNotMatch(academy, /dangerouslySetInnerHTML|\bbody\s*:\s*\[/);
 });
+
+test("Académie : la fiche demandée depuis le résultat du quiz s'ouvre directement", async () => {
+  const h = harness();
+  // Le joueur répond dans la modale (autre écran), puis clique « Lire la fiche » :
+  // la demande arrive AVANT que l'écran Académie ne soit monté côté navigateur —
+  // ici il l'est déjà, et le module demandé doit être chargé sans passer par la liste.
+  h.win.dispatchEvent({ type: "fa:academy-module", detail: { module: "minage" } });
+  await h.settle();
+  const asked = h.calls.map((u) => new URL(u).pathname).filter((p) => p.startsWith("/academy/module/"));
+  assert.ok(asked.includes("/academy/module/minage"), `le module demandé doit être chargé : ${asked.join(", ")}`);
+  // Et la demande ne survit pas à la lecture : elle ne doit pas rouvrir le module
+  // à chaque montage suivant (retour à la liste, changement de langue).
+  h.win.dispatchEvent({ type: "fa:academy-module", detail: {} });
+  await h.settle();
+  assert.equal(h.calls.filter((u) => new URL(u).pathname === "/academy/module/undefined").length, 0);
+});
+
+test("Le résultat du quiz porte le lien vers la fiche, et la nav bascule l'écran", () => {
+  const quiz = read("quiz.jsx");
+  assert.match(quiz, /verdict\.module_id/, "le champ serveur module_id est lu");
+  assert.match(quiz, /!choixEnAttente && verdict\.module_id/,
+    "le lien n'apparaît qu'une fois l'arbitrage garder/offrir tranché");
+  assert.match(quiz, /CustomEvent\("fa:academy-module"/);
+  assert.match(quiz, /ACADEMY_READ_LESSON/);
+  assert.match(app, /addEventListener\("fa:academy-module", versAcademie\)/);
+  assert.match(app, /go\("academie"\)/);
+});

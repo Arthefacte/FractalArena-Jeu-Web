@@ -317,6 +317,19 @@ function QuizToast() {
             {I18N.t(verdict.correct ? "QUIZ_CORRECT" : "QUIZ_WRONG")}
           </div>
           <div className="quiz-why">{verdict.explanation}</div>
+          {/* La fiche qui porte cette question : le serveur nomme le module
+              (`module_id`), le client n'a aucune table de thèmes à recopier.
+              Il n'apparaît qu'une fois le choix garder/offrir tranché : deux
+              sorties en même temps rendraient l'arbitrage illisible. */}
+          {!choixEnAttente && verdict.module_id && (
+            <button className="quiz-to-lesson" onClick={() => {
+              const module = verdict.module_id;
+              fermer();
+              window.dispatchEvent(new CustomEvent("fa:academy-module", { detail: { module } }));
+            }}>
+              {I18N.t("ACADEMY_READ_LESSON")} →
+            </button>
+          )}
           {/* Le gain de révision passe par le même choix garder/offrir que les
               questions neuves (le montant s'affiche dans le bouton « Garder »). */}
           {/* Les deux destinations, même classe, même largeur : le joueur voit

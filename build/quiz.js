@@ -340,7 +340,18 @@ function QuizToast() {
     className: cx("quiz-verdict", verdict.correct ? "ok" : "ko")
   }, I18N.t(verdict.correct ? "QUIZ_CORRECT" : "QUIZ_WRONG")), /*#__PURE__*/React.createElement("div", {
     className: "quiz-why"
-  }, verdict.explanation), choixEnAttente && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+  }, verdict.explanation), !choixEnAttente && verdict.module_id && /*#__PURE__*/React.createElement("button", {
+    className: "quiz-to-lesson",
+    onClick: () => {
+      const module = verdict.module_id;
+      fermer();
+      window.dispatchEvent(new CustomEvent("fa:academy-module", {
+        detail: {
+          module
+        }
+      }));
+    }
+  }, I18N.t("ACADEMY_READ_LESSON"), " \u2192"), choixEnAttente && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     className: "quiz-dest"
   }, /*#__PURE__*/React.createElement("button", {
     className: "quiz-choice",

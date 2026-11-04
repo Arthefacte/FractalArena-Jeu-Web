@@ -3822,6 +3822,13 @@ function Nav() {
   const lock = useGuideLock();
   const bloque = (k) => !!(lock.on && !lock.views.includes(k));
   const go = (k) => { if (window.FA_SFX) window.FA_SFX.play("tab"); actions.setView(k); setSheetOpen(false); };
+  // Le résultat du quiz propose la fiche correspondante : ce composant-ci porte la
+  // navigation, donc c'est lui qui bascule l'écran (l'Académie lit le module).
+  useEffect(() => {
+    const versAcademie = () => go("academie");
+    window.addEventListener("fa:academy-module", versAcademie);
+    return () => window.removeEventListener("fa:academy-module", versAcademie);
+  }, []);
   const areneBadge = g.pvp && g.pvp.attacksUnseen > 0 ? g.pvp.attacksUnseen : 0;
   // Pastille Expéditions : dérivée des ends_at connus (aucun poll réseau) — un
   // tick de 30 s suffit pour qu'elle s'allume pendant qu'on joue ailleurs, et
