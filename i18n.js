@@ -48,6 +48,7 @@
     ACADEMY_CONNECT: { FR: "Connecte-toi pour passer l’examen.", EN: "Sign in to take the exam.", ZH: "请登录后参加考试。" },
     ACADEMY_EXAM_EMPTY: { FR: "Aucune question disponible pour ce module pour le moment.", EN: "No questions available for this module right now.", ZH: "此模块暂无可用题目。" },
     ACADEMY_READ_LESSON: { FR: "Lire la fiche", EN: "Read the lesson", ZH: "阅读课程" },
+    ACADEMY_LESSON_LOCKED: { FR: "La fiche s'ouvrira une fois l'intro terminée — l'Académie est encore verrouillée.", EN: "The lesson opens once the intro is finished — the Academy is still locked.", ZH: "完成新手引导后即可阅读课程——学院尚未解锁。" },
     NAV_CAMPAIGN: { FR: "Campagne", EN: "Campaign", ZH: "战役" },
     NAV_MORE: { FR: "Plus", EN: "More", ZH: "更多" },
     LEGAL_HUB: { FR: "Informations légales", EN: "Legal information", ZH: "法律信息" },

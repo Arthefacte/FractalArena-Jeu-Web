@@ -35,6 +35,15 @@ function estOccupe() {
 
 // ---- la bulle ----
 
+// Le rail de première session restreint la navigation à l'étape en cours
+// (window.FA_GUIDE_LOCK, publié par guide.jsx). Une sortie vers l'Académie
+// serait refusée en silence : on ne l'affiche pas plutôt que de laisser un
+// bouton qui ne fait rien.
+function vueAtteignable(vue) {
+  const lock = window.FA_GUIDE_LOCK;
+  return !(lock && lock.on && !(lock.views || []).includes(vue));
+}
+
 function QuizToast() {
   const { g, actions, toast } = useFA();
   const [question, setQuestion] = useState(null);   // { id, q, c[], revision }
@@ -320,16 +329,33 @@ function QuizToast() {
           {/* La fiche qui porte cette question : le serveur nomme le module
               (`module_id`), le client n'a aucune table de thèmes à recopier.
               Il n'apparaît qu'une fois le choix garder/offrir tranché : deux
-              sorties en même temps rendraient l'arbitrage illisible. */}
-          {!choixEnAttente && verdict.module_id && (
+              sorties en même temps rendraient l'arbitrage illisible.
+              Et seulement si l'écran est atteignable : pendant le rail de
+              première session, la navigation REFUSE les vues hors étape — un
+              lien qui ne peut pas aboutir serait un bouton mort. */}
+          {!choixEnAttente && verdict.module_id && (vueAtteignable("academie") ? (
             <button className="quiz-to-lesson" onClick={() => {
               const module = verdict.module_id;
+              // 1. La demande, avant tout : l'écran Académie la lit au montage
+              //    (il n'est pas encore affiché à cet instant).
+              window.__faAcademyModule = module;
+              // 2. La navigation, par le même chemin que la barre de nav. Un
+              //    seul saut, pas d'écouteur intermédiaire à traverser.
+              actions.setView("academie");
+              // 3. La bulle se referme : sinon la fiche s'ouvre derrière elle.
               fermer();
+              // 4. Si l'écran Académie est DÉJÀ monté, il écoute et bascule
+              //    directement sur le module (le montage, lui, est déjà passé).
               window.dispatchEvent(new CustomEvent("fa:academy-module", { detail: { module } }));
             }}>
               {I18N.t("ACADEMY_READ_LESSON")} →
             </button>
-          )}
+          ) : (
+            // Pendant le rail de première session la navigation refuse les
+            // vues hors étape : on dit pourquoi la fiche n'ouvre pas plutôt que
+            // d'afficher un bouton qui ne fait rien.
+            <div className="quiz-why">{I18N.t("ACADEMY_LESSON_LOCKED")}</div>
+          ))}
           {/* Le gain de révision passe par le même choix garder/offrir que les
               questions neuves (le montant s'affiche dans le bouton « Garder »). */}
           {/* Les deux destinations, même classe, même largeur : le joueur voit

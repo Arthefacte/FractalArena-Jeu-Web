@@ -35,7 +35,7 @@ function textOf(tree) {
 function harness({ root = "Academie", wallet = "wallet &/一", lang = "FR", fetcher } = {}) {
   let g = { wallet, lang }, tree, current, hookIndex;
   const instances = new Map(), listeners = new Map(), timers = new Set();
-  const calls = [], toasts = [];
+  const calls = [], toasts = [], views = [];
   const win = {
     addEventListener(name, fn) {
       if (!listeners.has(name)) listeners.set(name, new Set());
@@ -65,7 +65,7 @@ function harness({ root = "Academie", wallet = "wallet &/一", lang = "FR", fetc
   const I = win.FA_I18N;
   I.setLang(lang);
   context.I18N = I;
-  const actions = { answerQuiz: async () => ({ ok: true, data: { correct: true, reward: 0 } }) };
+  const actions = { answerQuiz: async () => ({ ok: true, data: { correct: true, reward: 0 } }), setView: (v) => views.push(v) };
   for (const name of ["fetchAcademyModules", "fetchAcademyModule", "fetchQuizQuestion"]) {
     const start = app.indexOf(`    async ${name}(`);
     const end = app.indexOf("\n    },", start) + "\n    }".length;
@@ -140,7 +140,7 @@ function harness({ root = "Academie", wallet = "wallet &/一", lang = "FR", fetc
   }
   render();
   return {
-    win, actions, calls, toasts, I, render, settle,
+    win, actions, calls, toasts, views, I, render, settle,
     get tree() { return tree; }, nodes: () => nodes(tree),
     button: (text) => nodes(tree).find((n) => n.type === "button" && textOf(n) === text),
     async click(node) {
@@ -376,4 +376,54 @@ test("Le résultat du quiz porte le lien vers la fiche, et la nav bascule l'écr
   assert.match(quiz, /ACADEMY_READ_LESSON/);
   assert.match(app, /addEventListener\("fa:academy-module", versAcademie\)/);
   assert.match(app, /go\("academie"\)/);
+});
+
+test("mauvaise réponse : « Lire la fiche » ferme la bulle et demande VRAIMENT la fiche", async () => {
+  const h = harness({ root: "QuizToast" });
+  const demandes = [];
+  h.win.addEventListener("fa:academy-module", (e) => demandes.push(e.detail && e.detail.module));
+  h.actions.answerQuiz = async () => ({
+    ok: true,
+    data: { correct: false, reward: 0, explanation: "Explication serveur", module_id: "minage" },
+  });
+  await h.tick(); h.dispatch(); await h.settle();
+  await h.click(h.button("A"));
+
+  const lien = h.nodes().find((n) => n.props.className === "quiz-to-lesson");
+  assert.ok(lien, "sur une mauvaise réponse, le lien vers la fiche apparaît");
+  await h.click(lien);
+
+  // Les trois sorties du clic, dans l'ordre : la demande déposée pour l'écran,
+  // la navigation elle-même, et l'événement pour un écran déjà monté.
+  assert.equal(h.win.__faAcademyModule, "minage", "la demande est déposée pour le montage de l'écran");
+  assert.deepEqual(h.views, ["academie"], "le clic navigue directement, sans passer par la barre de nav");
+  assert.deepEqual(demandes, ["minage"], "l'écran déjà monté reçoit aussi le module");
+  assert.equal(h.nodes().some((n) => n.props.className === "quiz-q"), false,
+    "la bulle se referme : sinon la fiche s'ouvre derrière une modale");
+});
+
+test("rail de première session : pas de lien vers une fiche inatteignable", async () => {
+  const verdict = () => ({
+    ok: true,
+    data: { correct: false, reward: 0, explanation: "Explication serveur", module_id: "minage" },
+  });
+  // Le rail restreint la navigation : la barre de nav refuserait « academie ».
+  const bloque = harness({ root: "QuizToast" });
+  bloque.win.FA_GUIDE_LOCK = { on: true, views: ["arene"], step: "s1", label: "Combat" };
+  bloque.actions.answerQuiz = async () => verdict();
+  await bloque.tick(); bloque.dispatch(); await bloque.settle();
+  await bloque.click(bloque.button("A"));
+  assert.equal(bloque.nodes().some((n) => n.props.className === "quiz-to-lesson"), false,
+    "aucun bouton qui ne pourrait pas aboutir");
+  assert.match(textOf(bloque.tree), /Académie est encore verrouillée/,
+    "et le joueur lit POURQUOI la fiche n'ouvre pas");
+  assert.deepEqual(bloque.views, [], "et évidemment rien n'est tenté");
+
+  // Hors rail, le même verdict rend le lien : c'est bien le verrou qui décide.
+  const libre = harness({ root: "QuizToast" });
+  libre.win.FA_GUIDE_LOCK = { on: false, views: [], step: null, label: "" };
+  libre.actions.answerQuiz = async () => verdict();
+  await libre.tick(); libre.dispatch(); await libre.settle();
+  await libre.click(libre.button("A"));
+  assert.ok(libre.nodes().some((n) => n.props.className === "quiz-to-lesson"));
 });

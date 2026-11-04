@@ -46,6 +46,14 @@ function estOccupe() {
 
 // ---- la bulle ----
 
+// Le rail de première session restreint la navigation à l'étape en cours
+// (window.FA_GUIDE_LOCK, publié par guide.jsx). Une sortie vers l'Académie
+// serait refusée en silence : on ne l'affiche pas plutôt que de laisser un
+// bouton qui ne fait rien.
+function vueAtteignable(vue) {
+  const lock = window.FA_GUIDE_LOCK;
+  return !(lock && lock.on && !(lock.views || []).includes(vue));
+}
 function QuizToast() {
   const {
     g,
@@ -340,18 +348,34 @@ function QuizToast() {
     className: cx("quiz-verdict", verdict.correct ? "ok" : "ko")
   }, I18N.t(verdict.correct ? "QUIZ_CORRECT" : "QUIZ_WRONG")), /*#__PURE__*/React.createElement("div", {
     className: "quiz-why"
-  }, verdict.explanation), !choixEnAttente && verdict.module_id && /*#__PURE__*/React.createElement("button", {
+  }, verdict.explanation), !choixEnAttente && verdict.module_id && (vueAtteignable("academie") ? /*#__PURE__*/React.createElement("button", {
     className: "quiz-to-lesson",
     onClick: () => {
       const module = verdict.module_id;
+      // 1. La demande, avant tout : l'écran Académie la lit au montage
+      //    (il n'est pas encore affiché à cet instant).
+      window.__faAcademyModule = module;
+      // 2. La navigation, par le même chemin que la barre de nav. Un
+      //    seul saut, pas d'écouteur intermédiaire à traverser.
+      actions.setView("academie");
+      // 3. La bulle se referme : sinon la fiche s'ouvre derrière elle.
       fermer();
+      // 4. Si l'écran Académie est DÉJÀ monté, il écoute et bascule
+      //    directement sur le module (le montage, lui, est déjà passé).
       window.dispatchEvent(new CustomEvent("fa:academy-module", {
         detail: {
           module
         }
       }));
     }
-  }, I18N.t("ACADEMY_READ_LESSON"), " \u2192"), choixEnAttente && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+  }, I18N.t("ACADEMY_READ_LESSON"), " \u2192") :
+  /*#__PURE__*/
+  // Pendant le rail de première session la navigation refuse les
+  // vues hors étape : on dit pourquoi la fiche n'ouvre pas plutôt que
+  // d'afficher un bouton qui ne fait rien.
+  React.createElement("div", {
+    className: "quiz-why"
+  }, I18N.t("ACADEMY_LESSON_LOCKED"))), choixEnAttente && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     className: "quiz-dest"
   }, /*#__PURE__*/React.createElement("button", {
     className: "quiz-choice",
