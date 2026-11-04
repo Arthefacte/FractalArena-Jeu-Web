@@ -16,7 +16,7 @@ const existe = (f) => fs.existsSync(path.join(__dirname, "..", f));
 const ATTENDUS = ["team", "fosse", "arene", "campaign", "tour", "expeditions", "quests",
   "forge", "market", "wallet", "boosts", "leaderboard", "options", "compte"];
 // Les écrans sans peinture propre : ils héritent, ils ne tombent pas dans le vide.
-const HERITENT = ["perso", "lien", "parrainage"];
+const HERITENT = ["perso", "lien", "parrainage", "academie"];
 
 // Extrait un objet littéral `const NOM = { ... };` du source — le test suit le code
 // réel au lieu de recopier une liste qui pourrait diverger.
