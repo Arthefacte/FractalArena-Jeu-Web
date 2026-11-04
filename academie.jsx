@@ -129,14 +129,35 @@ function AcademyModule({ id, revision, retry }) {
   </>;
 }
 
+// Une demande ouverte AILLEURS (résultat du quiz : « lire la fiche ») arrive
+// pendant que cet écran n'est pas monté — le module demandé attend donc dans une
+// variable de module, consommée au montage. Le navigateur pointe l'écran en même
+// temps (fa:academy-module est écouté par la barre de nav).
+let demandeModule = null;
+// Écouteur de module : la demande peut arriver avant le montage (le quiz est une
+// modale qui vit sur un autre écran). Il ne fait que mémoriser.
+window.addEventListener("fa:academy-module", (event) => {
+  const id = event && event.detail && event.detail.module;
+  if (id) demandeModule = id;
+});
+
 function Academie() {
   const { g } = useFA();
-  const [selected, setSelected] = useState(null);
+  const [selected, setSelected] = useState(() => demandeModule);
   const [revision, setRevision] = useState(0);
   const retry = () => setRevision((n) => n + 1);
   useEffect(() => {
+    demandeModule = null;
+    const ouvrir = (event) => {
+      const id = event && event.detail && event.detail.module;
+      if (id) setSelected(id);
+    };
     window.addEventListener("fa:academy-refresh", retry);
-    return () => window.removeEventListener("fa:academy-refresh", retry);
+    window.addEventListener("fa:academy-module", ouvrir);
+    return () => {
+      window.removeEventListener("fa:academy-refresh", retry);
+      window.removeEventListener("fa:academy-module", ouvrir);
+    };
   }, []);
   const scope = `${g.lang}:${g.wallet || ""}`;
   return <div className="container" style={{ maxWidth: 640 }}>
