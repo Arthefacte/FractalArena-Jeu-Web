@@ -58,6 +58,10 @@ function QuizToast() {
   const [donne, setDonne] = useState(false); // don déjà effectué
   const [restant, setRestant] = useState(0); // secondes affichées par le décompte
   const [pret, setPret] = useState(false); // un quiz attend d'être ouvert
+  const [examModule, setExamModule] = useState(null);
+  const opening = useRef(false);
+  const identity = useRef(null);
+  identity.current = g.wallet;
   const lastAskAt = useRef(0);
   const finAt = useRef(0);
   const ouvert = !!question;
@@ -111,23 +115,65 @@ function QuizToast() {
   // Ouverture à la demande : pastille du header (fa:open-quiz) ou bulle
   // flottante desktop. La question n'est fetchée qu'à ce moment-là.
   const ouvrirRef = useRef(null);
-  ouvrirRef.current = async () => {
-    if (question || envoi || !pret) return;
+  ouvrirRef.current = async requestedModule => {
+    const moduleId = typeof requestedModule === "string" ? requestedModule : requestedModule?.id;
+    if (question || envoi || opening.current || !moduleId && !pret) return;
+    if (!g.wallet) {
+      if (moduleId) toast(I18N.t("ACADEMY_CONNECT"), "info");
+      return;
+    }
+    const who = identity.current;
+    opening.current = true;
     lastAskAt.current = Date.now(); // le cooldown repart, même si le fetch échoue
     setPret(false);
-    const r = await actions.fetchQuizQuestion();
-    if (!r.ok || !r.data || !r.data.question) return;
-    setVerdict(null);
-    setDonne(false);
-    setQuestion(r.data.question);
+    try {
+      let module = null;
+      if (moduleId) {
+        const detail = await actions.fetchAcademyModule(moduleId);
+        if (identity.current !== who) return;
+        if (!detail.ok || !detail.data?.module) {
+          toast(I18N.t("ACADEMY_ERROR"), "bad");
+          return;
+        }
+        module = detail.data.module;
+        if (module.progress?.unlocked === false) {
+          toast(I18N.t("ACADEMY_LOCKED_HELP"), "info");
+          return;
+        }
+      }
+      const r = await actions.fetchQuizQuestion(moduleId);
+      if (identity.current !== who) return;
+      if (!r.ok || !r.data?.question) {
+        if (moduleId) toast(I18N.t(r.ok ? "ACADEMY_EXAM_EMPTY" : "ACADEMY_ERROR"), "info");
+        return;
+      }
+      setExamModule(module);
+      setVerdict(null);
+      setDonne(false);
+      setQuestion(r.data.question);
+    } finally {
+      opening.current = false;
+    }
   };
   useEffect(() => {
-    const h = () => {
-      if (ouvrirRef.current) ouvrirRef.current();
+    const h = event => {
+      if (ouvrirRef.current) ouvrirRef.current(event.detail?.module);
     };
     window.addEventListener("fa:open-quiz", h);
     return () => window.removeEventListener("fa:open-quiz", h);
   }, []);
+  useEffect(() => {
+    identity.current = g.wallet;
+    setQuestion(null);
+    setExamModule(null);
+    setVerdict(null);
+    setEnvoi(false);
+    setDonne(false);
+    setPret(false);
+    return () => {
+      identity.current = null;
+    };
+  }, [g.wallet]);
 
   // Le décompte EST l'horloge de la bulle : ce que le joueur voit descendre est
   // ce qui la ferme. Il repart à 30 s quand la réponse arrive — lire l'explication
@@ -155,6 +201,7 @@ function QuizToast() {
   }, [ouvert, verdict]);
   function fermer() {
     setQuestion(null);
+    setExamModule(null);
     setVerdict(null);
     setEnvoi(false);
     setDonne(false);
@@ -162,15 +209,25 @@ function QuizToast() {
   }
   async function repondre(i) {
     if (envoi || verdict) return;
+    const who = identity.current;
     setEnvoi(true);
     let r = await actions.answerQuiz(question.id, i);
+    if (identity.current !== who) return;
     if (!r.ok && r.reason === "retry") r = await actions.answerQuiz(question.id, i);
+    if (identity.current !== who) return;
     setEnvoi(false);
     if (!r.ok) {
       fermer();
       return;
     }
     setVerdict(r.data);
+    window.dispatchEvent(new CustomEvent("fa:academy-refresh"));
+    if (examModule) {
+      const detail = await actions.fetchAcademyModule(examModule.id);
+      if (identity.current === who && detail.ok && detail.data?.module) {
+        setExamModule(current => current?.id === examModule.id ? detail.data.module : current);
+      }
+    }
   }
 
   // Les deux issues se confirment pareil. « Garder » n'a rien à envoyer — les FA
@@ -256,7 +313,11 @@ function QuizToast() {
     }
   })), /*#__PURE__*/React.createElement("div", {
     className: "quiz-head"
-  }, question.revision ? /*#__PURE__*/React.createElement("div", {
+  }, examModule && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "q-name"
+  }, examModule.title), examModule.progress && /*#__PURE__*/React.createElement("div", {
+    className: "muted"
+  }, I18N.t("ACADEMY_SCORE", examModule.progress.correct, examModule.exam.question_count))), question.revision ? /*#__PURE__*/React.createElement("div", {
     className: "quiz-tag"
   }, question.review_left > 0 ? I18N.t("QUIZ_REVIEW_PAID", question.review_reward || 5) : I18N.t("QUIZ_REVIEW")) : /*#__PURE__*/React.createElement("span", null), /*#__PURE__*/React.createElement("div", {
     className: "quiz-timer"

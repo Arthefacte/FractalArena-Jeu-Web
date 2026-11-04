@@ -4,7 +4,7 @@
 const { useState, useEffect, useRef, useMemo, useCallback } = React;
 const D = window.FA_DATA, I18N = window.FA_I18N, LOOP = window.FA_LOOP;
 const { FA_Ctx, useFA, cx, fmt, Coin, Bar } = window;
-const { Team, Fosse, Arene, Forge, Wallet, Boutique, Perso, Options, ChatFab, RoomFab, Leaderboard, Quests, Campaign, Tour, LoginGate, TutorialGate, Link, Cinematique, Market, LockedBanner, Expeditions, Referral } = window;
+const { Team, Fosse, Arene, Forge, Wallet, Boutique, Perso, Options, ChatFab, RoomFab, Leaderboard, Quests, Academie, Campaign, Tour, LoginGate, TutorialGate, Link, Cinematique, Market, LockedBanner, Expeditions, Referral } = window;
 const SAVE_KEY = "fractal_arena_v1";
 // Stockage du bearer : delegue a FA_ACCOUNT (account-ui.js), qui applique la regle
 // decidee le 2026-07-27 — sessionStorage pour un compte UniSat (efface a la fermeture
@@ -2312,12 +2312,31 @@ function App() {
     // --- Quiz éducatif ---
     // Tire la prochaine question. Lecture seule : le serveur n'écrit rien ici et
     // ne renvoie jamais la bonne réponse — seulement l'énoncé et les trois choix.
-    async fetchQuizQuestion() {
+    async fetchAcademyModules() {
+      try {
+        const lang = encodeURIComponent(I18N.getLang() || "FR");
+        const resp = await fetch(`${API_URL}/academy/modules?lang=${lang}`);
+        if (!resp.ok) return { ok: false, status: resp.status };
+        return { ok: true, data: await resp.json() };
+      } catch (e) { return { ok: false }; }
+    },
+    async fetchAcademyModule(id) {
+      const s = gRef.current;
+      try {
+        const lang = encodeURIComponent(I18N.getLang() || "FR");
+        const wallet = s.wallet ? `&wallet=${encodeURIComponent(s.wallet)}` : "";
+        const resp = await fetch(`${API_URL}/academy/module/${encodeURIComponent(id)}?lang=${lang}${wallet}`);
+        if (!resp.ok) return { ok: false, status: resp.status };
+        return { ok: true, data: await resp.json() };
+      } catch (e) { return { ok: false }; }
+    },
+    async fetchQuizQuestion(module) {
       const s = gRef.current;
       if (!s.wallet) return { ok: false };
       try {
         const lang = encodeURIComponent(I18N.getLang() || "FR");
-        const resp = await fetch(`${API_URL}/quiz/next/${encodeURIComponent(s.wallet)}?lang=${lang}`);
+        const scope = module ? `&module=${encodeURIComponent(module)}` : "";
+        const resp = await fetch(`${API_URL}/quiz/next/${encodeURIComponent(s.wallet)}?lang=${lang}${scope}`);
         if (!resp.ok) return { ok: false };
         return { ok: true, data: await resp.json() };
       } catch (e) {
@@ -3244,7 +3263,7 @@ function App() {
     );
   }
 
-  const VIEWS = { team: Team, fosse: Fosse, arene: Arene, campaign: Campaign, tour: Tour, expeditions: Expeditions, quests: Quests, forge: Forge, market: Market, wallet: Wallet, boosts: Boutique, perso: Perso, leaderboard: Leaderboard, options: Options, lien: Link, parrainage: Referral };
+  const VIEWS = { team: Team, fosse: Fosse, arene: Arene, campaign: Campaign, tour: Tour, expeditions: Expeditions, quests: Quests, academie: Academie, forge: Forge, market: Market, wallet: Wallet, boosts: Boutique, perso: Perso, leaderboard: Leaderboard, options: Options, lien: Link, parrainage: Referral };
 
   const View = VIEWS[g.view] || Team;
 
@@ -3333,7 +3352,7 @@ const WORLD_BG = {
 // (`quiz` n'est pas listé : le quiz du jeu n'est pas un écran, c'est une modale — sa
 // peinture est livrée et gardée en réserve, à brancher le jour où il aura une surface.)
 const WORLD_BG_PARENT = {
-  perso: "team", lien: "team", parrainage: "team",
+  perso: "team", lien: "team", parrainage: "team", academie: "quests",
 };
 function worldBackdrop(view) {
   return WORLD_BG[view] || WORLD_BG_PARENT[view] || "team";
@@ -3793,7 +3812,7 @@ function Nav() {
     return () => { vivant = false; };
   }, [sheetOpen]);
   const tabs = [
-    ["team", "NAV_TEAM"], ["fosse", "NAV_FOSSE"], ["arene", "NAV_ARENE"], ["campaign", "NAV_CAMPAIGN"], ["tour", "NAV_TOUR"], ["expeditions", "NAV_EXPEDITIONS"], ["quests", "NAV_QUESTS"], ["forge", "NAV_FORGE"], ["market", "NAV_MARKET"],
+    ["team", "NAV_TEAM"], ["fosse", "NAV_FOSSE"], ["arene", "NAV_ARENE"], ["campaign", "NAV_CAMPAIGN"], ["tour", "NAV_TOUR"], ["expeditions", "NAV_EXPEDITIONS"], ["quests", "NAV_QUESTS"], ["academie", "NAV_ACADEMIE"], ["forge", "NAV_FORGE"], ["market", "NAV_MARKET"],
     ["wallet", "NAV_WALLET"], ["boosts", "NAV_BOOSTS"], ["perso", "NAV_PERSO"], ["leaderboard", "NAV_LEADERBOARD"], ["options", "NAV_OPTIONS"],
   ];
   const MAIN = ["team", "fosse", "arene", "campaign"];
@@ -3824,7 +3843,7 @@ function Nav() {
       <nav className="nav">
         {tabs.map(([k, key]) => (
           <button key={k} className={cx("nav-tab", g.view === k && "on", bloque(k) && "locked")} onClick={() => go(k)} aria-disabled={bloque(k) ? "true" : undefined} title={bloque(k) ? lock.label : undefined}>
-            <img className="nav-icon" src={`assets/nav-icons/${k}.png?v=216`} alt="" aria-hidden="true" draggable="false" />
+            <img className="nav-icon" src={`assets/nav-icons/${k === "academie" ? "quests" : k}.png?v=216`} alt="" aria-hidden="true" draggable="false" />
             <span className="nav-label">{I18N.t(key)}</span>
             {k === "arene" && areneBadge > 0 && (
               <span className="nav-badge" style={{ marginLeft: 4, background: "var(--alert)", color: "#fff", borderRadius: 9, fontSize: 10, padding: "0 5px", fontWeight: 700 }}>
@@ -3878,7 +3897,7 @@ function Nav() {
             <div className="fa-sheet-grid">
               {more.map(([k, key]) => (
                 <button key={k} className={cx("fa-sheet-item", g.view === k && "on", bloque(k) && "locked")} onClick={() => go(k)} aria-disabled={bloque(k) ? "true" : undefined}>
-                  <img src={`assets/nav-icons/${k}.png?v=216`} alt="" aria-hidden="true" draggable="false" />
+                  <img src={`assets/nav-icons/${k === "academie" ? "quests" : k}.png?v=216`} alt="" aria-hidden="true" draggable="false" />
                   <span>{I18N.t(key)}</span>
                   {k === "expeditions" && expReady > 0 && <span className="fa-sheet-dot" aria-hidden="true" />}
                 </button>

@@ -34,6 +34,7 @@ const {
   RoomFab,
   Leaderboard,
   Quests,
+  Academie,
   Campaign,
   Tour,
   LoginGate,
@@ -3910,14 +3911,53 @@ function App() {
     // --- Quiz éducatif ---
     // Tire la prochaine question. Lecture seule : le serveur n'écrit rien ici et
     // ne renvoie jamais la bonne réponse — seulement l'énoncé et les trois choix.
-    async fetchQuizQuestion() {
+    async fetchAcademyModules() {
+      try {
+        const lang = encodeURIComponent(I18N.getLang() || "FR");
+        const resp = await fetch(`${API_URL}/academy/modules?lang=${lang}`);
+        if (!resp.ok) return {
+          ok: false,
+          status: resp.status
+        };
+        return {
+          ok: true,
+          data: await resp.json()
+        };
+      } catch (e) {
+        return {
+          ok: false
+        };
+      }
+    },
+    async fetchAcademyModule(id) {
+      const s = gRef.current;
+      try {
+        const lang = encodeURIComponent(I18N.getLang() || "FR");
+        const wallet = s.wallet ? `&wallet=${encodeURIComponent(s.wallet)}` : "";
+        const resp = await fetch(`${API_URL}/academy/module/${encodeURIComponent(id)}?lang=${lang}${wallet}`);
+        if (!resp.ok) return {
+          ok: false,
+          status: resp.status
+        };
+        return {
+          ok: true,
+          data: await resp.json()
+        };
+      } catch (e) {
+        return {
+          ok: false
+        };
+      }
+    },
+    async fetchQuizQuestion(module) {
       const s = gRef.current;
       if (!s.wallet) return {
         ok: false
       };
       try {
         const lang = encodeURIComponent(I18N.getLang() || "FR");
-        const resp = await fetch(`${API_URL}/quiz/next/${encodeURIComponent(s.wallet)}?lang=${lang}`);
+        const scope = module ? `&module=${encodeURIComponent(module)}` : "";
+        const resp = await fetch(`${API_URL}/quiz/next/${encodeURIComponent(s.wallet)}?lang=${lang}${scope}`);
         if (!resp.ok) return {
           ok: false
         };
@@ -5685,6 +5725,7 @@ function App() {
     tour: Tour,
     expeditions: Expeditions,
     quests: Quests,
+    academie: Academie,
     forge: Forge,
     market: Market,
     wallet: Wallet,
@@ -5781,7 +5822,8 @@ const WORLD_BG = {
 const WORLD_BG_PARENT = {
   perso: "team",
   lien: "team",
-  parrainage: "team"
+  parrainage: "team",
+  academie: "quests"
 };
 function worldBackdrop(view) {
   return WORLD_BG[view] || WORLD_BG_PARENT[view] || "team";
@@ -6379,7 +6421,7 @@ function Nav() {
       vivant = false;
     };
   }, [sheetOpen]);
-  const tabs = [["team", "NAV_TEAM"], ["fosse", "NAV_FOSSE"], ["arene", "NAV_ARENE"], ["campaign", "NAV_CAMPAIGN"], ["tour", "NAV_TOUR"], ["expeditions", "NAV_EXPEDITIONS"], ["quests", "NAV_QUESTS"], ["forge", "NAV_FORGE"], ["market", "NAV_MARKET"], ["wallet", "NAV_WALLET"], ["boosts", "NAV_BOOSTS"], ["perso", "NAV_PERSO"], ["leaderboard", "NAV_LEADERBOARD"], ["options", "NAV_OPTIONS"]];
+  const tabs = [["team", "NAV_TEAM"], ["fosse", "NAV_FOSSE"], ["arene", "NAV_ARENE"], ["campaign", "NAV_CAMPAIGN"], ["tour", "NAV_TOUR"], ["expeditions", "NAV_EXPEDITIONS"], ["quests", "NAV_QUESTS"], ["academie", "NAV_ACADEMIE"], ["forge", "NAV_FORGE"], ["market", "NAV_MARKET"], ["wallet", "NAV_WALLET"], ["boosts", "NAV_BOOSTS"], ["perso", "NAV_PERSO"], ["leaderboard", "NAV_LEADERBOARD"], ["options", "NAV_OPTIONS"]];
   const MAIN = ["team", "fosse", "arene", "campaign"];
   const more = tabs.filter(([k]) => !MAIN.includes(k));
   // Rail : les onglets hors de l'étape en cours sont peints comme fermés (et le
@@ -6417,7 +6459,7 @@ function Nav() {
     title: bloque(k) ? lock.label : undefined
   }, /*#__PURE__*/React.createElement("img", {
     className: "nav-icon",
-    src: `assets/nav-icons/${k}.png?v=216`,
+    src: `assets/nav-icons/${k === "academie" ? "quests" : k}.png?v=216`,
     alt: "",
     "aria-hidden": "true",
     draggable: "false"
@@ -6497,7 +6539,7 @@ function Nav() {
     onClick: () => go(k),
     "aria-disabled": bloque(k) ? "true" : undefined
   }, /*#__PURE__*/React.createElement("img", {
-    src: `assets/nav-icons/${k}.png?v=216`,
+    src: `assets/nav-icons/${k === "academie" ? "quests" : k}.png?v=216`,
     alt: "",
     "aria-hidden": "true",
     draggable: "false"
