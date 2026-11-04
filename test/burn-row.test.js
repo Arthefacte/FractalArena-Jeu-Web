@@ -63,3 +63,33 @@ test("clés i18n BURN_* présentes en FR/EN/ZH", () => {
     }
   }
 });
+
+// La part brûlée n'est plus un « 1/3 » figé : la répartition dynamique (25/10) la fait bouger
+// toutes les 5 min, et le halving la réduit. Le libellé doit lire le split du serveur.
+test("BURN_SUB ne code plus la part en dur et porte les trois valeurs (part, taux, palier)", () => {
+  const i = I18N.indexOf("BURN_SUB:");
+  assert.ok(i > -1);
+  const bloc = I18N.slice(i, I18N.indexOf("\n", I18N.indexOf("BURN_SUB_NOPART"))+1);
+  assert.ok(!/1\/3/.test(bloc), "« 1/3 » est périmé depuis la répartition dynamique");
+  for (const lang of ["FR", "EN", "ZH"]) {
+    const m = bloc.match(new RegExp(lang + ': "([^"]*)"'));
+    assert.ok(m, `BURN_SUB.${lang} attendue`);
+    assert.strictEqual((m[1].match(/%s/g) || []).length, 3, `BURN_SUB.${lang} : part, taux, palier`);
+  }
+  const m2 = bloc.match(/BURN_SUB_NOPART: \{ FR: "([^"]*)"/);
+  assert.strictEqual((m2[1].match(/%s/g) || []).length, 2, "BURN_SUB_NOPART : taux, palier seulement");
+});
+
+test("RangeeBurn lit la part du burn dans /buyback/status → split, jamais en dur", () => {
+  const i = SRC.indexOf("function RangeeBurn");
+  const corps = SRC.slice(i, SRC.indexOf("\nfunction", i + 10));
+  assert.match(corps, /split\.burn_bp/, "la part vient de split.burn_bp");
+  assert.match(corps, /nominal_bp/, "à défaut, la nominale publiée par le serveur");
+  assert.match(corps, /BURN_SUB_NOPART/, "sans part connue, le libellé reste honnête");
+  assert.ok(!/1\/3/.test(corps), "aucune part figée dans la rangée");
+});
+
+test("le ticker passe le split à la rangée burn", () => {
+  assert.match(SRC, /<RangeeBurn burn=\{burn\} split=\{bb\.split\}/,
+    "RangeeBurn doit recevoir bb.split");
+});

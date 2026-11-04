@@ -238,7 +238,7 @@ function RangeeDex({ dex }) {
 // (barre qui se remplit vers la cérémonie de 100 000, +delta quand ça entre,
 // pulse à la cérémonie). Ne s'affiche que si /burn/status a répondu — pas de
 // valeur fabriquée quand le serveur manque : une panne ne devient pas « 0 brûlé ».
-function RangeeBurn({ burn }) {
+function RangeeBurn({ burn, split }) {
   const I = window.FA_I18N;
   // Ce qui vient d'entrer au compteur (dû qui monte) → même +delta que les pools.
   const [gain, setGain] = React.useState({ n: 0, montant: 0 });
@@ -267,6 +267,14 @@ function RangeeBurn({ burn }) {
   const frac = buybackFraction(burn.owed, burn.ceremony_threshold);
   // current_rate ∈ {1, 0.5, 0.25, …} — affiché tel quel, le halving se lit dedans.
   const rateTxt = String(Number(burn.current_rate) || 1);
+  // Part RÉELLE du burn dans la répartition dynamique (burn → cagnotte → rachat) : le libellé
+  // suit /buyback/status → split.burn_bp, jamais une fraction figée — le split bouge toutes les
+  // 5 min et le halving le réduit. Part absente → la nominale que le SERVEUR publie ; les deux
+  // absentes → on n'écrit pas de part du tout (aucune valeur inventée côté client).
+  const burnBp = Number(split && split.burn_bp);
+  const nomBp = Number(split && split.nominal_bp && split.nominal_bp.burn);
+  const partBp = Number.isFinite(burnBp) ? burnBp : (Number.isFinite(nomBp) ? nomBp : null);
+  const partTxt = partBp == null ? null : Math.round(partBp / 100) + " %";
   return (
     <React.Fragment>
     <div
@@ -285,7 +293,9 @@ function RangeeBurn({ burn }) {
           <FaText text={I.t("BURN_ROW", bbFmt(burn.total_burned))} s={10} />
         </button>
         {" "}
-        <FaText text={"· " + I.t("BURN_SUB", rateTxt, bbFmt(burn.next_halving_at_burned))} s={10} />
+        <FaText text={"· " + (partTxt
+          ? I.t("BURN_SUB", partTxt, rateTxt, bbFmt(burn.next_halving_at_burned))
+          : I.t("BURN_SUB_NOPART", rateTxt, bbFmt(burn.next_halving_at_burned)))} s={10} />
         {" "}
         {/* UniScan, pas fractal.unisat.io : la page wallet d'UniSat affiche un panneau
             Actifs vide pour l'adresse de burn — UniScan montre badge « Burn Address »,
@@ -592,7 +602,7 @@ function BuybackTicker() {
           ) : null}
         />
       ))}
-      <RangeeBurn burn={burn} />
+      <RangeeBurn burn={burn} split={bb.split} />
       {/* Pied du bandeau : le prix spot seul. La ligne d'info ne se glisse jamais
           entre deux jauges (retour user 22/10) et le compte de rachats vérifiés
           est remonté sur la ligne du rachat, à la suite de son cumul. */}

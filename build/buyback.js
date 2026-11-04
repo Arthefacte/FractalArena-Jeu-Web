@@ -303,7 +303,8 @@ function RangeeDex({
 // pulse à la cérémonie). Ne s'affiche que si /burn/status a répondu — pas de
 // valeur fabriquée quand le serveur manque : une panne ne devient pas « 0 brûlé ».
 function RangeeBurn({
-  burn
+  burn,
+  split
 }) {
   const I = window.FA_I18N;
   // Ce qui vient d'entrer au compteur (dû qui monte) → même +delta que les pools.
@@ -345,6 +346,14 @@ function RangeeBurn({
   const frac = buybackFraction(burn.owed, burn.ceremony_threshold);
   // current_rate ∈ {1, 0.5, 0.25, …} — affiché tel quel, le halving se lit dedans.
   const rateTxt = String(Number(burn.current_rate) || 1);
+  // Part RÉELLE du burn dans la répartition dynamique (burn → cagnotte → rachat) : le libellé
+  // suit /buyback/status → split.burn_bp, jamais une fraction figée — le split bouge toutes les
+  // 5 min et le halving le réduit. Part absente → la nominale que le SERVEUR publie ; les deux
+  // absentes → on n'écrit pas de part du tout (aucune valeur inventée côté client).
+  const burnBp = Number(split && split.burn_bp);
+  const nomBp = Number(split && split.nominal_bp && split.nominal_bp.burn);
+  const partBp = Number.isFinite(burnBp) ? burnBp : Number.isFinite(nomBp) ? nomBp : null;
+  const partTxt = partBp == null ? null : Math.round(partBp / 100) + " %";
   return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     key: "g" + gain.n + ":c" + ceremonie,
     className: "bb-row burn" + (gain.montant > 0 ? " bb-gain" : "") + (ceremonie > 0 ? " bb-rachat" : "")
@@ -373,7 +382,7 @@ function RangeeBurn({
     text: I.t("BURN_ROW", bbFmt(burn.total_burned)),
     s: 10
   })), " ", /*#__PURE__*/React.createElement(FaText, {
-    text: "· " + I.t("BURN_SUB", rateTxt, bbFmt(burn.next_halving_at_burned)),
+    text: "· " + (partTxt ? I.t("BURN_SUB", partTxt, rateTxt, bbFmt(burn.next_halving_at_burned)) : I.t("BURN_SUB_NOPART", rateTxt, bbFmt(burn.next_halving_at_burned))),
     s: 10
   }), " ", /*#__PURE__*/React.createElement("a", {
     className: "bb-burn-lien",
@@ -781,7 +790,8 @@ function BuybackTicker() {
       onClick: () => setVoirPaiements(true)
     }, I.t("POT_PAY_BTN", paiements.paid_count)))) : null
   })), /*#__PURE__*/React.createElement(RangeeBurn, {
-    burn: burn
+    burn: burn,
+    split: bb.split
   }), /*#__PURE__*/React.createElement(RangeeDex, {
     dex: dex
   }), /*#__PURE__*/React.createElement(TapeBoursiere, {
