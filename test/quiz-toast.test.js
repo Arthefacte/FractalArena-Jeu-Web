@@ -64,8 +64,9 @@ test("le decompte est ce qui ferme la bulle, pas un second minuteur", () => {
   assert.ok(!/setTimeout\([^)]*fermer/.test(src), "un setTimeout parallele au decompte");
   // A zero, la bulle disparait : soit par fermer(), soit par garder() qui ferme
   // apres avoir confirme. Le test tient a ce que le compteur declenche la sortie,
-  // pas a la forme exacte de la branche.
-  assert.match(src, /if\s*\(\s*r\s*<=\s*0\s*\)[\s\S]{0,120}(garder|fermer)\(\)/);
+  // pas a la forme exacte de la branche — mais une fiche ouverte suspend la
+  // fermeture, donc la sortie se lit un peu plus loin qu'avant.
+  assert.match(src, /if\s*\(\s*r\s*<=\s*0\s*\)[\s\S]{0,200}(garder|fermer)\(\)/);
 });
 
 // Sans choix, la bulle se ferme et rien n'est offert : le joueur doit le savoir
@@ -119,7 +120,7 @@ test("garder confirme par un toast, comme offrir", () => {
 // cas ou le joueur est le plus perdu est justement celui qui ne dit rien.
 test("l'expiration avec un choix en attente confirme la conservation", () => {
   assert.match(src, /choixRef/, "le minuteur doit connaitre l'etat courant du choix");
-  assert.match(src, /if\s*\(\s*r\s*<=\s*0\s*\)\s*\{?\s*(choixRef\.current\s*\?\s*garder\(\)|if\s*\(\s*choixRef\.current\s*\)\s*garder\(\))/,
+  assert.match(src, /if\s*\(\s*r\s*<=\s*0\s*\)\s*\{[\s\S]{0,220}?if\s*\(\s*choixRef\.current\s*\)\s*garder\(\)/,
     "a 0 s, un choix en attente doit passer par garder()");
 });
 

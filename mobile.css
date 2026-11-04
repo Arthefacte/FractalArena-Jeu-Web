@@ -347,6 +347,8 @@
   /* Même raison que sur desktop : ligne pleine largeur et 34 px de haut, sinon
      le pouce rate le lien et croit que le bouton ne fait rien. */
   .quiz-to-lesson { padding: 9px 0; font-size: 11.5px; }
+  /* La fiche reste lisible sans manger l'écran : elle défile dans la bulle. */
+  .quiz-lesson { max-height: 34dvh; }
   .quiz-timeout { font-size: 10px; }
 }
 

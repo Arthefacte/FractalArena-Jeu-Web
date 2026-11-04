@@ -46,14 +46,6 @@ function estOccupe() {
 
 // ---- la bulle ----
 
-// Le rail de première session restreint la navigation à l'étape en cours
-// (window.FA_GUIDE_LOCK, publié par guide.jsx). Une sortie vers l'Académie
-// serait refusée en silence : on ne l'affiche pas plutôt que de laisser un
-// bouton qui ne fait rien.
-function vueAtteignable(vue) {
-  const lock = window.FA_GUIDE_LOCK;
-  return !(lock && lock.on && !(lock.views || []).includes(vue));
-}
 function QuizToast() {
   const {
     g,
@@ -67,6 +59,11 @@ function QuizToast() {
   const [restant, setRestant] = useState(0); // secondes affichées par le décompte
   const [pret, setPret] = useState(false); // un quiz attend d'être ouvert
   const [examModule, setExamModule] = useState(null);
+  // La fiche s'ouvre DANS la bulle : pas de changement d'écran, donc pas de
+  // navigation qui puisse refuser (rail de première session), pas d'écran à
+  // monter, pas d'ordre de chargement à respecter. Le clic fait toujours
+  // quelque chose de visible, même si le réseau échoue.
+  const [fiche, setFiche] = useState(null); // null | {loading} | {error} | {module}
   const opening = useRef(false);
   const identity = useRef(null);
   identity.current = g.wallet;
@@ -83,6 +80,10 @@ function QuizToast() {
   // un don réussi.
   const choixRef = useRef(false);
   choixRef.current = choixEnAttente;
+  // Même raison pour la fiche : tant qu'elle est ouverte, le décompte ne doit
+  // pas emporter la lecture du joueur.
+  const ficheRef = useRef(false);
+  ficheRef.current = !!fiche;
 
   // Plus aucune bulle spontanée (retour joueur, 15/08 : « les notifications qui
   // popent, c'est relou ») : la minuterie ne fait qu'allumer la pastille ❓.
@@ -202,6 +203,7 @@ function QuizToast() {
       // Laisser filer le décompte, c'est garder : même confirmation qu'un clic,
       // sinon le cas où le joueur est le plus perdu est celui qui ne dit rien.
       if (r <= 0) {
+        if (ficheRef.current) return; // il lit : la bulle attend, elle ne ferme pas
         if (choixRef.current) garder();else fermer();
       }
     }, 250);
@@ -213,7 +215,27 @@ function QuizToast() {
     setVerdict(null);
     setEnvoi(false);
     setDonne(false);
+    setFiche(null);
     lastAskAt.current = Date.now(); // la prochaine bulle repart d'un intervalle plein
+  }
+
+  // Le clic « Lire la fiche » n'a qu'un effet, local et immédiat : la fiche du
+  // module s'affiche sous l'explication. Si le réseau échoue, l'erreur s'affiche
+  // aussi — jamais un clic sans réaction.
+  async function ouvrirFiche() {
+    if (!verdict || !verdict.module_id) return;
+    const who = identity.current;
+    setFiche({
+      loading: true
+    });
+    const r = await actions.fetchAcademyModule(verdict.module_id);
+    if (identity.current !== who) return;
+    const module = r && r.ok && r.data && r.data.module;
+    setFiche(module ? {
+      module
+    } : {
+      error: true
+    });
   }
   async function repondre(i) {
     if (envoi || verdict) return;
@@ -348,34 +370,34 @@ function QuizToast() {
     className: cx("quiz-verdict", verdict.correct ? "ok" : "ko")
   }, I18N.t(verdict.correct ? "QUIZ_CORRECT" : "QUIZ_WRONG")), /*#__PURE__*/React.createElement("div", {
     className: "quiz-why"
-  }, verdict.explanation), !choixEnAttente && verdict.module_id && (vueAtteignable("academie") ? /*#__PURE__*/React.createElement("button", {
+  }, verdict.explanation), !choixEnAttente && verdict.module_id && !fiche && /*#__PURE__*/React.createElement("button", {
     className: "quiz-to-lesson",
-    onClick: () => {
-      const module = verdict.module_id;
-      // 1. La demande, avant tout : l'écran Académie la lit au montage
-      //    (il n'est pas encore affiché à cet instant).
-      window.__faAcademyModule = module;
-      // 2. La navigation, par le même chemin que la barre de nav. Un
-      //    seul saut, pas d'écouteur intermédiaire à traverser.
-      actions.setView("academie");
-      // 3. La bulle se referme : sinon la fiche s'ouvre derrière elle.
-      fermer();
-      // 4. Si l'écran Académie est DÉJÀ monté, il écoute et bascule
-      //    directement sur le module (le montage, lui, est déjà passé).
-      window.dispatchEvent(new CustomEvent("fa:academy-module", {
-        detail: {
-          module
-        }
-      }));
-    }
-  }, I18N.t("ACADEMY_READ_LESSON"), " \u2192") :
-  /*#__PURE__*/
-  // Pendant le rail de première session la navigation refuse les
-  // vues hors étape : on dit pourquoi la fiche n'ouvre pas plutôt que
-  // d'afficher un bouton qui ne fait rien.
-  React.createElement("div", {
+    onClick: ouvrirFiche
+  }, I18N.t("ACADEMY_READ_LESSON"), " \u2192"), fiche && /*#__PURE__*/React.createElement("div", {
+    className: "quiz-lesson",
+    "aria-live": "polite"
+  }, fiche.loading && /*#__PURE__*/React.createElement("div", {
     className: "quiz-why"
-  }, I18N.t("ACADEMY_LESSON_LOCKED"))), choixEnAttente && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+  }, I18N.t("ACADEMY_LOADING")), fiche.error && /*#__PURE__*/React.createElement("div", {
+    className: "quiz-why"
+  }, I18N.t("ACADEMY_ERROR")), fiche.module && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    className: "q-name"
+  }, fiche.module.title), fiche.module.lessons.map(lesson => /*#__PURE__*/React.createElement("div", {
+    key: lesson.id
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "quiz-lesson-title"
+  }, lesson.title), lesson.body.map((paragraph, i) => /*#__PURE__*/React.createElement("p", {
+    key: i,
+    className: "quiz-why"
+  }, paragraph)), !!lesson.sources.length && /*#__PURE__*/React.createElement("ul", {
+    className: "quiz-lesson-sources"
+  }, lesson.sources.filter(url => /^https?:\/\//i.test(url)).map((url, i) => /*#__PURE__*/React.createElement("li", {
+    key: i
+  }, /*#__PURE__*/React.createElement("a", {
+    href: url,
+    target: "_blank",
+    rel: "noopener noreferrer"
+  }, url)))))))), choixEnAttente && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     className: "quiz-dest"
   }, /*#__PURE__*/React.createElement("button", {
     className: "quiz-choice",

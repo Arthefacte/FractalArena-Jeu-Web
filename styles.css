@@ -1406,6 +1406,24 @@ body[data-fond="cite"] .app-bg {
   text-decoration: underline; text-underline-offset: 3px;
 }
 .quiz-to-lesson:hover { color: var(--fire); }
+/* La fiche ouverte DANS la bulle. Hauteur bornée et défilement interne : elle
+   ne doit pas pousser la question hors de l'écran ni transformer la bulle en
+   page d'article. Les sources restent citées, dans la langue du contenu. */
+.quiz-lesson {
+  display: flex; flex-direction: column; gap: 6px;
+  margin-top: 4px; padding-top: 8px; border-top: 1px solid var(--line);
+  max-height: 240px; overflow-y: auto;
+}
+.quiz-lesson p { margin: 0; }
+.quiz-lesson-title {
+  font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.5px;
+  text-transform: uppercase; color: var(--elec);
+}
+.quiz-lesson-sources {
+  margin: 0; padding-left: 14px; font-size: 11px;
+  color: var(--text-dim); overflow-wrap: anywhere;
+}
+.quiz-lesson-sources a { color: var(--text-dim); }
 /* Les deux destinations pèsent exactement pareil : même largeur, même fond,
    même bordure, même graisse. Aucune ne doit attirer l'œil plus que l'autre. */
 .quiz-dest { display: flex; gap: 8px; }
