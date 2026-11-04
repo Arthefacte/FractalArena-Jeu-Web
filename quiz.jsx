@@ -35,15 +35,6 @@ function estOccupe() {
 
 // ---- la bulle ----
 
-// Le rail de première session restreint la navigation à l'étape en cours
-// (window.FA_GUIDE_LOCK, publié par guide.jsx). Une sortie vers l'Académie
-// serait refusée en silence : on ne l'affiche pas plutôt que de laisser un
-// bouton qui ne fait rien.
-function vueAtteignable(vue) {
-  const lock = window.FA_GUIDE_LOCK;
-  return !(lock && lock.on && !(lock.views || []).includes(vue));
-}
-
 function QuizToast() {
   const { g, actions, toast } = useFA();
   const [question, setQuestion] = useState(null);   // { id, q, c[], revision }
@@ -53,6 +44,11 @@ function QuizToast() {
   const [restant, setRestant] = useState(0);       // secondes affichées par le décompte
   const [pret, setPret] = useState(false);          // un quiz attend d'être ouvert
   const [examModule, setExamModule] = useState(null);
+  // La fiche s'ouvre DANS la bulle : pas de changement d'écran, donc pas de
+  // navigation qui puisse refuser (rail de première session), pas d'écran à
+  // monter, pas d'ordre de chargement à respecter. Le clic fait toujours
+  // quelque chose de visible, même si le réseau échoue.
+  const [fiche, setFiche] = useState(null);         // null | {loading} | {error} | {module}
   const opening = useRef(false);
   const identity = useRef(null);
   identity.current = g.wallet;
@@ -70,6 +66,10 @@ function QuizToast() {
   // un don réussi.
   const choixRef = useRef(false);
   choixRef.current = choixEnAttente;
+  // Même raison pour la fiche : tant qu'elle est ouverte, le décompte ne doit
+  // pas emporter la lecture du joueur.
+  const ficheRef = useRef(false);
+  ficheRef.current = !!fiche;
 
   // Plus aucune bulle spontanée (retour joueur, 15/08 : « les notifications qui
   // popent, c'est relou ») : la minuterie ne fait qu'allumer la pastille ❓.
@@ -177,7 +177,10 @@ function QuizToast() {
       setRestant(r);
       // Laisser filer le décompte, c'est garder : même confirmation qu'un clic,
       // sinon le cas où le joueur est le plus perdu est celui qui ne dit rien.
-      if (r <= 0) { if (choixRef.current) garder(); else fermer(); }
+      if (r <= 0) {
+        if (ficheRef.current) return;   // il lit : la bulle attend, elle ne ferme pas
+        if (choixRef.current) garder(); else fermer();
+      }
     }, 250);
     return () => clearInterval(id);
   }, [ouvert, verdict]);
@@ -188,7 +191,21 @@ function QuizToast() {
     setVerdict(null);
     setEnvoi(false);
     setDonne(false);
+    setFiche(null);
     lastAskAt.current = Date.now(); // la prochaine bulle repart d'un intervalle plein
+  }
+
+  // Le clic « Lire la fiche » n'a qu'un effet, local et immédiat : la fiche du
+  // module s'affiche sous l'explication. Si le réseau échoue, l'erreur s'affiche
+  // aussi — jamais un clic sans réaction.
+  async function ouvrirFiche() {
+    if (!verdict || !verdict.module_id) return;
+    const who = identity.current;
+    setFiche({ loading: true });
+    const r = await actions.fetchAcademyModule(verdict.module_id);
+    if (identity.current !== who) return;
+    const module = r && r.ok && r.data && r.data.module;
+    setFiche(module ? { module } : { error: true });
   }
 
   async function repondre(i) {
@@ -328,34 +345,38 @@ function QuizToast() {
           <div className="quiz-why">{verdict.explanation}</div>
           {/* La fiche qui porte cette question : le serveur nomme le module
               (`module_id`), le client n'a aucune table de thèmes à recopier.
+              Elle s'ouvre ICI, dans la bulle — pas d'écran à changer.
               Il n'apparaît qu'une fois le choix garder/offrir tranché : deux
-              sorties en même temps rendraient l'arbitrage illisible.
-              Et seulement si l'écran est atteignable : pendant le rail de
-              première session, la navigation REFUSE les vues hors étape — un
-              lien qui ne peut pas aboutir serait un bouton mort. */}
-          {!choixEnAttente && verdict.module_id && (vueAtteignable("academie") ? (
-            <button className="quiz-to-lesson" onClick={() => {
-              const module = verdict.module_id;
-              // 1. La demande, avant tout : l'écran Académie la lit au montage
-              //    (il n'est pas encore affiché à cet instant).
-              window.__faAcademyModule = module;
-              // 2. La navigation, par le même chemin que la barre de nav. Un
-              //    seul saut, pas d'écouteur intermédiaire à traverser.
-              actions.setView("academie");
-              // 3. La bulle se referme : sinon la fiche s'ouvre derrière elle.
-              fermer();
-              // 4. Si l'écran Académie est DÉJÀ monté, il écoute et bascule
-              //    directement sur le module (le montage, lui, est déjà passé).
-              window.dispatchEvent(new CustomEvent("fa:academy-module", { detail: { module } }));
-            }}>
+              sorties en même temps rendraient l'arbitrage illisible. */}
+          {!choixEnAttente && verdict.module_id && !fiche && (
+            <button className="quiz-to-lesson" onClick={ouvrirFiche}>
               {I18N.t("ACADEMY_READ_LESSON")} →
             </button>
-          ) : (
-            // Pendant le rail de première session la navigation refuse les
-            // vues hors étape : on dit pourquoi la fiche n'ouvre pas plutôt que
-            // d'afficher un bouton qui ne fait rien.
-            <div className="quiz-why">{I18N.t("ACADEMY_LESSON_LOCKED")}</div>
-          ))}
+          )}
+          {fiche && (
+            <div className="quiz-lesson" aria-live="polite">
+              {fiche.loading && <div className="quiz-why">{I18N.t("ACADEMY_LOADING")}</div>}
+              {fiche.error && <div className="quiz-why">{I18N.t("ACADEMY_ERROR")}</div>}
+              {fiche.module && <>
+                <div className="q-name">{fiche.module.title}</div>
+                {fiche.module.lessons.map((lesson) => (
+                  <div key={lesson.id}>
+                    <div className="quiz-lesson-title">{lesson.title}</div>
+                    {lesson.body.map((paragraph, i) => (
+                      <p key={i} className="quiz-why">{paragraph}</p>
+                    ))}
+                    {!!lesson.sources.length && (
+                      <ul className="quiz-lesson-sources">
+                        {lesson.sources.filter((url) => /^https?:\/\//i.test(url)).map((url, i) => (
+                          <li key={i}><a href={url} target="_blank" rel="noopener noreferrer">{url}</a></li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                ))}
+              </>}
+            </div>
+          )}
           {/* Le gain de révision passe par le même choix garder/offrir que les
               questions neuves (le montant s'affiche dans le bouton « Garder »). */}
           {/* Les deux destinations, même classe, même largeur : le joueur voit

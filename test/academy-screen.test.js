@@ -367,21 +367,9 @@ test("Académie : la fiche demandée depuis le résultat du quiz s'ouvre directe
   assert.equal(h.calls.filter((u) => new URL(u).pathname === "/academy/module/undefined").length, 0);
 });
 
-test("Le résultat du quiz porte le lien vers la fiche, et la nav bascule l'écran", () => {
-  const quiz = read("quiz.jsx");
-  assert.match(quiz, /verdict\.module_id/, "le champ serveur module_id est lu");
-  assert.match(quiz, /!choixEnAttente && verdict\.module_id/,
-    "le lien n'apparaît qu'une fois l'arbitrage garder/offrir tranché");
-  assert.match(quiz, /CustomEvent\("fa:academy-module"/);
-  assert.match(quiz, /ACADEMY_READ_LESSON/);
-  assert.match(app, /addEventListener\("fa:academy-module", versAcademie\)/);
-  assert.match(app, /go\("academie"\)/);
-});
 
-test("mauvaise réponse : « Lire la fiche » ferme la bulle et demande VRAIMENT la fiche", async () => {
+test("mauvaise réponse : « Lire la fiche » affiche la fiche DANS la bulle", async () => {
   const h = harness({ root: "QuizToast" });
-  const demandes = [];
-  h.win.addEventListener("fa:academy-module", (e) => demandes.push(e.detail && e.detail.module));
   h.actions.answerQuiz = async () => ({
     ok: true,
     data: { correct: false, reward: 0, explanation: "Explication serveur", module_id: "minage" },
@@ -393,37 +381,40 @@ test("mauvaise réponse : « Lire la fiche » ferme la bulle et demande VRAIMENT
   assert.ok(lien, "sur une mauvaise réponse, le lien vers la fiche apparaît");
   await h.click(lien);
 
-  // Les trois sorties du clic, dans l'ordre : la demande déposée pour l'écran,
-  // la navigation elle-même, et l'événement pour un écran déjà monté.
-  assert.equal(h.win.__faAcademyModule, "minage", "la demande est déposée pour le montage de l'écran");
-  assert.deepEqual(h.views, ["academie"], "le clic navigue directement, sans passer par la barre de nav");
-  assert.deepEqual(demandes, ["minage"], "l'écran déjà monté reçoit aussi le module");
-  assert.equal(h.nodes().some((n) => n.props.className === "quiz-q"), false,
-    "la bulle se referme : sinon la fiche s'ouvre derrière une modale");
+  // Le clic a un effet visible, local : la fiche se lit sous l'explication.
+  assert.ok(h.calls.map((u) => new URL(u).pathname).includes("/academy/module/minage"),
+    "la fiche du module de la question est demandée");
+  assert.match(textOf(h.tree), /Titre serveur/, "le module s'affiche");
+  assert.match(textOf(h.tree), /Paragraphe fourni par le mock serveur/, "le corps de la fiche s'affiche");
+  assert.match(textOf(h.tree), /example\.org/, "les sources restent citées");
+  assert.ok(h.nodes().some((n) => n.props.className === "quiz-q"),
+    "la question reste au-dessus : on lit sans changer d'écran");
+  assert.equal(h.nodes().some((n) => n.props.className === "quiz-to-lesson"), false,
+    "le lien laisse la place à la fiche");
 });
 
-test("rail de première session : pas de lien vers une fiche inatteignable", async () => {
-  const verdict = () => ({
+test("fiche indisponible : le clic affiche l'erreur, il ne fait jamais rien", async () => {
+  const h = harness({ root: "QuizToast", fetcher: (url) => {
+    if (url.pathname.startsWith("/academy/")) return response({}, 500);
+    return response({ question: { id: "q1", q: "Question", c: ["A", "B"] } });
+  } });
+  h.actions.answerQuiz = async () => ({
     ok: true,
     data: { correct: false, reward: 0, explanation: "Explication serveur", module_id: "minage" },
   });
-  // Le rail restreint la navigation : la barre de nav refuserait « academie ».
-  const bloque = harness({ root: "QuizToast" });
-  bloque.win.FA_GUIDE_LOCK = { on: true, views: ["arene"], step: "s1", label: "Combat" };
-  bloque.actions.answerQuiz = async () => verdict();
-  await bloque.tick(); bloque.dispatch(); await bloque.settle();
-  await bloque.click(bloque.button("A"));
-  assert.equal(bloque.nodes().some((n) => n.props.className === "quiz-to-lesson"), false,
-    "aucun bouton qui ne pourrait pas aboutir");
-  assert.match(textOf(bloque.tree), /Académie est encore verrouillée/,
-    "et le joueur lit POURQUOI la fiche n'ouvre pas");
-  assert.deepEqual(bloque.views, [], "et évidemment rien n'est tenté");
+  await h.tick(); h.dispatch(); await h.settle();
+  await h.click(h.button("A"));
+  await h.click(h.nodes().find((n) => n.props.className === "quiz-to-lesson"));
+  assert.match(textOf(h.tree), /Académie indisponible/, "l'échec réseau est dit en clair");
+});
 
-  // Hors rail, le même verdict rend le lien : c'est bien le verrou qui décide.
-  const libre = harness({ root: "QuizToast" });
-  libre.win.FA_GUIDE_LOCK = { on: false, views: [], step: null, label: "" };
-  libre.actions.answerQuiz = async () => verdict();
-  await libre.tick(); libre.dispatch(); await libre.settle();
-  await libre.click(libre.button("A"));
-  assert.ok(libre.nodes().some((n) => n.props.className === "quiz-to-lesson"));
+test("la fiche ne s'ouvre qu'après l'arbitrage, et le décompte l'épargne", () => {
+  const quiz = read("quiz.jsx");
+  assert.match(quiz, /verdict\.module_id/, "le champ serveur module_id est lu");
+  assert.match(quiz, /!choixEnAttente && verdict\.module_id && !fiche/,
+    "le lien n'apparaît qu'une fois garder/offrir tranché");
+  // Sans cette garde, les 30 s emportent la fiche que le joueur est en train de lire.
+  assert.match(quiz, /if \(ficheRef\.current\) return;/, "le décompte n'emporte pas une fiche ouverte");
+  assert.match(quiz, /actions\.fetchAcademyModule\(verdict\.module_id\)/,
+    "la fiche vient du serveur, pas d'un texte local");
 });
