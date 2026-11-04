@@ -166,8 +166,10 @@ test("Académie : composant window, VIEWS, onglet Plus et chargement du build", 
   const html = read("index.html");
   assert.ok(html.indexOf("build/academie.js") > html.indexOf("build/components.js"));
   assert.ok(html.indexOf("build/academie.js") < html.indexOf("build/app.js"));
-  assert.equal((app.match(/k === "academie" \? "quests" : k/g) || []).length, 2);
-  assert.match(app, /academie: "quests"/);
+  assert.equal((app.match(/k === "academie" \? "quests" : k/g) || []).length, 0,
+    "l'icône d'Académie est un asset dédié : plus aucun écran n'en emprunte une autre");
+  assert.ok(fs.existsSync(path.join(__dirname, "..", "assets/nav-icons/academie.png")),
+    "assets/nav-icons/academie.png doit exister, sinon la tuile rend un carré vide");
 });
 
 test("toutes les nouvelles clés existent en FR, EN et ZH", () => {

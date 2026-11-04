@@ -6459,7 +6459,7 @@ function Nav() {
     title: bloque(k) ? lock.label : undefined
   }, /*#__PURE__*/React.createElement("img", {
     className: "nav-icon",
-    src: `assets/nav-icons/${k === "academie" ? "quests" : k}.png?v=216`,
+    src: `assets/nav-icons/${k}.png?v=216`,
     alt: "",
     "aria-hidden": "true",
     draggable: "false"
@@ -6539,7 +6539,7 @@ function Nav() {
     onClick: () => go(k),
     "aria-disabled": bloque(k) ? "true" : undefined
   }, /*#__PURE__*/React.createElement("img", {
-    src: `assets/nav-icons/${k === "academie" ? "quests" : k}.png?v=216`,
+    src: `assets/nav-icons/${k}.png?v=216`,
     alt: "",
     "aria-hidden": "true",
     draggable: "false"
