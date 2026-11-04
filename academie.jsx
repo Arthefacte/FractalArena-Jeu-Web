@@ -141,16 +141,30 @@ window.addEventListener("fa:academy-module", (event) => {
   if (id) demandeModule = id;
 });
 
+// Deux canaux pour la même intention, et il faut les deux : la variable de
+// module (événement reçu avant ce montage) et window.__faAcademyModule (posé par
+// le clic du quiz JUSTE avant la navigation — donc lisible même si l'écouteur
+// de module n'était pas encore chargé). Consommées une seule fois : revenir sur
+// l'écran plus tard doit rendre la liste, pas rouvrir le module.
+function consommerDemande() {
+  const pose = window.__faAcademyModule || null;
+  window.__faAcademyModule = null;
+  const enAttente = demandeModule;
+  demandeModule = null;
+  return pose || enAttente || null;
+}
+
 function Academie() {
   const { g } = useFA();
-  const [selected, setSelected] = useState(() => demandeModule);
+  const [selected, setSelected] = useState(consommerDemande);
   const [revision, setRevision] = useState(0);
   const retry = () => setRevision((n) => n + 1);
   useEffect(() => {
     demandeModule = null;
+    window.__faAcademyModule = null;
     const ouvrir = (event) => {
       const id = event && event.detail && event.detail.module;
-      if (id) setSelected(id);
+      if (id) { demandeModule = null; window.__faAcademyModule = null; setSelected(id); }
     };
     window.addEventListener("fa:academy-refresh", retry);
     window.addEventListener("fa:academy-module", ouvrir);
