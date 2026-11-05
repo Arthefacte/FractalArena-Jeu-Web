@@ -584,7 +584,7 @@ function ResultModal({ data, onClose }) {
         )}
         {data.milestone && (
           <div className="oct-sm" style={{ marginTop: 6, padding: "12px 14px", background: "rgba(255,230,0,0.08)", border: "1px solid rgba(255,230,0,0.4)", textAlign: "center" }}>
-            <span className="mono" style={{ color: "var(--gold)", fontSize: 13 }}>{I18N.t("RES_MILESTONE", D.ECON.MILESTONE_REWARD)}</span>
+            <span className="mono" style={{ color: "var(--gold)", fontSize: 13 }}>{I18N.t("RES_MILESTONE", data.milestoneLocked || D.ECON.MILESTONE_REWARD)}</span>
             <div className="mono" style={{ fontSize: 11, color: "var(--text-dim)", marginTop: 3 }}>+{D.ECON.TICKET_SILVER_PER_MS} 🎟 Silver · +{D.ECON.TICKET_GOLD_PER_MS} 🎟 Gold</div>
           </div>
         )}
