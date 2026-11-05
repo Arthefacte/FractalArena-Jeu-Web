@@ -219,7 +219,7 @@ window.FA_ASSET_URL = function (chemin) {
     PAYOUT_MULT: 1.7,
     LP_PAYOUT_MULT: { G1: 1.9, G2: 2.1 }, // bonus liquidité (miroir fight.js payoutMultForTier)
     MILESTONE_EVERY: 50,
-    MILESTONE_REWARD: 100,
+    MILESTONE_REWARD: 50,
     LOOP_SILVER_MAX: 100,
     LOOP_GOLD_MAX: 50,
     TICKET_SILVER_PER_MS: 2,
