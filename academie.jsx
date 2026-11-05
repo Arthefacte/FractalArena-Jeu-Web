@@ -85,6 +85,10 @@ function AcademyExam({ module, onClose }) {
   const [envoi, setEnvoi] = useState(false);
   const [score, setScore] = useState({ posees: 0, bonnes: 0, gains: 0 });
   const [rates, setRates] = useState([]);
+  // Un échec de VALIDATION ne détruit pas l'examen : la question reste à
+  // l'écran et le joueur lit ce qui bloque (session expirée, serveur muet).
+  // Seul l'échec du premier chargement remplace l'écran.
+  const [souci, setSouci] = useState(null);   // null | "auth" | "reseau"
 
   async function charger() {
     setEtat({ loading: true, question: null, error: false, fin: false });
@@ -104,10 +108,15 @@ function AcademyExam({ module, onClose }) {
     if (envoi || verdict) return;
     setEnvoi(true);
     setChoix(i);
-    const r = await actions.answerQuiz(etat.question.id, i);
+    setSouci(null);
+    let r = await actions.answerQuiz(etat.question.id, i);
+    // Le jeton expiré est rejoué une fois par answerQuiz (« retry ») ; s'il
+    // revient encore, on ne boucle pas indéfiniment.
+    if (!r.ok && r.reason === "retry") r = await actions.answerQuiz(etat.question.id, i);
     setEnvoi(false);
     if (!r.ok || !r.data) {
-      setEtat((e) => ({ ...e, error: true }));
+      // Session absente ou expirée : on le dit, la question reste en place.
+      setSouci(r.ok === false && r.reason === "auth" ? "auth" : "reseau");
       return;
     }
     const v = r.data;
@@ -186,6 +195,10 @@ function AcademyExam({ module, onClose }) {
         <span className="q-name">{choice}</span>
       </button>)}
     </div>
+    {souci && <div className="exam-souci" role="alert">
+      <p className="exam-ko">{I18N.t(souci === "auth" ? "ACADEMY_CONNECT" : "ACADEMY_ERROR")}</p>
+      <button className="btn" onClick={() => repondre(choix)}>{I18N.t("ACADEMY_RETRY")}</button>
+    </div>}
     {verdict && <div className="exam-verdict">
       <p className={verdict.correct ? "exam-ok" : "exam-ko"}>
         {I18N.t(verdict.correct ? "ACADEMY_EXAM_CORRECT" : "ACADEMY_EXAM_WRONG")}

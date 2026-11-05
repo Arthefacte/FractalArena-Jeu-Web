@@ -1074,6 +1074,9 @@ body[data-fond="cite"] .app-bg {
   color: var(--text-dim); margin: 18px 0 8px; }
 .exam-missed { display: flex; flex-direction: column; gap: 4px; }
 .exam-source { font-size: 11px; color: var(--text-dim); overflow-wrap: anywhere; }
+.exam-souci { display: flex; flex-direction: column; align-items: flex-start;
+  gap: 8px; margin-top: 12px; }
+.exam-souci p { margin: 0; }
 .q-claim {
   padding: 7px 16px; cursor: pointer; border-radius: 8px;
   background: var(--elec); color: #04121a; border: none; font-weight: 700; font-size: 13px;

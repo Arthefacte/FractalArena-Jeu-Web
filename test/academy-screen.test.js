@@ -482,3 +482,50 @@ test("l'examen d'un module vit dans l'écran, la bulle reste au quiz surprise", 
   assert.match(src, /verdict\.source/, "la preuve vient du serveur, pas d'un texte local");
   assert.match(src, /ACADEMY_EXAM_ANSWER_WAS/);
 });
+
+// Une session absente ou expirée ne doit pas emporter l'examen : la question
+// reste à l'écran, et le joueur lit ce qui bloque. (Constaté en vrai : la
+// validation sans jeton remplaçait tout l'écran par « Académie indisponible ».)
+test("examen : session expirée, la question reste et le message explique", async () => {
+  const h = harness({
+    root: "AcademyExam",
+    props: { module: examModule(2), onClose: () => {} },
+    fetcher: (u) => {
+      if (u.pathname.startsWith("/quiz/next/")) {
+        return response({ question: { id: "q1", q: "Question serveur", c: ["Choix A", "Choix B"] } });
+      }
+      assert.fail("appel inattendu : " + u.pathname);
+    },
+  });
+  await h.settle();
+  h.actions.answerQuiz = async () => ({ ok: false, reason: "auth" });
+  await h.click(h.button("Choix A"));
+
+  assert.match(textOf(h.tree), /Question serveur/, "la question reste affichée");
+  assert.match(textOf(h.tree), /Connecte-toi pour passer l.examen/);
+  assert.doesNotMatch(textOf(h.tree), /Académie indisponible/, "ce n'est pas une panne d'Académie");
+  assert.ok(h.button(h.I.t("ACADEMY_RETRY")), "et le joueur peut réessayer sans perdre sa place");
+});
+
+test("examen : un jeton rafraîchi est rejoué une fois, sans perdre la question", async () => {
+  const h = harness({
+    root: "AcademyExam",
+    props: { module: examModule(2), onClose: () => {} },
+    fetcher: (u) => {
+      if (u.pathname.startsWith("/quiz/next/")) {
+        return response({ question: { id: "q1", q: "Question serveur", c: ["Choix A", "Choix B"] } });
+      }
+      assert.fail("appel inattendu : " + u.pathname);
+    },
+  });
+  await h.settle();
+  let appels = 0;
+  h.actions.answerQuiz = async () => {
+    appels += 1;
+    if (appels === 1) return { ok: false, reason: "retry" };
+    return { ok: true, data: { correct: true, reward: 10, answer: 0, explanation: "Parce que.", source: "https://example.org/preuve" } };
+  };
+  await h.click(h.button("Choix A"));
+  assert.equal(appels, 2, "la réponse est rejouée une seule fois");
+  assert.match(textOf(h.tree), /Bonne réponse/);
+});
