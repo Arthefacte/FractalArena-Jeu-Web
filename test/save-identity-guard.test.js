@@ -25,8 +25,9 @@ function bloc(marker, len) {
 // Fenêtre élargie pour les actions qui ont grandi (la borne est un simple repère de
 // lecture, pas la propriété testée : ce qui est vérifié reste « identité capturée à
 // l'entrée » et « applySave », tous deux présents quel que soit l'écart). `fuse` a
-// reçu la troisième vitesse de paiement (tickets Argent, 13/10/2026).
-const FENETRES = { "async fuse(": 3400, "async rankFuse(": 2000 };
+// reçu la troisième vitesse de paiement (tickets Argent, 13/10/2026), puis le rang normalisé
+// et l'équipement détaché (05/11/2026) ; `rankFuse` de même.
+const FENETRES = { "async fuse(": 3400, "async rankFuse(": 3000 };
 
 // Les actions qui relisent /save apres une mutation (ou a la connexion).
 const RESYNCS = [

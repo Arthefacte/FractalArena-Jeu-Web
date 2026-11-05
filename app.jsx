@@ -1735,9 +1735,16 @@ function App() {
       if (!Array.isArray(beastIds) || beastIds.length !== 3 || new Set(beastIds).size !== 3) return { ok: false, reason: I18N.t("FG_RANK_REQ3") };
       const picked = beastIds.map((id) => s.roster.find((b) => b.id === id));
       if (picked.some((b) => !b)) return { ok: false, reason: I18N.t("FG_ERR_entite_introuvable") };
-      if (picked.some((b) => b.rank !== picked[0].rank || b.rarity !== picked[0].rarity)) return { ok: false, reason: I18N.t("FG_RANK_MISMATCH") };
-      const cost = D.FORGE.RANK_FUSE_COST[picked[0].rank];
-      if (!cost) return { ok: false, reason: I18N.t("FG_RANK_MAX") };
+      // Le rang est lu AVEC le même défaut que l'affichage ("C") : des entités antérieures au
+      // système de rang n'ont pas de champ `rank`, l'écran les montre en C (art, pastille,
+      // coût 5 000 FA) — les comparer en brut refusait la fusion avec un message « rang S :
+      // sommet atteint » alors que le joueur n'avait aucune carte S sous les yeux (vécu 05/11).
+      const rankOf = (b) => (b && D.RANK_LIST.includes(b.rank) ? b.rank : "C");
+      const rank = rankOf(picked[0]);
+      if (picked.some((b) => rankOf(b) !== rank || b.rarity !== picked[0].rarity)) return { ok: false, reason: I18N.t("FG_RANK_MISMATCH") };
+      const cost = D.FORGE.RANK_FUSE_COST[rank];
+      // Deux refus distincts : le vrai sommet (S) et un rang illisible (bug de données).
+      if (!cost) return { ok: false, reason: I18N.t(rank === "S" ? "FG_RANK_MAX" : "FG_RANK_BAD_RANK") };
       if (!s.wallet) return { ok: false, reason: "Wallet requis" };
       if (s.liquid + s.locked < cost) return { ok: false, reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, cost) };
       try {
