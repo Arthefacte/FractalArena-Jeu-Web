@@ -48,6 +48,7 @@ function harness({ root = "Academie", wallet = "wallet &/一", lang = "FR", fetc
     window: win, API_URL, encodeURIComponent,
     CustomEvent: class { constructor(type, init) { this.type = type; this.detail = init?.detail; } },
     setInterval(fn) { timers.add(fn); return fn; }, clearInterval(fn) { timers.delete(fn); },
+    setTimeout(fn) { timers.add(fn); return fn; }, clearTimeout(fn) { timers.delete(fn); },
     fetch: async (url) => {
       calls.push(url);
       if (fetcher) return fetcher(new URL(url));
@@ -527,5 +528,35 @@ test("examen : un jeton rafraîchi est rejoué une fois, sans perdre la question
   };
   await h.click(h.button("Choix A"));
   assert.equal(appels, 2, "la réponse est rejouée une seule fois");
+  assert.match(textOf(h.tree), /Bonne réponse/);
+});
+
+// Le quiz limite à une réponse toutes les 20 s (anti-farm). En examen, le 429
+// cassait l'écran ; maintenant l'écran annonce le délai et rejoue tout seul.
+test("examen : le limiteur anti-farm fait patienter puis rejoue la réponse", async () => {
+  const h = harness({
+    root: "AcademyExam",
+    props: { module: examModule(2), onClose: () => {} },
+    fetcher: (u) => {
+      if (u.pathname.startsWith("/quiz/next/")) {
+        return response({ question: { id: "q1", q: "Question serveur", c: ["Choix A", "Choix B"] } });
+      }
+      assert.fail("appel inattendu : " + u.pathname);
+    },
+  });
+  await h.settle();
+  let appels = 0;
+  h.actions.answerQuiz = async () => {
+    appels += 1;
+    if (appels === 1) return { ok: false, reason: "rate", retry_after: 2 };
+    return { ok: true, data: { correct: true, reward: 10, answer: 0, explanation: "Parce que.", source: "https://example.org/preuve" } };
+  };
+  await h.click(h.button("Choix A"));
+  assert.equal(appels, 1);
+  assert.match(textOf(h.tree), /Encore 2 s/, "le délai est annoncé, ce n'est pas une erreur");
+  assert.doesNotMatch(textOf(h.tree), /Académie indisponible/);
+  await h.tick();
+  await h.tick();
+  assert.equal(appels, 2, "la réponse est rejouée sans que le joueur reclique");
   assert.match(textOf(h.tree), /Bonne réponse/);
 });
