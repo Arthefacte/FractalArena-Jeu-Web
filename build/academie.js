@@ -149,6 +149,11 @@ function AcademyExam({
     gains: 0
   });
   const [rates, setRates] = useState([]);
+  // Un échec de VALIDATION ne détruit pas l'examen : la question reste à
+  // l'écran et le joueur lit ce qui bloque (session expirée, serveur muet).
+  // Seul l'échec du premier chargement remplace l'écran.
+  const [souci, setSouci] = useState(null); // null | "auth" | "reseau"
+
   async function charger() {
     setEtat({
       loading: true,
@@ -188,13 +193,15 @@ function AcademyExam({
     if (envoi || verdict) return;
     setEnvoi(true);
     setChoix(i);
-    const r = await actions.answerQuiz(etat.question.id, i);
+    setSouci(null);
+    let r = await actions.answerQuiz(etat.question.id, i);
+    // Le jeton expiré est rejoué une fois par answerQuiz (« retry ») ; s'il
+    // revient encore, on ne boucle pas indéfiniment.
+    if (!r.ok && r.reason === "retry") r = await actions.answerQuiz(etat.question.id, i);
     setEnvoi(false);
     if (!r.ok || !r.data) {
-      setEtat(e => ({
-        ...e,
-        error: true
-      }));
+      // Session absente ou expirée : on le dit, la question reste en place.
+      setSouci(r.ok === false && r.reason === "auth" ? "auth" : "reseau");
       return;
     }
     const v = r.data;
@@ -298,7 +305,15 @@ function AcademyExam({
     onClick: () => repondre(i)
   }, /*#__PURE__*/React.createElement("span", {
     className: "q-name"
-  }, choice)))), verdict && /*#__PURE__*/React.createElement("div", {
+  }, choice)))), souci && /*#__PURE__*/React.createElement("div", {
+    className: "exam-souci",
+    role: "alert"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "exam-ko"
+  }, I18N.t(souci === "auth" ? "ACADEMY_CONNECT" : "ACADEMY_ERROR")), /*#__PURE__*/React.createElement("button", {
+    className: "btn",
+    onClick: () => repondre(choix)
+  }, I18N.t("ACADEMY_RETRY"))), verdict && /*#__PURE__*/React.createElement("div", {
     className: "exam-verdict"
   }, /*#__PURE__*/React.createElement("p", {
     className: verdict.correct ? "exam-ok" : "exam-ko"
