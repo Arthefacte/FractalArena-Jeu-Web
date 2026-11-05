@@ -690,7 +690,14 @@ function ForgeRangs() {
     setTemplateId(null);
     // Le résultat (toast) passe par onDone : il est donc rendu dans TOUS les cas — fin,
     // saut d'un clic, mouvement réduit, module absent. Jamais un silence après 50 000 FA.
-    const showResult = () => toast(I18N.t("FG_RANK_OK", r.newRank || "?", r.beast ? D.displayName(r.beast) : ""), "good");
+    const showResult = () => {
+      toast(I18N.t("FG_RANK_OK", r.newRank || "?", r.beast ? D.displayName(r.beast) : ""), "good");
+      // Les items portés par les trois sortantes sont rendus : le joueur doit le LIRE, pas
+      // le découvrir en fouillant son inventaire. Le serveur envoie la liste exacte.
+      if (r.equipmentDetached && r.equipmentDetached.length) {
+        toast(I18N.t("FG_RANK_EQUIP_BACK", r.equipmentDetached.length), "good");
+      }
+    };
     if (window.FA_FORGE_CINE) {
       window.FA_FORGE_CINE.play({
         mode: "rank", success: true, tier: r.newRank || "C",

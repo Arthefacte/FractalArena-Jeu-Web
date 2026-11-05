@@ -1754,7 +1754,7 @@ function App() {
           const { save } = await sv.json();
           applySave(save, s.wallet, s.authToken, (n, st) => { n.selected = st.selected.filter((x) => n.roster.some((r) => r.id === x)); return n; });
         }
-        return { ok: true, beast: data.beast, newRank: data.new_rank || null, cost: data.cost || cost };
+        return { ok: true, beast: data.beast, newRank: data.new_rank || null, cost: data.cost || cost, equipmentDetached: Array.isArray(data.equipment_detached) ? data.equipment_detached : [] };
       } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
     },
 

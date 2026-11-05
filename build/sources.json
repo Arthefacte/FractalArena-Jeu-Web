@@ -6,7 +6,7 @@
   "arene-battle.jsx": "4de4b442dde6d0fc5dca6c39e5823a41ba28a9060cc6e3a0b725f9cbbdecb3ae",
   "arene.jsx": "bc8336d01a2f39f16a9107d7ec27dd340489da90cdad5bbaf72bc06d5187c5a9",
   "market.jsx": "9dee7a22e2d2d269225b69a1c9d05001ef63b3f6d7f6b56b4da0d7c93a4c16f0",
-  "screens.jsx": "21f786311dc03ed5b51ab5c679e37aa1098424cf5f77a9c67f96dee7a1887b02",
+  "screens.jsx": "705ac5478ca149cb8d894dafa3ab99b42d9d0ab081fa9bf42c8103a6e8e6c53e",
   "chat.jsx": "7a851fe2b27a68c4ccd56ba368ab5e89b09ec43b65e1425fe7b6d3c10efb3fbe",
   "roomchat.jsx": "be7d736e75a8321bda99ed0481e00bac6326cb9e4eb1b33bd51e2c9a4be14bdc",
   "leaderboard.jsx": "6843f6c3fa59d8a6d6d3f1e09f6f9df43c68433fe63d1fca1369d335b417c8b6",
@@ -27,5 +27,5 @@
   "quiz.jsx": "4f6da7e8912881bb0d5154621f5225afe5d37aba8012d350d9f2f17c4ad91134",
   "pwa.jsx": "4784c7c790ca516da106605b1fa579f93329899a0d6b0d62d9f40c719d828c2d",
   "maj.jsx": "39cbd36a7ff9938a89c82173fea02b3ad4b64fff785e93f0b8940c566b9f6666",
-  "app.jsx": "5c47cab8e51ef689732d28ce25f07868c124d51694d4ab37785a20efdb901ae6"
+  "app.jsx": "654928034252b3c8a33bd7d92d82a95f67d03aadb937d28833cb321345c7a084"
 }
