@@ -153,7 +153,22 @@ function AcademyExam({
   // l'écran et le joueur lit ce qui bloque (session expirée, serveur muet).
   // Seul l'échec du premier chargement remplace l'écran.
   const [souci, setSouci] = useState(null); // null | "auth" | "reseau"
-
+  // Le quiz limite à une réponse toutes les 20 s (anti-farm). En examen, ça se
+  // traduisait par un 429 et un écran en erreur : on attend le délai annoncé et
+  // on rejoue la réponse tout seul.
+  const [attente, setAttente] = useState(0);
+  const [relance, setRelance] = useState(false);
+  useEffect(() => {
+    if (attente <= 0) return;
+    const id = setTimeout(() => setAttente(n => Math.max(0, n - 1)), 1000);
+    return () => clearTimeout(id);
+  }, [attente]);
+  useEffect(() => {
+    if (attente === 0 && relance) {
+      setRelance(false);
+      repondre(choix);
+    }
+  }, [attente, relance]);
   async function charger() {
     setEtat({
       loading: true,
@@ -190,7 +205,7 @@ function AcademyExam({
     charger();
   }, []);
   async function repondre(i) {
-    if (envoi || verdict) return;
+    if (envoi || verdict || attente > 0) return;
     setEnvoi(true);
     setChoix(i);
     setSouci(null);
@@ -200,6 +215,12 @@ function AcademyExam({
     if (!r.ok && r.reason === "retry") r = await actions.answerQuiz(etat.question.id, i);
     setEnvoi(false);
     if (!r.ok || !r.data) {
+      // Limiteur : on attend le délai qu'il annonce, puis on rejoue la réponse.
+      if (r.reason === "rate") {
+        setAttente(r.retry_after || 20);
+        setRelance(true);
+        return;
+      }
       // Session absente ou expirée : on le dit, la question reste en place.
       setSouci(r.ok === false && r.reason === "auth" ? "auth" : "reseau");
       return;
@@ -300,12 +321,15 @@ function AcademyExam({
     className: "q-list"
   }, q.c.map((choice, i) => /*#__PURE__*/React.createElement("button", {
     key: i,
-    disabled: !!verdict || envoi,
+    disabled: !!verdict || envoi || attente > 0,
     className: cx("q-row", "exam-choice", verdict && i === verdict.answer && "exam-juste", verdict && i === choix && !verdict.correct && "exam-faux"),
     onClick: () => repondre(i)
   }, /*#__PURE__*/React.createElement("span", {
     className: "q-name"
-  }, choice)))), souci && /*#__PURE__*/React.createElement("div", {
+  }, choice)))), attente > 0 && /*#__PURE__*/React.createElement("p", {
+    className: "q-prog exam-attente",
+    role: "status"
+  }, I18N.t("ACADEMY_EXAM_WAIT", attente)), !attente && souci && /*#__PURE__*/React.createElement("div", {
     className: "exam-souci",
     role: "alert"
   }, /*#__PURE__*/React.createElement("p", {
