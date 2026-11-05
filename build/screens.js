@@ -1160,6 +1160,13 @@ function RankFuseWarningModal({
       marginTop: 6
     }
   }, I18N.t("FG_RANK_ALERT_EQUIP")), /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      fontSize: 12,
+      marginTop: 6,
+      color: "var(--success)"
+    }
+  }, I18N.t("FG_RANK_ALERT_QUALITY")), /*#__PURE__*/React.createElement("div", {
     className: "mono muted",
     style: {
       fontSize: 12,
@@ -1344,11 +1351,27 @@ function ForgeRangs() {
     className: "grid-cards"
   }, sorted.map(b => {
     const role = sel.some(x => x.id === b.id);
-    // La pastille ne dit QUE le sacrifice (demande fondateur du 14/10/2026) : chaque
-    // carte portait aussi son rang (« Rang C ») dans une pastille grise, sur toute la
-    // grille — du bruit. Le rang reste lisible par l'ART lui-même (data.js `artFor`
-    // charge <type>_<rang>.webp) et les cartes non éligibles sont baissées à 32 %.
-    const badge = role ? /*#__PURE__*/React.createElement("div", {
+    // Deux pastilles, deux rôles distincts :
+    //  • RANG (haut-gauche, couleur du rang) : la fusion exige trois entités du MÊME rang, et
+    //    l'art seul ne le dit pas au joueur — retour réel du 03/11/2026 : « par quel moyen on
+    //    peut voir la différence sur la carte ? ». Il reste lisible sur toutes les cartes,
+    //    sélectionnées comprises (l'art ne porte que les états d'interaction).
+    //  • CONSOMMÉE (bas, rouge) : ici les TROIS partent — « sacrifiée » appartenait à la
+    //    fusion de rareté 2 → 1, où une carte est gardée. Deux rôles, deux mots.
+    const rankColor = D.RANK_COLORS && D.RANK_COLORS[b.rank] || "var(--text)";
+    const badge = /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+      className: "pill",
+      title: I18N.t("FG_RANK_MARK_TIP"),
+      style: {
+        position: "absolute",
+        top: 8,
+        left: 8,
+        background: "var(--bg)",
+        color: rankColor,
+        border: `1px solid ${rankColor}`,
+        fontWeight: 700
+      }
+    }, b.rank || "C"), role && /*#__PURE__*/React.createElement("div", {
       className: "pill",
       style: {
         position: "absolute",
@@ -1360,7 +1383,7 @@ function ForgeRangs() {
         color: "var(--alert)",
         border: "1px solid var(--alert)"
       }
-    }, I18N.t("FG_SACRIFICED")) : null;
+    }, I18N.t("FG_CONSUMED")));
     return /*#__PURE__*/React.createElement("div", {
       key: b.id,
       style: {

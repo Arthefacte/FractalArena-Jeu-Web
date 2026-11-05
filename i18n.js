@@ -733,6 +733,10 @@
     FG_SWAP: { FR: "Inverser", EN: "Swap", ZH: "交换" },
     FG_KEPT: { FR: "✓ Conservée", EN: "✓ Kept", ZH: "✓ 保留" },
     FG_SACRIFICED: { FR: "☠ Sacrifiée", EN: "☠ Sacrificed", ZH: "☠ 牺牲" },
+    // Fusion de RANG (3 → 1) : les trois partent, aucune n'est « gardée » — « sacrifiée » y était
+    // illisible (deux rôles dans la fusion de rareté 2 → 1, un seul ici). Mot propre au 3 → 1.
+    FG_CONSUMED: { FR: "☠ Consommée", EN: "☠ Consumed", ZH: "☠ 被消耗" },
+    FG_RANK_MARK_TIP: { FR: "Rang de l'entité — la fusion exige trois entités du MÊME rang", EN: "Entity rank — a fusion needs three entities of the SAME rank", ZH: "实体阶位 — 融合需要三个相同阶位的实体" },
     // Qualité du tirage d'invocation (en % du maximum de son rang) : marqueur de carte + garde de fusion.
     CARD_ROLL_TIP: { FR: "Qualité du tirage d'invocation : pourcentage du maximum possible pour son rang. À 100 % (1 invocation sur 11) les 5 stats sont au plafond — ne pas sacrifier cette entité par erreur", EN: "Summon roll quality: percentage of the maximum possible for its rank. At 100% (1 summon in 11) all 5 stats are at the ceiling — do not sacrifice this entity by mistake", ZH: "召唤抽取品质：相对于该阶位上限的百分比。100%（11 分之一）时五项属性均达上限 — 请勿误将此实体牺牲" },
     FG_SACRIFICED_STRONG: { FR: "☠ Sacrifiée ★ la plus forte", EN: "☠ Sacrificed ★ the stronger one", ZH: "☠ 牺牲 ★ 更强的一方" },
@@ -756,7 +760,7 @@
     // Onglet SÉPARÉ de la fusion de rareté : mêmes barres, mêmes cartes, mais un autre axe —
     // empilés, le joueur déclenchait la mauvaise opération (leçon des forges de fragments).
     FG_RANGS: { FR: "Fusion de rang", EN: "Rank fusion", ZH: "阶位融合" },
-    FG_RANK_HINT: { FR: "Sélectionne 3 entités de MÊME rang et de MÊME rareté : le rang monte d'un cran (C→B→A→S), la rareté ne bouge pas. Les trois sont consommées.", EN: "Select 3 entities of the SAME rank and the SAME rarity: the rank goes up one step (C→B→A→S), the rarity does not move. All three are consumed.", ZH: "选择 3 个相同阶位且相同稀有度的实体：阶位上升一级（C→B→A→S），稀有度不变。三个都会被消耗。" },
+    FG_RANK_HINT: { FR: "Sélectionne 3 entités de MÊME rang et de MÊME rareté : le rang monte d'un cran (C→B→A→S), la rareté ne bouge pas. Les trois sont consommées — mais la qualité ne redescend jamais : l'entité produite garde le meilleur tirage des trois.", EN: "Select 3 entities of the SAME rank and the SAME rarity: the rank goes up one step (C→B→A→S), the rarity does not move. All three are consumed — but quality never goes down: the entity produced keeps the best roll of the three.", ZH: "选择 3 个相同阶位且相同稀有度的实体：阶位上升一级（C→B→A→S），稀有度不变。三个都会被消耗 — 但品质绝不下降：产出的实体保留三者中最好的抽取。" },
     FG_RANK_NONE: { FR: "Sélectionne 3 entités de même rang et de même rareté", EN: "Select 3 entities of the same rank and rarity", ZH: "选择 3 个相同阶位且相同稀有度的实体" },
     FG_RANK_MISSING: { FR: "Encore %d entité(s) de rang %s (même rareté)", EN: "Still %d entity(ies) of rank %s (same rarity)", ZH: "还需 %d 个阶位 %s 的实体（相同稀有度）" },
     FG_RANK_MISMATCH: { FR: "Même rang ET même rareté requis.", EN: "Same rank AND same rarity required.", ZH: "必须阶位与稀有度都相同。" },
@@ -767,7 +771,7 @@
     FG_RANK_REQ3: { FR: "Sélectionne 3 entités de même rang et de même rareté.", EN: "Select 3 entities of the same rank and rarity.", ZH: "请选择 3 个相同阶位且相同稀有度的实体。" },
     FG_RANK_BTN: { FR: "Fusionner  −%d FA", EN: "Fuse  −%d FA", ZH: "融合  −%d FA" },
     FG_RANK_TYPE: { FR: "Type de l'entité produite", EN: "Type of the produced entity", ZH: "产出实体的类型" },
-    FG_RANK_TYPE_HINT: { FR: "Il doit être l'un des types sacrifiés — il compte pour les affinités.", EN: "It must be one of the sacrificed types — it counts for affinities.", ZH: "必须是被消耗实体之一的类型——它影响亲和。" },
+    FG_RANK_TYPE_HINT: { FR: "Il doit être l'un des trois — trois Mineurs donnent un Mineur, jamais un autre type. Il compte pour les affinités.", EN: "It must be one of the three — three Miners give a Miner, never another type. It counts for affinities.", ZH: "必须是三者之一的类型 — 三个矿工只产出矿工，绝不会是其他类型。它影响亲和。" },
     FG_RANK_OK: { FR: "FUSION DE RANG RÉUSSIE → %s [%s]", EN: "RANK FUSION SUCCESS → %s [%s]", ZH: "阶位融合成功 → %s [%s]" },
     // Avertissement obligatoire AVANT validation (exigence explicite du fondateur 13/10/2026) :
     // la modale nomme ce qui part et ce qui arrive, et exige une confirmation qui n'est PAS
@@ -779,6 +783,7 @@
     FG_RANK_ALERT_NEW: { FR: "Ce qui arrive : 1 entité NEUVE de rang %s, niveau 1, 0 XP, sans talent ni équipement.", EN: "What you get: 1 NEW entity of rank %s, level 1, 0 XP, no talent and no equipment.", ZH: "你将获得：1 个全新的 %s 阶实体，等级 1，0 XP，无天赋无装备。" },
     FG_RANK_ALERT_EQUIP: { FR: "Les reliques et cores équipés ne sont pas détruits : ils retombent dans ton inventaire.", EN: "Equipped relics and cores are not destroyed: they return to your inventory.", ZH: "已装备的圣物与核心不会被销毁：它们会回到你的库存。" },
     FG_RANK_ALERT_COST: { FR: "Coût : %s FA (100 % reversés au rachat).", EN: "Cost: %s FA (100% goes to the buyback pool).", ZH: "花费：%s FA（100% 进入回购池）。" },
+    FG_RANK_ALERT_QUALITY: { FR: "Qualité conservée : l'entité produite garde le meilleur tirage des trois (3 × 100 % → 100 %). Elle ne redescend jamais.", EN: "Quality kept: the entity produced keeps the best roll of the three (3 × 100% → 100%). It never goes down.", ZH: "品质保留：产出的实体保留三者中最好的抽取（3 × 100% → 100%）。品质绝不下降。" },
     FG_RANK_ALERT_CONFIRM: { FR: "Je confirme la fusion", EN: "I confirm the fusion", ZH: "我确认融合" },
     FG_RANK_ALERT_BACK: { FR: "← Retour", EN: "← Back", ZH: "← 返回" },
     // Refus serveur de la fusion (codes mappés dans SERVER_ERROR_KEYS : un code snake_case

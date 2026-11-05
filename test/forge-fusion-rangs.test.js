@@ -215,16 +215,38 @@ test("l'onglet de rang affiche le TYPE produit et le rang visé", () => {
   assert.match(b, /FG_RANK_MAX/, "le refus du rang S doit être affiché");
 });
 
-// Demande fondateur du 14/10/2026 (capture d'une carte de la grille, pastille grise
-// « Rang C ») : la grille ne badge QUE le sacrifice. Le rang reste lisible par l'art
-// lui-même (data.js artFor → <type>_<rang>.webp) et par la baisse à 32 % des cartes
-// qui ne partagent pas rang+rareté avec la sélection.
-test("la grille de rang ne badge QUE le sacrifice (plus de « Rang N » sur chaque carte)", () => {
+// Retour joueur du 03/11/2026, verbatim : « mais par quel moyen on peut voir la différence
+// sur la carte ? Est-ce que le A par exemple […] il est un plus brillant qu'un autre rang C ? »
+// — la pastille de rang supprimée le 14/10 rendait la grille illisible dès qu'on cherchait
+// TROIS entités du même rang. Elle revient, en haut-gauche, à la couleur du rang.
+test("chaque carte de la grille de rang porte son rang, à la couleur du rang", () => {
   const b = fnBloc("ForgeRangs");
-  assert.match(b, /FG_SACRIFICED/, "la carte sacrifiée doit rester marquée");
-  assert.ok(!/I18N\.t\("FG_RANK"\)\s*\+\s*" "/.test(b),
-    "plus de pastille de rang posée sur les cartes non sélectionnées");
-  assert.match(b, /badge = role \?/, "la pastille est conditionnée au rôle, jamais inconditionnelle");
+  assert.match(b, /D\.RANK_COLORS\[b\.rank\]/, "la pastille prend la couleur du rang");
+  assert.match(b, /FG_RANK_MARK_TIP/, "la pastille doit être expliquée au survol");
+  assert.match(b, /\{b\.rank \|\| "C"\}/, "la pastille affiche le rang de l'entité");
+  assert.match(b, /top: 8, left: 8/, "rang en haut-gauche : il ne masque pas le nom de l'entité");
+});
+
+// Deux rôles, deux mots : dans la fusion de rareté (2 → 1) une carte est CONSERVÉE ; ici les
+// TROIS partent. « Sacrifiée » y faisait croire qu'une des trois serait gardée.
+test("la grille de rang dit « consommée », jamais « sacrifiée »", () => {
+  const b = fnBloc("ForgeRangs");
+  assert.match(b, /FG_CONSUMED/, "les trois entités consommées doivent être dites consommées");
+  assert.ok(!/FG_SACRIFICED/.test(b),
+    "« sacrifiée » appartient à la fusion de rareté 2 → 1 : pas de mot ambigu ici");
+});
+
+// La règle de qualité (décision fondateur 03/11/2026) doit être dite AVANT de valider :
+// le joueur qui brûle une carte à 100 % ne doit pas découvrir après coup qu'il redescend.
+test("la qualité conservée et la règle de type sont annoncées avant la validation", () => {
+  const b = fnBloc("ForgeRangs") + fnBloc("RankFuseWarningModal");
+  assert.match(b, /FG_RANK_ALERT_QUALITY/, "la modale doit dire que la qualité ne redescend jamais");
+  const hint = I18N.match(/FG_RANK_HINT: \{ FR: "([^"]+)"/);
+  assert.ok(hint, "FG_RANK_HINT introuvable");
+  assert.match(hint[1], /meilleur tirage/, "l'onglet doit rappeler la meilleure qualité conservée");
+  const typeHint = I18N.match(/FG_RANK_TYPE_HINT: \{ FR: "([^"]+)"/);
+  assert.ok(typeHint, "FG_RANK_TYPE_HINT introuvable");
+  assert.match(typeHint[1], /Mineurs/, "trois Mineurs → un Mineur doit être dit explicitement");
 });
 
 // ---- 5. Réseau : la route de rang, le champ ticket, le miroir du serveur ----
@@ -278,6 +300,7 @@ test("les phrases de l'onglet de rang et de la vitesse Argent existent en trois 
                      "FG_RANK_TYPE", "FG_RANK_TYPE_HINT", "FG_RANK_OK", "FG_RANK_ALERT_TITLE",
                      "FG_RANK_ALERT_BODY", "FG_RANK_ALERT_LINE", "FG_RANK_ALERT_TOTALS", "FG_RANK_ALERT_NEW",
                      "FG_RANK_ALERT_EQUIP", "FG_RANK_ALERT_COST", "FG_RANK_ALERT_CONFIRM", "FG_RANK_ALERT_BACK",
+                     "FG_RANK_ALERT_QUALITY", "FG_CONSUMED", "FG_RANK_MARK_TIP",
                      "FG_SILVER", "FG_SILVER_PRICE", "FG_FUSE_BTN_SILVER", "FG_SILVER_SHORT", "FG_FUSE_SILVER_OK"]) {
     assert.match(I18N, new RegExp(`\\n    ${cle}: \\{ FR: "[^"]+", EN: "[^"]+", ZH: "[^"]+" \\},`),
       `${cle} absente ou incomplète`);
