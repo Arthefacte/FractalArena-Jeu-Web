@@ -324,3 +324,18 @@ test("la fusion de rang joue la cinématique de la Forge (mode rank) — et parl
   assert.match(bloc, /else showResult\(\);/, "sans cinématique, le toast tombe quand même");
   assert.match(bloc, /FG_RANK_OK/, "la phrase de résultat reste utilisée");
 });
+
+// Demande fondateur du 03/11/2026 : l'équipement des entités consommées doit être retiré
+// automatiquement, et le joueur doit le SAVOIR — pas le découvrir en fouillant l'inventaire.
+test("l'équipement détaché est annoncé au joueur après la fusion", () => {
+  const app = APP;
+  assert.match(app, /equipment_detached/, "l'action lit le champ renvoyé par le serveur");
+  assert.match(app, /equipmentDetached: Array\.isArray\(data\.equipment_detached\)/,
+    "le champ est normalise (jamais undefined) avant d'atteindre l'écran");
+  const b = fnBloc("ForgeRangs");
+  assert.match(b, /FG_RANK_EQUIP_BACK/, "un second toast nomme le nombre d'items récupérés");
+  assert.match(I18N, /FG_RANK_EQUIP_BACK: \{ FR: "[^"]+", EN: "[^"]+", ZH: "[^"]+"/, "clé trilingue");
+  // La modale doit dire la règle AVANT de valider, pas seulement après.
+  const hint = I18N.match(/FG_RANK_ALERT_EQUIP: \{ FR: "([^"]+)"/);
+  assert.match(hint[1], /retiré automatiquement/, "l'avertissement annonce le détachement automatique");
+});

@@ -2674,7 +2674,8 @@ function App() {
           ok: true,
           beast: data.beast,
           newRank: data.new_rank || null,
-          cost: data.cost || cost
+          cost: data.cost || cost,
+          equipmentDetached: Array.isArray(data.equipment_detached) ? data.equipment_detached : []
         };
       } catch (e) {
         return {
