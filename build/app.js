@@ -4032,6 +4032,17 @@ function App() {
             reason: "retry"
           };
         }
+        // Le limiteur anti-farm répond 429 avec Retry-After. Ce n'est pas une
+        // panne : l'examen doit pouvoir attendre le délai et rejouer tout seul,
+        // au lieu d'afficher une erreur et de laisser le joueur recliquer.
+        if (resp.status === 429) {
+          const attente = Number(resp.headers.get("Retry-After"));
+          return {
+            ok: false,
+            reason: "rate",
+            retry_after: attente > 0 ? attente : 20
+          };
+        }
         if (!resp.ok) {
           const err = await resp.json().catch(() => ({}));
           return {

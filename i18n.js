@@ -60,6 +60,7 @@
     ACADEMY_EXAM_MISSED: { FR: "À revoir (%d)", EN: "To review (%d)", ZH: "需复习 (%d)" },
     ACADEMY_EXAM_BACK: { FR: "Retour aux fiches", EN: "Back to the lessons", ZH: "返回课程" },
     ACADEMY_EXAM_QUIT: { FR: "Quitter l'examen", EN: "Leave the exam", ZH: "退出考试" },
+    ACADEMY_EXAM_WAIT: { FR: "Encore %d s avant la validation suivante.", EN: "%d s before the next answer.", ZH: "%d 秒后可继续作答。" },
     NAV_CAMPAIGN: { FR: "Campagne", EN: "Campaign", ZH: "战役" },
     NAV_MORE: { FR: "Plus", EN: "More", ZH: "更多" },
     LEGAL_HUB: { FR: "Informations légales", EN: "Legal information", ZH: "法律信息" },

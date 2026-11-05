@@ -89,6 +89,24 @@ function AcademyExam({ module, onClose }) {
   // l'écran et le joueur lit ce qui bloque (session expirée, serveur muet).
   // Seul l'échec du premier chargement remplace l'écran.
   const [souci, setSouci] = useState(null);   // null | "auth" | "reseau"
+  // Le quiz limite à une réponse toutes les 20 s (anti-farm). En examen, ça se
+  // traduisait par un 429 et un écran en erreur : on attend le délai annoncé et
+  // on rejoue la réponse tout seul.
+  const [attente, setAttente] = useState(0);
+  const [relance, setRelance] = useState(false);
+
+  useEffect(() => {
+    if (attente <= 0) return;
+    const id = setTimeout(() => setAttente((n) => Math.max(0, n - 1)), 1000);
+    return () => clearTimeout(id);
+  }, [attente]);
+
+  useEffect(() => {
+    if (attente === 0 && relance) {
+      setRelance(false);
+      repondre(choix);
+    }
+  }, [attente, relance]);
 
   async function charger() {
     setEtat({ loading: true, question: null, error: false, fin: false });
@@ -105,7 +123,7 @@ function AcademyExam({ module, onClose }) {
   useEffect(() => { charger(); }, []);
 
   async function repondre(i) {
-    if (envoi || verdict) return;
+    if (envoi || verdict || attente > 0) return;
     setEnvoi(true);
     setChoix(i);
     setSouci(null);
@@ -115,6 +133,12 @@ function AcademyExam({ module, onClose }) {
     if (!r.ok && r.reason === "retry") r = await actions.answerQuiz(etat.question.id, i);
     setEnvoi(false);
     if (!r.ok || !r.data) {
+      // Limiteur : on attend le délai qu'il annonce, puis on rejoue la réponse.
+      if (r.reason === "rate") {
+        setAttente(r.retry_after || 20);
+        setRelance(true);
+        return;
+      }
       // Session absente ou expirée : on le dit, la question reste en place.
       setSouci(r.ok === false && r.reason === "auth" ? "auth" : "reseau");
       return;
@@ -187,7 +211,7 @@ function AcademyExam({ module, onClose }) {
     </div>
     <p className="q-name exam-q">{q.q}</p>
     <div className="q-list">
-      {q.c.map((choice, i) => <button key={i} disabled={!!verdict || envoi}
+      {q.c.map((choice, i) => <button key={i} disabled={!!verdict || envoi || attente > 0}
         className={cx("q-row", "exam-choice",
           verdict && i === verdict.answer && "exam-juste",
           verdict && i === choix && !verdict.correct && "exam-faux")}
@@ -195,7 +219,10 @@ function AcademyExam({ module, onClose }) {
         <span className="q-name">{choice}</span>
       </button>)}
     </div>
-    {souci && <div className="exam-souci" role="alert">
+    {attente > 0 && <p className="q-prog exam-attente" role="status">
+      {I18N.t("ACADEMY_EXAM_WAIT", attente)}
+    </p>}
+    {!attente && souci && <div className="exam-souci" role="alert">
       <p className="exam-ko">{I18N.t(souci === "auth" ? "ACADEMY_CONNECT" : "ACADEMY_ERROR")}</p>
       <button className="btn" onClick={() => repondre(choix)}>{I18N.t("ACADEMY_RETRY")}</button>
     </div>}
