@@ -1351,27 +1351,12 @@ function ForgeRangs() {
     className: "grid-cards"
   }, sorted.map(b => {
     const role = sel.some(x => x.id === b.id);
-    // Deux pastilles, deux rôles distincts :
-    //  • RANG (haut-gauche, couleur du rang) : la fusion exige trois entités du MÊME rang, et
-    //    l'art seul ne le dit pas au joueur — retour réel du 03/11/2026 : « par quel moyen on
-    //    peut voir la différence sur la carte ? ». Il reste lisible sur toutes les cartes,
-    //    sélectionnées comprises (l'art ne porte que les états d'interaction).
-    //  • CONSOMMÉE (bas, rouge) : ici les TROIS partent — « sacrifiée » appartenait à la
-    //    fusion de rareté 2 → 1, où une carte est gardée. Deux rôles, deux mots.
-    const rankColor = D.RANK_COLORS && D.RANK_COLORS[b.rank] || "var(--text)";
-    const badge = /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
-      className: "pill",
-      title: I18N.t("FG_RANK_MARK_TIP"),
-      style: {
-        position: "absolute",
-        top: 8,
-        left: 8,
-        background: "var(--bg)",
-        color: rankColor,
-        border: `1px solid ${rankColor}`,
-        fontWeight: 700
-      }
-    }, b.rank || "C"), role && /*#__PURE__*/React.createElement("div", {
+    // UNE seule pastille, et elle ne dit que le rôle : les TROIS partent (mot « consommée » ;
+    // « sacrifiée » appartient à la fusion de rareté 2 → 1, où une carte est gardée).
+    // Pas de pastille de rang : le rang est DÉJÀ écrit sur l'art de la carte (data.js artFor
+    // sert <type>_<rang>.webp, le visuel porte son rang). Décision fondateur du 03/11/2026 —
+    // une seconde étiquette par-dessus l'art, c'était du bruit sous les yeux du joueur.
+    const badge = role ? /*#__PURE__*/React.createElement("div", {
       className: "pill",
       style: {
         position: "absolute",
@@ -1383,7 +1368,7 @@ function ForgeRangs() {
         color: "var(--alert)",
         border: "1px solid var(--alert)"
       }
-    }, I18N.t("FG_CONSUMED")));
+    }, I18N.t("FG_CONSUMED")) : null;
     return /*#__PURE__*/React.createElement("div", {
       key: b.id,
       style: {

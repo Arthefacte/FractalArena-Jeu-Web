@@ -736,7 +736,6 @@
     // Fusion de RANG (3 → 1) : les trois partent, aucune n'est « gardée » — « sacrifiée » y était
     // illisible (deux rôles dans la fusion de rareté 2 → 1, un seul ici). Mot propre au 3 → 1.
     FG_CONSUMED: { FR: "☠ Consommée", EN: "☠ Consumed", ZH: "☠ 被消耗" },
-    FG_RANK_MARK_TIP: { FR: "Rang de l'entité — la fusion exige trois entités du MÊME rang", EN: "Entity rank — a fusion needs three entities of the SAME rank", ZH: "实体阶位 — 融合需要三个相同阶位的实体" },
     // Qualité du tirage d'invocation (en % du maximum de son rang) : marqueur de carte + garde de fusion.
     CARD_ROLL_TIP: { FR: "Qualité du tirage d'invocation : pourcentage du maximum possible pour son rang. À 100 % (1 invocation sur 11) les 5 stats sont au plafond — ne pas sacrifier cette entité par erreur", EN: "Summon roll quality: percentage of the maximum possible for its rank. At 100% (1 summon in 11) all 5 stats are at the ceiling — do not sacrifice this entity by mistake", ZH: "召唤抽取品质：相对于该阶位上限的百分比。100%（11 分之一）时五项属性均达上限 — 请勿误将此实体牺牲" },
     FG_SACRIFICED_STRONG: { FR: "☠ Sacrifiée ★ la plus forte", EN: "☠ Sacrificed ★ the stronger one", ZH: "☠ 牺牲 ★ 更强的一方" },
