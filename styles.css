@@ -1055,6 +1055,25 @@ body[data-fond="cite"] .app-bg {
 .q-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 8px; }
 .q-prog { font-family: var(--font-mono); color: var(--text-dim); font-size: 13px; }
 .q-claimed { color: #27E08A; font-weight: 700; font-size: 13px; }
+
+/* ---- examen d'un module : un écran, pas une bulle ----
+   Le reste réutilise .q-row / .q-bar / .q-fill : seuls les états juste/faux et
+   la carte de note manquaient. */
+.exam-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.exam-q { display: block; font-size: 15px; line-height: 1.45; margin: 12px 0; }
+.exam-choice { display: block; width: 100%; text-align: left; font: inherit; cursor: pointer; }
+.exam-choice:disabled { cursor: default; }
+.exam-choice.exam-juste { border-color: var(--success); background: rgba(39,224,138,.08); }
+.exam-choice.exam-faux { border-color: var(--alert); background: rgba(255,59,92,.08); }
+.exam-ok { color: var(--success); font-weight: 600; font-size: 13px; }
+.exam-ko { color: var(--alert); font-weight: 600; font-size: 13px; }
+.exam-verdict { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+.exam-score { text-align: center; padding: 18px 0 8px; }
+.exam-score-big { font-family: var(--font-mono); font-weight: 700; font-size: 32px; color: var(--gold); }
+.exam-h { font-size: 11px; letter-spacing: 0.6px; text-transform: uppercase;
+  color: var(--text-dim); margin: 18px 0 8px; }
+.exam-missed { display: flex; flex-direction: column; gap: 4px; }
+.exam-source { font-size: 11px; color: var(--text-dim); overflow-wrap: anywhere; }
 .q-claim {
   padding: 7px 16px; cursor: pointer; border-radius: 8px;
   background: var(--elec); color: #04121a; border: none; font-weight: 700; font-size: 13px;

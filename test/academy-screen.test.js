@@ -32,7 +32,7 @@ function textOf(tree) {
   return tree == null || typeof tree === "boolean" ? "" : String(tree);
 }
 
-function harness({ root = "Academie", wallet = "wallet &/一", lang = "FR", fetcher } = {}) {
+function harness({ root = "Academie", wallet = "wallet &/一", lang = "FR", fetcher, props } = {}) {
   let g = { wallet, lang }, tree, current, hookIndex;
   const instances = new Map(), listeners = new Map(), timers = new Set();
   const calls = [], toasts = [], views = [];
@@ -119,7 +119,7 @@ function harness({ root = "Academie", wallet = "wallet &/一", lang = "FR", fetc
       }
       return { ...node, children: expand(node.children, position) };
     }
-    tree = expand(React.createElement(win[root]), "root");
+    tree = expand(React.createElement(win[root], props), "root");
     for (const [key, instance] of instances) {
       if (!used.has(key)) {
         instance.hooks.forEach((h) => h?.cleanup?.());
@@ -238,10 +238,14 @@ test("fiches en texte, accordéon, sources sûres et examen actif sans progressi
   assert.equal(exam.props.disabled, false);
   assert.match(exam.props.className, /\bsolid\b/);
   assert.doesNotMatch(textOf(h.tree), /0\/7/);
-  let opened;
-  h.win.addEventListener("fa:open-quiz", (event) => { opened = event.detail.module; });
+  // Un examen s'ouvre DANS l'écran : le bouton ne diffuse plus rien à la bulle,
+  // il remplace les fiches par les questions.
+  let diffuse = false;
+  h.win.addEventListener("fa:open-quiz", () => { diffuse = true; });
   await h.click(exam);
-  assert.equal(opened.id, moduleData().id);
+  assert.equal(diffuse, false, "l'examen ne passe plus par la bulle");
+  assert.equal(h.nodes().filter((n) => "aria-expanded" in n.props).length, 0,
+    "l'écran d'examen remplace les fiches");
 });
 
 test("quiz existant sans detail : aucun paramètre module", async () => {
@@ -417,4 +421,64 @@ test("la fiche ne s'ouvre qu'après l'arbitrage, et le décompte l'épargne", ()
   assert.match(quiz, /if \(ficheRef\.current\) return;/, "le décompte n'emporte pas une fiche ouverte");
   assert.match(quiz, /actions\.fetchAcademyModule\(verdict\.module_id\)/,
     "la fiche vient du serveur, pas d'un texte local");
+});
+
+// L'examen d'un module : un écran qui enchaîne les questions. La bulle reste
+// pour la question surprise ; un examen, lui, se joue jusqu'à la note.
+const examModule = (total = 2) => ({
+  id: "mine", order: 1, title: "Titre serveur mine", tagline: "Accroche serveur",
+  lessons: [{ id: "fiche-a", title: "Fiche A", minutes: 3, body: ["Texte serveur"], sources: [] }],
+  exam: { question_count: total, question_ids: [] },
+  question_count: total, progress: null,
+});
+
+test("examen d'un module : enchaînement, bonne réponse, note finale", async () => {
+  let posees = 0;
+  const h = harness({
+    root: "AcademyExam",
+    props: { module: examModule(2), onClose: () => {} },
+    fetcher: (u) => {
+      if (u.pathname.startsWith("/quiz/next/")) {
+        posees += 1;
+        return response({ question: { id: "q" + posees, q: "Question " + posees, c: ["Choix A", "Choix B"] } });
+      }
+      assert.fail("appel inattendu : " + u.pathname);
+    },
+  });
+
+  await h.settle();
+  assert.match(textOf(h.tree), /Question 1 \/ 2/, "la progression s'affiche");
+
+  const reponses = [
+    { correct: true, reward: 10, answer: 0, explanation: "Parce que le protocole.", source: "https://example.org/preuve-1" },
+    { correct: false, reward: 0, answer: 1, explanation: "Parce que le bloc.", source: "https://example.org/preuve-2" },
+  ];
+  h.actions.answerQuiz = async () => ({ ok: true, data: reponses.shift() });
+
+  await h.click(h.button("Choix A"));
+  assert.match(textOf(h.tree), /Bonne réponse/);
+  assert.doesNotMatch(textOf(h.tree), /La bonne réponse/, "quand c'est juste, on ne récite pas la réponse");
+
+  await h.click(h.button("Question suivante"));
+  assert.match(textOf(h.tree), /Question 2 \/ 2/, "on enchaîne sur la suivante sans quitter l'écran");
+
+  await h.click(h.button("Choix A"));
+  assert.match(textOf(h.tree), /Mauvaise réponse/);
+  assert.match(textOf(h.tree), /La bonne réponse : Choix B/);
+  assert.match(textOf(h.tree), /preuve-2/, "la source de la bonne réponse est citée");
+
+  await h.click(h.button("Voir ma note"));
+  assert.match(textOf(h.tree), /1 \/ 2/, "la note tombe à la fin");
+  assert.match(textOf(h.tree), /50 % de réussite/);
+  assert.match(textOf(h.tree), /Question 2/, "le bilan rappelle la question ratée");
+  assert.match(textOf(h.tree), /preuve-2/, "et garde sa source sous les yeux");
+});
+
+test("l'examen d'un module vit dans l'écran, la bulle reste au quiz surprise", () => {
+  const src = read("academie.jsx");
+  assert.match(src, /function AcademyExam/);
+  assert.match(src, /setExamen\(true\)/, "le bouton ouvre l'écran d'examen");
+  assert.doesNotMatch(src, /fa:open-quiz/, "l'examen ne passe plus par la bulle");
+  assert.match(src, /verdict\.source/, "la preuve vient du serveur, pas d'un texte local");
+  assert.match(src, /ACADEMY_EXAM_ANSWER_WAS/);
 });
