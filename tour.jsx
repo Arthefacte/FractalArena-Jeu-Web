@@ -144,7 +144,8 @@ function TourLeaderboard() {
       {/* 26/10/2026 : la ligne annonçait « jusqu'à 3 000 FA », un montant que le barème ne
           produisait pas alors (10 payés × 100 FA = 1 000 max). On affiche désormais la
           dotation RÉELLE de la semaine, servie par le serveur (towerRankPool), et la part
-          du rang 1 — quel que soit le prix d'entrée courant (1000 FA depuis le 05/11). */}
+          du rang 1. La dotation ne suit pas le prix du run : 100 FA par classé, plafond
+          1 000 pour un top 10 complet, même si l'entrée coûte 1 000 FA depuis le 05/11. */}
       <div className="mono" style={{ fontSize: 11, color: "var(--text-dim)", marginBottom: 4 }}><FaText text={I18N.t("TOUR_LB_DOTATION")} s={11} /></div>
       {!st.loading && !st.error && (
         <div className="mono" style={{ fontSize: 11, color: "var(--gold)", marginBottom: 8 }}>
