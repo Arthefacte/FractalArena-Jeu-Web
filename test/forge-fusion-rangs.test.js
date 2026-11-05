@@ -215,16 +215,16 @@ test("l'onglet de rang affiche le TYPE produit et le rang visé", () => {
   assert.match(b, /FG_RANK_MAX/, "le refus du rang S doit être affiché");
 });
 
-// Retour joueur du 03/11/2026, verbatim : « mais par quel moyen on peut voir la différence
-// sur la carte ? Est-ce que le A par exemple […] il est un plus brillant qu'un autre rang C ? »
-// — la pastille de rang supprimée le 14/10 rendait la grille illisible dès qu'on cherchait
-// TROIS entités du même rang. Elle revient, en haut-gauche, à la couleur du rang.
-test("chaque carte de la grille de rang porte son rang, à la couleur du rang", () => {
+// Décision fondateur du 03/11/2026, verbatim : « c'était pas la peine de préciser sur la carte
+// en haut à gauche de mettre C, B ou A suivant le rang de la carte, parce qu'il y a déjà écrit
+// le rang de la carte sur la carte ». L'art porte le rang (artFor → <type>_<rang>.webp) : pas
+// de seconde étiquette posée dessus.
+test("la grille de rang ne repose pas le rang sur l'art (il y est déjà)", () => {
   const b = fnBloc("ForgeRangs");
-  assert.match(b, /D\.RANK_COLORS\[b\.rank\]/, "la pastille prend la couleur du rang");
-  assert.match(b, /FG_RANK_MARK_TIP/, "la pastille doit être expliquée au survol");
-  assert.match(b, /\{b\.rank \|\| "C"\}/, "la pastille affiche le rang de l'entité");
-  assert.match(b, /top: 8, left: 8/, "rang en haut-gauche : il ne masque pas le nom de l'entité");
+  assert.ok(!/D\.RANK_COLORS\[b\.rank\]/.test(b), "plus de pastille de rang colorée sur la carte");
+  assert.ok(!/FG_RANK_MARK_TIP/.test(b), "plus d'infobulle de rang sur la carte");
+  assert.ok(!/top: 8, left: 8/.test(b), "plus de pastille en haut-gauche");
+  assert.match(b, /badge = role \?/, "la seule pastille restante est conditionnée au rôle");
 });
 
 // Deux rôles, deux mots : dans la fusion de rareté (2 → 1) une carte est CONSERVÉE ; ici les
@@ -300,7 +300,7 @@ test("les phrases de l'onglet de rang et de la vitesse Argent existent en trois 
                      "FG_RANK_TYPE", "FG_RANK_TYPE_HINT", "FG_RANK_OK", "FG_RANK_ALERT_TITLE",
                      "FG_RANK_ALERT_BODY", "FG_RANK_ALERT_LINE", "FG_RANK_ALERT_TOTALS", "FG_RANK_ALERT_NEW",
                      "FG_RANK_ALERT_EQUIP", "FG_RANK_ALERT_COST", "FG_RANK_ALERT_CONFIRM", "FG_RANK_ALERT_BACK",
-                     "FG_RANK_ALERT_QUALITY", "FG_CONSUMED", "FG_RANK_MARK_TIP",
+                     "FG_RANK_ALERT_QUALITY", "FG_CONSUMED",
                      "FG_SILVER", "FG_SILVER_PRICE", "FG_FUSE_BTN_SILVER", "FG_SILVER_SHORT", "FG_FUSE_SILVER_OK"]) {
     assert.match(I18N, new RegExp(`\\n    ${cle}: \\{ FR: "[^"]+", EN: "[^"]+", ZH: "[^"]+" \\},`),
       `${cle} absente ou incomplète`);
