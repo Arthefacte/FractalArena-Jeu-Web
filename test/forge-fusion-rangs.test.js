@@ -339,3 +339,15 @@ test("l'équipement détaché est annoncé au joueur après la fusion", () => {
   const hint = I18N.match(/FG_RANK_ALERT_EQUIP: \{ FR: "([^"]+)"/);
   assert.match(hint[1], /retiré automatiquement/, "l'avertissement annonce le détachement automatique");
 });
+
+// Vécu du 05/11/2026 : trois rang C à l'écran, et « Rang S : sommet atteint » au moment de
+// valider. Cause : le champ `rank` manquait (entités antérieures au système de rang), lu en
+// brut côté action alors que l'affichage le défautait en « C ». Le rang se lit maintenant
+// avec le MÊME défaut partout.
+test("le rang absent est lu en C côté action, jamais pris pour un rang S", () => {
+  assert.match(APP, /const rankOf = \(b\) => \(b && D\.RANK_LIST\.includes\(b\.rank\) \? b\.rank : "C"\)/,
+    "défaut C identique à l'affichage");
+  assert.match(APP, /const rank = rankOf\(picked\[0\]\)/, "le coût se calcule sur le rang normalisé");
+  assert.match(APP, /FG_RANK_BAD_RANK/, "un rang illisible a son propre refus, pas « rang S »");
+  assert.match(I18N, /FG_RANK_BAD_RANK: \{ FR: "[^"]+", EN: "[^"]+", ZH: "[^"]+"/, "clé trilingue");
+});
