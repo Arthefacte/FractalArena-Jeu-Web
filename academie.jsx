@@ -72,10 +72,146 @@ function AcademyList({ revision, retry, select }) {
   </>;
 }
 
+// ---- l'examen d'un module ----
+// Un examen ne se joue pas dans une bulle : il a son écran. Les questions
+// s'enchaînent, une par une, et une mauvaise réponse donne la bonne réponse
+// AVEC sa source — c'est ce qui distingue une leçon d'un simple score.
+function AcademyExam({ module, onClose }) {
+  const { actions } = useFA();
+  const total = module.exam?.question_count || module.question_count || 0;
+  const [etat, setEtat] = useState({ loading: true, question: null, error: false, fin: false });
+  const [verdict, setVerdict] = useState(null);
+  const [choix, setChoix] = useState(null);
+  const [envoi, setEnvoi] = useState(false);
+  const [score, setScore] = useState({ posees: 0, bonnes: 0, gains: 0 });
+  const [rates, setRates] = useState([]);
+
+  async function charger() {
+    setEtat({ loading: true, question: null, error: false, fin: false });
+    setVerdict(null);
+    setChoix(null);
+    const r = await actions.fetchQuizQuestion(module.id);
+    const question = r.ok && r.data ? r.data.question : null;
+    if (question) return setEtat({ loading: false, question, error: false, fin: false });
+    // Plus de question pour ce module : l'examen s'arrête proprement, ce n'est
+    // pas une panne (le pool peut être plus court que le nombre annoncé).
+    if (r.ok || r.status === 404) return setEtat({ loading: false, question: null, error: false, fin: true });
+    setEtat({ loading: false, question: null, error: true, fin: false });
+  }
+  useEffect(() => { charger(); }, []);
+
+  async function repondre(i) {
+    if (envoi || verdict) return;
+    setEnvoi(true);
+    setChoix(i);
+    const r = await actions.answerQuiz(etat.question.id, i);
+    setEnvoi(false);
+    if (!r.ok || !r.data) {
+      setEtat((e) => ({ ...e, error: true }));
+      return;
+    }
+    const v = r.data;
+    setVerdict(v);
+    setScore((s) => ({
+      posees: s.posees + 1,
+      bonnes: s.bonnes + (v.correct ? 1 : 0),
+      gains: s.gains + (v.reward || 0),
+    }));
+    if (!v.correct) {
+      setRates((rs) => [...rs, {
+        id: etat.question.id,
+        q: etat.question.q,
+        c: etat.question.c,
+        answer: v.answer,
+        explanation: v.explanation,
+        source: v.source,
+      }]);
+    }
+  }
+
+  function suite() {
+    if (score.posees >= total) {
+      return setEtat({ loading: false, question: null, error: false, fin: true });
+    }
+    charger();
+  }
+
+  if (etat.loading) return <p role="status" className="muted">{I18N.t("ACADEMY_LOADING")}</p>;
+  if (etat.error) return <AcademyError retry={charger} />;
+
+  if (etat.fin) {
+    const pct = score.posees ? Math.round((score.bonnes / score.posees) * 100) : 0;
+    return <>
+      <SectionHead title={module.title} />
+      <div className="exam-score">
+        <div className="exam-score-big">{score.bonnes} / {score.posees}</div>
+        <div className="q-prog">{I18N.t("ACADEMY_EXAM_PCT", pct)}</div>
+        {score.gains > 0 && <div className="q-prog">{I18N.t("ACADEMY_EXAM_EARNED", score.gains)}</div>}
+      </div>
+      {!!rates.length && <>
+        <h3 className="exam-h">{I18N.t("ACADEMY_EXAM_MISSED", rates.length)}</h3>
+        <div className="q-list">
+          {rates.map((item) => <div key={item.id} className="q-row exam-missed">
+            <span className="q-name">{item.q}</span>
+            <span className="exam-ok">{item.c[item.answer]}</span>
+            {item.explanation && <span className="muted">{item.explanation}</span>}
+            {item.source && <a href={item.source} target="_blank" rel="noopener noreferrer"
+              className="exam-source">{item.source}</a>}
+          </div>)}
+        </div>
+      </>}
+      <button className="btn solid btn-gold block" style={{ marginTop: 16 }} onClick={onClose}>
+        {I18N.t("ACADEMY_EXAM_BACK")}
+      </button>
+    </>;
+  }
+
+  const q = etat.question;
+  const numero = Math.min(score.posees + 1, total || score.posees + 1);
+  return <>
+    <div className="exam-bar">
+      <button className="btn" onClick={onClose}>{I18N.t("ACADEMY_EXAM_QUIT")}</button>
+      <span className="q-prog">{I18N.t("ACADEMY_EXAM_PROGRESS", numero, total)}</span>
+    </div>
+    <div className="q-bar">
+      <div className="q-fill" style={{ width: (total ? (score.posees / total) * 100 : 0) + "%" }} />
+    </div>
+    <p className="q-name exam-q">{q.q}</p>
+    <div className="q-list">
+      {q.c.map((choice, i) => <button key={i} disabled={!!verdict || envoi}
+        className={cx("q-row", "exam-choice",
+          verdict && i === verdict.answer && "exam-juste",
+          verdict && i === choix && !verdict.correct && "exam-faux")}
+        onClick={() => repondre(i)}>
+        <span className="q-name">{choice}</span>
+      </button>)}
+    </div>
+    {verdict && <div className="exam-verdict">
+      <p className={verdict.correct ? "exam-ok" : "exam-ko"}>
+        {I18N.t(verdict.correct ? "ACADEMY_EXAM_CORRECT" : "ACADEMY_EXAM_WRONG")}
+      </p>
+      {!verdict.correct && <p className="exam-ok">
+        {I18N.t("ACADEMY_EXAM_ANSWER_WAS", q.c[verdict.answer])}
+      </p>}
+      {verdict.explanation && <p className="muted">{verdict.explanation}</p>}
+      {verdict.source && <p className="muted">
+        {I18N.t("ACADEMY_EXAM_SOURCE")}{" : "}
+        <a href={verdict.source} target="_blank" rel="noopener noreferrer"
+          className="exam-source">{verdict.source}</a>
+      </p>}
+      <button className="btn solid btn-gold block" style={{ marginTop: 12 }} onClick={suite}>
+        {score.posees >= total ? I18N.t("ACADEMY_EXAM_FINISH") : I18N.t("ACADEMY_EXAM_NEXT")}
+      </button>
+    </div>}
+  </>;
+}
+
 function AcademyModule({ id, revision, retry }) {
   const { g, actions } = useFA();
   const [st, setSt] = useState({ loading: true, error: false, module: null });
   const [open, setOpen] = useState(undefined);
+  // L'examen remplace le contenu du module : c'est un écran, pas une bulle.
+  const [examen, setExamen] = useState(false);
   useEffect(() => {
     let active = true;
     setSt({ loading: true, error: false, module: null });
@@ -92,6 +228,8 @@ function AcademyModule({ id, revision, retry }) {
   if (st.loading) return <p role="status" className="muted">{I18N.t("ACADEMY_LOADING")}</p>;
   if (st.error) return <AcademyError retry={retry} missing={st.missing} />;
   const module = st.module;
+  if (examen) return <AcademyExam module={module}
+    onClose={() => { setExamen(false); retry(); }} />;
   const progress = module.progress;
   const locked = progress?.unlocked === false;
   return <>
@@ -123,9 +261,7 @@ function AcademyModule({ id, revision, retry }) {
     </div>
     {locked && <p className="muted">{I18N.t("ACADEMY_LOCKED_HELP")}</p>}
     <button className="btn solid btn-gold block" style={{ marginTop: 16 }}
-      disabled={locked} onClick={() => {
-        window.dispatchEvent(new CustomEvent("fa:open-quiz", { detail: { module } }));
-      }}>{I18N.t("ACADEMY_EXAM")}</button>
+      disabled={locked} onClick={() => setExamen(true)}>{I18N.t("ACADEMY_EXAM")}</button>
   </>;
 }
 
@@ -184,4 +320,4 @@ function Academie() {
   </div>;
 }
 
-Object.assign(window, { Academie });
+Object.assign(window, { Academie, AcademyExam });

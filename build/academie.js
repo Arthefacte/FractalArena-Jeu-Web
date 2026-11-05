@@ -121,6 +121,206 @@ function AcademyList({
     className: "q-claimed"
   }, academyStatus(progress[module.id])))))));
 }
+
+// ---- l'examen d'un module ----
+// Un examen ne se joue pas dans une bulle : il a son écran. Les questions
+// s'enchaînent, une par une, et une mauvaise réponse donne la bonne réponse
+// AVEC sa source — c'est ce qui distingue une leçon d'un simple score.
+function AcademyExam({
+  module,
+  onClose
+}) {
+  const {
+    actions
+  } = useFA();
+  const total = module.exam?.question_count || module.question_count || 0;
+  const [etat, setEtat] = useState({
+    loading: true,
+    question: null,
+    error: false,
+    fin: false
+  });
+  const [verdict, setVerdict] = useState(null);
+  const [choix, setChoix] = useState(null);
+  const [envoi, setEnvoi] = useState(false);
+  const [score, setScore] = useState({
+    posees: 0,
+    bonnes: 0,
+    gains: 0
+  });
+  const [rates, setRates] = useState([]);
+  async function charger() {
+    setEtat({
+      loading: true,
+      question: null,
+      error: false,
+      fin: false
+    });
+    setVerdict(null);
+    setChoix(null);
+    const r = await actions.fetchQuizQuestion(module.id);
+    const question = r.ok && r.data ? r.data.question : null;
+    if (question) return setEtat({
+      loading: false,
+      question,
+      error: false,
+      fin: false
+    });
+    // Plus de question pour ce module : l'examen s'arrête proprement, ce n'est
+    // pas une panne (le pool peut être plus court que le nombre annoncé).
+    if (r.ok || r.status === 404) return setEtat({
+      loading: false,
+      question: null,
+      error: false,
+      fin: true
+    });
+    setEtat({
+      loading: false,
+      question: null,
+      error: true,
+      fin: false
+    });
+  }
+  useEffect(() => {
+    charger();
+  }, []);
+  async function repondre(i) {
+    if (envoi || verdict) return;
+    setEnvoi(true);
+    setChoix(i);
+    const r = await actions.answerQuiz(etat.question.id, i);
+    setEnvoi(false);
+    if (!r.ok || !r.data) {
+      setEtat(e => ({
+        ...e,
+        error: true
+      }));
+      return;
+    }
+    const v = r.data;
+    setVerdict(v);
+    setScore(s => ({
+      posees: s.posees + 1,
+      bonnes: s.bonnes + (v.correct ? 1 : 0),
+      gains: s.gains + (v.reward || 0)
+    }));
+    if (!v.correct) {
+      setRates(rs => [...rs, {
+        id: etat.question.id,
+        q: etat.question.q,
+        c: etat.question.c,
+        answer: v.answer,
+        explanation: v.explanation,
+        source: v.source
+      }]);
+    }
+  }
+  function suite() {
+    if (score.posees >= total) {
+      return setEtat({
+        loading: false,
+        question: null,
+        error: false,
+        fin: true
+      });
+    }
+    charger();
+  }
+  if (etat.loading) return /*#__PURE__*/React.createElement("p", {
+    role: "status",
+    className: "muted"
+  }, I18N.t("ACADEMY_LOADING"));
+  if (etat.error) return /*#__PURE__*/React.createElement(AcademyError, {
+    retry: charger
+  });
+  if (etat.fin) {
+    const pct = score.posees ? Math.round(score.bonnes / score.posees * 100) : 0;
+    return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(SectionHead, {
+      title: module.title
+    }), /*#__PURE__*/React.createElement("div", {
+      className: "exam-score"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "exam-score-big"
+    }, score.bonnes, " / ", score.posees), /*#__PURE__*/React.createElement("div", {
+      className: "q-prog"
+    }, I18N.t("ACADEMY_EXAM_PCT", pct)), score.gains > 0 && /*#__PURE__*/React.createElement("div", {
+      className: "q-prog"
+    }, I18N.t("ACADEMY_EXAM_EARNED", score.gains))), !!rates.length && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("h3", {
+      className: "exam-h"
+    }, I18N.t("ACADEMY_EXAM_MISSED", rates.length)), /*#__PURE__*/React.createElement("div", {
+      className: "q-list"
+    }, rates.map(item => /*#__PURE__*/React.createElement("div", {
+      key: item.id,
+      className: "q-row exam-missed"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "q-name"
+    }, item.q), /*#__PURE__*/React.createElement("span", {
+      className: "exam-ok"
+    }, item.c[item.answer]), item.explanation && /*#__PURE__*/React.createElement("span", {
+      className: "muted"
+    }, item.explanation), item.source && /*#__PURE__*/React.createElement("a", {
+      href: item.source,
+      target: "_blank",
+      rel: "noopener noreferrer",
+      className: "exam-source"
+    }, item.source))))), /*#__PURE__*/React.createElement("button", {
+      className: "btn solid btn-gold block",
+      style: {
+        marginTop: 16
+      },
+      onClick: onClose
+    }, I18N.t("ACADEMY_EXAM_BACK")));
+  }
+  const q = etat.question;
+  const numero = Math.min(score.posees + 1, total || score.posees + 1);
+  return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    className: "exam-bar"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "btn",
+    onClick: onClose
+  }, I18N.t("ACADEMY_EXAM_QUIT")), /*#__PURE__*/React.createElement("span", {
+    className: "q-prog"
+  }, I18N.t("ACADEMY_EXAM_PROGRESS", numero, total))), /*#__PURE__*/React.createElement("div", {
+    className: "q-bar"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "q-fill",
+    style: {
+      width: (total ? score.posees / total * 100 : 0) + "%"
+    }
+  })), /*#__PURE__*/React.createElement("p", {
+    className: "q-name exam-q"
+  }, q.q), /*#__PURE__*/React.createElement("div", {
+    className: "q-list"
+  }, q.c.map((choice, i) => /*#__PURE__*/React.createElement("button", {
+    key: i,
+    disabled: !!verdict || envoi,
+    className: cx("q-row", "exam-choice", verdict && i === verdict.answer && "exam-juste", verdict && i === choix && !verdict.correct && "exam-faux"),
+    onClick: () => repondre(i)
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "q-name"
+  }, choice)))), verdict && /*#__PURE__*/React.createElement("div", {
+    className: "exam-verdict"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: verdict.correct ? "exam-ok" : "exam-ko"
+  }, I18N.t(verdict.correct ? "ACADEMY_EXAM_CORRECT" : "ACADEMY_EXAM_WRONG")), !verdict.correct && /*#__PURE__*/React.createElement("p", {
+    className: "exam-ok"
+  }, I18N.t("ACADEMY_EXAM_ANSWER_WAS", q.c[verdict.answer])), verdict.explanation && /*#__PURE__*/React.createElement("p", {
+    className: "muted"
+  }, verdict.explanation), verdict.source && /*#__PURE__*/React.createElement("p", {
+    className: "muted"
+  }, I18N.t("ACADEMY_EXAM_SOURCE"), " : ", /*#__PURE__*/React.createElement("a", {
+    href: verdict.source,
+    target: "_blank",
+    rel: "noopener noreferrer",
+    className: "exam-source"
+  }, verdict.source)), /*#__PURE__*/React.createElement("button", {
+    className: "btn solid btn-gold block",
+    style: {
+      marginTop: 12
+    },
+    onClick: suite
+  }, score.posees >= total ? I18N.t("ACADEMY_EXAM_FINISH") : I18N.t("ACADEMY_EXAM_NEXT"))));
+}
 function AcademyModule({
   id,
   revision,
@@ -136,6 +336,8 @@ function AcademyModule({
     module: null
   });
   const [open, setOpen] = useState(undefined);
+  // L'examen remplace le contenu du module : c'est un écran, pas une bulle.
+  const [examen, setExamen] = useState(false);
   useEffect(() => {
     let active = true;
     setSt({
@@ -168,6 +370,13 @@ function AcademyModule({
     missing: st.missing
   });
   const module = st.module;
+  if (examen) return /*#__PURE__*/React.createElement(AcademyExam, {
+    module: module,
+    onClose: () => {
+      setExamen(false);
+      retry();
+    }
+  });
   const progress = module.progress;
   const locked = progress?.unlocked === false;
   return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(SectionHead, {
@@ -222,13 +431,7 @@ function AcademyModule({
       marginTop: 16
     },
     disabled: locked,
-    onClick: () => {
-      window.dispatchEvent(new CustomEvent("fa:open-quiz", {
-        detail: {
-          module
-        }
-      }));
-    }
+    onClick: () => setExamen(true)
   }, I18N.t("ACADEMY_EXAM")));
 }
 
@@ -303,6 +506,7 @@ function Academie() {
   }));
 }
 Object.assign(window, {
-  Academie
+  Academie,
+  AcademyExam
 });
 })();
