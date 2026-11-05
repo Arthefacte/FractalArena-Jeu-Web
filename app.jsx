@@ -129,8 +129,16 @@ let BOOT_LINK_CODE = (() => {
 // n'est PAS rattaché (anti-Sybil, pas de rattachement différé). `let` : le
 // code est consommé (null) dès qu'une création a été acceptée par le serveur.
 let BOOT_REF_CODE = window.FA_REFERRAL ? window.FA_REFERRAL.parseRefSearch(window.location.search) : null;
-const refBody = () => (window.FA_REFERRAL ? window.FA_REFERRAL.refBody(BOOT_REF_CODE) : {});
+const refBody = () => ({
+  ...(window.FA_REFERRAL ? window.FA_REFERRAL.refBody(BOOT_REF_CODE) : {}),
+  ...(window.FA_ACQ ? window.FA_ACQ.payload() : {}),
+});
 const refConsumed = () => { BOOT_REF_CODE = null; };
+// Origine du compte (acquisition, acq-ui.js + serveur acq.js) : la PREMIÈRE touche
+// est figée MAINTENANT, avant qu'une navigation interne ne réécrive document.referrer.
+// Elle part avec refBody, donc uniquement aux trois points de création — le serveur
+// ne lit l'origine qu'à l'INSERT de la ligne.
+if (window.FA_ACQ) window.FA_ACQ.boot();
 // Toujours via ACC : `window.unisat` peut être un portefeuille FORKÉ qui a squatté
 // le global. Voir ACC.provider() dans account-ui.js.
 const HAS_UNISAT = () => ACC.hasProvider();
