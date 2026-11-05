@@ -9,7 +9,7 @@ const TU = globalThis.window.FA_TOUR_UI;
 // Palier d'entrée de l'étage 3 ajouté le 2026-07-29 (somme 6 500 → 6 550) et prix de
 // re-run devenu progressif : les deux suivent le serveur, cette table est un miroir.
 test("TIERS : miroir serveur — somme 9550 FA, 2 silver, 2 gold, étages 1..100", () => {
-  assert.deepStrictEqual(TU.RERUN_COSTS, [100, 125, 150]);
+  assert.deepStrictEqual(TU.RERUN_COSTS, [1000, 1250, 1500]);
   assert.strictEqual(TU.TIERS.length, 13);
   assert.deepStrictEqual(TU.TIERS.map((t) => t.floor), [1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 75, 100]);
   assert.strictEqual(TU.TIERS.reduce((s, t) => s + t.fa, 0), 9550);

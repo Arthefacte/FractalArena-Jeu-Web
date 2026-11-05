@@ -4,7 +4,7 @@
 // Volet web de l'ouverture de la Tour (serveur : feat/tour-onboarding).
 //
 // Trois changements a refleter : palier d'entree a l'etage 3, etape `d_tower` du
-// parcours ramenee a 3 etages, et prix de re-run progressif (100 / 125 / 150).
+// parcours ramenee a 3 etages, et prix de re-run progressif (1000 / 1250 / 1500).
 //
 // Le prix n'est plus une constante : le client ne peut plus l'afficher de memoire.
 // Le serveur l'annonce dans /tower/state (`next_cost`) et fait foi ; la table locale
@@ -48,11 +48,11 @@ test("la table des paliers reste identique au serveur", () => {
 });
 
 test("les prix de re-run refletent le serveur", () => {
-  assert.deepStrictEqual(TU.RERUN_COSTS, [100, 125, 150]);
-  assert.strictEqual(TU.entryCost(0), 100);
-  assert.strictEqual(TU.entryCost(1), 125);
-  assert.strictEqual(TU.entryCost(2), 150);
-  assert.strictEqual(TU.entryCost(9), 150, "le prix plafonne");
+  assert.deepStrictEqual(TU.RERUN_COSTS, [1000, 1250, 1500]);
+  assert.strictEqual(TU.entryCost(0), 1000);
+  assert.strictEqual(TU.entryCost(1), 1250);
+  assert.strictEqual(TU.entryCost(2), 1500);
+  assert.strictEqual(TU.entryCost(9), 1500, "le prix plafonne");
 });
 
 // ---- Le serveur fait foi sur le prix ----
@@ -61,21 +61,21 @@ test("nextCost prefere le montant annonce par le serveur", () => {
   // Si le serveur dit 125, on affiche 125 — meme si le calcul local donnait autre
   // chose. Un prix affiche plus bas que le prix reellement debite serait pris pour
   // une arnaque, et il serait de notre fait.
-  assert.strictEqual(TU.nextCost({ next_cost: 125 }, { free_run_used: true, runs_paid: 0 }), 125);
+  assert.strictEqual(TU.nextCost({ next_cost: 1250 }, { free_run_used: true, runs_paid: 0 }), 1250);
   assert.strictEqual(TU.nextCost({ next_cost: 0 }, { free_run_used: false, runs_paid: 0 }), 0,
     "run gratuite disponible : le serveur annonce 0");
 });
 
 test("sans next_cost (serveur pas encore deploye), le client retombe sur son calcul", () => {
-  assert.strictEqual(TU.nextCost({}, { free_run_used: true, runs_paid: 0 }), 100);
-  assert.strictEqual(TU.nextCost({}, { free_run_used: true, runs_paid: 2 }), 150);
+  assert.strictEqual(TU.nextCost({}, { free_run_used: true, runs_paid: 0 }), 1000);
+  assert.strictEqual(TU.nextCost({}, { free_run_used: true, runs_paid: 2 }), 1500);
   assert.strictEqual(TU.nextCost({}, { free_run_used: false, runs_paid: 0 }), 0);
 });
 
 test("un next_cost aberrant est ignore au profit du calcul local", () => {
   // Le client ne doit jamais afficher un prix negatif ou non numerique venu du reseau.
   for (const v of [-100, "gratuit", NaN, {}]) {
-    assert.strictEqual(TU.nextCost({ next_cost: v }, { free_run_used: true, runs_paid: 0 }), 100,
+    assert.strictEqual(TU.nextCost({ next_cost: v }, { free_run_used: true, runs_paid: 0 }), 1000,
       "valeur aberrante : " + String(v));
   }
 });

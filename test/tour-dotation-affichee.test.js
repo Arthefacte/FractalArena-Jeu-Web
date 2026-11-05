@@ -22,7 +22,7 @@ test("le classement n'annonce plus une dotation impossible", () => {
   const l = ligneDe("TOUR_LB_DOTATION");
   assert.ok(l, "clé absente");
   assert.ok(!/3\s?000|3,000/.test(l), "le « jusqu'à 3 000 FA » est un montant que le barème ne produit pas");
-  assert.match(l, /100 FA/, "la règle réelle : 100 FA par joueur classé");
+  assert.match(l, /1000 FA/, "la règle réelle : 1000 FA par joueur classé");
   for (const lang of ["FR:", "EN:", "ZH:"]) assert.ok(l.includes(lang), "libellé manquant : " + lang);
 });
 
