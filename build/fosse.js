@@ -1136,7 +1136,7 @@ function ResultModal({
       color: "var(--gold)",
       fontSize: 13
     }
-  }, I18N.t("RES_MILESTONE", D.ECON.MILESTONE_REWARD)), /*#__PURE__*/React.createElement("div", {
+  }, I18N.t("RES_MILESTONE", data.milestoneLocked || D.ECON.MILESTONE_REWARD)), /*#__PURE__*/React.createElement("div", {
     className: "mono",
     style: {
       fontSize: 11,

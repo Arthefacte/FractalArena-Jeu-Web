@@ -1531,8 +1531,13 @@ function App() {
       // de React 18 — désactivée dès qu'une autre mise à jour d'App est en attente —
       // et rendait alors une modale « +0 FA / +0 XP » (audit web 2026-09-08, P2#7).
       // L'updater ci-dessous ne fait plus que fusionner l'état.
-      const summary = { payout: 0, net: 0, xp: 0, milestone: false, luckyBonus: 0, momentumBonus: 0, catalystUnlocked: 0, winStreak: 0, betAmount, levelUps: [], rarityUps: [] };
-      if (srv && srv.milestone) summary.milestone = true;
+      const summary = { payout: 0, net: 0, xp: 0, milestone: false, milestoneLocked: 0, luckyBonus: 0, momentumBonus: 0, catalystUnlocked: 0, winStreak: 0, betAmount, levelUps: [], rarityUps: [] };
+      if (srv && srv.milestone) {
+        summary.milestone = true;
+        // Montant ANNONCÉ = montant CRÉDITÉ (server-owned) : plus de constante client
+        // affichée à côté d'un crédit serveur qui pourrait diverger.
+        summary.milestoneLocked = Number(srv.milestone_locked) || 0;
+      }
       if (win) {
         const base = free ? D.ECON.BET.bronze : betAmount;
         // Le payout vient du SERVEUR dès qu'il est là (arrondi round + palier LP) : le
