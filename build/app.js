@@ -2907,7 +2907,7 @@ function App() {
         ok: false,
         reason: "Wallet requis"
       };
-      const cost = 8000; // RELIC_SUMMON_COST serveur
+      const cost = D.ECON.RELIC_SUMMON_COST;
       if (s.liquid + s.locked < cost) return {
         ok: false,
         reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, cost)
@@ -2994,7 +2994,7 @@ function App() {
         ok: false,
         reason: "Wallet requis"
       };
-      const cost = 8000; // CORE_SUMMON_COST serveur
+      const cost = D.ECON.CORE_SUMMON_COST;
       if (s.liquid + s.locked < cost) return {
         ok: false,
         reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, cost)

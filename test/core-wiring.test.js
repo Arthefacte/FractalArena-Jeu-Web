@@ -19,9 +19,9 @@ test("les deux routes forge des cores sont appelées", () => {
   assert.match(APP, /\/forge\/core-equip/);
 });
 
-test("coreSummon : coût 8000 vérifié côté client, Bearer, resync du save", () => {
+test("coreSummon : coût vérifié côté client (miroir D.ECON), Bearer, resync du save", () => {
   const b = bloc("coreSummon");
-  assert.match(b, /8000/, "CORE_SUMMON_COST serveur = 8000, aligné relics");
+  assert.match(b, /D\.ECON\.CORE_SUMMON_COST/, "le coût vient du miroir ECON (5 000 depuis le 06/11/2026)");
   assert.match(b, /Authorization/, "coreSummon n'authentifie pas sa requête");
   assert.match(b, /insufficient_balance/, "le cas solde insuffisant a son message");
   assert.match(b, /\/save\//, "après summon, resync du save (solde + inventaire)");

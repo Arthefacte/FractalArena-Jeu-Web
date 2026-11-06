@@ -2092,7 +2092,19 @@ function ForgeEquipement() {
     }
     setSel([]);
     setConfirmDis(false);
-    toast(I18N.t("FG_SUMMON_OK", I18N.t("RELIC_" + r.relic.type.toUpperCase()), rarityLabel(r.relic.rarity)), "good");
+    const reveal = () => toast(I18N.t("FG_SUMMON_OK", I18N.t("RELIC_" + r.relic.type.toUpperCase()), rarityLabel(r.relic.rarity)), "good");
+    // Même Moment Forge que la fusion d'entités et l'invocation (retour fondateur 06/11/2026 :
+    // « la même petite animation quand on achète une relique ou qu'on la forge »). Le résultat
+    // est rendu dans onDone → garanti dans tous les cas, jamais sous l'animation.
+    if (window.FA_FORGE_CINE) {
+      window.FA_FORGE_CINE.play({
+        mode: "fuse",
+        success: true,
+        tier: r.relic.rarity,
+        color: D.RARITY_COLORS[r.relic.rarity] || "#46e6ff",
+        onDone: reveal
+      });
+    } else reveal();
   }
   async function doDisenchant() {
     if (dis.disabled) return;
@@ -2353,7 +2365,7 @@ function ForgeCoreSummon({
   } = useFA();
   const [coreBusy, setCoreBusy] = useState(false);
   const balance = g.liquid + g.locked;
-  const coreCost = 8000; // CORE_SUMMON_COST serveur
+  const coreCost = D.ECON.CORE_SUMMON_COST;
   const coreBalOk = balance >= coreCost;
   const coreOdds = [["Common", 70], ["Rare", 20], ["Epic", 8], ["Legendary", 2]];
   async function doCoreSummon() {
@@ -2366,9 +2378,23 @@ function ForgeCoreSummon({
       return;
     }
     const name = r.core && r.core.core_id ? I18N.t("CORE_" + r.core.core_id.toUpperCase()) : I18N.t("CORE_SUMMON_TITLE");
-    toast(I18N.t("CORE_SUMMON_OK", name), "good");
-    // Reveal dans la case de résultat du parent (même séquencement que la relique).
-    if (r.core && r.core.core_id && onSummoned) onSummoned(r.core);
+    const reveal = () => {
+      toast(I18N.t("CORE_SUMMON_OK", name), "good");
+      // Reveal dans la case de résultat du parent (même séquencement que la relique).
+      if (r.core && r.core.core_id && onSummoned) onSummoned(r.core);
+    };
+    // Invocation de core : MÊME Moment Forge que la relique (retour fondateur 06/11/2026 —
+    // « elle n'y est pas pour les cores, la petite animation quand on achète »). Le toast et
+    // la case de résultat restent dans onDone : jamais un silence après un débit.
+    if (window.FA_FORGE_CINE) {
+      window.FA_FORGE_CINE.play({
+        mode: "summon",
+        success: true,
+        tier: r.core.rarity,
+        color: D.RARITY_COLORS[r.core.rarity] || "#46e6ff",
+        onDone: reveal
+      });
+    } else reveal();
   }
   return /*#__PURE__*/React.createElement("div", {
     style: {
@@ -2511,9 +2537,21 @@ function ForgeCoreEquipement({
     }
     setSel([]);
     setConfirmDis(false);
-    toast(I18N.t("FG_CORE_EQ_FUSE_OK", coreName(r.core), rarityLabel(r.core.rarity)), "good");
-    // Le core fusionné remplace le précédent dans la petite case de résultat.
-    if (onForged) onForged(r.core);
+    const reveal = () => {
+      toast(I18N.t("FG_CORE_EQ_FUSE_OK", coreName(r.core), rarityLabel(r.core.rarity)), "good");
+      // Le core fusionné remplace le précédent dans la petite case de résultat.
+      if (onForged) onForged(r.core);
+    };
+    // Même cinématique que la fusion de reliques et de cores invoqués (06/11/2026).
+    if (window.FA_FORGE_CINE) {
+      window.FA_FORGE_CINE.play({
+        mode: "fuse",
+        success: true,
+        tier: r.core.rarity,
+        color: D.RARITY_COLORS[r.core.rarity] || "#46e6ff",
+        onDone: reveal
+      });
+    } else reveal();
   }
   async function doDisenchant() {
     if (dis.disabled) return;
@@ -2716,7 +2754,7 @@ function ForgeReliques() {
   const [rolling, setRolling] = useState(false);
   const [detail, setDetail] = useState(null);
   const RV = window.RelicViewer;
-  const cost = 8000;
+  const cost = D.ECON.RELIC_SUMMON_COST;
   const balOk = g.liquid + g.locked >= cost;
   async function doSummon() {
     if (!balOk || rolling) return;
