@@ -35,6 +35,19 @@ test("doSummon branche la cinématique (rang) et révèle la carte dans onDone",
   assert.ok(m, "setLast(r.beast) dans le onDone du summon");
 });
 
+test("invocation de core : MÊME cinématique que la relique (retour fondateur 06/11/2026)", () => {
+  const m = screens.match(/const reveal = \(\) => \{\s*toast\(I18N\.t\("CORE_SUMMON_OK"[\s\S]{0,600}mode:\s*"summon"[\s\S]{0,200}onDone:\s*reveal/);
+  assert.ok(m, "le toast CORE_SUMMON_OK et la case résultat doivent être dans le onDone du summon core");
+  assert.ok(/tier:\s*r\.core\.rarity/.test(screens), "tier = r.core.rarity pour le core");
+});
+
+test("forge de reliques et de cores : cinématique de fusion + résultat dans onDone", () => {
+  const relic = screens.match(/const reveal = \(\) => toast\(I18N\.t\("FG_SUMMON_OK"[\s\S]{0,600}mode:\s*"fuse"[\s\S]{0,200}tier:\s*r\.relic\.rarity/);
+  assert.ok(relic, "la fusion 3 reliques → 1 doit jouer la cinématique, teintée par r.relic.rarity");
+  const core = screens.match(/const reveal = \(\) => \{[\s\S]{0,300}FG_CORE_EQ_FUSE_OK[\s\S]{0,700}mode:\s*"fuse"[\s\S]{0,200}tier:\s*r\.core\.rarity/);
+  assert.ok(core, "la fusion 3 cores → 1 doit jouer la cinématique, teintée par r.core.rarity");
+});
+
 test("doSummon reliques : cinématique teintée par la rareté, relique révélée dans onDone", () => {
   const m = screens.match(/const revealRelic = \(\) => \{\s*setLast\(r\.relic\)[\s\S]{0,500}mode:\s*"summon"[\s\S]{0,200}onDone:\s*revealRelic/);
   assert.ok(m, "setLast(r.relic) dans le onDone du summon relique");

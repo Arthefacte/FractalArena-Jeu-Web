@@ -1852,7 +1852,7 @@ function App() {
     async relicSummon() {
       const s = gRef.current;
       if (!s.wallet || !s.authToken) return { ok: false, reason: "Wallet requis" };
-      const cost = 8000; // RELIC_SUMMON_COST serveur
+      const cost = D.ECON.RELIC_SUMMON_COST;
       if (s.liquid + s.locked < cost) return { ok: false, reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, cost) };
       try {
         const resp = await fetch(`${API_URL}/forge/relic-summon`, {
@@ -1886,7 +1886,7 @@ function App() {
     async coreSummon() {
       const s = gRef.current;
       if (!s.wallet || !s.authToken) return { ok: false, reason: "Wallet requis" };
-      const cost = 8000; // CORE_SUMMON_COST serveur
+      const cost = D.ECON.CORE_SUMMON_COST;
       if (s.liquid + s.locked < cost) return { ok: false, reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, cost) };
       try {
         const resp = await fetch(`${API_URL}/forge/core-summon`, {

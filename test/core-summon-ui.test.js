@@ -1,6 +1,6 @@
 // Câblage UI de l'invocation des cores : ForgeCoreSummon (screens.jsx, onglet
 // Forge → Cores) doit offrir un bouton « Invoquer un core » branché sur
-// actions.coreSummon (app.jsx), avec coût 8000 et garde de solde. Le bloc vivait
+// actions.coreSummon (app.jsx), avec le coût du miroir D.ECON et garde de solde. Le bloc vivait
 // avant au bas de ForgeEquipement, où il était noyé sous la fusion de reliques.
 // Vérification au niveau SOURCE (pattern forge-equip-wiring) : le JSX n'est pas
 // exécutable en node.
@@ -36,11 +36,14 @@ test("ForgeEquipement ne porte plus l'invocation d'un core (elle a son onglet)",
   assert.ok(!/coreSummon/.test(b), "ForgeEquipement ne doit plus appeler coreSummon");
 });
 
-test("coreSummon (app.jsx) : route, Bearer, coût 8000, resync /save", () => {
+test("coreSummon (app.jsx) : route, Bearer, coût lu dans D.ECON, resync /save", () => {
   const b = bloc(APP, "async coreSummon()", 1200);
   assert.match(b, /forge\/core-summon/);
   assert.match(b, /Authorization/, "Bearer manquant");
-  assert.match(b, /8000/, "coût 8000 manquant");
+  // Le prix vient du miroir, jamais d'un littéral : c'est ce qui a permis de le baisser
+  // à 5 000 FA (06/11/2026) sans laisser un bouton annoncer l'ancien montant.
+  assert.match(b, /D\.ECON\.CORE_SUMMON_COST/, "coût du core doit venir de D.ECON.CORE_SUMMON_COST");
+  assert.ok(!/\b8000\b/.test(b), "aucun prix en dur dans coreSummon");
   assert.match(b, /svOpts\(\)/, "resync /save manquante");
   assert.match(b, /applySave\(save, s\.wallet, s\.authToken\)/, "la réponse /save doit passer par la garde d'identité applySave");
 });
