@@ -1,36 +1,46 @@
-# Rapport — Wallet : cycle de cagnotte clôturé et part figée
+# Rapport — Dépôts FA et FB explicites dans le Portefeuille
 
-Branche : `Arthefacte/wallet-cycle-cloture-2` — cible : `main`, sans fusion.
+Branche : `Arthefacte/depot-fb-ui` — cible : `main`, PR à ouvrir sans fusion.
 
-## Changement
+## Résultat pour le joueur
 
-Le panneau cagnotte du Wallet lit les indicateurs déjà reçus dans `pot.eligibility` :
+Le dépôt général propose deux portes : « FA · BRC-20 FRACTALARENA » et « FB · natif (sats) ». Aucun formulaire ni adresse n'est affiché avant le choix. Une seule porte affiche ensuite ses consignes, l'adresse complète du pool et son champ TXID. Changer d'actif vide le TXID ; pendant la vérification, le choix et la saisie sont verrouillés.
 
-- `cycle_closed === true` et `paid_out === false` : la phrase de fenêtre est remplacée par la date de clôture, le nombre de jours validés figé et la mention du tirage en attente.
-- `paid_out === true` : une ligne discrète indique le tirage effectué, la part envoyée et le redémarrage au prochain FA versé. Cet état est prioritaire et masque les deux anciennes phrases de fenêtre.
-- Cycle ouvert ou ancien payload : l'affichage existant est conservé, y compris la borne de fin exclusive du serveur.
+La porte FB indique l'envoi depuis le wallet lié, le minimum du brief (100 000 sats = 0,001 FB) et les 3 confirmations requises. Elle appelle `POST /verify-deposit-fb` avec `{ wallet: g.wallet, txid }` et le jeton Bearer. Le toast de succès affiche directement `credited_sats` et `fb_sats` renvoyés par le serveur, sans conversion, addition locale ni crédit FA.
 
-Les deux nouvelles clés `POT_CYCLE_CLOSED` et `POT_CYCLE_PAID_OUT` sont traduites en FR/EN/ZH dans `i18n.js`. La clôture utilise directement `eligibility.cycle_closed_at`, formaté avec `toLocaleDateString()`, et `eligibility.days_qualified`, sans recalcul ni utilisation de la borne exclusive comme date de clôture.
+Les douze statuts demandés sont couverts : `ok`, `already_used`, `wrong_recipient`, `sender_unverified`, `sender_mismatch`, `tx_pending`, `tx_unconfirmed`, `below_minimum`, `invalid_amount`, `no_account`, `onchain_unavailable`, `deposits_disabled`. Le minimum d'un refus vient de `minimum_sats`. Les erreurs inconnues ont un message traduit, jamais le code brut.
 
-La phrase de clôture exige une date lisible et un nombre entier de jours non négatif. Zéro est accepté ; une valeur absente, nulle ou invalide conserve la fenêtre historique. Aucun nouveau helper, aucune nouvelle requête, aucun changement des compteurs, des montants ou des règles serveur.
+Le bouton « Déposer du FB » de l'encart Portefeuille ouvre désormais `DepositModal` avec FB sélectionné, via `FbCaseModal`. Le bouton général s'appelle « Dépôt FA / FB ». La Boutique conserve son renvoi vers le Portefeuille et ne contient aucun formulaire de dépôt.
 
-## Build et cache
+La porte FA conserve `/verify-deposit`, le payload authentifié, les consignes, `actions.deposit(data.credited)` et les messages de succès/refus existants.
 
-- Dépendances installées avec `npm ci --no-audit --no-fund`, sans changement de dépendance.
-- `npm run build` : 28 écrans et 17 empreintes d'assets régénérés par le pipeline du dépôt ; aucun fichier de `build/` édité à la main.
-- `build/screens.js` et `build/sources.json` changent ; `build/app.js` et `asset-hashes.js` sont régénérés à contenu identique.
-- Version du cache 429 → 430 dans `index.html`, `data.js`, `sw-policy.js`, `manifest.webmanifest`, `version.json` et les assertions existantes de `test/account-wiring.test.js`.
+## Rafraîchissement confirmé avec l'utilisateur
 
-## Vérification
+Contrairement au brief initial, Wallet écoutait déjà `fa:fb-liquidity` pour relire `/fb`. Après accord explicite de l'utilisateur, ce listener est réutilisé tel quel. Le succès FB émet l'événement une fois. Aucun nouveau mécanisme de rafraîchissement n'est ajouté.
 
-- `npm test` : **1 362 tests, 1 356 réussis, 6 ignorés, 0 échec**. Aucun faux rouge SRI Windows rencontré.
-- Revue indépendante du diff : aucune anomalie relevée.
-- Harnais temporaire exécutant les vrais composants Wallet et PotLigne transpilés par Babel : **99 rendus validés** (33 payloads × FR/EN/ZH). Cas vérifiés : ouvert, clôturé avec 5 ou 0 jours, payé prioritaire même sans date/jours, ancien serveur, borne exclusive, champs manquants, nuls et invalides.
-- Chaque rendu contient une seule phrase de fenêtre/statut. Aucun placeholder, `undefined`, `NaN` ou date invalide dans cette phrase. Tous les autres appels i18n, arguments et textes sont comparés au composant de départ et restent identiques, notamment les compteurs, la progression et le dernier tirage.
-- Le harnais jetable est conservé dans le dossier temporaire système : `wallet-cycle-render-review.cjs`. Il n'est pas ajouté au dépôt.
-- `node tools/asset-hashes.mjs --check` et `git diff --check` réussis.
-- Validation du rendu par harnais ; aucune inspection visuelle dans un navigateur.
+## Fichiers
 
-Les modifications préexistantes de `BRIEF.md` et le dossier non suivi `mcp/` sont conservés hors commit.
+- `screens.jsx` : choix de l'actif, route FB, messages, événement et accès direct depuis l'encart FB.
+- `i18n.js` : libellés et messages FR/EN/ZH.
+- `test/deposit-modal.test.js` : 19 tests exécutant les vrais composants extraits de la source et du build, transpilés avec Babel puis évalués dans `vm`.
+- `test/wallet-fb-card.test.js` : description de la rangée dépôt/retrait adaptée au dépôt FA/FB.
+- `version.json`, `data.js`, tous les `?v=` de `index.html`, `manifest.webmanifest`, `sw-policy.js`, `test/account-wiring.test.js` : version 460 → 461.
+- `build/screens.js` et `build/sources.json` : régénérés par `npm run build`.
+- `RAPPORT.md` : présent rapport.
 
-Commit demandé : `feat(wallet): la cagnotte dit quand son cycle est cloture et sa part figee`.
+Les autres fichiers de build et `asset-hashes.js` sont régénérés à contenu identique. Les fichiers modifiés sont en CRLF. Les changements préexistants de `BRIEF.md` et le dossier non suivi `mcp/` restent hors commit.
+
+## Vérifications
+
+- `npm ci --no-audit --no-fund` : réussi, aucune dépendance modifiée.
+- `npm run build` : réussi, 29 écrans transpilés et 17 empreintes d'assets produites.
+- Tests ciblés (`deposit-modal`, `wallet-fb-card`, `boutique-depot`, `account-wiring`) : **51 réussis, 0 échec**.
+- `npm test` avant commit : **1 446 tests, 1 440 réussis, 6 ignorés, 0 échec** (19 063,8016 ms).
+- Les 6 tests ignorés sont les contrôles existants dépendant des sources du dépôt serveur (arène et forge), absentes de ce dépôt web.
+- Vérifications du nouveau harnais : choix exclusif, adresse et consignes propres à l'actif en trois langues ; routes, Bearer et wallet ; montants serveur exacts ; chaque statut FB dans les trois langues ; anciens traitements FA ; erreurs réseau/HTTP/inconnues ; TXID invalide ; changement d'actif et verrouillage pendant l'envoi ; accès depuis l'encart FB ; relecture authentifiée de `/fb` sur succès et retrait du listener au démontage.
+- `node tools/asset-hashes.mjs --check` : réussi après le build, 17 modèles à jour.
+- `git diff --check` : réussi.
+
+## Limites
+
+Les requêtes des tests sont simulées. Aucun transfert réel, crédit en production ou appel authentifié au serveur n'a été effectué. La récupération effective du dépôt de 0,5 FB signalé dans le brief n'a donc pas été vérifiée. Le minimum initial affiché reprend la valeur du brief ; un refus affiche le minimum retourné par le serveur. Le rendu a été contrôlé par le harnais de composants, sans inspection visuelle dans un navigateur.

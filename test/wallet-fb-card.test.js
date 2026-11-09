@@ -1,15 +1,15 @@
 // test/wallet-fb-card.test.js
 // Liquidité FB dans l'écran Wallet (demande fondateur 16/10/2026, variante C) : le FB est une monnaie
 // SÉPARÉE du FA (dépôt en sats, jamais converti, dépensé en boutique), donc un encart à part — badge
-// réel du jeu + solde — et les deux actions FA sur leur propre rangée.
+// réel du jeu + solde — et les actions dépôt/retrait sur leur propre rangée.
 //
 // Ce que ces tests tiennent :
 //   1. le glyphe « ◎ » ne tient plus lieu de logo : c'est l'asset du jeu (assets/fb-badge.webp), le
 //      même que le chip du header, et il passe par FA_ASSET_URL (sans quoi le CDN sert l'ancien) ;
 //   2. le solde vient du SERVEUR (GET /fb, authentifié) et l'encart disparaît s'il ne répond pas :
 //      aucun solde inventé, et pas de carte vide qui promet un chiffre ;
-//   3. la rangée du bas ne contient plus QUE les deux actions FA (Dépôt / Retrait) : mélanger les
-//      deux monnaies dans une même rangée de boutons faisait croire à un même solde.
+//   3. la rangée du bas ne contient QUE les deux actions Dépôt / Retrait : mélanger les
+//      deux monnaies dans une même rangée de soldes faisait croire à un même solde.
 "use strict";
 const test = require("node:test");
 const assert = require("node:assert");
@@ -48,10 +48,10 @@ test("le solde FB vient du serveur, et l'encart disparaît s'il ne répond pas",
   assert.ok(!/fbInfo \|\| \{/.test(w), "pas de solde de repli inventé");
 });
 
-test("les deux actions FA gardent leur rangée, et la liquidité FB n'y est plus", () => {
+test("le dépôt FA/FB et le retrait FA gardent leur rangée, séparée du solde FB", () => {
   const w = blocWallet();
-  const i = w.indexOf("Les deux actions FA gardent LEUR rangée");
-  assert.ok(i > 0, "rangée des actions FA introuvable");
+  const i = w.indexOf("Le dépôt FA/FB et le retrait FA gardent leur rangée");
+  assert.ok(i > 0, "rangée des actions dépôt/retrait introuvable");
   // Bornée par le bouton suivant (l'historique) : sinon la tranche attrape les boutons d'après et
   // le compte devient faux pour une raison qui n'a rien à voir avec la rangée testée.
   const fin = w.indexOf('setModal("history")', i);

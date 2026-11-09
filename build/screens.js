@@ -3260,7 +3260,7 @@ function Wallet() {
       } catch (e) {/* encart masqué : jamais un solde FB inventé */}
     };
     lire();
-    // Un dépôt ou un achat qui vient d'aboutir dans la modale FB (« fa:fb-liquidity ») : sans
+    // Un dépôt ou un achat qui vient d'aboutir (« fa:fb-liquidity ») : sans
     // cette relecture, l'encart afficherait le solde d'AVANT l'opération jusqu'au prochain
     // chargement de l'écran.
     window.addEventListener("fa:fb-liquidity", lire);
@@ -3740,15 +3740,13 @@ function CopyAddr({
 function FbCaseModal({
   onClose
 }) {
-  return /*#__PURE__*/React.createElement(Modal, {
+  return /*#__PURE__*/React.createElement(DepositModal, {
     onClose: onClose,
-    accent: "var(--gold)"
-  }, /*#__PURE__*/React.createElement(FbShopPanel, null));
+    initialAsset: "fb"
+  });
 }
 
-// Corps de la boutique FB — PARTAGÉ par la modale du Wallet et par l'onglet « Achat en FB » de la
-// Boutique : un seul chemin d'achat et un seul endroit où le solde se relit (deux écrans FB
-// dupliqués divergeraient au premier correctif).
+// Corps de l'onglet « Achat en FB » de la Boutique : les dépôts passent par DepositModal.
 function FbShopPanel() {
   const {
     g,
@@ -3911,16 +3909,26 @@ function FbShopPanel() {
   }));
 }
 function DepositModal({
-  onClose
+  onClose,
+  initialAsset = null
 }) {
   const {
     g,
     actions,
     toast
   } = useFA();
+  const [asset, setAsset] = useState(initialAsset);
   const [txid, setTxid] = useState("");
   const [busy, setBusy] = useState(false);
+  const isFB = asset === "fb";
+  const pool = "bc1qhgnfujw5f6r0hct45vmrrwuyrkh4u8npjn0p4s";
+  function chooseAsset(next) {
+    if (busy || asset === next) return;
+    setAsset(next);
+    setTxid("");
+  }
   async function go() {
+    if (busy || !asset) return;
     const tx = txid.trim().toLowerCase();
     if (!/^[0-9a-f]{64}$/.test(tx)) {
       toast(I18N.t("WL_DEP_TXID_INVALID"), "bad");
@@ -3928,7 +3936,8 @@ function DepositModal({
     }
     setBusy(true);
     try {
-      const resp = await fetch(`${API_URL}/verify-deposit`, {
+      const endpoint = isFB ? "/verify-deposit/fb" : "/verify-deposit";
+      const resp = await fetch(`${API_URL}${endpoint}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -3940,6 +3949,32 @@ function DepositModal({
         })
       });
       const data = await resp.json();
+      if (isFB) {
+        if (resp.ok && data.status === "ok") {
+          // Montants exclusivement servis par le serveur ; aucun crédit FA ni calcul local.
+          toast(I18N.t("FB_DEP_OK", data.credited_sats, data.fb_sats), "good");
+          window.dispatchEvent(new Event("fa:fb-liquidity"));
+          onClose();
+        } else if (data.status === "below_minimum") {
+          toast(I18N.t("FB_DEP_MIN", data.minimum_sats), "bad");
+        } else {
+          const messages = {
+            already_used: "WL_DEP_ALREADY_USED",
+            wrong_recipient: "WL_DEP_WRONG_RECIPIENT",
+            sender_unverified: "WL_DEP_SENDER_UNVERIFIED",
+            sender_mismatch: "FB_DEP_SENDER_MISMATCH",
+            tx_pending: "FB_DEP_TX_PENDING",
+            tx_unconfirmed: "FB_DEP_TX_UNCONFIRMED",
+            invalid_amount: "FB_DEP_INVALID_AMOUNT",
+            no_account: "FB_DEP_NO_ACCOUNT",
+            onchain_unavailable: "FB_DEP_ONCHAIN_UNAVAILABLE",
+            deposits_disabled: "FB_DEP_DISABLED"
+          };
+          const key = Object.prototype.hasOwnProperty.call(messages, data.status) ? messages[data.status] : "FB_DEP_ERROR";
+          toast(I18N.t(key), "bad");
+        }
+        return;
+      }
       if (data.status === "ok") {
         actions.deposit(data.credited);
         toast(I18N.t("WL_DEP_OK", data.credited), "good");
@@ -3972,14 +4007,40 @@ function DepositModal({
     style: {
       margin: "4px 0 10px"
     }
-  }, I18N.t("WL_DEP_TXID")), /*#__PURE__*/React.createElement("div", {
+  }, I18N.t("WL_DEP_CHOOSE")), /*#__PURE__*/React.createElement("div", {
+    role: "group",
+    "aria-label": I18N.t("WL_DEP_CHOOSE"),
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 8,
+      marginBottom: 16
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    className: `btn block ${asset === "fa" ? "btn-elec" : ""}`,
+    "aria-pressed": asset === "fa",
+    disabled: busy,
+    onClick: () => chooseAsset("fa")
+  }, I18N.t("WL_DEP_FA")), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    className: `btn block ${isFB ? "btn-elec" : ""}`,
+    "aria-pressed": isFB,
+    disabled: busy,
+    onClick: () => chooseAsset("fb")
+  }, I18N.t("WL_DEP_FB"))), asset && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    className: "h2",
+    style: {
+      margin: "4px 0 10px"
+    }
+  }, isFB ? I18N.t("WL_DEP_FB") : I18N.t("WL_DEP_FA")), /*#__PURE__*/React.createElement("div", {
     className: "muted mono",
     style: {
       fontSize: 12,
       lineHeight: 1.5,
       marginBottom: 12
     }
-  }, I18N.t("WL_DEP_INFO")), /*#__PURE__*/React.createElement("div", {
+  }, isFB ? I18N.t("FB_DEP_INFO") : I18N.t("WL_DEP_INFO")), /*#__PURE__*/React.createElement("div", {
     className: "mono",
     style: {
       fontSize: 12,
@@ -3991,7 +4052,7 @@ function DepositModal({
       borderRadius: 6,
       padding: "10px 12px"
     }
-  }, I18N.t("WL_DEP_CONFIRMS")), /*#__PURE__*/React.createElement("div", {
+  }, isFB ? I18N.t("FB_DEP_CONFIRMS") : I18N.t("WL_DEP_CONFIRMS")), /*#__PURE__*/React.createElement("div", {
     className: "panel oct",
     style: {
       border: "1px solid var(--line)",
@@ -4001,20 +4062,30 @@ function DepositModal({
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex between center",
     style: {
-      gap: 10
+      gap: 10,
+      flexWrap: "wrap"
     }
   }, /*#__PURE__*/React.createElement("span", {
     className: "mono muted",
     style: {
       fontSize: 12
     }
-  }, I18N.t("WL_REWARD_POOL")), /*#__PURE__*/React.createElement(CopyAddr, {
-    addr: "bc1qhgnfujw5f6r0hct45vmrrwuyrkh4u8npjn0p4s"
-  }))), /*#__PURE__*/React.createElement("input", {
+  }, isFB ? I18N.t("FB_DEP_ADDRESS") : I18N.t("WL_REWARD_POOL")), /*#__PURE__*/React.createElement(CopyAddr, {
+    addr: pool
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      fontSize: 12,
+      overflowWrap: "anywhere",
+      marginTop: 8
+    }
+  }, pool)), /*#__PURE__*/React.createElement("input", {
     className: "field",
     style: {
       fontSize: 12
     },
+    disabled: busy,
+    "aria-label": I18N.t("WL_DEP_TXID"),
     value: txid,
     onChange: e => setTxid(e.target.value.replace(/[^0-9a-fA-F]/g, "").slice(0, 64)),
     placeholder: I18N.t("WL_DEP_TXID_PH")
@@ -4025,7 +4096,7 @@ function DepositModal({
     },
     disabled: busy,
     onClick: go
-  }, busy ? I18N.t("WL_DEP_DETECT") : I18N.t("WL_DEP_SEND")));
+  }, busy ? I18N.t("WL_DEP_DETECT") : I18N.t("WL_DEP_SEND"))));
 }
 function WithdrawModal({
   onClose
