@@ -12,6 +12,23 @@
   .container,
   .container.wide { max-width: 100%; padding: 18px 14px 104px; }
 
+  .container.minage { padding: 12px 12px 190px; }
+  /* Un parent transformé ferait dépendre le bandeau fixe de la hauteur du contenu. */
+  .view-anim.minage-view { animation: none; }
+  .minage-heading { margin-bottom: 8px; }
+  .minage-heading h1 { font-size: 22px; }
+  .minage-machine, .minage-chance, .minage-estimates { padding: 10px 12px; margin-bottom: 8px; }
+  .minage-machine-values { font-size: 18px; }
+  .minage h2 { font-size: 14px; margin-bottom: 5px; }
+  .minage-percent { font-size: 32px; margin: 4px 0; }
+  .minage-estimates dl > div { padding: 6px 0; }
+  .minage-estimates dt { font-size: 13px; }
+  .minage-estimates dd { font-size: 14px; }
+  /* La mention reste visible dès l'ouverture, même avec les bandeaux du shell.
+     Le bas du contenu réserve sa place ; elle ne masque pas le bouton manuel. */
+  .minage-note { position: fixed; z-index: 44; left: 10px; right: 10px;
+    bottom: calc(76px + env(safe-area-inset-bottom, 0px)); margin: 0; }
+
   /* ============================================================
      Coquille v152 — header une ligne, habillage 100 % CSS
      (dégradés + lueurs, plus aucun bitmap : rien à étirer).

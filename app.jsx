@@ -4,7 +4,7 @@
 const { useState, useEffect, useRef, useMemo, useCallback } = React;
 const D = window.FA_DATA, I18N = window.FA_I18N, LOOP = window.FA_LOOP;
 const { FA_Ctx, useFA, cx, fmt, Coin, Bar } = window;
-const { Team, Fosse, Arene, Forge, Wallet, Boutique, Perso, Options, ChatFab, RoomFab, Leaderboard, Quests, Academie, Campaign, Tour, LoginGate, TutorialGate, Link, Cinematique, Market, LockedBanner, Expeditions, Referral } = window;
+const { Team, Fosse, Arene, Forge, Wallet, Boutique, Perso, Options, ChatFab, RoomFab, Leaderboard, Quests, Academie, Campaign, Tour, LoginGate, TutorialGate, Link, Cinematique, Market, LockedBanner, Expeditions, Referral, Minage } = window;
 const SAVE_KEY = "fractal_arena_v1";
 // Stockage du bearer : delegue a FA_ACCOUNT (account-ui.js), qui applique la regle
 // decidee le 2026-07-27 — sessionStorage pour un compte UniSat (efface a la fermeture
@@ -3290,7 +3290,7 @@ function App() {
     );
   }
 
-  const VIEWS = { team: Team, fosse: Fosse, arene: Arene, campaign: Campaign, tour: Tour, expeditions: Expeditions, quests: Quests, academie: Academie, forge: Forge, market: Market, wallet: Wallet, boosts: Boutique, perso: Perso, leaderboard: Leaderboard, options: Options, lien: Link, parrainage: Referral };
+  const VIEWS = { team: Team, fosse: Fosse, arene: Arene, campaign: Campaign, tour: Tour, expeditions: Expeditions, quests: Quests, academie: Academie, forge: Forge, market: Market, wallet: Wallet, boosts: Boutique, perso: Perso, leaderboard: Leaderboard, minage: Minage, options: Options, lien: Link, parrainage: Referral };
 
   const View = VIEWS[g.view] || Team;
 
@@ -3325,7 +3325,7 @@ function App() {
         <Nav />
         {/* Guide de la première session : prochaine étape + élément surligné. */}
         {g.wallet && tutVu && <window.GuideBar />}
-        <div className="view-anim" key={g.view}><View /></div>
+        <div className={cx("view-anim", g.view === "minage" && "minage-view")} key={g.view}><View /></div>
       </div>
       {/* key={g.wallet} : un changement de compte (claim de liaison quand on est
           déjà connecté) remonte le ChatFab — sinon il garde l'historique de
@@ -3840,7 +3840,7 @@ function Nav() {
   }, [sheetOpen]);
   const tabs = [
     ["team", "NAV_TEAM"], ["fosse", "NAV_FOSSE"], ["arene", "NAV_ARENE"], ["campaign", "NAV_CAMPAIGN"], ["tour", "NAV_TOUR"], ["expeditions", "NAV_EXPEDITIONS"], ["quests", "NAV_QUESTS"], ["academie", "NAV_ACADEMIE"], ["forge", "NAV_FORGE"], ["market", "NAV_MARKET"],
-    ["wallet", "NAV_WALLET"], ["boosts", "NAV_BOOSTS"], ["perso", "NAV_PERSO"], ["leaderboard", "NAV_LEADERBOARD"], ["options", "NAV_OPTIONS"],
+    ["wallet", "NAV_WALLET"], ["boosts", "NAV_BOOSTS"], ["perso", "NAV_PERSO"], ["leaderboard", "NAV_LEADERBOARD"], ["minage", "NAV_MINAGE"], ["options", "NAV_OPTIONS"],
   ];
   const MAIN = ["team", "fosse", "arene", "campaign"];
   const more = tabs.filter(([k]) => !MAIN.includes(k));
@@ -3877,7 +3877,7 @@ function Nav() {
       <nav className="nav">
         {tabs.map(([k, key]) => (
           <button key={k} className={cx("nav-tab", g.view === k && "on", bloque(k) && "locked")} onClick={() => go(k)} aria-disabled={bloque(k) ? "true" : undefined} title={bloque(k) ? lock.label : undefined}>
-            <img className="nav-icon" src={`assets/nav-icons/${k}.png?v=216`} alt="" aria-hidden="true" draggable="false" />
+            <img className="nav-icon" src={k === "minage" ? window.FA_ASSET_URL("assets/nav-icons/minage.svg") : `assets/nav-icons/${k}.png?v=216`} alt="" aria-hidden="true" draggable="false" />
             <span className="nav-label">{I18N.t(key)}</span>
             {k === "arene" && areneBadge > 0 && (
               <span className="nav-badge" style={{ marginLeft: 4, background: "var(--alert)", color: "#fff", borderRadius: 9, fontSize: 10, padding: "0 5px", fontWeight: 700 }}>
@@ -3931,7 +3931,7 @@ function Nav() {
             <div className="fa-sheet-grid">
               {more.map(([k, key]) => (
                 <button key={k} className={cx("fa-sheet-item", g.view === k && "on", bloque(k) && "locked")} onClick={() => go(k)} aria-disabled={bloque(k) ? "true" : undefined}>
-                  <img src={`assets/nav-icons/${k}.png?v=216`} alt="" aria-hidden="true" draggable="false" />
+                  <img src={k === "minage" ? window.FA_ASSET_URL("assets/nav-icons/minage.svg") : `assets/nav-icons/${k}.png?v=216`} alt="" aria-hidden="true" draggable="false" />
                   <span>{I18N.t(key)}</span>
                   {k === "expeditions" && expReady > 0 && <span className="fa-sheet-dot" aria-hidden="true" />}
                 </button>
