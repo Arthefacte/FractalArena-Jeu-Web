@@ -147,26 +147,32 @@ function screen(compiled, raw, lang) {
 for (const file of ["minage.jsx", "build/minage.js"]) {
   const compiled = Babel.transform(extract(read(file)), { presets: ["react"], sourceType: "script" }).code;
 
-  test(`${file} : carte reconnue, estimation d'usine et hypothèse explicite sans réseau`, () => {
+  test(`${file} : carte reconnue, estimation d'usine en solo, hypothèse explicite sans réseau`, () => {
     for (const lang of ["FR", "EN", "ZH"]) {
       const h = screen(compiled, "NVIDIA GeForce RTX 4070", lang);
       const tree = h.render();
       assert.match(textOf(tree), /RTX 4070/);
       assert.match(textOf(tree), /6 GH\/s/);
-      assert.ok(textOf(tree).includes(h.i18n.t("minage.reseau", M.formaterNombre(1000, lang))));
+      assert.ok(textOf(tree).includes(h.i18n.t("minage.solo")));
+      assert.ok(!textOf(tree).includes(h.i18n.t("minage.reseau", "")));
       assert.ok(textOf(tree).includes(h.i18n.t("minage.note")));
       const blocks = nodes(tree);
       const order = ["minage-machine", "minage-chance", "minage-estimates", "minage-network", "minage-note"]
         .map((name) => blocks.findIndex((n) => n.props.className === name));
       assert.ok(order.every((position, i) => position >= 0 && (i === 0 || position > order[i - 1])));
       const meter = blocks.find((n) => n.props.role === "meter");
-      const part = M.partReseau(6, M.COMPTES_FALLBACK * M.GH_PAR_COMPTE);
+      // Solo : la part vaut 1, la jauge est pleine et l'estimation ne dépend plus du hashrate.
+      const part = 1;
       assert.equal(meter.props["aria-valuetext"], M.formaterProba(part, lang));
-      assert.equal(meter.props["aria-valuenow"], part * 100);
-      assert.equal(nodes(meter).find((n) => n.type === "span").props.style.minWidth, 2);
+      assert.equal(meter.props["aria-valuenow"], 100);
+      assert.equal(nodes(meter).find((n) => n.type === "span").props.style.width, "100%");
       assert.ok(!/undefined|NaN|minage\./.test(textOf(tree)));
       assert.ok(textOf(tree).includes(M.formaterFb(M.fbParJour(part), lang)));
       assert.ok(textOf(tree).includes(M.formaterDuree(M.tempsMoyenMs(part), lang)));
+      // Deux cartes de puissance différente affichent la même espérance : c'est le lot d'un réseau solo.
+      const autre = screen(compiled, "NVIDIA GeForce RTX 4090", lang);
+      assert.match(textOf(autre.render()), /RTX 4090/);
+      assert.ok(textOf(autre.render()).includes(M.formaterFb(M.fbParJour(1), lang)));
       assert.ok(textOf(tree).includes(h.i18n.t("minage.table")));
       assert.ok(!blocks.some((n) => ["input", "button", "select", "a"].includes(n.type)));
       assert.deepEqual(h.render(), tree);
