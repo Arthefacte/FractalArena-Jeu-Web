@@ -1,46 +1,54 @@
-# Rapport — Dépôts FA et FB explicites dans le Portefeuille
+# Rapport — Minage par détection seule, version 463
 
-Branche : `Arthefacte/depot-fb-ui` — cible : `main`, PR à ouvrir sans fusion.
+Branche : `Arthefacte/minage-detect` ; cible de livraison : PR vers `main`, sans fusion.
 
-## Résultat pour le joueur
+## Résultat
 
-Le dépôt général propose deux portes : « FA · BRC-20 FRACTALARENA » et « FB · natif (sats) ». Aucun formulaire ni adresse n'est affiché avant le choix. Une seule porte affiche ensuite ses consignes, l'adresse complète du pool et son champ TXID. Changer d'actif vide le TXID ; pendant la vérification, le choix et la saisie sont verrouillés.
+La saisie manuelle est supprimée : états, curseur, bornes, boutons, traductions, styles et tests du curseur.
 
-La porte FB indique l'envoi depuis le wallet lié, le minimum du brief (100 000 sats = 0,001 FB) et les 3 confirmations requises. Elle appelle `POST /verify-deposit-fb` avec `{ wallet: g.wallet, txid }` et le jeton Bearer. Le toast de succès affiche directement `credited_sats` et `fb_sats` renvoyés par le serveur, sans conversion, addition locale ni crédit FA.
+Avec une carte reconnue, le joueur voit son modèle, le hashrate de la table, la jauge, ses probabilités, les FB attendus par jour et le temps moyen. Les 43 valeurs de la table sont conservées ; une phrase documente leur convention d'usine (clocks stock, médiane des relevés publiés pour SHA-256d, sans underclock ni overclock).
 
-Les douze statuts demandés sont couverts : `ok`, `already_used`, `wrong_recipient`, `sender_unverified`, `sender_mismatch`, `tx_pending`, `tx_unconfirmed`, `below_minimum`, `invalid_amount`, `no_account`, `onchain_unavailable`, `deposits_disabled`. Le minimum d'un refus vient de `minimum_sats`. Les erreurs inconnues ont un message traduit, jamais le code brut.
+Sur téléphone ou dès que le renderer est absent, masqué ou non reconnu, l'écran affiche « Pas de carte graphique détectée » et le texte demandant d'ouvrir cet écran sur un ordinateur équipé d'une carte dédiée. Cet état ne contient ni chiffre, ni jauge, ni estimation, ni action. Les messages existent en FR, EN et ZH.
 
-Le bouton « Déposer du FB » de l'encart Portefeuille ouvre désormais `DepositModal` avec FB sélectionné, via `FbCaseModal`. Le bouton général s'appelle « Dépôt FA / FB ». La Boutique conserve son renvoi vers le Portefeuille et ne contient aucun formulaire de dépôt.
+Le titre « Minage », l'entrée dans Plus et la mention de simulation sont conservés. Aucun backend ni appel réseau ajouté.
 
-La porte FA conserve `/verify-deposit`, le payload authentifié, les consignes, `actions.deposit(data.credited)` et les messages de succès/refus existants.
+## Calibrage et formatage
 
-## Rafraîchissement confirmé avec l'utilisateur
+- `GH_PAR_COMPTE` : **300 → 20 GH/s**.
+- `COMPTES_FALLBACK` : **1 000** autres mineurs, toujours une hypothèse fixe.
+- Constantes conservées : `BLOC_MS = 30000`, `BLOCS_PAR_JOUR = 2880`, `REWARD_FB = 6.25`.
+- Probabilités arrondies à deux chiffres significatifs, sans seuil « < 0,1 % ». Pour respecter les exemples du brief, aucun zéro final n'est ajouté au-delà du millième sous 0,01 % : `0,030 %`, `0,006 %`, `0,002 %` ; une seconde décimale significative reste affichée si nécessaire (`0,0061 %`). Zéro, y compris `-0`, donne `0 %`.
 
-Contrairement au brief initial, Wallet écoutait déjà `fa:fb-liquidity` pour relire `/fb`. Après accord explicite de l'utilisateur, ce listener est réutilisé tel quel. Le succès FB émet l'événement une fois. Aucun nouveau mécanisme de rafraîchissement n'est ajouté.
+| Carte | Part par bloc | Affichage | FB attendus/jour | Temps moyen |
+| --- | --- | --- | --- | --- |
+| 6 GH/s | 0,00029991002699190244 | 0,030 % | 5,398380485854244 | 1,1577546296296297 jour, affiché « 1 jour » |
+| 12 GH/s | 0,0005996402158704777 | 0,060 % | 10,793523885668597 | 0,579050925925926 jour, affiché « 13 h 53 » |
+
+Doubler le hashrate double approximativement la part et les FB attendus et divise l'attente moyenne par deux ; la puissance du joueur est incluse au dénominateur.
 
 ## Fichiers
 
-- `screens.jsx` : choix de l'actif, route FB, messages, événement et accès direct depuis l'encart FB.
-- `i18n.js` : libellés et messages FR/EN/ZH.
-- `test/deposit-modal.test.js` : 19 tests exécutant les vrais composants extraits de la source et du build, transpilés avec Babel puis évalués dans `vm`.
-- `test/wallet-fb-card.test.js` : description de la rangée dépôt/retrait adaptée au dépôt FA/FB.
-- `version.json`, `data.js`, tous les `?v=` de `index.html`, `manifest.webmanifest`, `sw-policy.js`, `test/account-wiring.test.js` : version 460 → 461.
-- `build/screens.js` et `build/sources.json` : régénérés par `npm run build`.
+- `minage.jsx` : détection seule, branche d'affichage dédiée quand aucune carte n'est reconnue.
+- `minage-ui.js` : calibrage à 20 GH/s et formatage des petites probabilités.
+- `gpu-hashrate.js` : convention d'usine et suppression des commentaires du mode manuel.
+- `i18n.js` : messages FR/EN/ZH et retrait des anciens libellés.
+- `styles.css`, `mobile.css` : présentation du message et retrait des styles manuels.
+- `test/minage-ui.test.js` : calculs, formatage et composants extraits de la source et du build, transpilés avec Babel puis exécutés dans `vm`.
+- `test/gpu-hashrate.test.js` : Apple GPU, Adreno (TM) 740 et Mali-G78 inconnus, sans exception.
+- `version.json`, `data.js`, tous les `?v=` de `index.html`, `manifest.webmanifest`, `sw-policy.js`, littéraux de `test/account-wiring.test.js` : version **462 → 463**.
+- `build/minage.js`, `build/sources.json` : régénérés.
 - `RAPPORT.md` : présent rapport.
 
-Les autres fichiers de build et `asset-hashes.js` sont régénérés à contenu identique. Les fichiers modifiés sont en CRLF. Les changements préexistants de `BRIEF.md` et le dossier non suivi `mcp/` restent hors commit.
+Les autres fichiers de build et `asset-hashes.js` sont régénérés à contenu identique. Les fichiers livrés sont en CRLF. Le BRIEF.md modifié avant intervention et le dossier non suivi mcp/ restent hors commit.
 
 ## Vérifications
 
-- `npm ci --no-audit --no-fund` : réussi, aucune dépendance modifiée.
-- `npm run build` : réussi, 29 écrans transpilés et 17 empreintes d'assets produites.
-- Tests ciblés (`deposit-modal`, `wallet-fb-card`, `boutique-depot`, `account-wiring`) : **51 réussis, 0 échec**.
-- `npm test` avant commit : **1 446 tests, 1 440 réussis, 6 ignorés, 0 échec** (19 063,8016 ms).
-- Les 6 tests ignorés sont les contrôles existants dépendant des sources du dépôt serveur (arène et forge), absentes de ce dépôt web.
-- Vérifications du nouveau harnais : choix exclusif, adresse et consignes propres à l'actif en trois langues ; routes, Bearer et wallet ; montants serveur exacts ; chaque statut FB dans les trois langues ; anciens traitements FA ; erreurs réseau/HTTP/inconnues ; TXID invalide ; changement d'actif et verrouillage pendant l'envoi ; accès depuis l'encart FB ; relecture authentifiée de `/fb` sur succès et retrait du listener au démontage.
-- `node tools/asset-hashes.mjs --check` : réussi après le build, 17 modèles à jour.
-- `git diff --check` : réussi.
+- `npm ci --no-audit --no-fund` : réussi, 23 paquets installés, aucune dépendance modifiée.
+- `npm run build` : réussi, **30 écrans** transpilés et **17 empreintes** d'assets produites.
+- Tests ciblés minage, GPU et account-wiring : **39 réussis, 0 échec**.
+- `npm test` sur les fichiers finaux en CRLF : **1 465 tests, 1 459 réussis, 6 ignorés, 0 échec**, durée **8 116,0238 ms**.
+- Les 6 tests ignorés dépendent des sources du dépôt serveur (arène et forge), absentes de ce dépôt web.
+- Tests de rendu sur source et build en FR/EN/ZH : carte reconnue ; Apple GPU, Adreno, Mali ; renderer nul ou vide ; modèle inconnu ; variante absente de la table. Aucun chiffre ni contrôle dans l'état sans carte ; mention de simulation conservée ; détection unique entre deux rendus.
+- `git diff --check` : réussi ; aucune référence au mode manuel ne subsiste dans le code minage.
 
-## Limites
-
-Les requêtes des tests sont simulées. Aucun transfert réel, crédit en production ou appel authentifié au serveur n'a été effectué. La récupération effective du dépôt de 0,5 FB signalé dans le brief n'a donc pas été vérifiée. Le minimum initial affiché reprend la valeur du brief ; un refus affiche le minimum retourné par le serveur. Le rendu a été contrôlé par le harnais de composants, sans inspection visuelle dans un navigateur.
+Le rendu est contrôlé par le harnais de composants, sans inspection visuelle dans un navigateur ni mesure sur du matériel physique.

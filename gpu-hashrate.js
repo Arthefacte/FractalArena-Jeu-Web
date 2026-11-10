@@ -12,7 +12,7 @@
       const raw = info && gl.getParameter(info.UNMASKED_RENDERER_WEBGL);
       return typeof raw === "string" && raw.trim() ? raw : null;
     } catch (e) {
-      return null; // Renderer masqué ou WebGL refusé : la saisie manuelle reste accessible.
+      return null; // Renderer masqué ou WebGL refusé : aucune estimation disponible.
     } finally {
       // Ne pas garder un contexte GPU juste pour lire son nom.
       try { const ext = gl && gl.getExtension("WEBGL_lose_context"); if (ext) ext.loseContext(); } catch (e) {}
@@ -35,8 +35,7 @@
     return name;
   }
 
-  // Table SHA-256d du brief, en GH/s. Ordres de grandeur de simulation,
-  // jamais une mesure de la machine. Modèles les plus spécifiques en premier.
+  // Hashrate d'usine en GH/s : clocks stock, médiane des relevés publiés pour SHA-256d — ni underclock, ni overclock.
   const GPU_TABLE = [
     { nom: "RTX 5090", gh: 22, match: /^RTX 5090$/i },
     { nom: "RTX 5080", gh: 14, match: /^RTX 5080$/i },
@@ -80,7 +79,7 @@
     { nom: "M3", gh: 1.8, match: /^M3$/i },
     { nom: "M3 Pro", gh: 2.6, match: /^M3 Pro$/i },
     { nom: "M3 Max", gh: 4, match: /^M3 Max$/i },
-    // Libellé traduit par l'écran ; une carte totalement inconnue reste manuelle.
+    // Libellé traduit par l'écran.
     { nom: "Intel", gh: 0.4, match: /^Intel(?:\s+(?:HD|UHD|Iris)\b.*|\s+Graphics)?$/i },
   ];
 
