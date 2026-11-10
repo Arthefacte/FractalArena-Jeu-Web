@@ -64,7 +64,7 @@ function Minage() {
     className: "mono"
   }, MU.formaterGh(monGh, lang))), /*#__PURE__*/React.createElement("p", {
     className: "minage-caption"
-  }, I18N.t("minage.table"))), /*#__PURE__*/React.createElement("section", {
+  }, I18N.t(carte.mesure ? "minage.tableMesure" : "minage.tableEstime"))), /*#__PURE__*/React.createElement("section", {
     className: "minage-chance",
     "aria-labelledby": "minage-chance-title"
   }, /*#__PURE__*/React.createElement("h2", {

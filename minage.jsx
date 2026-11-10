@@ -42,7 +42,7 @@ function Minage() {
             <strong>{nom}</strong>
             <strong className="mono">{MU.formaterGh(monGh, lang)}</strong>
           </div>
-          <p className="minage-caption">{I18N.t("minage.table")}</p>
+          <p className="minage-caption">{I18N.t(carte.mesure ? "minage.tableMesure" : "minage.tableEstime")}</p>
         </section>
 
         <section className="minage-chance" aria-labelledby="minage-chance-title">

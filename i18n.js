@@ -72,6 +72,8 @@
     "minage.pcRequis": { FR: "Le minage n’est pas possible sur un téléphone : il faut une carte graphique dédiée, donc un PC. Ouvre cet écran depuis un ordinateur pour connaître sa puissance de calcul.", EN: "Mining is not possible on a phone: it requires a dedicated graphics card, so you need a PC. Open this screen on a computer to see its hashrate.", ZH: "手机无法挖矿：挖矿需要独立显卡，因此需要一台电脑。请在电脑上打开此页面，查看其算力。" },
     "minage.intel": { FR: "Intel intégré / inconnu", EN: "Intel integrated / unknown", ZH: "Intel 集成显卡 / 未知型号" },
     "minage.table": { FR: "Puissance de calcul SHA-256d de cette carte · valeur d’usine", EN: "SHA-256d hashrate of this card · factory value", ZH: "该显卡的 SHA-256d 算力 · 出厂值" },
+    "minage.tableMesure": { FR: "Débit mesuré (benchmark SHA-256, clocks stock)", EN: "Measured rate (SHA-256 benchmark, stock clocks)", ZH: "实测算力（SHA-256 基准，默频）" },
+    "minage.tableEstime": { FR: "Débit estimé, faute de mesure sur ce modèle", EN: "Estimated rate, no benchmark for this model", ZH: "估算算力：该型号暂无实测数据" },
     "minage.chanceBloc": { FR: "Ta chance de toucher un bloc", EN: "Your chance of finding a block", ZH: "你找到区块的概率" },
     "minage.parBloc": { FR: "Estimation par bloc", EN: "Estimate per block", ZH: "每个区块的估算概率" },
     "minage.estimations": { FR: "Tes estimations", EN: "Your estimates", ZH: "你的估算结果" },
