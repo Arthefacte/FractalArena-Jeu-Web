@@ -44,7 +44,8 @@ const {
   Market,
   LockedBanner,
   Expeditions,
-  Referral
+  Referral,
+  Minage
 } = window;
 const SAVE_KEY = "fractal_arena_v1";
 // Stockage du bearer : delegue a FA_ACCOUNT (account-ui.js), qui applique la regle
@@ -5765,6 +5766,7 @@ function App() {
     boosts: Boutique,
     perso: Perso,
     leaderboard: Leaderboard,
+    minage: Minage,
     options: Options,
     lien: Link,
     parrainage: Referral
@@ -5783,7 +5785,7 @@ function App() {
     prompt: pwaPrompt,
     onInstalled: () => setPwaPrompt(null)
   }), /*#__PURE__*/React.createElement(PoolsFold, null, /*#__PURE__*/React.createElement(BuybackTicker, null), /*#__PURE__*/React.createElement(window.QuizTicker, null), /*#__PURE__*/React.createElement(window.DexBuysTicker, null)), /*#__PURE__*/React.createElement(Nav, null), g.wallet && tutVu && /*#__PURE__*/React.createElement(window.GuideBar, null), /*#__PURE__*/React.createElement("div", {
-    className: "view-anim",
+    className: cx("view-anim", g.view === "minage" && "minage-view"),
     key: g.view
   }, /*#__PURE__*/React.createElement(View, null))), /*#__PURE__*/React.createElement(ChatFab, {
     key: g.wallet
@@ -6454,7 +6456,7 @@ function Nav() {
       vivant = false;
     };
   }, [sheetOpen]);
-  const tabs = [["team", "NAV_TEAM"], ["fosse", "NAV_FOSSE"], ["arene", "NAV_ARENE"], ["campaign", "NAV_CAMPAIGN"], ["tour", "NAV_TOUR"], ["expeditions", "NAV_EXPEDITIONS"], ["quests", "NAV_QUESTS"], ["academie", "NAV_ACADEMIE"], ["forge", "NAV_FORGE"], ["market", "NAV_MARKET"], ["wallet", "NAV_WALLET"], ["boosts", "NAV_BOOSTS"], ["perso", "NAV_PERSO"], ["leaderboard", "NAV_LEADERBOARD"], ["options", "NAV_OPTIONS"]];
+  const tabs = [["team", "NAV_TEAM"], ["fosse", "NAV_FOSSE"], ["arene", "NAV_ARENE"], ["campaign", "NAV_CAMPAIGN"], ["tour", "NAV_TOUR"], ["expeditions", "NAV_EXPEDITIONS"], ["quests", "NAV_QUESTS"], ["academie", "NAV_ACADEMIE"], ["forge", "NAV_FORGE"], ["market", "NAV_MARKET"], ["wallet", "NAV_WALLET"], ["boosts", "NAV_BOOSTS"], ["perso", "NAV_PERSO"], ["leaderboard", "NAV_LEADERBOARD"], ["minage", "NAV_MINAGE"], ["options", "NAV_OPTIONS"]];
   const MAIN = ["team", "fosse", "arene", "campaign"];
   const more = tabs.filter(([k]) => !MAIN.includes(k));
   // Rail : les onglets hors de l'étape en cours sont peints comme fermés (et le
@@ -6499,7 +6501,7 @@ function Nav() {
     title: bloque(k) ? lock.label : undefined
   }, /*#__PURE__*/React.createElement("img", {
     className: "nav-icon",
-    src: `assets/nav-icons/${k}.png?v=216`,
+    src: k === "minage" ? window.FA_ASSET_URL("assets/nav-icons/minage.svg") : `assets/nav-icons/${k}.png?v=216`,
     alt: "",
     "aria-hidden": "true",
     draggable: "false"
@@ -6579,7 +6581,7 @@ function Nav() {
     onClick: () => go(k),
     "aria-disabled": bloque(k) ? "true" : undefined
   }, /*#__PURE__*/React.createElement("img", {
-    src: `assets/nav-icons/${k}.png?v=216`,
+    src: k === "minage" ? window.FA_ASSET_URL("assets/nav-icons/minage.svg") : `assets/nav-icons/${k}.png?v=216`,
     alt: "",
     "aria-hidden": "true",
     draggable: "false"

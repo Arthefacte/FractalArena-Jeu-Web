@@ -63,6 +63,41 @@
     ACADEMY_EXAM_WAIT: { FR: "Encore %d s avant la validation suivante.", EN: "%d s before the next answer.", ZH: "%d 秒后可继续作答。" },
     NAV_CAMPAIGN: { FR: "Campagne", EN: "Campaign", ZH: "战役" },
     NAV_MORE: { FR: "Plus", EN: "More", ZH: "更多" },
+    NAV_MINAGE: { FR: "Minage", EN: "Mining", ZH: "挖矿" },
+    // ---- Minage : hypothèses de simulation, aucune récompense versée ----
+    "minage.titre": { FR: "Minage", EN: "Mining", ZH: "挖矿" },
+    "minage.simulateur": { FR: "Simulateur", EN: "Simulator", ZH: "模拟器" },
+    "minage.machine": { FR: "Ta machine", EN: "Your machine", ZH: "你的设备" },
+    "minage.inconnue": { FR: "Carte non reconnue", EN: "Unrecognized graphics card", ZH: "未识别的显卡" },
+    "minage.intel": { FR: "Intel intégré / inconnu", EN: "Intel integrated / unknown", ZH: "Intel 集成显卡 / 未知型号" },
+    "minage.table": { FR: "Puissance de calcul estimée · SHA-256d", EN: "Estimated hashrate · SHA-256d", ZH: "估算算力 · SHA-256d" },
+    "minage.manuelle": { FR: "Estimation manuelle", EN: "Manual estimate", ZH: "手动估算" },
+    "minage.curseur": { FR: "Puissance de calcul manuelle", EN: "Manual hashrate", ZH: "手动设置算力" },
+    "minage.chanceBloc": { FR: "Ta chance de toucher un bloc", EN: "Your chance of finding a block", ZH: "你找到区块的概率" },
+    "minage.parBloc": { FR: "Estimation par bloc", EN: "Estimate per block", ZH: "每个区块的估算概率" },
+    "minage.estimations": { FR: "Tes estimations", EN: "Your estimates", ZH: "你的估算结果" },
+    "minage.chanceJour": { FR: "Chance sur 24 h", EN: "Chance over 24 h", ZH: "24 小时内的概率" },
+    "minage.fbJour": { FR: "FB attendus par jour", EN: "Expected FB per day", ZH: "每日预期 FB" },
+    "minage.temps": { FR: "Temps moyen avant ton premier bloc", EN: "Average time to your first block", ZH: "找到首个区块的平均时间" },
+    "minage.reseau": { FR: "Hypothèse — réseau simulé : %s mineurs de référence", EN: "Assumption — simulated network: %s reference miners", ZH: "假设 — 模拟网络：%s 个参考矿工" },
+    "minage.total": { FR: "%s au total, avec ta machine · ta part : %s", EN: "%s total, including your machine · your share: %s", ZH: "总算力 %s（含你的设备）· 你的占比：%s" },
+    "minage.note": { FR: "Simulation : ce jeu ne mine pas la chaîne Fractal et ne verse aucun FB.", EN: "Simulation: this game does not mine the Fractal chain or pay out any FB.", ZH: "仅为模拟：本游戏不在 Fractal 链上挖矿，也不发放任何 FB。" },
+    "minage.carteAbsente": { FR: "Ma carte n’est pas dans la liste", EN: "My card is not in the list", ZH: "列表中没有我的显卡" },
+    "minage.revenir": { FR: "Revenir à la carte détectée", EN: "Use the detected card", ZH: "使用已检测到的显卡" },
+    "minage.indisponible": { FR: "Indisponible", EN: "Unavailable", ZH: "不可用" },
+    "minage.locale": { FR: "fr-FR", EN: "en-US", ZH: "zh-CN" },
+    "minage.pourcentage": { FR: "%s %", EN: "%s%", ZH: "%s%" },
+    "minage.probaPetite": { FR: "< 0,1 %", EN: "< 0.1%", ZH: "< 0.1%" },
+    "minage.gh": { FR: "%s GH/s", EN: "%s GH/s", ZH: "%s GH/s" },
+    "minage.fb": { FR: "%s FB", EN: "%s FB", ZH: "%s FB" },
+    "minage.fbPetit": { FR: "< 0,001 FB", EN: "< 0.001 FB", ZH: "< 0.001 FB" },
+    "minage.an": { FR: "%s an", EN: "%s year", ZH: "%s 年" },
+    "minage.ans": { FR: "%s ans", EN: "%s years", ZH: "%s 年" },
+    "minage.jour": { FR: "%s jour", EN: "%s day", ZH: "%s 天" },
+    "minage.jours": { FR: "%s jours", EN: "%s days", ZH: "%s 天" },
+    "minage.heuresMinutes": { FR: "%s h %s", EN: "%s h %s min", ZH: "%s 小时 %s 分钟" },
+    "minage.minutes": { FR: "%s min", EN: "%s min", ZH: "%s 分钟" },
+    "minage.secondes": { FR: "%s s", EN: "%s s", ZH: "%s 秒" },
     LEGAL_HUB: { FR: "Informations légales", EN: "Legal information", ZH: "法律信息" },
     LEGAL_NOTICE: { FR: "Mentions légales", EN: "Legal notice", ZH: "法律信息" },
     LEGAL_PRIVACY: { FR: "Confidentialité", EN: "Privacy", ZH: "隐私政策" },
@@ -2213,5 +2248,7 @@
     return t("ERR_GENERIC");
   }
 
-  window.FA_I18N = { t, setLang, getLang, detectLang, dur, T, localizeServerError, LP_TIER_MIN };
+  const api = { t, setLang, getLang, detectLang, dur, T, localizeServerError, LP_TIER_MIN };
+  if (typeof module !== "undefined" && module.exports) module.exports = api;
+  if (typeof window !== "undefined") window.FA_I18N = api;
 })();
