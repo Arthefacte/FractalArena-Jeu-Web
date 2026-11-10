@@ -2,9 +2,6 @@
 (function () {
 /* Minage : simulation locale uniquement, sans requête ni récompense. */
 const {
-  useState
-} = React;
-const {
   useFA
 } = window;
 const I18N = window.FA_I18N;
@@ -15,14 +12,39 @@ function Minage() {
     g
   } = useFA();
   const lang = g.lang;
-  const [carte] = useState(() => GPU.resolveGpu(GPU.detectGpu()));
+  // Lecture unique au montage : le nom du renderer, puis sa ligne de table.
+  // Aucune mesure de charge, aucune requête : c'est la puissance d'usage courant.
+  const [carte] = React.useState(() => GPU.resolveGpu(GPU.detectGpu()));
   const monGh = carte.gh;
-  // Le classement n'expose que top/you, aucun total : ces 1 000 autres mineurs
-  // sont TOUJOURS une hypothèse fixe, jamais un nombre de joueurs mesuré.
-  const mineurs = MU.COMPTES_FALLBACK;
-  const autresGh = mineurs * MU.GH_PAR_COMPTE;
-  const part = carte.connu ? MU.partReseau(monGh, autresGh) : null;
-  const chance = carte.connu ? MU.formaterProba(MU.probaParBloc(part), lang) : null;
+  // Réseau Fractal RÉEL, lu en direct (mempool.fractalbitcoin.io) : difficulté du
+  // dernier bloc, cible de bloc de 10 min et récompense de tête. Aucune donnée inventée.
+  const [reseau, setReseau] = React.useState({
+    etat: "chargement",
+    difficulte: null,
+    reward: null,
+    hauteur: null
+  });
+  React.useEffect(() => {
+    let vivant = true;
+    MU.lireReseau(typeof window !== "undefined" && window.fetch || (typeof fetch !== "undefined" ? fetch : null)).then(r => {
+      if (vivant) setReseau(r);
+    }).catch(() => {
+      if (vivant) setReseau({
+        etat: "erreur",
+        difficulte: null,
+        reward: null,
+        hauteur: null
+      });
+    });
+    return () => {
+      vivant = false;
+    };
+  }, []);
+  const reseauH = MU.hashrateReseau(reseau.difficulte, MU.BLOC_MS / 1000);
+  const temps = carte.connu && reseauH ? MU.tempsMoyenReseau(monGh, reseauH, MU.BLOC_MS / 1000) : null;
+  const fbJour = temps ? (reseau.reward || 0) / 1e8 * 86400000 / temps : null;
+  // Chance sur un bloc : monGh / réseau. Elle est minuscule, donc affichée en notation exacte.
+  const chance = temps ? MU.formaterProba(monGh * 1e9 / reseauH, lang) : null;
   const nom = carte.nom === "Intel" ? I18N.t("minage.intel") : carte.nom;
   return /*#__PURE__*/React.createElement("main", {
     className: "container minage",
@@ -42,25 +64,24 @@ function Minage() {
     className: "mono"
   }, MU.formaterGh(monGh, lang))), /*#__PURE__*/React.createElement("p", {
     className: "minage-caption"
-  }, I18N.t("minage.table"))), /*#__PURE__*/React.createElement("section", {
+  }, I18N.t(carte.mesure ? "minage.tableMesure" : "minage.tableEstime"))), /*#__PURE__*/React.createElement("section", {
     className: "minage-chance",
     "aria-labelledby": "minage-chance-title"
   }, /*#__PURE__*/React.createElement("h2", {
     id: "minage-chance-title"
   }, I18N.t("minage.chanceBloc")), /*#__PURE__*/React.createElement("strong", {
     className: "minage-percent mono"
-  }, chance), /*#__PURE__*/React.createElement("div", {
+  }, chance || (reseau.etat === "erreur" ? I18N.t("minage.reseauErreur") : "…")), /*#__PURE__*/React.createElement("div", {
     className: "minage-gauge",
     role: "meter",
     "aria-labelledby": "minage-chance-title",
     "aria-valuemin": 0,
     "aria-valuemax": 100,
-    "aria-valuenow": part * 100,
-    "aria-valuetext": chance
+    "aria-valuenow": Math.min(100, temps ? monGh * 1e9 / reseauH * 100 : 0),
+    "aria-valuetext": chance || I18N.t("minage.reseauErreur")
   }, /*#__PURE__*/React.createElement("span", {
     style: {
-      width: `${part * 100}%`,
-      minWidth: part > 0 ? 2 : 0
+      width: "2px"
     }
   })), /*#__PURE__*/React.createElement("p", {
     className: "minage-caption"
@@ -69,9 +90,9 @@ function Minage() {
     "aria-labelledby": "minage-estimates-title"
   }, /*#__PURE__*/React.createElement("h2", {
     id: "minage-estimates-title"
-  }, I18N.t("minage.estimations")), /*#__PURE__*/React.createElement("dl", null, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("dt", null, I18N.t("minage.chanceJour")), /*#__PURE__*/React.createElement("dd", null, MU.formaterProba(MU.probaJour(part), lang))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("dt", null, I18N.t("minage.fbJour")), /*#__PURE__*/React.createElement("dd", null, MU.formaterFb(MU.fbParJour(part), lang))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("dt", null, I18N.t("minage.temps")), /*#__PURE__*/React.createElement("dd", null, MU.formaterDuree(MU.tempsMoyenMs(part), lang) || I18N.t("minage.indisponible"))))), /*#__PURE__*/React.createElement("p", {
+  }, I18N.t("minage.estimations")), /*#__PURE__*/React.createElement("dl", null, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("dt", null, I18N.t("minage.temps")), /*#__PURE__*/React.createElement("dd", null, MU.formaterDuree(temps, lang) || I18N.t("minage.indisponible"))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("dt", null, I18N.t("minage.fbJour")), /*#__PURE__*/React.createElement("dd", null, MU.formaterFb(fbJour, lang) || I18N.t("minage.indisponible"))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("dt", null, I18N.t("minage.reward")), /*#__PURE__*/React.createElement("dd", null, reseau.reward ? MU.formaterFb(reseau.reward / 1e8, lang) || "6,25 FB" : I18N.t("minage.indisponible"))))), /*#__PURE__*/React.createElement("p", {
     className: "minage-network"
-  }, I18N.t("minage.reseau", MU.formaterNombre(mineurs, lang)), /*#__PURE__*/React.createElement("br", null), I18N.t("minage.total", MU.formaterGh(autresGh + monGh, lang), chance))) : /*#__PURE__*/React.createElement("section", {
+  }, reseau.etat === "ok" ? /*#__PURE__*/React.createElement(React.Fragment, null, I18N.t("minage.reseauReel", reseau.hauteur ? MU.formaterNombre(reseau.hauteur, lang) : "—"), /*#__PURE__*/React.createElement("br", null), I18N.t("minage.reseauPuissance", MU.formaterHashrate(reseauH, lang))) : reseau.etat === "erreur" ? I18N.t("minage.reseauErreur") : I18N.t("minage.reseauChargement"))) : /*#__PURE__*/React.createElement("section", {
     className: "minage-unavailable",
     "aria-labelledby": "minage-unavailable-title"
   }, /*#__PURE__*/React.createElement("h2", {

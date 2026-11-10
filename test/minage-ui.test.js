@@ -9,41 +9,64 @@ const M = require("../minage-ui.js");
 const I = require("../i18n.js");
 const read = (f) => fs.readFileSync(path.join(__dirname, "..", f), "utf8");
 
-test("hypothèses fixes du brief et part du joueur ajoutée au dénominateur", () => {
-  assert.deepEqual([M.BLOC_MS, M.BLOCS_PAR_JOUR, M.REWARD_FB, M.GH_PAR_COMPTE, M.COMPTES_FALLBACK], [30000, 2880, 6.25, 20, 1000]);
+test("cible de bloc du réseau réel : 10 minutes, et pas 30 secondes", () => {
+  assert.deepEqual([M.BLOC_MS, M.BLOCS_PAR_JOUR, M.REWARD_FB], [600000, 144, 6.25]);
   assert.equal(M.BLOC_MS * M.BLOCS_PAR_JOUR, 86400000);
-  assert.equal(M.partReseau(6, M.COMPTES_FALLBACK * M.GH_PAR_COMPTE), 6 / 20006);
-  assert.equal(M.partReseau(6, 0), 1);
-  assert.equal(M.partReseau(0, 1000), 0);
-  assert.equal(M.partReseau(0, 0), null);
-  assert.equal(M.partReseau(Number.MAX_VALUE, Number.MAX_VALUE), 0.5);
 });
 
-test("repères à 6 et 12 GH/s : part, FB par jour et attente moyenne", () => {
-  const autresGh = M.COMPTES_FALLBACK * M.GH_PAR_COMPTE;
-  const part6 = M.partReseau(6, autresGh), part12 = M.partReseau(12, autresGh);
-  assert.equal(M.formaterProba(part6), "0,030 %");
-  assert.equal(M.formaterProba(part12), "0,060 %");
-  assert.ok(Math.abs(M.fbParJour(part6) - 5.4) < 0.002);
-  assert.ok(Math.abs(M.fbParJour(part12) - 10.8) < 0.007);
-  assert.ok(Math.abs(M.tempsMoyenMs(part6) / 86400000 - 1.158) < 0.001);
-  assert.ok(Math.abs(M.tempsMoyenMs(part12) / 86400000 - 0.579) < 0.001);
-  assert.equal(M.formaterDuree(M.tempsMoyenMs(part6)), "1 jour");
-  assert.ok(Math.abs(part12 / part6 - 2) < 0.001);
+test("hashrate réseau dérivé de la difficulté réelle, temps moyen et FB par jour", () => {
+  // Difficulté réelle relevée sur mempool.fractalbitcoin.io ; cible 600 s.
+  const diff = 3749992429.200496;
+  const reseau = M.hashrateReseau(diff, 600);
+  assert.ok(Math.abs(reseau - diff * Math.pow(2, 32) / 600) < 1);
+  assert.match(M.formaterHashrate(reseau, "FR"), /^26,\d PH\/s$/);
+  // Une RTX 4070 (7,8 GH/s mesurés) face à ce réseau : ~65 ans pour le moindre bloc.
+  const t = M.tempsMoyenReseau(6, reseau, 600);
+  assert.ok(Math.abs(t / 86400000 / 365 - 85.1) < 0.2);
+    assert.equal(M.formaterDuree(t, "FR"), "85 ans");
+  // Doubler la puissance divise l'attente par deux ; une carte absente n'a pas d'attente.
+  assert.ok(Math.abs(M.tempsMoyenReseau(12, reseau, 600) * 2 - t) < 1);
+  assert.equal(M.tempsMoyenReseau(0, reseau, 600), null);
+  assert.equal(M.tempsMoyenReseau(6, 0, 600), null);
+  assert.equal(M.tempsMoyenReseau(6, reseau, 0), null);
+  assert.equal(M.hashrateReseau(0, 600), null);
+  assert.equal(M.hashrateReseau(-1, 600), null);
+  // Récompense de tête réelle : 625 000 575 sats, soit 6,25 FB.
+  assert.ok(Math.abs(M.fbParJourReseau(625000575 / 1e8, 600) - 900) < 1);
+  assert.equal(M.fbParJourReseau(0, 600), 0);
+  assert.equal(M.fbParJourReseau(6.25, 0), null);
 });
 
-test("espérance FB, probabilité par bloc et sur 24 h, temps moyen", () => {
-  assert.equal(M.fbParJour(0), 0);
-  assert.equal(M.fbParJour(1), 18000);
-  assert.ok(M.fbParJour(0.2) > M.fbParJour(0.1));
-  assert.equal(M.probaParBloc(0.032), 0.032);
-  assert.equal(M.probaJour(0), 0);
-  assert.equal(M.probaJour(1), 1);
-  assert.ok(Math.abs(M.probaJour(0.5) - 1) < 1e-12);
-  assert.ok(Math.abs(M.probaJour(0.00002) - (1 - Math.pow(1 - 0.00002, 2880))) < 1e-12);
-  assert.ok(M.probaJour(1e-20) > 0, "pas d'arrondi à zéro pour une très faible part");
-  assert.equal(M.tempsMoyenMs(0), null);
-  assert.equal(M.tempsMoyenMs(0.5), 60000);
+test("lecture du réseau : rejette une réponse vide ou incohérente, garde la médiane des blocs", async () => {
+  const ok = (json) => () => Promise.resolve({ ok: true, json: () => Promise.resolve(json) });
+  const bloc = (height, difficulty, reward) => ({ height, difficulty, extras: { reward } });
+  const r = await M.lireReseau(ok([bloc(10, 100, 625000000), bloc(11, 200, 625000000), bloc(12, 300, 625000000)]));
+  assert.equal(r.etat, "ok");
+  assert.equal(r.hauteur, 12);
+  assert.equal(r.difficulte, 200);
+  // La difficulté 1 du bloc d'ajustement est écartée, jamais retenue comme réseau.
+  const ajust = await M.lireReseau(ok([bloc(20, 1, 625000000), bloc(21, 500, 625000000), bloc(22, 400, 625000000)]));
+  assert.equal(ajust.difficulte, 500);
+  await assert.rejects(M.lireReseau(ok([])));
+  await assert.rejects(M.lireReseau(ok(null)));
+  await assert.rejects(M.lireReseau(() => Promise.resolve({ ok: false, status: 503 })));
+  assert.equal(M.RESEAU_URL, "https://mempool.fractalbitcoin.io/api/blocks");
+});
+
+test("réseau réel : repères à 6 et 12 GH/s, attente et espérance qui suivent la puissance", () => {
+  const reseau = M.hashrateReseau(3749992429.2, 600);
+  for (const gh of [7.8, 13, 22]) {
+    const t = M.tempsMoyenReseau(gh, reseau, 600);
+    assert.ok(t > 0 && Number.isFinite(t));
+  }
+  // Doubler la puissance double l'espérance et divise l'attente par deux.
+  const t6 = M.tempsMoyenReseau(7.8, reseau, 600), t12 = M.tempsMoyenReseau(15.6, reseau, 600);
+  assert.ok(Math.abs(t6 / t12 - 2) < 1e-9);
+  const fb6 = (625000000 / 1e8) * 86400000 / t6;
+  const fb12 = (625000000 / 1e8) * 86400000 / t12;
+  assert.ok(Math.abs(fb12 / fb6 - 2) < 1e-9);
+  // Aucune écriture ne grossit une chance réelle : la probabilité par bloc reste exacte.
+  assert.equal(M.formaterProba(7.8e9 / reseau), "0,000029 %");
 });
 
 test("toutes les fonctions numériques refusent les entrées invalides sans coercition", () => {
@@ -120,9 +143,14 @@ function textOf(tree) {
   return tree == null || typeof tree === "boolean" ? "" : String(tree);
 }
 function screen(compiled, raw, lang) {
-  let index, detections = 0;
-  const states = [];
-  const context = { window: {}, fetch() { assert.fail("aucun réseau dans le simulateur"); } };
+  let index, detections = 0, monte = false;
+  const states = [], effets = [];
+  // Le seul réseau autorisé est la lecture de l'explorateur public, et elle est simulée ici.
+  const reseauSimule = [{ height: 100, difficulty: 3749992429.2, extras: { reward: 625000000 } }];
+  const context = { window: {}, fetch(url) {
+    assert.equal(url, "https://mempool.fractalbitcoin.io/api/blocks");
+    return Promise.resolve({ ok: true, json: () => Promise.resolve(reseauSimule) });
+  } };
   vm.createContext(context);
   for (const f of ["i18n.js", "gpu-hashrate.js", "minage-ui.js"]) vm.runInContext(read(f), context);
   const win = context.window;
@@ -137,40 +165,67 @@ function screen(compiled, raw, lang) {
       if (!(i in states)) states[i] = typeof initial === "function" ? initial() : initial;
       return [states[i], (next) => { states[i] = next; }];
     },
+    useEffect(effet) {
+      // Un seul montage : l'effet réseau n'est pas rejoué aux rendus suivants.
+      if (monte) return;
+      monte = true;
+      effets.push(effet());
+    },
   };
-  Object.assign(context, { useState: context.React.useState, useFA: win.useFA,
+  Object.assign(context, { useState: context.React.useState, useEffect: context.React.useEffect, React: context.React, useFA: win.useFA,
     I18N: win.FA_I18N, MU: win.FA_MINAGE_UI, GPU: win.FA_GPU_HASHRATE });
   vm.runInContext(compiled, context);
-  return { render() { index = 0; return context.Minage(); }, get detections() { return detections; }, i18n: win.FA_I18N };
+  const attendre = async () => { await Promise.all(effets.splice(0)); };
+  return {
+    render() { index = 0; return context.Minage(); },
+    // Monte l'écran, laisse la lecture réseau se résoudre, puis rend le résultat.
+    async renderAvecReseau() { index = 0; context.Minage(); await attendre(); await new Promise((r) => setTimeout(r, 0)); index = 0; return context.Minage(); },
+    get detections() { return detections; }, i18n: win.FA_I18N };
 }
 
 for (const file of ["minage.jsx", "build/minage.js"]) {
   const compiled = Babel.transform(extract(read(file)), { presets: ["react"], sourceType: "script" }).code;
 
-  test(`${file} : carte reconnue, estimation d'usine et hypothèse explicite sans réseau`, () => {
+  test(`${file} : réseau réel lu une fois, carte détectée, attente et espérance calculées`, async () => {
     for (const lang of ["FR", "EN", "ZH"]) {
       const h = screen(compiled, "NVIDIA GeForce RTX 4070", lang);
       const tree = h.render();
       assert.match(textOf(tree), /RTX 4070/);
-      assert.match(textOf(tree), /6 GH\/s/);
-      assert.ok(textOf(tree).includes(h.i18n.t("minage.reseau", M.formaterNombre(1000, lang))));
+      assert.match(textOf(tree), new RegExp(M.formaterGh(7.8, lang).replace(".", "\\.")));
+      assert.ok(textOf(tree).includes(h.i18n.t("minage.reseauChargement")));
       assert.ok(textOf(tree).includes(h.i18n.t("minage.note")));
       const blocks = nodes(tree);
       const order = ["minage-machine", "minage-chance", "minage-estimates", "minage-network", "minage-note"]
         .map((name) => blocks.findIndex((n) => n.props.className === name));
       assert.ok(order.every((position, i) => position >= 0 && (i === 0 || position > order[i - 1])));
       const meter = blocks.find((n) => n.props.role === "meter");
-      const part = M.partReseau(6, M.COMPTES_FALLBACK * M.GH_PAR_COMPTE);
-      assert.equal(meter.props["aria-valuetext"], M.formaterProba(part, lang));
-      assert.equal(meter.props["aria-valuenow"], part * 100);
-      assert.equal(nodes(meter).find((n) => n.type === "span").props.style.minWidth, 2);
+      // Avant l'arrivée des données réseau : aucune valeur inventée, seulement l'attente.
+      assert.equal(meter.props["aria-valuenow"], 0);
       assert.ok(!/undefined|NaN|minage\./.test(textOf(tree)));
-      assert.ok(textOf(tree).includes(M.formaterFb(M.fbParJour(part), lang)));
-      assert.ok(textOf(tree).includes(M.formaterDuree(M.tempsMoyenMs(part), lang)));
-      assert.ok(textOf(tree).includes(h.i18n.t("minage.table")));
+      assert.equal(h.detections, 1);
+      // La légende dit si le débit est mesuré ou estimé : jamais une estimation présentée comme mesure.
+      assert.ok(textOf(tree).includes(h.i18n.t("minage.tableMesure")));
+      assert.ok(!textOf(tree).includes(h.i18n.t("minage.tableEstime")));
       assert.ok(!blocks.some((n) => ["input", "button", "select", "a"].includes(n.type)));
       assert.deepEqual(h.render(), tree);
       assert.equal(h.detections, 1);
+    }
+  });
+
+  test(`${file} : après lecture réseau, une RTX 4070 affiche ~85 ans et moins de 0,001 FB par jour`, async () => {
+    for (const lang of ["FR", "EN", "ZH"]) {
+      const h = screen(compiled, "NVIDIA GeForce RTX 4070", lang);
+      const tree = await h.renderAvecReseau();
+      const texte = textOf(tree), blocks = nodes(tree);
+      const reseau = M.hashrateReseau(3749992429.2, 600);
+      const attendu = M.tempsMoyenReseau(7.8, reseau, 600);
+      assert.ok(texte.includes(M.formaterHashrate(reseau, lang)), "puissance du réseau");
+      assert.ok(texte.includes(M.formaterDuree(attendu, lang)), "attente moyenne");
+      assert.ok(texte.includes(h.i18n.t("minage.reseauReel", M.formaterNombre(100, lang))), "hauteur réelle");
+      const meter = blocks.find((n) => n.props.role === "meter");
+      assert.equal(meter.props["aria-valuetext"], M.formaterProba(7.8e9 / reseau, lang));
+      assert.ok(h.i18n.t("minage.reseauReel", "100").length > 0);
+      assert.ok(!/NaN|undefined|minage\./.test(texte));
     }
   });
 
