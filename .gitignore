@@ -35,3 +35,4 @@ res-*.txt
 # bande assemblee + les RGBA bruts servis au controle. Jamais versionnes.
 _bake/_hd-frames/
 _bake/_spin-frames/
+mcp/
