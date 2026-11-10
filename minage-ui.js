@@ -6,7 +6,7 @@
   const BLOC_MS = 30000; // Hypothèse : un bloc toutes les 30 s.
   const BLOCS_PAR_JOUR = 2880; // 24 heures avec cette cadence.
   const REWARD_FB = 6.25; // Récompense de bloc post-halving retenue pour la simulation.
-  const GH_PAR_COMPTE = 300; // Puissance attribuée à chacun des autres mineurs de référence.
+  const GH_PAR_COMPTE = 20; // Un mineur de référence correspond environ à une carte moyenne.
   const COMPTES_FALLBACK = 1000; // Toujours fixe : le classement ne fournit aucun total de comptes.
 
   const positif = (n) => Number.isFinite(n) && n >= 0;
@@ -43,8 +43,14 @@
   }
   function formaterProba(p, lang = "FR") {
     if (!partValide(p)) return null;
-    if (p > 0 && p < 0.001) return texte("probaPetite", lang);
-    return texte("pourcentage", lang, nombre(p * 100, lang, 1));
+    if (p === 0) return texte("pourcentage", lang, "0");
+    // Deux chiffres significatifs ; sous 0,01 %, aucun zéro final ajouté
+    // au-delà du millième : 0,030 %, 0,006 %, mais 0,0061 % si nécessaire.
+    const valeur = new Intl.NumberFormat(texte("locale", lang), {
+      minimumSignificantDigits: p < 0.0001 ? 1 : 2,
+      maximumSignificantDigits: 2,
+    }).format(p * 100);
+    return texte("pourcentage", lang, valeur);
   }
   function formaterDuree(ms, lang = "FR") {
     if (!positif(ms)) return null;

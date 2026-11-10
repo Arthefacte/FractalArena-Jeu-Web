@@ -35,6 +35,14 @@ test("GPU inconnus ou variantes absentes : jamais de modèle approché ni d'exce
   }
 });
 
+test("renderers mobiles Apple GPU, Adreno et Mali : inconnus sans exception", () => {
+  for (const raw of ["Apple GPU", "Adreno (TM) 740", "Mali-G78"]) {
+    assert.doesNotThrow(() => resolveGpu(raw));
+    assert.equal(resolveGpu(raw).connu, false);
+    assert.equal(resolveGpu(raw).gh, null);
+  }
+});
+
 test("la table conserve exactement les 43 valeurs du brief et distingue les suffixes", () => {
   const expected = [
     ["RTX 5090", 22], ["RTX 5080", 14], ["RTX 5070 Ti", 11], ["RTX 5070", 8], ["RTX 5060 Ti", 6],

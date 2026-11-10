@@ -190,14 +190,11 @@ body[data-fond="cite"] .app-bg {
 .minage-heading h1 { margin: 0; font-size: 26px; }
 .minage-heading > span { color: var(--elec); border: 1px solid var(--line); border-radius: 20px; padding: 4px 10px; font-size: 12px; }
 .minage h2 { margin: 0 0 8px; font-size: 15px; font-weight: 600; }
-.minage-machine, .minage-chance, .minage-estimates { padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: rgba(10,15,30,.94); margin-bottom: 12px; }
+.minage-machine, .minage-chance, .minage-estimates, .minage-unavailable { padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: rgba(10,15,30,.94); margin-bottom: 12px; }
+.minage-unavailable p { margin: 0; color: #b3bfd6; line-height: 1.6; }
 .minage-machine-values { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 12px; font-size: 21px; overflow-wrap: anywhere; }
 .minage-machine-values .mono { color: var(--elec); white-space: nowrap; }
 .minage-caption { color: #b3bfd6; font-size: 12px; margin: 6px 0 0; }
-.minage-manual { margin-top: 10px; }
-.minage-manual label, .minage-range-labels { font-size: 12px; color: #b3bfd6; }
-.minage-manual input { display: block; width: 100%; min-height: 30px; margin: 0; accent-color: var(--elec); cursor: pointer; }
-.minage-range-labels { display: flex; justify-content: space-between; }
 .minage-chance { text-align: center; background: linear-gradient(120deg, #0c2733, #0a0f1e); }
 .minage-percent { display: block; color: var(--elec); font-size: clamp(30px, 7vw, 44px); line-height: 1.25; margin: 8px 0; }
 .minage-gauge { height: 8px; background: #050b16; border: 1px solid #364860; border-radius: 8px; overflow: hidden; }
@@ -208,8 +205,6 @@ body[data-fond="cite"] .app-bg {
 .minage-estimates dd { font-weight: 700; margin: 0; text-align: right; white-space: nowrap; }
 .minage-network { color: #b3bfd6; font-size: 12px; line-height: 1.5; margin: 12px 0; }
 .minage-note { padding: 10px 12px; margin: 12px 0; border: 1px solid #655031; border-radius: 8px; background: #19170f; color: #ffe2b4; font-size: 13px; line-height: 1.4; }
-.minage-toggle { display: block; padding: 10px 0; min-height: 44px; color: var(--elec); font: inherit; font-size: 13px; text-decoration: underline; background: none; border: none; cursor: pointer; }
-.minage input:focus-visible, .minage button:focus-visible { outline: 2px solid var(--elec); outline-offset: 3px; }
 
 /* ---- Header ---- */
 .hdr {
