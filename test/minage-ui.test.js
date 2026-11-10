@@ -20,7 +20,7 @@ test("hashrate réseau dérivé de la difficulté réelle, temps moyen et FB par
   const reseau = M.hashrateReseau(diff, 600);
   assert.ok(Math.abs(reseau - diff * Math.pow(2, 32) / 600) < 1);
   assert.match(M.formaterHashrate(reseau, "FR"), /^26,\d PH\/s$/);
-  // Une RTX 4070 (7,8 GH/s mesurés) face à ce réseau : ~65 ans pour le moindre bloc.
+  // Une RTX 4070 (7,9 GH/s mesurés) face à ce réseau : ~64 ans pour le moindre bloc.
   const t = M.tempsMoyenReseau(6, reseau, 600);
   assert.ok(Math.abs(t / 86400000 / 365 - 85.1) < 0.2);
     assert.equal(M.formaterDuree(t, "FR"), "85 ans");
@@ -53,20 +53,20 @@ test("lecture du réseau : rejette une réponse vide ou incohérente, garde la m
   assert.equal(M.RESEAU_URL, "https://mempool.fractalbitcoin.io/api/blocks");
 });
 
-test("réseau réel : repères à 6 et 12 GH/s, attente et espérance qui suivent la puissance", () => {
+test("réseau réel : repères à 7,9 et 15,8 GH/s, attente et espérance qui suivent la puissance", () => {
   const reseau = M.hashrateReseau(3749992429.2, 600);
-  for (const gh of [7.8, 13, 22]) {
+  for (const gh of [7.9, 13, 22]) {
     const t = M.tempsMoyenReseau(gh, reseau, 600);
     assert.ok(t > 0 && Number.isFinite(t));
   }
   // Doubler la puissance double l'espérance et divise l'attente par deux.
-  const t6 = M.tempsMoyenReseau(7.8, reseau, 600), t12 = M.tempsMoyenReseau(15.6, reseau, 600);
+  const t6 = M.tempsMoyenReseau(7.9, reseau, 600), t12 = M.tempsMoyenReseau(15.8, reseau, 600);
   assert.ok(Math.abs(t6 / t12 - 2) < 1e-9);
   const fb6 = (625000000 / 1e8) * 86400000 / t6;
   const fb12 = (625000000 / 1e8) * 86400000 / t12;
   assert.ok(Math.abs(fb12 / fb6 - 2) < 1e-9);
   // Aucune écriture ne grossit une chance réelle : la probabilité par bloc reste exacte.
-  assert.equal(M.formaterProba(7.8e9 / reseau), "0,000029 %");
+  assert.equal(M.formaterProba(7.9e9 / reseau), "0,000029 %");
 });
 
 test("toutes les fonctions numériques refusent les entrées invalides sans coercition", () => {
@@ -191,7 +191,7 @@ for (const file of ["minage.jsx", "build/minage.js"]) {
       const h = screen(compiled, "NVIDIA GeForce RTX 4070", lang);
       const tree = h.render();
       assert.match(textOf(tree), /RTX 4070/);
-      assert.match(textOf(tree), new RegExp(M.formaterGh(7.8, lang).replace(".", "\\.")));
+      assert.match(textOf(tree), new RegExp(M.formaterGh(7.9, lang).replace(".", "\\.")));
       assert.ok(textOf(tree).includes(h.i18n.t("minage.reseauChargement")));
       assert.ok(textOf(tree).includes(h.i18n.t("minage.note")));
       const blocks = nodes(tree);
@@ -218,19 +218,19 @@ for (const file of ["minage.jsx", "build/minage.js"]) {
       const tree = await h.renderAvecReseau();
       const texte = textOf(tree), blocks = nodes(tree);
       const reseau = M.hashrateReseau(3749992429.2, 600);
-      const attendu = M.tempsMoyenReseau(7.8, reseau, 600);
+      const attendu = M.tempsMoyenReseau(7.9, reseau, 600);
       assert.ok(texte.includes(M.formaterHashrate(reseau, lang)), "puissance du réseau");
       assert.ok(texte.includes(M.formaterDuree(attendu, lang)), "attente moyenne");
       assert.ok(texte.includes(h.i18n.t("minage.reseauReel", M.formaterNombre(100, lang))), "hauteur réelle");
       const meter = blocks.find((n) => n.props.role === "meter");
-      assert.equal(meter.props["aria-valuetext"], M.formaterProba(7.8e9 / reseau, lang));
+      assert.equal(meter.props["aria-valuetext"], M.formaterProba(7.9e9 / reseau, lang));
       assert.ok(h.i18n.t("minage.reseauReel", "100").length > 0);
       assert.ok(!/NaN|undefined|minage\./.test(texte));
     }
   });
 
   test(`${file} : GPU mobile, masqué ou inconnu, message localisé sans chiffres ni action`, () => {
-    for (const lang of ["FR", "EN", "ZH"]) for (const raw of ["Apple GPU", "Adreno (TM) 740", "Mali-G78", null, "", "GPU non répertorié", "RTX 4070 Laptop GPU"]) {
+    for (const lang of ["FR", "EN", "ZH"]) for (const raw of ["Apple GPU", "Adreno (TM) 740", "Mali-G78", null, "", "GPU non répertorié", "PowerVR Rogue GE8320"]) {
       const h = screen(compiled, raw, lang);
       const tree = h.render();
       const blocks = nodes(tree), text = textOf(tree);
