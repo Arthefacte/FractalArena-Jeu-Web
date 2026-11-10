@@ -43,13 +43,15 @@
        new Function. Reste 'unsafe-inline' pour les
        scripts inline de boot ; React, ReactDOM et Three.js AUTO-HÉBERGÉS (vendor/, protégés par
        SRI, cf. scripts en bas) — plus aucun CDN tiers en script-src (E8).
-       connect-src verrouillé sur l'API Railway (seul hôte appelé) : même une lib CDN compromise
+       connect-src verrouillé sur l'API Railway et sur l'explorateur mempool Fractal (les deux
+       seuls hôtes appelés ; le second sert à lire la difficulté réelle du réseau pour l'écran
+       Minage) : même une lib CDN compromise
        ne pourrait pas exfiltrer le token sessionStorage vers un tiers. blob:/data: pour les
        textures GLB et les vignettes canvas des reliques. Google Fonts (@import styles.css) exige
        fonts.googleapis.com en style-src + fonts.gstatic.com en font-src ; l'art des totems
        upgradés est servi depuis le bucket R2 (img-src) : domaine managé pub-*.r2.dev
        + l'ancien domaine perso totems.fractalarena.com conservé si un jour rebranché. -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval' 'sha256-nP7Lf5D3tIw8pykmO5oG0PnwhHWbac+axwKm7G4pR1g='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://totems.fractalarena.com https://pub-0b140013c6564ee080397bcdb722b776.r2.dev; font-src 'self' data:; media-src 'self'; connect-src 'self' https://fractal-arena-server-production.up.railway.app blob: data:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval' 'sha256-nP7Lf5D3tIw8pykmO5oG0PnwhHWbac+axwKm7G4pR1g='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://totems.fractalarena.com https://pub-0b140013c6564ee080397bcdb722b776.r2.dev; font-src 'self' data:; media-src 'self'; connect-src 'self' https://fractal-arena-server-production.up.railway.app https://mempool.fractalbitcoin.io blob: data:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'" />
   <!-- Anti-clickjacking. `frame-ancestors` est declare plus haut mais les navigateurs
        IGNORENT cette directive quand elle vient d'un <meta>, et GitHub Pages ne permet pas
        d'ajouter un en-tete HTTP : la protection est donc ce script, charge avant tout
