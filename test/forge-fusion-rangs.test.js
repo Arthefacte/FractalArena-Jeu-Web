@@ -401,7 +401,10 @@ test("la fusion de rang joue la cinématique de la Forge (mode rank) — et parl
   const debut = SCREENS.indexOf("async function doRankFuse");
   assert.ok(debut > 0, "doRankFuse introuvable dans screens.jsx");
   const bloc = SCREENS.slice(debut, SCREENS.indexOf("function RerollPreviewModal", debut));
-  assert.ok(bloc.length > 0 && bloc.length < 6000, "fenêtre de lecture de doRankFuse incohérente");
+  // Plafond de fenêtre : il sert à détecter que la tranche a débordé sur d'autres écrans,
+  // pas à figer la taille du bloc. Relevé le 11/11 après l'ajout de la pastille de coût et
+  // de la ligne de tarifs dans l'onglet de rang (DoRankFuse + son rendu = ~6 850 caractères).
+  assert.ok(bloc.length > 0 && bloc.length < 9000, "fenêtre de lecture de doRankFuse incohérente");
   // Le mode « rank » est ce qui distingue la fusion de rang : trois cœurs qui convergent
   // (forge-cine.js) au lieu du cœur unique de la fusion de rareté.
   assert.match(bloc, /FA_FORGE_CINE\.play\(/, "la cinématique doit être jouée après une fusion réussie");

@@ -715,8 +715,16 @@ function ForgeRangs() {
             <span className="pill" style={{ color: "var(--success)" }}>{I18N.t("FG_RANK_SUCCESS")} 100%</span>
             <span className="pill" style={{ color: D.RANK_COLORS[st.rank] || "var(--text)" }}>{I18N.t("FG_RANK")} {st.rank}</span>
             {st.nextRank && <span className="pill" style={{ color: D.RANK_COLORS[st.nextRank] || "var(--text)" }}>{I18N.t("FG_RANK_TARGET", st.nextRank)}</span>}
-            <button className="btn btn-forge" disabled={st.disabled} onClick={() => setConfirm(true)}>
-              {busy ? "…" : <FaText text={I18N.t("FG_RANK_BTN", fmt(st.cost || 0))} />}
+            {/* Le prix vit dans SA pastille : collé au bouton il débordait de la largeur
+                disponible sur mobile et le montant disparaissait (constaté 11/11 — le
+                joueur voyait « Fusionner — » et découvrait 5 000 FA après le clic). */}
+            {st.cost != null && (
+              <span className="pill" style={{ color: st.showInsufficient ? "var(--alert)" : "var(--text)" }}>
+                <FaText text={I18N.t("FG_RANK_COST_PILL", fmt(st.cost))} />
+              </span>
+            )}
+            <button className="btn btn-forge" disabled={st.disabled} onClick={() => setConfirm(true)} style={{ flexShrink: 0, whiteSpace: "nowrap" }}>
+              {busy ? "…" : I18N.t("FG_RANK_BTN")}
             </button>
           </div>
         )}
@@ -727,6 +735,18 @@ function ForgeRangs() {
       {!st.maxRank && sel.length === 0 && (
         <div className="mono muted" style={{ fontSize: 12, marginBottom: 10 }}>{I18N.t("FG_RANK_NONE")}</div>
       )}
+      {/* Tarifs des trois paliers, lus dans le modèle : le joueur choisit son rang en
+          connaissance du prix, pas après avoir sélectionné trois cartes. */}
+      {!st.rank && (() => {
+        const T = (D.FORGE && D.FORGE.RANK_FUSE_COST) || {};
+        const ordre = ["C", "B", "A"].filter((r) => T[r] != null);
+        if (!ordre.length) return null;
+        return (
+          <div className="mono muted" style={{ fontSize: 12, marginBottom: 10 }}>
+            <FaText text={I18N.t("FG_RANK_PRICES", ordre.map((r) => `${r} ${fmt(T[r])} FA`).join(" · "))} />
+          </div>
+        );
+      })()}
       {!st.maxRank && sel.length > 0 && sel.length < 3 && (
         <div className="mono muted" style={{ fontSize: 12, marginBottom: 10 }}>{I18N.t("FG_RANK_MISSING", 3 - sel.length, st.rank)}</div>
       )}
