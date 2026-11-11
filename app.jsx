@@ -1754,7 +1754,7 @@ function App() {
       // sommet atteint » alors que le joueur n'avait aucune carte S sous les yeux (vécu 05/11).
       const rankOf = (b) => (b && D.RANK_LIST.includes(b.rank) ? b.rank : "C");
       const rank = rankOf(picked[0]);
-      if (picked.some((b) => rankOf(b) !== rank || b.rarity !== picked[0].rarity)) return { ok: false, reason: I18N.t("FG_RANK_MISMATCH") };
+      if (picked.some((b) => rankOf(b) !== rank)) return { ok: false, reason: I18N.t("FG_RANK_MISMATCH") };
       const cost = D.FORGE.RANK_FUSE_COST[rank];
       // Deux refus distincts : le vrai sommet (S) et un rang illisible (bug de données).
       if (!cost) return { ok: false, reason: I18N.t(rank === "S" ? "FG_RANK_MAX" : "FG_RANK_BAD_RANK") };

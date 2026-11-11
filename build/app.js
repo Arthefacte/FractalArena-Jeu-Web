@@ -2638,7 +2638,7 @@ function App() {
       // sommet atteint » alors que le joueur n'avait aucune carte S sous les yeux (vécu 05/11).
       const rankOf = b => b && D.RANK_LIST.includes(b.rank) ? b.rank : "C";
       const rank = rankOf(picked[0]);
-      if (picked.some(b => rankOf(b) !== rank || b.rarity !== picked[0].rarity)) return {
+      if (picked.some(b => rankOf(b) !== rank)) return {
         ok: false,
         reason: I18N.t("FG_RANK_MISMATCH")
       };

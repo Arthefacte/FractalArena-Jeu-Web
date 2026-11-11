@@ -5,7 +5,7 @@
    Ce que ces tests tiennent, dans l'ordre où ça coûte de l'argent au joueur :
      1. les barèmes miroirs du client sont EXACTEMENT ceux du serveur (un écart ici paie
         un prix que le serveur refuse, ou annonce une réussite fausse) ;
-     2. la fusion de rang refuse un mélange de rang/rareté, une 4ᵉ entité et le rang S ;
+     2. la fusion de rang accepte les raretés mélangées, refuse un autre rang, une 4ᵉ entité et le rang S ;
      3. l'avertissement obligatoire nomme niveau, XP, talents et équipement des TROIS
         entités qui partent — c'est une exigence produit, pas une décoration ;
      4. l'onglet de rang est SÉPARÉ de la fusion de rareté (deux blocs semblables dans le
@@ -76,8 +76,8 @@ test("rankNext suit RANK_LIST du client ; rankFuseCost refuse le rang S", () => 
   assert.strictEqual(F.rankFuseCost("S"), null, "un rang S n'est pas fusionnable, pas gratuit pour autant");
 });
 
-test("rankSelToggle : même rang ET même rareté, 3 maximum, re-clic = retrait", () => {
-  const a = ent("a", "B", "Rare"), b = ent("b", "B", "Rare"), c = ent("c", "B", "Rare");
+test("rankSelToggle : même rang, raretés mélangées acceptées, 3 maximum, re-clic = retrait", () => {
+  const a = ent("a", "B", "Rare"), b = ent("b", "B", "Common"), c = ent("c", "B", "Legendary");
   const s1 = F.rankSelToggle([], a);
   assert.deepStrictEqual(s1.map((x) => x.id), ["a"]);
   const s2 = F.rankSelToggle(s1, b);
@@ -85,7 +85,8 @@ test("rankSelToggle : même rang ET même rareté, 3 maximum, re-clic = retrait"
   assert.strictEqual(s3.length, 3);
   assert.strictEqual(F.rankSelToggle(s3, ent("d", "B", "Rare")), null, "une 4ᵉ entité est refusée");
   assert.strictEqual(F.rankSelToggle(s2, ent("e", "A", "Rare")), null, "un autre rang est refusé");
-  assert.strictEqual(F.rankSelToggle(s2, ent("f", "B", "Epic")), null, "une autre rareté est refusée");
+  assert.deepStrictEqual(F.rankSelToggle(s2, ent("f", "B", "Epic")).map((x) => x.id), ["a", "b", "f"], "une autre rareté est acceptée");
+  assert.deepStrictEqual(F.rankSelToggle(s3, c).map((x) => x.id), ["a", "b"], "le retrait reste possible à 3");
   assert.deepStrictEqual(F.rankSelToggle(s2, a).map((x) => x.id), ["b"], "re-cliquer retire l'entité");
   assert.deepStrictEqual(s2.map((x) => x.id), ["a", "b"], "immutabilité de la sélection");
 });
@@ -151,8 +152,35 @@ test("rankFuseWarning : niveau, XP, talents et équipement des TROIS entités", 
   assert.strictEqual(w.totalXp, 430);
   assert.strictEqual(w.totalTalents, 3);
   assert.strictEqual(w.totalEquipment, 2);
+  assert.strictEqual(w.targetRarity, "Common");
+  assert.strictEqual(w.bestRollPct, null, "aucun tirage renseigné : pas de pourcentage inventé");
   assert.strictEqual(F.rankFuseWarning(sel.slice(0, 2)), null, "rien à annoncer avant les 3 entités");
   assert.strictEqual(F.rankFuseWarning([{ id: "z" }]), null, "entité sans stats : jamais de NaN");
+});
+
+test("rankFuseWarning : toujours Commune, meilleur tirage des trois quel que soit sa position ou sa rareté", () => {
+  const sel = [
+    ent("a", "B", "Legendary", { summon_roll_pct: 68 }),
+    ent("b", "B", "Common", { summon_roll_pct: 97.5 }),
+    ent("c", "B", "Epic", { summon_roll_pct: 83 }),
+  ];
+  for (let i = 0; i < 3; i++) {
+    const w = F.rankFuseWarning([...sel.slice(i), ...sel.slice(0, i)]);
+    assert.strictEqual(w.targetRarity, "Common");
+    assert.strictEqual(w.bestRollPct, 97.5);
+  }
+  const allLegendary = sel.map((b) => ({ ...b, rarity: "Legendary" }));
+  assert.strictEqual(F.rankFuseWarning(allLegendary).targetRarity, "Common", "trois Légendaires donnent aussi une Commune");
+});
+
+test("rankFuseWarning : tirages absents ignorés, zéro conservé", () => {
+  const sel = [
+    ent("a", "C", "Common"),
+    ent("b", "C", "Rare", { summon_roll_pct: null }),
+    ent("c", "C", "Epic", { summon_roll_pct: 0 }),
+  ];
+  assert.strictEqual(F.rankFuseWarning(sel).bestRollPct, 0);
+  assert.strictEqual(F.rankFuseWarning(sel.map((b) => ({ ...b, summon_roll_pct: null }))).bestRollPct, null);
 });
 
 // ---- 4. Écran : onglet séparé, mode Argent, modale de confirmation ----
@@ -236,17 +264,50 @@ test("la grille de rang dit « consommée », jamais « sacrifiée »", () => {
     "« sacrifiée » appartient à la fusion de rareté 2 → 1 : pas de mot ambigu ici");
 });
 
-// La règle de qualité (décision fondateur 03/11/2026) doit être dite AVANT de valider :
-// le joueur qui brûle une carte à 100 % ne doit pas découvrir après coup qu'il redescend.
+// La rareté Commune et le meilleur tirage conservé doivent être dits AVANT de valider.
 test("la qualité conservée et la règle de type sont annoncées avant la validation", () => {
   const b = fnBloc("ForgeRangs") + fnBloc("RankFuseWarningModal");
-  assert.match(b, /FG_RANK_ALERT_QUALITY/, "la modale doit dire que la qualité ne redescend jamais");
+  assert.match(b, /FG_RANK_ALERT_QUALITY/, "la modale doit annoncer la rareté Commune et les stats de création conservées");
   const hint = I18N.match(/FG_RANK_HINT: \{ FR: "([^"]+)"/);
   assert.ok(hint, "FG_RANK_HINT introuvable");
   assert.match(hint[1], /meilleur tirage/, "l'onglet doit rappeler la meilleure qualité conservée");
   const typeHint = I18N.match(/FG_RANK_TYPE_HINT: \{ FR: "([^"]+)"/);
   assert.ok(typeHint, "FG_RANK_TYPE_HINT introuvable");
   assert.match(typeHint[1], /Mineurs/, "trois Mineurs → un Mineur doit être dit explicitement");
+});
+
+test("la modale annonce Commune, le rang obtenu et le meilleur tirage avant confirmation en FR/EN/ZH", () => {
+  const i18n = require("../i18n.js");
+  const lang = i18n.getLang();
+  const code = require("@babel/standalone").transform(fnBloc("RankFuseWarningModal"), { presets: ["react"] }).code;
+  const modal = require("node:vm").runInNewContext(code + "\nRankFuseWarningModal;", {
+    React: { createElement: (tag, props, ...children) => ({ tag, props, children }) },
+    window: { Modal: "modal" }, I18N: i18n, rarityLabel: (rarity) => i18n.t(rarity), fmt: String,
+  });
+  const sel = [ent("a", "B", "Legendary", { summon_roll_pct: 70 }),
+               ent("b", "B", "Common", { summon_roll_pct: 97.5 }),
+               ent("c", "B", "Epic", { summon_roll_pct: 80 })];
+  const warn = F.rankFuseWarning(sel);
+  const text = (node) => node == null ? "" : Array.isArray(node) ? node.map(text).join("")
+    : typeof node === "object" ? text(node.children) : String(node);
+  const expected = {
+    FR: "La carte produite sera de rareté Commune, rang A, avec les stats de création du meilleur tirage des trois (97.5 %).",
+    EN: "The resulting card will have Common rarity, rank A, with the creation stats of the best roll of the three (97.5%).",
+    ZH: "产出的卡牌稀有度将为普通，阶位为A，并保留三者中最佳抽取的初始属性（97.5%）。",
+  };
+  try {
+    for (const language of ["FR", "EN", "ZH"]) {
+      i18n.setLang(language);
+      const render = (warning) => text(modal({ warn: warning, state: F.rankFuseState({ sel, balance: 15000 }) }));
+      const rendered = render(warn);
+      assert.ok(rendered.includes(expected[language]), language + " : résultat précis annoncé");
+      assert.strictEqual(rendered.split(expected[language]).length, 2, "une seule ligne de qualité");
+      assert.ok(rendered.indexOf(expected[language]) < rendered.indexOf(i18n.t("FG_RANK_ALERT_CONFIRM")), "résultat annoncé avant le bouton");
+      assert.ok(render({ ...warn, bestRollPct: null }).includes(i18n.t("FG_RANK_ALERT_QUALITY", i18n.t("Common"), "A", "—")), "tirage absent : aucun faux zéro");
+    }
+  } finally {
+    i18n.setLang(lang);
+  }
 });
 
 // ---- 5. Réseau : la route de rang, le champ ticket, le miroir du serveur ----
@@ -259,6 +320,35 @@ test("l'action rankFuse appelle POST /forge/rank-fuse avec les 3 ids et le templ
   assert.match(b, /beast_ids: beastIds/);
   assert.match(b, /template_id: templateId/);
   assert.match(b, /status !== "ok"/, "seul status ok est un succès");
+});
+
+test("l'action rankFuse transmet les raretés mélangées et refuse toujours un autre rang", async () => {
+  const start = APP.indexOf("async rankFuse(");
+  const method = APP.slice(start, APP.indexOf("\n    },", start) + 6);
+  const roster = [ent("a", "C", "Common"), ent("b", "C", "Epic"), ent("c", "C", "Legendary")];
+  const calls = [];
+  const rankFuse = require("node:vm").runInNewContext("({" + method + "}).rankFuse", {
+    gRef: { current: { roster, wallet: "wallet-test", authToken: "test-token", liquid: 5000, locked: 0 } },
+    D, I18N: { t: (key) => key }, API_URL: "https://example.invalid", svOpts: () => ({}),
+    fetch: async (url, options) => {
+      calls.push({ url, options });
+      return options.method === "POST"
+        ? { json: async () => ({ status: "ok", beast: { rarity: "Common", rank: "B" }, new_rank: "B" }) }
+        : { ok: false };
+    },
+  });
+  const result = await rankFuse(["a", "b", "c"], "HashByte-1");
+  assert.strictEqual(result.ok, true, "la confirmation doit accepter les raretés mélangées");
+  assert.strictEqual(calls.length, 2, "fusion puis synchronisation existante");
+  assert.strictEqual(calls[0].url, "https://example.invalid/forge/rank-fuse");
+  assert.deepStrictEqual(JSON.parse(calls[0].options.body), {
+    wallet: "wallet-test", beast_ids: ["a", "b", "c"], template_id: "HashByte-1",
+  });
+  roster[2].rank = "B";
+  const refused = await rankFuse(["a", "b", "c"], "HashByte-1");
+  assert.strictEqual(refused.ok, false);
+  assert.strictEqual(refused.reason, "FG_RANK_MISMATCH");
+  assert.strictEqual(calls.length, 2, "aucun appel en cas de rang différent");
 });
 
 test("l'action fuse envoie le champ ticket (fa : aucun champ, comme le défaut serveur)", () => {

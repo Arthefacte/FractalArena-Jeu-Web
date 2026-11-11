@@ -1166,7 +1166,7 @@ function RankFuseWarningModal({
       marginTop: 6,
       color: "var(--success)"
     }
-  }, I18N.t("FG_RANK_ALERT_QUALITY")), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("strong", null, I18N.t("FG_RANK_ALERT_QUALITY", rarityLabel(warn.targetRarity), state.nextRank || "", warn.bestRollPct ?? "—"))), /*#__PURE__*/React.createElement("div", {
     className: "mono muted",
     style: {
       fontSize: 12,
@@ -1221,7 +1221,7 @@ function ForgeRangs() {
   function clickable(b) {
     if (!sel.length) return true;
     if (sel.some(x => x.id === b.id)) return true;
-    return b.rank === sel[0].rank && b.rarity === sel[0].rarity;
+    return b.rank === sel[0].rank;
   }
   function toggle(b) {
     const next = F.rankSelToggle(sel, b);
