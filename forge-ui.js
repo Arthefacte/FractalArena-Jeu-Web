@@ -88,8 +88,8 @@
     return { disabled: insufficient, showInsufficient: insufficient };
   }
 
-  // ---- Fusion de RANG (3 entités de même rang ET de même rareté → 1 entité NEUVE
-  //      du rang au-dessus, niveau 1, 100 %) — décision fondateur 13/10/2026 ----
+  // ---- Fusion de RANG (3 entités de même rang, rareté indifférente → 1 entité Commune
+  //      du rang au-dessus, niveau 1, 100 %) — décision fondateur 11/11/2026 ----
   // Barèmes et paliers lus sur window.FA_DATA À L'APPEL (D.FORGE.RANK_FUSE_COST,
   // D.RANK_LIST) : aucune table recopiée ici, sinon elle dériverait du serveur en silence.
 
@@ -108,7 +108,7 @@
   }
 
   // Sélection de 3 entités éligibles. Refus (null) : une 4ᵉ, ou une entité d'un autre rang
-  // ou d'une autre rareté que la première choisie. Re-cliquer une entité la retire.
+  // que la première choisie. Re-cliquer une entité la retire.
   // On garde les ENTITÉS (pas les ids) : la modale d'avertissement doit nommer leur niveau,
   // leur XP, leurs talents et leur équipement — un id seul ne dit rien au joueur.
   function rankSelToggle(sel, beast) {
@@ -116,7 +116,7 @@
     if (!beast) return null;
     if (S.some((b) => b.id === beast.id)) return S.filter((b) => b.id !== beast.id);
     if (S.length >= 3) return null;
-    if (S.length && (S[0].rank !== beast.rank || S[0].rarity !== beast.rarity)) return null;
+    if (S.length && S[0].rank !== beast.rank) return null;
     return [...S, beast];
   }
 
@@ -182,7 +182,10 @@
       talents: countTalents(b),
       equipment: (b.relic_id ? 1 : 0) + (b.core_id ? 1 : 0),
     }));
+    const rolls = S.map((b) => b.summon_roll_pct).filter(Number.isFinite);
     return {
+      targetRarity: "Common",
+      bestRollPct: rolls.length ? Math.max(...rolls) : null,
       lines,
       levels: lines.map((l) => l.level),
       totalXp: lines.reduce((s, l) => s + l.xp, 0),

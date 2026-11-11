@@ -804,14 +804,14 @@
     FG_FUSE_BTN_SILVER: { FR: "Fusionner  🎟 −%d Argent", EN: "Fuse  🎟 −%d Silver", ZH: "融合  🎟 −%d 白银券" },
     FG_SILVER_SHORT: { FR: "Tickets Argent insuffisants : %d requis, %d en réserve.", EN: "Not enough Silver tickets: %d required, %d in reserve.", ZH: "白银券不足：需要 %d 张，现有 %d 张。" },
     FG_FUSE_SILVER_OK: { FR: "✨ FUSION GARANTIE → %s (100 %)", EN: "✨ GUARANTEED FUSION → %s (100%)", ZH: "✨ 保证融合 → %s（100%）" },
-    // ---- Fusion de RANG : 3 entités de même rang ET de même rareté → 1 entité neuve ----
+    // ---- Fusion de RANG : 3 entités de même rang, rareté indifférente → 1 entité Commune ----
     // Onglet SÉPARÉ de la fusion de rareté : mêmes barres, mêmes cartes, mais un autre axe —
     // empilés, le joueur déclenchait la mauvaise opération (leçon des forges de fragments).
     FG_RANGS: { FR: "Fusion de rang", EN: "Rank fusion", ZH: "阶位融合" },
-    FG_RANK_HINT: { FR: "Sélectionne 3 entités de MÊME rang et de MÊME rareté : le rang monte d'un cran (C→B→A→S), la rareté ne bouge pas. Les trois sont consommées — mais la qualité ne redescend jamais : l'entité produite garde le meilleur tirage des trois.", EN: "Select 3 entities of the SAME rank and the SAME rarity: the rank goes up one step (C→B→A→S), the rarity does not move. All three are consumed — but quality never goes down: the entity produced keeps the best roll of the three.", ZH: "选择 3 个相同阶位且相同稀有度的实体：阶位上升一级（C→B→A→S），稀有度不变。三个都会被消耗 — 但品质绝不下降：产出的实体保留三者中最好的抽取。" },
-    FG_RANK_NONE: { FR: "Sélectionne 3 entités de même rang et de même rareté", EN: "Select 3 entities of the same rank and rarity", ZH: "选择 3 个相同阶位且相同稀有度的实体" },
-    FG_RANK_MISSING: { FR: "Encore %d entité(s) de rang %s (même rareté)", EN: "Still %d entity(ies) of rank %s (same rarity)", ZH: "还需 %d 个阶位 %s 的实体（相同稀有度）" },
-    FG_RANK_MISMATCH: { FR: "Même rang ET même rareté requis.", EN: "Same rank AND same rarity required.", ZH: "必须阶位与稀有度都相同。" },
+    FG_RANK_HINT: { FR: "Sélectionne 3 entités de MÊME rang, rareté indifférente : le rang monte d'un cran (C→B→A→S). Les trois sont consommées et la carte produite repart toujours Commune, avec les stats de création du meilleur tirage des trois.", EN: "Select 3 entities of the SAME rank, regardless of rarity: the rank goes up one step (C→B→A→S). All three are consumed and the resulting card always starts again as Common, with the creation stats of the best roll of the three.", ZH: "选择 3 个相同阶位的实体，稀有度不限：阶位上升一级（C→B→A→S）。三个都会被消耗，产出的卡牌稀有度始终重置为普通，并保留三者中最佳抽取的初始属性。" },
+    FG_RANK_NONE: { FR: "Sélectionne 3 entités de même rang, rareté indifférente", EN: "Select 3 entities of the same rank, regardless of rarity", ZH: "选择 3 个相同阶位的实体，稀有度不限" },
+    FG_RANK_MISSING: { FR: "Encore %d entité(s) de rang %s (rareté indifférente)", EN: "Still %d entity(ies) of rank %s (any rarity)", ZH: "还需 %d 个阶位 %s 的实体（稀有度不限）" },
+    FG_RANK_MISMATCH: { FR: "Même rang requis.", EN: "Same rank required.", ZH: "必须为相同阶位。" },
     FG_RANK_SEL_MAX: { FR: "3 entités maximum", EN: "3 entities maximum", ZH: "最多 3 个实体" },
     FG_RANK_SUCCESS: { FR: "Réussite garantie", EN: "Guaranteed success", ZH: "保证成功" },
     FG_RANK_TARGET: { FR: "Rang visé : %s", EN: "Target rank: %s", ZH: "目标阶位：%s" },
@@ -833,7 +833,7 @@
     FG_RANK_ALERT_EQUIP: { FR: "L'équipement des trois est retiré automatiquement avant la fusion : reliques et cores restent dans ton inventaire, rien ne se perd.", EN: "The equipment on all three is removed automatically before the fusion: relics and cores stay in your inventory, nothing is lost.", ZH: "三者的装备会在融合前自动卸下：圣物与核心都会留在你的库存中，不会丢失任何物品。" },
     FG_RANK_EQUIP_BACK: { FR: "Équipement récupéré : %d objet(s) dans ton inventaire", EN: "Equipment recovered: %d item(s) back in your inventory", ZH: "已回收装备：%d 件物品回到你的库存" },
     FG_RANK_ALERT_COST: { FR: "Coût : %s FA (100 % reversés au rachat).", EN: "Cost: %s FA (100% goes to the buyback pool).", ZH: "花费：%s FA（100% 进入回购池）。" },
-    FG_RANK_ALERT_QUALITY: { FR: "Qualité conservée : l'entité produite garde le meilleur tirage des trois (3 × 100 % → 100 %). Elle ne redescend jamais.", EN: "Quality kept: the entity produced keeps the best roll of the three (3 × 100% → 100%). It never goes down.", ZH: "品质保留：产出的实体保留三者中最好的抽取（3 × 100% → 100%）。品质绝不下降。" },
+    FG_RANK_ALERT_QUALITY: { FR: "La carte produite sera de rareté %s, rang %s, avec les stats de création du meilleur tirage des trois (%s %%).", EN: "The resulting card will have %s rarity, rank %s, with the creation stats of the best roll of the three (%s%%).", ZH: "产出的卡牌稀有度将为%s，阶位为%s，并保留三者中最佳抽取的初始属性（%s%%）。" },
     FG_RANK_ALERT_CONFIRM: { FR: "Je confirme la fusion", EN: "I confirm the fusion", ZH: "我确认融合" },
     FG_RANK_ALERT_BACK: { FR: "← Retour", EN: "← Back", ZH: "← 返回" },
     // Refus serveur de la fusion (codes mappés dans SERVER_ERROR_KEYS : un code snake_case

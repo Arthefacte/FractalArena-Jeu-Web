@@ -633,7 +633,7 @@ function RankFuseWarningModal({ warn, state, template, busy, onBack, onConfirm }
       <div className="panel oct" style={{ border: "1px solid var(--line)", padding: 14, marginBottom: 12 }}>
         <div className="mono" style={{ fontSize: 13, color: "var(--success)" }}>{I18N.t("FG_RANK_ALERT_NEW", state.nextRank || "")}</div>
         <div className="mono muted" style={{ fontSize: 12, marginTop: 6 }}>{I18N.t("FG_RANK_ALERT_EQUIP")}</div>
-        <div className="mono" style={{ fontSize: 12, marginTop: 6, color: "var(--success)" }}>{I18N.t("FG_RANK_ALERT_QUALITY")}</div>
+        <div className="mono" style={{ fontSize: 12, marginTop: 6, color: "var(--success)" }}><strong>{I18N.t("FG_RANK_ALERT_QUALITY", rarityLabel(warn.targetRarity), state.nextRank || "", warn.bestRollPct ?? "—")}</strong></div>
         <div className="mono muted" style={{ fontSize: 12, marginTop: 6 }}>{I18N.t("FG_RANK_ALERT_COST", fmt(state.cost || 0))}</div>
         {template && <div className="mono muted" style={{ fontSize: 12, marginTop: 6 }}>{I18N.t("FG_RANK_TYPE")} : {template.label}</div>}
       </div>
@@ -667,7 +667,7 @@ function ForgeRangs() {
   function clickable(b) {
     if (!sel.length) return true;
     if (sel.some((x) => x.id === b.id)) return true;
-    return b.rank === sel[0].rank && b.rarity === sel[0].rarity;
+    return b.rank === sel[0].rank;
   }
   function toggle(b) {
     const next = F.rankSelToggle(sel, b);
