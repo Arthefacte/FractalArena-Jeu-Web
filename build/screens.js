@@ -1293,13 +1293,22 @@ function ForgeRangs() {
     style: {
       color: D.RANK_COLORS[st.nextRank] || "var(--text)"
     }
-  }, I18N.t("FG_RANK_TARGET", st.nextRank)), /*#__PURE__*/React.createElement("button", {
+  }, I18N.t("FG_RANK_TARGET", st.nextRank)), st.cost != null && /*#__PURE__*/React.createElement("span", {
+    className: "pill",
+    style: {
+      color: st.showInsufficient ? "var(--alert)" : "var(--text)"
+    }
+  }, /*#__PURE__*/React.createElement(FaText, {
+    text: I18N.t("FG_RANK_COST_PILL", fmt(st.cost))
+  })), /*#__PURE__*/React.createElement("button", {
     className: "btn btn-forge",
     disabled: st.disabled,
-    onClick: () => setConfirm(true)
-  }, busy ? "…" : /*#__PURE__*/React.createElement(FaText, {
-    text: I18N.t("FG_RANK_BTN", fmt(st.cost || 0))
-  })))), st.maxRank && /*#__PURE__*/React.createElement("div", {
+    onClick: () => setConfirm(true),
+    style: {
+      flexShrink: 0,
+      whiteSpace: "nowrap"
+    }
+  }, busy ? "…" : I18N.t("FG_RANK_BTN")))), st.maxRank && /*#__PURE__*/React.createElement("div", {
     className: "mono",
     style: {
       color: "var(--alert)",
@@ -1312,7 +1321,20 @@ function ForgeRangs() {
       fontSize: 12,
       marginBottom: 10
     }
-  }, I18N.t("FG_RANK_NONE")), !st.maxRank && sel.length > 0 && sel.length < 3 && /*#__PURE__*/React.createElement("div", {
+  }, I18N.t("FG_RANK_NONE")), !st.rank && (() => {
+    const T = D.FORGE && D.FORGE.RANK_FUSE_COST || {};
+    const ordre = ["C", "B", "A"].filter(r => T[r] != null);
+    if (!ordre.length) return null;
+    return /*#__PURE__*/React.createElement("div", {
+      className: "mono muted",
+      style: {
+        fontSize: 12,
+        marginBottom: 10
+      }
+    }, /*#__PURE__*/React.createElement(FaText, {
+      text: I18N.t("FG_RANK_PRICES", ordre.map(r => `${r} ${fmt(T[r])} FA`).join(" · "))
+    }));
+  })(), !st.maxRank && sel.length > 0 && sel.length < 3 && /*#__PURE__*/React.createElement("div", {
     className: "mono muted",
     style: {
       fontSize: 12,
