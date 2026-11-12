@@ -70,6 +70,17 @@ test("mentions légales : éditeur, hébergeurs du jeu et nature du site", () =>
   assert.match(html, /PSAN/, "le statut non-PSAN doit être écrit noir sur blanc");
 });
 
+// L'éditeur publie sous pseudo (LCEN 6-III-2) : son identité civile ne doit
+// jamais revenir en clair dans une page servie publiquement.
+test("aucune identité civile de l'éditeur dans les pages légales", () => {
+  for (const f of [...PAGES, "juridique.html"]) {
+    const html = lire(f).toLowerCase();
+    for (const mot of ["mhanna", "gabriel"]) {
+      assert.equal(html.includes(mot), false, `${f} contient « ${mot} »`);
+    }
+  }
+});
+
 test("confidentialité : données réelles du compte portefeuille, RGPD et CNIL", () => {
   const html = lire("confidentialite.html");
   assert.match(html, /2016\/679|RGPD/);
