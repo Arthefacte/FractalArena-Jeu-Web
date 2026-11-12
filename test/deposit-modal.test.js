@@ -83,6 +83,16 @@ function mount(code, { component = "DepositModal", props = {}, lang = "FR", resp
     API_URL: "https://api.test",
     fetch: async (url, options) => {
       requests.push({ url, options });
+      // L'adresse de dépôt FB vient du SERVEUR (`GET /fb` → `deposit_address`) : on la sert
+      // ici comme le ferait la prod, au lieu de laisser le composant la coder en dur. Le
+      // `fetcher` du cas garde la main sur le RESTE du corps (solde, etc.).
+      if (/\/fb\?wallet=/.test(String(url))) {
+        let corps = {};
+        if (fetcher) {
+          try { const r = await fetcher(url, options); corps = (r && r.json) ? await r.json() : {}; } catch (e) { corps = {}; }
+        }
+        return { ok: true, json: async () => ({ ...corps, deposit_address: (corps && corps.deposit_address) || POOL }) };
+      }
       if (fetcher) return fetcher(url, options);
       return { ok: response.status === "ok", json: async () => response };
     },
@@ -108,7 +118,12 @@ function mount(code, { component = "DepositModal", props = {}, lang = "FR", resp
     render, button, context, requests, toasts, deposits, browserWindow,
     get closed() { return closed; },
     get tree() { return tree; },
-    choose(asset) { button(asset === "fb" ? "WL_DEP_FB" : "WL_DEP_FA").props.onClick(); render(); },
+    async choose(asset) {
+      button(asset === "fb" ? "WL_DEP_FB" : "WL_DEP_FA").props.onClick();
+      render();
+      await flush();   // la porte FB recharge l'adresse servie
+      render();
+    },
     enter(value = TXID) {
       nodes(tree).find((node) => node.type === "input").props.onChange({ target: { value } }); render();
     },
@@ -122,12 +137,12 @@ for (const file of ["screens.jsx", "build/screens.js"]) {
   const code = Babel.transform(["DepositModal", "FbCaseModal", "Wallet"].map((name) => extract(source, name)).join("\n"),
     { presets: ["react"], sourceType: "script" }).code;
 
-  test(`${file} : choix explicite, une seule porte avec ses consignes et son adresse`, () => {
+  test(`${file} : choix explicite, une seule porte avec ses consignes et son adresse`, async () => {
     for (const lang of ["FR", "EN", "ZH"]) {
       const h = mount(code, { lang });
       assert.equal(nodes(h.tree).filter((n) => n.type === "input" || n.type === "CopyAddr").length, 0);
       for (const asset of ["fa", "fb", "fa"]) {
-        h.choose(asset);
+        await h.choose(asset);
         const selected = nodes(h.tree).filter((n) => n.type === "button" && n.props["aria-pressed"]);
         assert.equal(selected.length, 1);
         assert.equal(visibleText(selected[0]), h.context.I18N.t(asset === "fb" ? "WL_DEP_FB" : "WL_DEP_FA"));
@@ -152,9 +167,11 @@ for (const file of ["screens.jsx", "build/screens.js"]) {
   test(`${file} : FB appelle sa route avec le compte, le jeton et le TXID, sans crédit FA`, async () => {
     for (const lang of ["FR", "EN", "ZH"]) {
       const h = mount(code, { lang });
-      h.choose("fb"); h.enter(TXID.toUpperCase()); await h.submit();
-      assert.equal(h.requests.length, 1);
-      const { url, options } = h.requests[0];
+      await h.choose("fb"); h.enter(TXID.toUpperCase()); await h.submit();
+      // Un seul POST de dépôt (le GET /fb qui sert l'adresse est un autre appel, hors sujet ici).
+      const depots = h.requests.filter((r) => /verify-deposit/.test(r.url));
+      assert.equal(depots.length, 1);
+      const { url, options } = depots[0];
       assert.equal(url, "https://api.test/verify-deposit/fb");
       assert.equal(options.method, "POST");
       assert.equal(options.headers.Authorization, `Bearer ${ACCOUNT.authToken}`);
@@ -173,7 +190,7 @@ for (const file of ["screens.jsx", "build/screens.js"]) {
     for (const [status, key] of Object.entries({ ok: "WL_DEP_OK", already_used: "WL_DEP_ALREADY_USED",
       wrong_recipient: "WL_DEP_WRONG_RECIPIENT", sender_unverified: "WL_DEP_SENDER_UNVERIFIED", missing: "WL_DEP_NOT_FOUND" })) {
       const h = mount(code, { response: { status, credited: 321 } });
-      h.choose("fa"); h.enter(); await h.submit();
+      await h.choose("fa"); h.enter(); await h.submit();
       const { url, options } = h.requests[0];
       assert.equal(url, "https://api.test/verify-deposit");
       assert.equal(options.method, "POST");
@@ -191,7 +208,7 @@ for (const file of ["screens.jsx", "build/screens.js"]) {
       for (const [status, key] of Object.entries(ERRORS)) {
         const h = mount(code, { lang, response: { status, minimum_sats: 234567 } });
         assert.ok(h.context.I18N.T[key]?.[lang]?.trim(), `${key}.${lang}`);
-        h.choose("fb"); h.enter(); await h.submit(); h.render();
+        await h.choose("fb"); h.enter(); await h.submit(); h.render();
         assert.deepEqual(h.toasts, [{ kind: "bad", message: status === "below_minimum"
           ? h.context.I18N.t(key, 234567) : h.context.I18N.t(key) }]);
         assert.ok(!h.toasts[0].message.includes(status), `code brut : ${status}`);
@@ -207,13 +224,13 @@ for (const file of ["screens.jsx", "build/screens.js"]) {
   test(`${file} : erreurs inconnues, HTTP et réseau sans faux succès ni code brut`, async () => {
     for (const status of ["future_status", "constructor", "ok"]) {
       const h = mount(code, { fetcher: async () => ({ ok: false, json: async () => ({ status }) }) });
-      h.choose("fb"); h.enter(); await h.submit();
+      await h.choose("fb"); h.enter(); await h.submit();
       assert.equal(h.toasts[0].message, h.context.I18N.t("FB_DEP_ERROR"));
       assert.equal(h.closed, 0);
       assert.deepEqual(h.browserWindow.events, []);
     }
     const h = mount(code, { fetcher: async () => { throw new Error("offline"); } });
-    h.choose("fb"); h.enter(); await h.submit(); h.render();
+    await h.choose("fb"); h.enter(); await h.submit(); h.render();
     assert.equal(h.toasts[0].message, h.context.I18N.t("WL_NET_ERROR"));
     assert.equal(h.button("WL_DEP_SEND").props.disabled, false);
     assert.equal(h.closed, 0);
@@ -222,24 +239,24 @@ for (const file of ["screens.jsx", "build/screens.js"]) {
 
   test(`${file} : changement de porte efface le TXID et un TXID invalide ne part jamais`, async () => {
     const h = mount(code);
-    h.choose("fa"); h.enter(); h.choose("fb");
+    await h.choose("fa"); h.enter(); await h.choose("fb");
     assert.equal(nodes(h.tree).find((n) => n.type === "input").props.value, "");
     await h.submit();
     h.enter("abc"); await h.submit();
-    assert.equal(h.requests.length, 0);
+    assert.equal(h.requests.filter((r) => /verify-deposit/.test(r.url)).length, 0);
     assert.ok(h.toasts.every((toast) => toast.message === h.context.I18N.t("WL_DEP_TXID_INVALID")));
   });
 
   test(`${file} : pendant une requête, portes et TXID sont verrouillés et aucun second envoi ne part`, async () => {
     let finish;
     const h = mount(code, { fetcher: () => new Promise((resolve) => { finish = resolve; }) });
-    h.choose("fb"); h.enter();
+    await h.choose("fb"); h.enter();
     const pending = h.submit(); h.render();
     assert.ok(nodes(h.tree).filter((n) => n.type === "button" || n.type === "input").every((n) => n.props.disabled));
-    h.choose("fa");
+    await h.choose("fa");
     assert.equal(h.button("WL_DEP_FB").props["aria-pressed"], true);
     await h.button("WL_DEP_DETECT").props.onClick();
-    assert.equal(h.requests.length, 1);
+    assert.equal(h.requests.filter((r) => /verify-deposit/.test(r.url)).length, 1);
     finish({ ok: true, json: async () => SUCCESS }); await pending;
     assert.equal(h.closed, 1);
   });

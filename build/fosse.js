@@ -1046,10 +1046,218 @@ function Fosse() {
       color: "var(--alert)",
       textAlign: "center"
     }
-  }, I18N.t("AR_NEED3")))), result && /*#__PURE__*/React.createElement(ResultModal, {
+  }, I18N.t("AR_NEED3")))), /*#__PURE__*/React.createElement(FosseTeam2Panel, null), result && /*#__PURE__*/React.createElement(ResultModal, {
     data: result,
     onClose: () => setResult(null)
   }));
+}
+
+/* ============================================================
+   2e ÉQUIPE DE FOSSE — la boucle de fond (10 FB / 30 jours)
+   ------------------------------------------------------------
+   Elle tourne CÔTÉ SERVEUR : 1 combat / 10 min, 30 par jour, XP seule,
+   aucune mise, aucun FA. Cet écran ne fait que choisir les 3 entités,
+   démarrer, arrêter, et dire quand tombe le prochain combat.
+   Tant qu'elle tourne, ses entités sont verrouillées partout ailleurs
+   (le serveur refuse) — l'écran le dit avant que le joueur le découvre.
+   ============================================================ */
+function FosseTeam2Panel() {
+  const {
+    g,
+    toast
+  } = useFA();
+  const [etat, setEtat] = useState(null);
+  const [choix, setChoix] = useState([]);
+  const [busy, setBusy] = useState(false);
+  const [maintenant, setMaintenant] = useState(Date.now());
+  const entetes = {
+    "Content-Type": "application/json",
+    ...(g.authToken ? {
+      Authorization: `Bearer ${g.authToken}`
+    } : {})
+  };
+  const lire = React.useCallback(async () => {
+    if (!g.wallet || !g.authToken) return;
+    try {
+      const r = await fetch(`${window.FA_API_URL}/fosse/team2/state`, {
+        headers: entetes
+      });
+      if (!r.ok) return;
+      const d = await r.json();
+      setEtat(d);
+      if (d.running) setChoix(d.beast_ids || []);else setChoix(c => c.length ? c : []);
+    } catch (e) {/* réseau : on garde le dernier état connu */}
+  }, [g.wallet, g.authToken]);
+
+  // État à l'ouverture, horloge locale pour le compte à rebours, et relecture
+  // périodique tant que la boucle tourne (un combat tombe toutes les 10 min).
+  useEffect(() => {
+    lire();
+    const t = setInterval(() => setMaintenant(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [lire]);
+  useEffect(() => {
+    if (!etat || !etat.running) return;
+    const t = setInterval(lire, 60000);
+    return () => clearInterval(t);
+  }, [etat && etat.running, lire]);
+  if (!etat || !etat.subscribed) return null; // la porte d'entrée, c'est la Boutique
+
+  const prisAilleurs = new Set(g.selected || []);
+  const roster = (g.roster || []).filter(b => b && !prisAilleurs.has(b.id));
+  const tourne = !!etat.running;
+  function basculer(id) {
+    if (tourne || busy) return;
+    setChoix(c => c.includes(id) ? c.filter(x => x !== id) : c.length >= 3 ? c : [...c, id]);
+  }
+  async function demarrer() {
+    if (busy || choix.length !== 3) return;
+    setBusy(true);
+    try {
+      const r = await fetch(`${window.FA_API_URL}/fosse/team2/start`, {
+        method: "POST",
+        headers: entetes,
+        body: JSON.stringify({
+          beast_ids: choix
+        })
+      });
+      const d = await r.json().catch(() => ({}));
+      if (r.ok) {
+        toast(I18N.t("FT2_RUNNING"), "good");
+        await lire();
+      } else toast(d.error || I18N.t("WL_NET_ERROR"), "bad");
+    } catch (e) {
+      toast(I18N.t("WL_NET_ERROR"), "bad");
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function arreter() {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const r = await fetch(`${window.FA_API_URL}/fosse/team2/stop`, {
+        method: "POST",
+        headers: entetes
+      });
+      if (r.ok) {
+        await lire();
+        setChoix([]);
+      }
+    } catch (e) {
+      toast(I18N.t("WL_NET_ERROR"), "bad");
+    } finally {
+      setBusy(false);
+    }
+  }
+  const restantMs = etat.next_fight_at ? Math.max(0, new Date(etat.next_fight_at).getTime() - maintenant) : 0;
+  const jusquau = etat.expires_at ? new Date(etat.expires_at).toLocaleDateString("fr-FR") : null;
+  return /*#__PURE__*/React.createElement("div", {
+    className: "panel oct",
+    style: {
+      border: "1px solid var(--line)",
+      padding: 16,
+      marginTop: 16
+    },
+    "data-guide": "fosse-team2"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex between center",
+    style: {
+      gap: 10,
+      flexWrap: "wrap"
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "h2",
+    style: {
+      fontSize: 14,
+      color: "var(--fire)"
+    }
+  }, I18N.t("FT2_TITLE")), /*#__PURE__*/React.createElement("span", {
+    className: "mono",
+    style: {
+      fontSize: 11,
+      color: tourne ? "var(--success)" : "var(--text-dim)"
+    }
+  }, tourne ? I18N.t("FT2_RUNNING") : "", jusquau ? ` · ${I18N.t("FT2_UNTIL")} ${jusquau}` : "")), /*#__PURE__*/React.createElement("div", {
+    className: "muted",
+    style: {
+      fontSize: 11,
+      lineHeight: 1.5,
+      margin: "6px 0 12px"
+    }
+  }, I18N.t("FT2_HINT")), tourne ? /*#__PURE__*/React.createElement("div", {
+    className: "flex gap8",
+    style: {
+      flexWrap: "wrap",
+      marginBottom: 12
+    }
+  }, (etat.entities || []).map(e => /*#__PURE__*/React.createElement("span", {
+    key: e.id,
+    className: "pill mono",
+    style: {
+      fontSize: 11
+    }
+  }, e.name || "—", e.level != null ? ` · Nv ${e.level}` : ""))) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      fontSize: 11,
+      color: "var(--text-dim)",
+      marginBottom: 8
+    }
+  }, I18N.t("FT2_PICK"), " \u2014 ", choix.length, "/3"), /*#__PURE__*/React.createElement("div", {
+    className: "flex gap8",
+    style: {
+      flexWrap: "wrap",
+      marginBottom: 12
+    }
+  }, roster.map(b => {
+    const on = choix.includes(b.id);
+    return /*#__PURE__*/React.createElement("button", {
+      key: b.id,
+      className: cx("btn sm", on && "on"),
+      style: {
+        "--c": D.RARITY_COLORS[b.rarity]
+      },
+      disabled: busy || !on && choix.length >= 3,
+      onClick: () => basculer(b.id)
+    }, D.displayName(b), " ", /*#__PURE__*/React.createElement("span", {
+      className: "mono",
+      style: {
+        fontSize: 10,
+        opacity: 0.8
+      }
+    }, "Nv ", b.level));
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "flex between center",
+    style: {
+      gap: 10,
+      flexWrap: "wrap"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      fontSize: 11,
+      color: "var(--text-dim)"
+    }
+  }, I18N.t("FT2_TODAY"), " : ", etat.fights_today, "/", etat.daily_max, tourne && restantMs > 0 && !etat.cap_reached ? ` · ${I18N.t("FT2_NEXT")} ${fmtFreeCountdown(restantMs)}` : ""), tourne ? /*#__PURE__*/React.createElement("button", {
+    className: "btn sm",
+    style: {
+      "--c": "var(--alert)"
+    },
+    disabled: busy,
+    onClick: arreter
+  }, I18N.t("FT2_STOP")) : /*#__PURE__*/React.createElement("button", {
+    className: "btn sm btn-success",
+    disabled: busy || choix.length !== 3,
+    onClick: demarrer
+  }, choix.length === 3 ? I18N.t("FT2_START") : I18N.t("FT2_NEED3"))), tourne && etat.cap_reached && /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      fontSize: 11,
+      color: "var(--gold)",
+      marginTop: 8
+    }
+  }, I18N.t("FT2_CAP")));
 }
 function ResultModal({
   data,
