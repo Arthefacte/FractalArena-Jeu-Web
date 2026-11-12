@@ -2037,11 +2037,30 @@ function DepositModal({ onClose, initialAsset = null }) {
   const [txid, setTxid] = useState("");
   const [busy, setBusy] = useState(false);
   const isFB = asset === "fb";
-  const pool = "bc1qhgnfujw5f6r0hct45vmrrwuyrkh4u8npjn0p4s";
+  // Adresse de dépôt FA : wallet en réception seule, reversé à la main (inchangé).
+  const FA_DEPOSIT_ADDRESS = "bc1qhgnfujw5f6r0hct45vmrrwuyrkh4u8npjn0p4s";
+  // Adresse de dépôt FB : elle vient du SERVEUR (`GET /fb` → `deposit_address`) et de nulle
+  // part ailleurs. Elle était codée en dur ici jusqu'au 12/11/2026 : le jour où le wallet de
+  // réception change, le client enverrait les joueurs vers une adresse morte et tous les
+  // dépôts tomberaient en `wrong_recipient`. Sans réponse du serveur : rien plutôt que faux.
+  const [fbPool, setFbPool] = useState(null);
+  // Rechargée à l'ouverture de la porte FB (et au montage si elle est déjà choisie) :
+  // aucune adresse n'est écrite en dur, et l'échec réseau laisse `null` → envoi bloqué.
+  async function chargerAdresseFB() {
+    if (!g.wallet || !g.authToken) return;
+    try {
+      const r = await fetch(`${API_URL}/fb?wallet=${encodeURIComponent(g.wallet)}`, { headers: { Authorization: `Bearer ${g.authToken}` } });
+      const d = r.ok ? await r.json() : null;
+      setFbPool((d && d.deposit_address) || null);
+    } catch (e) { setFbPool(null); }
+  }
+  useEffect(() => { if (isFB) chargerAdresseFB(); }, [isFB]);
+  const pool = isFB ? fbPool : FA_DEPOSIT_ADDRESS;
   function chooseAsset(next) {
     if (busy || asset === next) return;
     setAsset(next);
     setTxid("");
+    if (next === "fb") chargerAdresseFB();
   }
   async function go() {
     if (busy || !asset) return;
@@ -2116,12 +2135,12 @@ function DepositModal({ onClose, initialAsset = null }) {
         <div className="panel oct" style={{ border: "1px solid var(--line)", padding: "12px 14px", marginBottom: 16 }}>
           <div className="flex between center" style={{ gap: 10, flexWrap: "wrap" }}>
             <span className="mono muted" style={{ fontSize: 12 }}>{isFB ? I18N.t("FB_DEP_ADDRESS") : I18N.t("WL_REWARD_POOL")}</span>
-            <CopyAddr addr={pool} />
+            {pool ? <CopyAddr addr={pool} /> : null}
           </div>
-          <div className="mono" style={{ fontSize: 12, overflowWrap: "anywhere", marginTop: 8 }}>{pool}</div>
+          <div className="mono" style={{ fontSize: 12, overflowWrap: "anywhere", marginTop: 8 }}>{pool || "…"}</div>
         </div>
         <input className="field" style={{ fontSize: 12 }} disabled={busy} aria-label={I18N.t("WL_DEP_TXID")} value={txid} onChange={(e) => setTxid(e.target.value.replace(/[^0-9a-fA-F]/g, "").slice(0, 64))} placeholder={I18N.t("WL_DEP_TXID_PH")} />
-        <button className="btn btn-elec block lg" style={{ marginTop: 18 }} disabled={busy} onClick={go}>{busy ? I18N.t("WL_DEP_DETECT") : I18N.t("WL_DEP_SEND")}</button>
+        <button className="btn btn-elec block lg" style={{ marginTop: 18 }} disabled={busy || !pool} onClick={go}>{busy ? I18N.t("WL_DEP_DETECT") : I18N.t("WL_DEP_SEND")}</button>
       </>}
     </Modal>
   );
