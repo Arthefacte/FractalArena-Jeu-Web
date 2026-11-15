@@ -26,7 +26,7 @@ window.FA_API_URL = (typeof location !== "undefined" &&
 // l'installation alors que la prod servait le nouveau depuis une heure.
 // Ne sert plus que de REPLI : un asset absent du manifeste doit rester cache-busté
 // plutôt que servi indéfiniment par le CDN.
-window.FA_ASSET_V = "469";
+window.FA_ASSET_V = "470";
 
 // L'URL porte l'empreinte du CONTENU du fichier (asset-hashes.js, généré au build),
 // et non la version du jeu. Versionner par la version du jeu — ce que faisait la
@@ -89,13 +89,12 @@ window.FA_ASSET_URL = function (chemin) {
   // Fusion : 3 reliques de même rareté → 1 relique de la rareté supérieure
   // (RARITY_UPGRADE), succès 100 %. Legendary = rareté max, absente de la table.
   const RELIC_FUSE_COSTS = { Common: 2000, Rare: 5000, Epic: 15000 };
-  // Désenchantement : détruit l'objet, crédite 20 % de sa valeur en FA liquid,
-  // moins des frais fixes (→ buyback). Reliques ET cores (cores depuis le 25/09).
+  // Anciens barèmes FA conservés pour compatibilité. Le recyclage ne les lit plus :
+  // forge-ui.js calcule les fragments, sans crédit ni frais FA (15/11/2026).
   const RELIC_BUYBACK = { Common: 1600, Rare: 4000, Epic: 10000, Legendary: 25000 };
-  // Frais : 500 → 600 (fondateur 25/09 : « 1400 net de gain c'est trop, 1000 »).
-  // Commune 1600 − 600 = 1 000 nets. Miroir serveur : DISENCHANT_COST.
+  // Frais historiques, sans effet sur le recyclage.
   const DISENCHANT_FEE = 600;
-  // Cores : mêmes barèmes que les reliques (miroir serveur CORE_FUSE_COSTS / CORE_BUYBACK).
+  // Cores : même coût de fusion ; CORE_BUYBACK est aussi un barème historique.
   const CORE_FUSE_COSTS = { Common: 2000, Rare: 5000, Epic: 15000 };
   const CORE_BUYBACK = { Common: 1600, Rare: 4000, Epic: 10000, Legendary: 25000 };
 

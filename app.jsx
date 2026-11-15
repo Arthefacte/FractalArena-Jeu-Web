@@ -1948,28 +1948,26 @@ function App() {
       } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
     },
 
-    // Désenchantement : détruit une relique OU un core, crédite 20 % de sa valeur en
-    // liquid, débite les frais fixes (→ buyback). La FAMILLE de l'objet choisit la
-    // table de valeur côté serveur ; ici on n'en garde que le miroir local du montant.
+    // Recyclage (ex-désenchantement) : détruit une relique OU un core et crédite des
+    // FRAGMENTS — plus aucun FA. Décision fondateur 2026-11-15 : créditer de l'argent pour un
+    // objet vidait le marché (0 annonce active) et tuait la progression par fusion. Le coût de
+    // l'opération, c'est l'objet ; le seul mouvement d'argent reste la vente au marché.
     async equipDisenchant(itemId) {
       const s = gRef.current;
       if (!s.wallet || !s.authToken) return { ok: false, reason: "Wallet requis" };
-      const item = (s.equipment || []).find((e) => e.id === itemId);
-      if (s.liquid + s.locked < D.DISENCHANT_FEE) return { ok: false, reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, D.DISENCHANT_FEE) };
       try {
         const resp = await fetch(`${API_URL}/forge/equip-disenchant`, {
           method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
           body: JSON.stringify({ wallet: s.wallet, item_id: itemId }),
         });
         const data = await resp.json();
-        if (data.status === "insufficient_balance") return { ok: false, reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, D.DISENCHANT_FEE) };
         if (data.status !== "ok") return { ok: false, reason: window.FA_FORGE_UI.equipForgeErrText(data.error) };
-        const sv = await fetch(`${API_URL}/save/${s.wallet}`, svOpts());
+        // /save retire l'objet ; /expeditions/state actualise les fragments de la forge.
+        const [sv] = await Promise.all([fetch(`${API_URL}/save/${s.wallet}`, svOpts()), actions.expeditionsState()]);
         if (sv.ok) { const { save } = await sv.json(); applySave(save, s.wallet, s.authToken); }
-        // Valeur créditée : celle du serveur si présente, sinon le miroir local.
-        const table = item && D.isCoreItem(item) ? D.CORE_BUYBACK : D.RELIC_BUYBACK;
-        const value = data.value != null ? data.value : (item ? table[item.rarity] || 0 : 0);
-        return { ok: true, value };
+        // Valeur en FA : toujours 0 depuis le 15/11. On garde le champ pour les appelants
+        // existants, et on remonte les fragments pour que l'écran puisse les annoncer.
+        return { ok: true, value: 0, fragments: data.fragments || 0, rank: data.rank || null };
       } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
     },
 

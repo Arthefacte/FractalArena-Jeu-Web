@@ -1210,20 +1210,19 @@
     // Forge d'équipement : fusion 3 reliques → rareté supérieure, désenchantement
     FG_EQ_TITLE: { FR: "Forge d'équipement", EN: "Equipment forge", ZH: "装备熔炉" },
     FG_EQ_SUB: {
-      FR: "Fusionne 3 reliques de même rareté en une relique supérieure, ou désenchante-en une contre des FA.",
-      EN: "Fuse 3 relics of the same rarity into a higher one, or disenchant one for FA.",
-      ZH: "将 3 件同稀有度圣物融合为更高稀有度，或分解一件换取 FA。",
+      FR: "Fusionne 3 reliques de même rareté en une relique supérieure, ou recycle-en une contre des fragments.",
+      EN: "Fuse 3 relics of the same rarity into a higher one, or recycle one for fragments.",
+      ZH: "将 3 件同稀有度圣物融合为更高稀有度，或回收一件换取碎片。",
     },
     FG_EQ_FUSE_BTN: { FR: "Fusionner  −%d FA", EN: "Fuse  −%d FA", ZH: "融合  −%d FA" },
     FG_EQ_FUSE_HINT: { FR: "3 × %s → 1 × %s (type aléatoire)", EN: "3 × %s → 1 × %s (random type)", ZH: "3 × %s → 1 × %s（类型随机）" },
     FG_EQ_MAX_RARITY: { FR: "Légendaire : rareté maximale, non fusible", EN: "Legendary: max rarity, cannot be fused", ZH: "传说：已是最高稀有度，无法融合" },
     FG_EQ_SEL_MAX: { FR: "3 reliques maximum", EN: "3 relics max", ZH: "最多选择 3 件圣物" },
-    FG_EQ_DIS_BTN: { FR: "Désenchanter  +%d FA net", EN: "Disenchant  +%d FA net", ZH: "分解  净得 +%d FA" },
-    FG_EQ_DIS_CONFIRM: { FR: "Sûr ? La relique sera détruite", EN: "Sure? The relic will be destroyed", ZH: "确定？圣物将被销毁" },
-    // Clé COMMUNE aux deux familles : le joueur ne voyait que le net, les frais
-    // (qui partent au rachat) doivent être lisibles avant de confirmer.
-    FG_EQ_DIS_BREAKDOWN: { FR: "Valeur %d FA − frais %d FA = +%d FA net", EN: "Value %d FA − fee %d FA = +%d FA net", ZH: "价值 %d FA − 手续费 %d FA = 净得 +%d FA" },
-    FG_EQ_DIS_OK: { FR: "+%d FA — relique désenchantée", EN: "+%d FA — relic disenchanted", ZH: "+%d FA——圣物已分解" },
+    FG_EQ_DIS_BTN: { FR: "Recycler  +%d fragments", EN: "Recycle  +%d fragments", ZH: "回收  +%d 碎片" },
+    FG_EQ_DIS_CONFIRM: { FR: "Sûr ? L'objet sera détruit et remplacé par des fragments", EN: "Sure? The item will be destroyed and replaced by fragments", ZH: "确定？物品将被销毁并转化为碎片" },
+    // Clé commune aux deux familles : annoncer les fragments avant la destruction.
+    FG_EQ_DIS_BREAKDOWN: { FR: "Détruit l'objet → +%d fragments (aucun FA)", EN: "Destroys the item → +%d fragments (no FA)", ZH: "销毁物品 → +%d 碎片（无 FA）" },
+    FG_EQ_DIS_OK: { FR: "+%d fragments — objet recyclé", EN: "+%d fragments — item recycled", ZH: "+%d 碎片——物品已回收" },
     // Codes d'erreur serveur relic-fuse / equip-disenchant (1:1 avec forge.js)
     FG_EQ_ERR_relic_ids_invalide: { FR: "Sélection invalide : 3 reliques requises.", EN: "Invalid selection: 3 relics required.", ZH: "选择无效：需要 3 件圣物。" },
     FG_EQ_ERR_relique_introuvable: { FR: "Relique introuvable dans ton inventaire.", EN: "Relic not found in your inventory.", ZH: "库存中找不到该圣物。" },
@@ -1236,15 +1235,15 @@
     // Mêmes barèmes que les reliques (décision fondateur) : la famille change le
     // libellé, pas l'économie.
     FG_CORE_EQ_TITLE: { FR: "Forge d'équipement (cores)", EN: "Core equipment forge", ZH: "核心装备熔炉" },
-    FG_CORE_EQ_SUB: { FR: "Fusionne 3 cores de même rareté en un core de la rareté supérieure, ou désenchante un core contre des FA.", EN: "Fuse 3 cores of the same rarity into a higher one, or disenchant one for FA.", ZH: "将同稀有度的 3 个核心融合为更高稀有度的核心，或分解换取 FA。" },
+    FG_CORE_EQ_SUB: { FR: "Fusionne 3 cores de même rareté en un core de la rareté supérieure, ou recycle un core contre des fragments.", EN: "Fuse 3 cores of the same rarity into a higher one, or recycle one for fragments.", ZH: "将同稀有度的 3 个核心融合为更高稀有度的核心，或回收换取碎片。" },
     FG_CORE_EQ_FUSE_BTN: { FR: "Fusionner  −%d FA", EN: "Fuse  −%d FA", ZH: "融合  −%d FA" },
     FG_CORE_EQ_FUSE_HINT: { FR: "3 × %s → 1 × %s (core aléatoire)", EN: "3 × %s → 1 × %s (random core)", ZH: "3 × %s → 1 × %s（核心随机）" },
     FG_CORE_EQ_FUSE_OK: { FR: "Fusion réussie : %s (%s)", EN: "Fusion complete: %s (%s)", ZH: "融合成功：%s（%s）" },
     FG_CORE_EQ_MAX_RARITY: { FR: "Légendaire : rareté maximale, non fusible", EN: "Legendary: max rarity, cannot be fused", ZH: "传说：已是最高稀有度，无法融合" },
     FG_CORE_EQ_SEL_MAX: { FR: "3 cores maximum", EN: "3 cores max", ZH: "最多选择 3 个核心" },
-    FG_CORE_EQ_DIS_BTN: { FR: "Désenchanter  +%d FA net", EN: "Disenchant  +%d FA net", ZH: "分解  净得 +%d FA" },
-    FG_CORE_EQ_DIS_CONFIRM: { FR: "Sûr ? Le core sera détruit", EN: "Sure? The core will be destroyed", ZH: "确定？核心将被销毁" },
-    FG_CORE_EQ_DIS_OK: { FR: "+%d FA — core désenchanté", EN: "+%d FA — core disenchanted", ZH: "+%d FA——核心已分解" },
+    FG_CORE_EQ_DIS_BTN: { FR: "Recycler  +%d fragments", EN: "Recycle  +%d fragments", ZH: "回收  +%d 碎片" },
+    FG_CORE_EQ_DIS_CONFIRM: { FR: "Sûr ? Le core sera détruit et remplacé par des fragments", EN: "Sure? The core will be destroyed and replaced by fragments", ZH: "确定？核心将被销毁并转化为碎片" },
+    FG_CORE_EQ_DIS_OK: { FR: "+%d fragments — core recyclé", EN: "+%d fragments — core recycled", ZH: "+%d 碎片——核心已回收" },
     // Codes serveur core-fuse (1:1 avec forge.js handleCoreFuse) + objet_invalide,
     // ajouté au désenchantement partagé quand l'objet n'est ni relique ni core.
     FG_EQ_ERR_core_ids_invalide: { FR: "Sélection invalide : 3 cores requis.", EN: "Invalid selection: 3 cores required.", ZH: "选择无效：需要 3 个核心。" },
@@ -1252,7 +1251,7 @@
     FG_EQ_ERR_pas_un_core: { FR: "Cet objet n'est pas un core.", EN: "This item is not a core.", ZH: "该物品不是核心。" },
     FG_EQ_ERR_core_rarity_mismatch: { FR: "Les 3 cores doivent être de la même rareté.", EN: "All 3 cores must share the same rarity.", ZH: "3 个核心必须为同一稀有度。" },
     FG_EQ_ERR_core_max_rarity: { FR: "Rareté maximale : un core Légendaire ne fusionne pas.", EN: "Max rarity: a Legendary core cannot be fused.", ZH: "已是最高稀有度：传说核心无法融合。" },
-    FG_EQ_ERR_objet_invalide: { FR: "Cet objet ne peut pas être désenchanté.", EN: "This item cannot be disenchanted.", ZH: "该物品无法分解。" },
+    FG_EQ_ERR_objet_invalide: { FR: "Cet objet ne peut pas être recyclé.", EN: "This item cannot be recycled.", ZH: "该物品无法回收。" },
 
     // ---- Marché (hôtel des ventes reliques) ----
     NAV_MARKET: { FR: "Marché", EN: "Market", ZH: "市场" },

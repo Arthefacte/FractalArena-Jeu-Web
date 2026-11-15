@@ -2063,8 +2063,8 @@ function ForgeCoreFragments({
 }
 
 /* ---------------- FORGE D'ÉQUIPEMENT ----------------
-   Fusion 3 reliques de même rareté → rareté supérieure, ou désenchantement
-   (détruit la relique, crédite sa valeur moins les frais). Sélection et états
+   Fusion 3 reliques de même rareté → rareté supérieure, ou recyclage
+   (détruit la relique contre des fragments, sans frais). Sélection et états
    des boutons délégués aux helpers purs de forge-ui.js (miroir serveur). */
 function ForgeEquipement() {
   const {
@@ -2130,8 +2130,6 @@ function ForgeEquipement() {
   }
   async function doDisenchant() {
     if (dis.disabled) return;
-    const fee = dis.fee,
-      net = dis.net;
     setBusy(true);
     const r = await actions.equipDisenchant(sel[0].id);
     setBusy(false);
@@ -2141,7 +2139,9 @@ function ForgeEquipement() {
       return;
     }
     setSel([]);
-    toast(I18N.t("FG_EQ_DIS_OK", fmt(r.value != null ? r.value - fee : net)), "good");
+    // Le recyclage rend des FRAGMENTS, plus de FA (décision fondateur 15/11/2026) : on
+    // annonce ce qui a réellement été crédité, jamais un montant qui n'existe plus.
+    toast(I18N.t("FG_EQ_DIS_OK", fmt(r.fragments || 0)), "good");
   }
   return /*#__PURE__*/React.createElement("div", {
     className: "panel oct",
@@ -2224,20 +2224,20 @@ function ForgeEquipement() {
       fontSize: 12,
       marginBottom: 8
     }
-  }, I18N.t("FG_EQ_FUSE_HINT", rarityLabel(selRarity), rarityLabel(fuse.nextRarity))), dis.value != null && !dis.showInsufficient && /*#__PURE__*/React.createElement("div", {
+  }, I18N.t("FG_EQ_FUSE_HINT", rarityLabel(selRarity), rarityLabel(fuse.nextRarity))), dis.fragments != null && /*#__PURE__*/React.createElement("div", {
     className: "mono muted",
     style: {
       fontSize: 12,
       marginBottom: 8
     }
-  }, I18N.t("FG_EQ_DIS_BREAKDOWN", fmt(dis.value), fmt(dis.fee), fmt(dis.net))), (fuse.showInsufficient || dis.showInsufficient) && /*#__PURE__*/React.createElement("div", {
+  }, I18N.t("FG_EQ_DIS_BREAKDOWN", fmt(dis.fragments || 0))), fuse.showInsufficient && /*#__PURE__*/React.createElement("div", {
     className: "mono",
     style: {
       fontSize: 12,
       color: "var(--alert)",
       marginBottom: 8
     }
-  }, I18N.t("INSUFFICIENT", fmt(balance), fmt(fuse.showInsufficient ? fuse.cost : dis.fee))), /*#__PURE__*/React.createElement("div", {
+  }, I18N.t("INSUFFICIENT", fmt(balance), fmt(fuse.cost))), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "grid",
       gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)",
@@ -2255,7 +2255,7 @@ function ForgeEquipement() {
     disabled: dis.disabled,
     onClick: () => setConfirmDis(true)
   }, busy ? "…" : /*#__PURE__*/React.createElement(FaText, {
-    text: I18N.t("FG_EQ_DIS_BTN", fmt(dis.net || 0))
+    text: I18N.t("FG_EQ_DIS_BTN", fmt(dis.fragments || 0))
   })) :
   /*#__PURE__*/
   // Le désenchantement DÉTRUIT la relique : confirmation obligatoire.
@@ -2291,7 +2291,7 @@ function ForgeEquipement() {
     },
     onClick: doDisenchant
   }, busy ? "…" : /*#__PURE__*/React.createElement(FaText, {
-    text: I18N.t("FG_EQ_DIS_BTN", fmt(dis.net || 0))
+    text: I18N.t("FG_EQ_DIS_BTN", fmt(dis.fragments || 0))
   }))))));
 }
 
@@ -2500,10 +2500,9 @@ function ForgeCoreSummon({
 }
 
 /* Forge d'équipement des CORES — miroir de ForgeEquipement (reliques) : fusion de
-   3 cores de même rareté → 1 core de la rareté supérieure, ou désenchantement
-   (détruit le core, crédite sa valeur moins les frais). Mêmes barèmes que les
-   reliques (décision fondateur 25/09), tables distinctes : CORE_FUSE_COSTS /
-   CORE_BUYBACK, choisies par la famille dans forge-ui.js (famille "core").
+   3 cores de même rareté → 1 core de la rareté supérieure, ou recyclage
+   (détruit le core contre des fragments, sans frais). Mêmes barèmes que les
+   reliques ; la fusion garde sa table CORE_FUSE_COSTS (famille "core").
 
    La grille sert À LA FOIS d'inventaire et de sélection — comme celle des reliques.
    C'est indispensable : `equipment` mêle reliques et cores, donc sans cette grille
@@ -2577,8 +2576,6 @@ function ForgeCoreEquipement({
   }
   async function doDisenchant() {
     if (dis.disabled) return;
-    const fee = dis.fee,
-      net = dis.net;
     setBusy(true);
     const r = await actions.equipDisenchant(sel[0].id);
     setBusy(false);
@@ -2588,7 +2585,8 @@ function ForgeCoreEquipement({
       return;
     }
     setSel([]);
-    toast(I18N.t("FG_CORE_EQ_DIS_OK", fmt(r.value != null ? r.value - fee : net)), "good");
+    // Cores : même contrat depuis le 15/11 — des fragments, plus de FA.
+    toast(I18N.t("FG_CORE_EQ_DIS_OK", fmt(r.fragments || 0)), "good");
   }
   return /*#__PURE__*/React.createElement("div", {
     className: "panel oct",
@@ -2681,20 +2679,20 @@ function ForgeCoreEquipement({
       fontSize: 12,
       marginBottom: 8
     }
-  }, I18N.t("FG_CORE_EQ_FUSE_HINT", rarityLabel(selRarity), rarityLabel(fuse.nextRarity))), dis.value != null && !dis.showInsufficient && /*#__PURE__*/React.createElement("div", {
+  }, I18N.t("FG_CORE_EQ_FUSE_HINT", rarityLabel(selRarity), rarityLabel(fuse.nextRarity))), dis.fragments != null && /*#__PURE__*/React.createElement("div", {
     className: "mono muted",
     style: {
       fontSize: 12,
       marginBottom: 8
     }
-  }, I18N.t("FG_EQ_DIS_BREAKDOWN", fmt(dis.value), fmt(dis.fee), fmt(dis.net))), (fuse.showInsufficient || dis.showInsufficient) && /*#__PURE__*/React.createElement("div", {
+  }, I18N.t("FG_EQ_DIS_BREAKDOWN", fmt(dis.fragments || 0))), fuse.showInsufficient && /*#__PURE__*/React.createElement("div", {
     className: "mono",
     style: {
       fontSize: 12,
       color: "var(--alert)",
       marginBottom: 8
     }
-  }, I18N.t("INSUFFICIENT", fmt(balance), fmt(fuse.showInsufficient ? fuse.cost : dis.fee))), /*#__PURE__*/React.createElement("div", {
+  }, I18N.t("INSUFFICIENT", fmt(balance), fmt(fuse.cost))), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "grid",
       gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)",
@@ -2712,7 +2710,7 @@ function ForgeCoreEquipement({
     disabled: dis.disabled,
     onClick: () => setConfirmDis(true)
   }, busy ? "…" : /*#__PURE__*/React.createElement(FaText, {
-    text: I18N.t("FG_CORE_EQ_DIS_BTN", fmt(dis.net || 0))
+    text: I18N.t("FG_CORE_EQ_DIS_BTN", fmt(dis.fragments || 0))
   })) :
   /*#__PURE__*/
   // Le désenchantement DÉTRUIT le core : confirmation obligatoire.
@@ -2748,7 +2746,7 @@ function ForgeCoreEquipement({
     },
     onClick: doDisenchant
   }, busy ? "…" : /*#__PURE__*/React.createElement(FaText, {
-    text: I18N.t("FG_CORE_EQ_DIS_BTN", fmt(dis.net || 0))
+    text: I18N.t("FG_CORE_EQ_DIS_BTN", fmt(dis.fragments || 0))
   }))))));
 }
 
