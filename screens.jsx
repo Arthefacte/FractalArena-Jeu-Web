@@ -1090,8 +1090,8 @@ function ForgeCoreFragments({ onForged }) {
 }
 
 /* ---------------- FORGE D'ÉQUIPEMENT ----------------
-   Fusion 3 reliques de même rareté → rareté supérieure, ou désenchantement
-   (détruit la relique, crédite sa valeur moins les frais). Sélection et états
+   Fusion 3 reliques de même rareté → rareté supérieure, ou recyclage
+   (détruit la relique contre des fragments, sans frais). Sélection et états
    des boutons délégués aux helpers purs de forge-ui.js (miroir serveur). */
 function ForgeEquipement() {
   const { g, actions, toast } = useFA();
@@ -1138,14 +1138,15 @@ function ForgeEquipement() {
 
   async function doDisenchant() {
     if (dis.disabled) return;
-    const fee = dis.fee, net = dis.net;
     setBusy(true);
     const r = await actions.equipDisenchant(sel[0].id);
     setBusy(false);
     setConfirmDis(false);
     if (!r.ok) { toast(I18N.localizeServerError(r.reason), "bad"); return; }
     setSel([]);
-    toast(I18N.t("FG_EQ_DIS_OK", fmt(r.value != null ? r.value - fee : net)), "good");
+    // Le recyclage rend des FRAGMENTS, plus de FA (décision fondateur 15/11/2026) : on
+    // annonce ce qui a réellement été crédité, jamais un montant qui n'existe plus.
+    toast(I18N.t("FG_EQ_DIS_OK", fmt(r.fragments || 0)), "good");
   }
 
   return (
@@ -1178,12 +1179,12 @@ function ForgeEquipement() {
       {fuse.cost != null && !fuse.maxRarity && (
         <div className="mono muted" style={{ fontSize: 12, marginBottom: 8 }}>{I18N.t("FG_EQ_FUSE_HINT", rarityLabel(selRarity), rarityLabel(fuse.nextRarity))}</div>
       )}
-      {/* Le joueur ne voyait que le net : ce qui part au buyback doit être lisible. */}
-      {dis.value != null && !dis.showInsufficient && (
-        <div className="mono muted" style={{ fontSize: 12, marginBottom: 8 }}>{I18N.t("FG_EQ_DIS_BREAKDOWN", fmt(dis.value), fmt(dis.fee), fmt(dis.net))}</div>
+      {/* Le rendement en fragments est annoncé pour l'objet sélectionné. */}
+      {dis.fragments != null && (
+        <div className="mono muted" style={{ fontSize: 12, marginBottom: 8 }}>{I18N.t("FG_EQ_DIS_BREAKDOWN", fmt(dis.fragments || 0))}</div>
       )}
-      {(fuse.showInsufficient || dis.showInsufficient) && (
-        <div className="mono" style={{ fontSize: 12, color: "var(--alert)", marginBottom: 8 }}>{I18N.t("INSUFFICIENT", fmt(balance), fmt(fuse.showInsufficient ? fuse.cost : dis.fee))}</div>
+      {fuse.showInsufficient && (
+        <div className="mono" style={{ fontSize: 12, color: "var(--alert)", marginBottom: 8 }}>{I18N.t("INSUFFICIENT", fmt(balance), fmt(fuse.cost))}</div>
       )}
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 10 }} className="summon-grid">
         <button className="btn btn-gold" disabled={fuse.disabled} onClick={doFuse}>
@@ -1191,7 +1192,7 @@ function ForgeEquipement() {
         </button>
         {!confirmDis ? (
           <button className="btn" disabled={dis.disabled} onClick={() => setConfirmDis(true)}>
-            {busy ? "…" : <FaText text={I18N.t("FG_EQ_DIS_BTN", fmt(dis.net || 0))} />}
+            {busy ? "…" : <FaText text={I18N.t("FG_EQ_DIS_BTN", fmt(dis.fragments || 0))} />}
           </button>
         ) : (
           // Le désenchantement DÉTRUIT la relique : confirmation obligatoire.
@@ -1200,7 +1201,7 @@ function ForgeEquipement() {
             <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 8 }}>
               <button className="btn" onClick={() => setConfirmDis(false)}>{I18N.t("CANCEL")}</button>
               <button className="btn" disabled={dis.disabled} style={{ background: "var(--alert)", borderColor: "#ff8ba4", color: "#14030a", fontWeight: 700 }} onClick={doDisenchant}>
-                {busy ? "…" : <FaText text={I18N.t("FG_EQ_DIS_BTN", fmt(dis.net || 0))} />}
+                {busy ? "…" : <FaText text={I18N.t("FG_EQ_DIS_BTN", fmt(dis.fragments || 0))} />}
               </button>
             </div>
           </div>
@@ -1306,10 +1307,9 @@ function ForgeCoreSummon({ last, onSummoned }) {
 }
 
 /* Forge d'équipement des CORES — miroir de ForgeEquipement (reliques) : fusion de
-   3 cores de même rareté → 1 core de la rareté supérieure, ou désenchantement
-   (détruit le core, crédite sa valeur moins les frais). Mêmes barèmes que les
-   reliques (décision fondateur 25/09), tables distinctes : CORE_FUSE_COSTS /
-   CORE_BUYBACK, choisies par la famille dans forge-ui.js (famille "core").
+   3 cores de même rareté → 1 core de la rareté supérieure, ou recyclage
+   (détruit le core contre des fragments, sans frais). Mêmes barèmes que les
+   reliques ; la fusion garde sa table CORE_FUSE_COSTS (famille "core").
 
    La grille sert À LA FOIS d'inventaire et de sélection — comme celle des reliques.
    C'est indispensable : `equipment` mêle reliques et cores, donc sans cette grille
@@ -1362,14 +1362,14 @@ function ForgeCoreEquipement({ onForged }) {
 
   async function doDisenchant() {
     if (dis.disabled) return;
-    const fee = dis.fee, net = dis.net;
     setBusy(true);
     const r = await actions.equipDisenchant(sel[0].id);
     setBusy(false);
     setConfirmDis(false);
     if (!r.ok) { toast(I18N.localizeServerError(r.reason), "bad"); return; }
     setSel([]);
-    toast(I18N.t("FG_CORE_EQ_DIS_OK", fmt(r.value != null ? r.value - fee : net)), "good");
+    // Cores : même contrat depuis le 15/11 — des fragments, plus de FA.
+    toast(I18N.t("FG_CORE_EQ_DIS_OK", fmt(r.fragments || 0)), "good");
   }
 
   return (
@@ -1406,12 +1406,12 @@ function ForgeCoreEquipement({ onForged }) {
       {fuse.cost != null && !fuse.maxRarity && (
         <div className="mono muted" style={{ fontSize: 12, marginBottom: 8 }}>{I18N.t("FG_CORE_EQ_FUSE_HINT", rarityLabel(selRarity), rarityLabel(fuse.nextRarity))}</div>
       )}
-      {/* Le joueur ne voyait que le net : ce qui part au buyback doit être lisible. */}
-      {dis.value != null && !dis.showInsufficient && (
-        <div className="mono muted" style={{ fontSize: 12, marginBottom: 8 }}>{I18N.t("FG_EQ_DIS_BREAKDOWN", fmt(dis.value), fmt(dis.fee), fmt(dis.net))}</div>
+      {/* Le rendement en fragments est annoncé pour l'objet sélectionné. */}
+      {dis.fragments != null && (
+        <div className="mono muted" style={{ fontSize: 12, marginBottom: 8 }}>{I18N.t("FG_EQ_DIS_BREAKDOWN", fmt(dis.fragments || 0))}</div>
       )}
-      {(fuse.showInsufficient || dis.showInsufficient) && (
-        <div className="mono" style={{ fontSize: 12, color: "var(--alert)", marginBottom: 8 }}>{I18N.t("INSUFFICIENT", fmt(balance), fmt(fuse.showInsufficient ? fuse.cost : dis.fee))}</div>
+      {fuse.showInsufficient && (
+        <div className="mono" style={{ fontSize: 12, color: "var(--alert)", marginBottom: 8 }}>{I18N.t("INSUFFICIENT", fmt(balance), fmt(fuse.cost))}</div>
       )}
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 10 }} className="summon-grid">
         <button className="btn btn-gold" disabled={fuse.disabled} onClick={doFuse}>
@@ -1419,7 +1419,7 @@ function ForgeCoreEquipement({ onForged }) {
         </button>
         {!confirmDis ? (
           <button className="btn" disabled={dis.disabled} onClick={() => setConfirmDis(true)}>
-            {busy ? "…" : <FaText text={I18N.t("FG_CORE_EQ_DIS_BTN", fmt(dis.net || 0))} />}
+            {busy ? "…" : <FaText text={I18N.t("FG_CORE_EQ_DIS_BTN", fmt(dis.fragments || 0))} />}
           </button>
         ) : (
           // Le désenchantement DÉTRUIT le core : confirmation obligatoire.
@@ -1428,7 +1428,7 @@ function ForgeCoreEquipement({ onForged }) {
             <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 8 }}>
               <button className="btn" onClick={() => setConfirmDis(false)}>{I18N.t("CANCEL")}</button>
               <button className="btn" disabled={dis.disabled} style={{ background: "var(--alert)", borderColor: "#ff8ba4", color: "#14030a", fontWeight: 700 }} onClick={doDisenchant}>
-                {busy ? "…" : <FaText text={I18N.t("FG_CORE_EQ_DIS_BTN", fmt(dis.net || 0))} />}
+                {busy ? "…" : <FaText text={I18N.t("FG_CORE_EQ_DIS_BTN", fmt(dis.fragments || 0))} />}
               </button>
             </div>
           </div>

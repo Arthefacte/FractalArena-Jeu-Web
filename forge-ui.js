@@ -256,20 +256,30 @@
   function relicFuseState(args) { return fuseState(args); }
   function coreFuseState(args) { return fuseState(args); }
 
-  // État du bouton Désenchanter : exactement 1 objet, relique OU core ; le serveur
-  // débite les frais fixes AVANT de créditer la valeur — le solde doit les couvrir.
-  function disenchantState({ sel, balance, busy }) {
-    const D = window.FA_DATA;
+  // Recyclage : l'objet est détruit et rend des FRAGMENTS — plus aucun FA (décision fondateur
+  // 15/11/2026). Le bouton reste (c'est la soupape contre l'inventaire mort), mais il n'exige
+  // plus de solde : l'objet EST le coût. Il faut quand même un seul objet sélectionné.
+  const RECYCLE_SHARE = 0.30;
+  const FRAGMENT_COSTS = { C: 100, B: 250, A: 600, S: 1000 };
+  const RANK_OF_RARITY = { Common: "C", Rare: "B", Epic: "A", Legendary: "S" };
+  function fragmentsForRecycle(item) {
+    if (!item || !Object.hasOwn(RANK_OF_RARITY, item.rarity)) return null;
+    const rank = RANK_OF_RARITY[item.rarity];
+    return { rank, fragments: Math.max(1, Math.floor(FRAGMENT_COSTS[rank] * RECYCLE_SHARE)) };
+  }
+
+  function disenchantState({ sel, busy }) {
     const S = Array.isArray(sel) ? sel : [];
     const one = S.length === 1 ? S[0] : null;
-    const value = buybackFor(one);
-    const insufficient = value != null && (balance || 0) < D.DISENCHANT_FEE;
+    const r = fragmentsForRecycle(one);
     return {
-      disabled: !!busy || value == null || insufficient,
-      value,
-      fee: D.DISENCHANT_FEE,
-      net: value != null ? value - D.DISENCHANT_FEE : null,
-      showInsufficient: insufficient,
+      disabled: !!busy || r == null,
+      value: 0,
+      fee: 0,
+      net: 0,
+      fragments: r ? r.fragments : null,
+      rank: r ? r.rank : null,
+      showInsufficient: false,
     };
   }
 
@@ -286,5 +296,6 @@
 
   window.FA_FORGE_UI = { rerollDiff, toggleLock, withLockCost, fusionSwap, fusionButtonState, entityPower, fusionKeepWarning, MAX_REROLL_LOCKS, REROLL_LOCK_MULT, LOCKABLE: KEYS,
     rankNext, rankFuseCost, rankSelToggle, rankFuseState, rankFuseTemplates, rankFuseWarning, countTalents,
+    FRAGMENT_COSTS, RECYCLE_SHARE, RANK_OF_RARITY,
     equipSelToggle, familyMatch, buybackFor, fuseCostFor, fuseState, relicFuseState, coreFuseState, disenchantState, equipForgeErrText };
 })();

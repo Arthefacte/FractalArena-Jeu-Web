@@ -1,6 +1,6 @@
-// Miroir web des constantes de la Forge d'équipement (le serveur — forge.js —
-// fait foi) : fusion 3 reliques → rareté supérieure, désenchantement → 20 % de
-// la valeur en FA moins des frais fixes.
+// Constantes de fusion et anciens exports FA conservés pour compatibilité.
+// Le recyclage rend des fragments sans frais : son contrat est vérifié dans
+// forge-ui.equip.test.js, indépendamment de ces anciens barèmes.
 const test = require("node:test");
 const assert = require("node:assert");
 globalThis.window = {};
@@ -12,11 +12,11 @@ test("RELIC_FUSE_COSTS : coûts du design v1, Legendary exclu (rareté max)", ()
   assert.ok(!Object.hasOwn(D.RELIC_FUSE_COSTS, "Legendary"), "Legendary ne fusionne pas");
 });
 
-test("RELIC_BUYBACK : valeurs rendues (20 %) pour les 4 raretés", () => {
+test("RELIC_BUYBACK : ancien barème FA conservé pour compatibilité", () => {
   assert.deepStrictEqual(D.RELIC_BUYBACK, { Common: 1600, Rare: 4000, Epic: 10000, Legendary: 25000 });
 });
 
-test("DISENCHANT_FEE : 600 FA fixes, net Commune +1000 (fondateur 25/09)", () => {
+test("DISENCHANT_FEE : ancien frais conservé, sans effet sur le recyclage", () => {
   assert.strictEqual(D.DISENCHANT_FEE, 600);
   assert.strictEqual(D.RELIC_BUYBACK.Common - D.DISENCHANT_FEE, 1000);
 });
