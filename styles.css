@@ -669,6 +669,32 @@ body[data-fond="cite"] .app-bg {
 .bar.rar > i { background: linear-gradient(90deg, color-mix(in srgb, var(--rc) 55%, #05070f), var(--rc)); }
 .bar-label { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); margin-bottom: 3px; }
 
+/* ---- Ligne rareté + niveau des cartes de combat ----------------------------
+   Le décompte ne doit JAMAIS être rogné : c'est une valeur (le niveau et son
+   plafond), pas un décor. Mesuré dans un navigateur sur le plateau à 3 cartes
+   par rangée, la ligne « Légendaire » + « LV 190/200 » demande 122 px en 10 px
+   alors que la colonne n'en offre que 53 px à 641 px de fenêtre, 72 px à 760,
+   96 px à 900 et 116 px à 1024. Les deux spans ne se comprimaient pas : le
+   texte sortait de la carte (.card{overflow:hidden}) et le dernier chiffre
+   disparaissait — « 190/200 » se lisait « 190/20 », soit un niveau dix fois
+   au-dessus du plafond qui n'existe pas (MAX_LEVEL_CAP = 200).
+   Sous 1100 px il n'y a la place que sur deux lignes : la rareté passe au-dessus
+   du décompte, pour TOUTES les raretés à la fois, donc les cartes d'une même
+   rangée gardent la même hauteur et les jauges restent alignées. Rien n'est
+   jamais coupé au milieu d'un nombre. */
+@media (max-width: 1099px) {
+  .arena-board-row .bar-label.rar-line { flex-direction: column; align-items: flex-start; gap: 0; }
+  .arena-board-row .bar-label.rar-line > span { white-space: nowrap; font-size: 9px; }
+  .arena-board-row .bar-label.rar-line { font-size: 9px; }
+}
+/* La colonne peut tomber à 53 px (carte de 76 px à 641 px de fenêtre) : en 9 px
+   « Légendaire » n'y entre plus. Sous 768 px la ligne revient à 8,5 px, la
+   taille qu'elle a déjà sur téléphone. */
+@media (max-width: 767px) {
+  .arena-board-row .bar-label.rar-line,
+  .arena-board-row .bar-label.rar-line > span { font-size: 8.5px; }
+}
+
 /* ---- Battle log ---- */
 .log {
   font-family: var(--font-mono); font-size: 12.5px; line-height: 1.65;

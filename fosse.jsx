@@ -99,7 +99,7 @@ function CombatCard({ meta, live, side, cref, oppMeta, scale = 1 }) {
             Jauge du côté joueur seulement, comme l'XP ; l'adversaire garde la
             ligne, qui reste une info tactique. */}
         <div style={{ marginTop: 6 }}>
-          <div className="bar-label">
+          <div className="bar-label rar-line">
             <span style={{ color: rc }}>{rarityLabel(meta.rarity)}</span>
             <span style={{ color: "var(--text)" }}>{maxRarity ? "LV " + meta.level + "/" + D.ECON.MAX_LEVEL_CAP : meta.level + "/" + D.ECON.MAX_LEVEL_UPGRADE}</span>
           </div>

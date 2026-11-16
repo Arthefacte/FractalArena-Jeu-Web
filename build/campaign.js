@@ -341,7 +341,7 @@ function CampCombatCard({
       marginTop: 6
     }
   }, /*#__PURE__*/React.createElement("div", {
-    className: "bar-label"
+    className: "bar-label rar-line"
   }, /*#__PURE__*/React.createElement("span", {
     style: {
       color: rc

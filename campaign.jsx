@@ -175,7 +175,7 @@ function CampCombatCard({ meta, live, side, cref, borrowTag, oppTypes }) {
             cycle : sa jauge vise le plafond absolu MAX_LEVEL_CAP (200).
             Jauge côté joueur seulement. */}
         <div style={{ marginTop: 6 }}>
-          <div className="bar-label">
+          <div className="bar-label rar-line">
             <span style={{ color: rc }}>{rarityLabel(meta.rarity)}</span>
             <span style={{ color: "var(--text)" }}>{maxRarity ? "LV " + meta.level + "/" + D.ECON.MAX_LEVEL_CAP : meta.level + "/" + D.ECON.MAX_LEVEL_UPGRADE}</span>
           </div>

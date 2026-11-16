@@ -90,3 +90,25 @@ test("plus aucun CSS de badge ne subsiste (code mort)", () => {
     assert.doesNotMatch(read(f), /^\s*\.[a-z.\- ]*(rar|lvl)-tag\s*\{/m, f + " : règle devenue morte");
   }
 });
+
+test("le décompte de niveau ne peut pas être rogné (mesuré : 7 px manquants à 360)", () => {
+  // Défaut vu en jeu le 16/11/2026 : sur une Légendaire, la ligne affichait
+  // « LégendaireLV 190/20 ». Ce n'était pas un niveau au-delà du plafond, mais
+  // les 5 derniers pixels de « 190/200 » mangés par .card{overflow:hidden} — le
+  // couple rareté + décompte demande 122 px et la colonne n'en offre que 98 px à
+  // 360, 90 px à 390 et 116 px à 1024. Le remède est au CSS : la rareté passe
+  // au-dessus du décompte et les deux spans cessent d'être compressibles.
+  // Ce test épingle les trois pièces qui, ensemble, empêchent la rechute.
+  const css = read("styles.css");
+  assert.match(css, /\.arena-board-row \.bar-label\.rar-line\s*\{[^}]*flex-direction:\s*column/,
+    "styles.css : la ligne rareté + niveau doit passer en colonne avant 1100 px");
+  assert.match(css, /\.arena-board-row \.bar-label\.rar-line > span\s*\{[^}]*white-space:\s*nowrap/,
+    "styles.css : un décompte ne se coupe jamais au milieu d'un nombre");
+  assert.match(css, /@media \(max-width: 1099px\)/,
+    "styles.css : le seuil de bascule est mesuré, pas deviné — 1100 px est la première largeur où la ligne tient sur une seule ligne");
+  for (const f of COMBAT) {
+    const src = read(f);
+    assert.match(src, /className="bar-label rar-line"/,
+      f + " : la ligne rareté + niveau doit porter la classe rar-line, sinon le CSS ne la vise pas");
+  }
+});
