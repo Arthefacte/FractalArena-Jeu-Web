@@ -56,6 +56,11 @@ test("la fusion informe qui donne ses stats, sans armer de confirmation", () => 
   assert.ok(!fusion.includes("FG_FUSE_CONFIRM"), "plus de double clic : la fusion n'a plus de perte à annoncer");
   assert.match(fusion, /onClick=\{\(\) => doFuse\(pay\)\}/, "le bouton fusionne au premier clic");
   assert.ok(!fusion.includes("confirmWeak"), "l'état de confirmation ne doit plus exister");
+  // Garde de RÉTROGRADATION : une référence orpheline à l'état supprimé ne se voit pas dans
+  // l'extrait d'une fonction (elle vivait dans `toggle`, une closure interne) et casse l'écran
+  // au premier clic (vécu : v472 livrée avec `setConfirmWeak(false)` dans `toggle`).
+  assert.ok(!src.includes("setConfirmWeak") && !src.includes("confirmWeak"),
+    "aucune référence orpheline à confirmWeak ne doit rester dans screens.jsx");
 });
 
 test("les clés i18n du tirage et de la garde existent en FR, EN et ZH", () => {

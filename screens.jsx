@@ -510,7 +510,6 @@ function ForgeFusion() {
     return b.rarity === first.rarity;
   }
   function toggle(b) {
-    setConfirmWeak(false);
     if (sel.includes(b.id)) setSel(sel.filter((x) => x !== b.id));
     else if (sel.length < 2 && clickable(b)) setSel([...sel, b.id]);
   }
