@@ -902,10 +902,10 @@ function ForgeFusion() {
   // « argent » (tickets Argent, prix progressif, 100 % aussi). Une seule à la fois : le
   // serveur refuse deux prix pour un même acte.
   const [pay, setPay] = useState("fa");
-  // Garde anti-sacrifice : quand l'entité sacrifiée est plus forte que celle conservée,
-  // le premier clic ARME la confirmation, le second fusionne. Sinon le joueur qui ne lit
-  // pas le guide perdait son meilleur tirage sans qu'aucun écran ne l'ait dit.
-  const [confirmWeak, setConfirmWeak] = useState(false);
+  // La qualité d'une fusion vient de la PLUS FORTE des deux entités, jamais de l'ordre de
+  // sélection (serveur, 19/11/2026). Il n'y a donc plus rien à confirmer avant de fusionner :
+  // garder la carte la plus faible ne détruit plus la meilleure. La ligne FG_FUSE_WARN reste
+  // affichée, mais elle INFORME (qui donne ses stats) au lieu d'annoncer une perte.
   const elig = g.roster.filter(b => b.rarity !== "Legendary");
   const sorted = elig.slice().sort((a, b) => D.RARITY_ORDER[b.rarity] - D.RARITY_ORDER[a.rarity]);
   const first = sel[0] ? g.roster.find(b => b.id === sel[0]) : null;
@@ -968,7 +968,6 @@ function ForgeFusion() {
   });
   // Comparaison des deux candidates : rien à signaler → null (cas normal).
   const keepWarn = F.fusionKeepWarning(first, second);
-  const needConfirm = !!keepWarn && !confirmWeak;
   return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "flex between center wrap",
     style: {
@@ -992,10 +991,7 @@ function ForgeFusion() {
     style: {
       cursor: "pointer"
     },
-    onClick: () => {
-      setSel(F.fusionSwap(sel));
-      setConfirmWeak(false);
-    }
+    onClick: () => setSel(F.fusionSwap(sel))
   }, "\u21C4 ", I18N.t("FG_SWAP")), /*#__PURE__*/React.createElement("span", {
     className: "pill",
     style: {
@@ -1015,10 +1011,10 @@ function ForgeFusion() {
     },
     onClick: () => setPay(pay === "argent" ? "fa" : "argent")
   }, I18N.t("FG_SILVER_PRICE", silverCost), " ", pay === "argent" ? "✓" : ""), /*#__PURE__*/React.createElement("button", {
-    className: cx("btn", needConfirm ? "btn-alert" : pay === "or" ? "btn-gold" : "btn-forge"),
+    className: cx("btn", pay === "or" ? "btn-gold" : "btn-forge"),
     disabled: btn.disabled,
-    onClick: () => needConfirm ? setConfirmWeak(true) : doFuse(pay)
-  }, fuseBusy ? "…" : needConfirm ? I18N.t("FG_FUSE_CONFIRM") : pay === "or" ? I18N.t("FG_FUSE_BTN_GOLD") : pay === "argent" ? /*#__PURE__*/React.createElement(FaText, {
+    onClick: () => doFuse(pay)
+  }, fuseBusy ? "…" : pay === "or" ? I18N.t("FG_FUSE_BTN_GOLD") : pay === "argent" ? /*#__PURE__*/React.createElement(FaText, {
     text: I18N.t("FG_FUSE_BTN_SILVER", silverCost)
   }) : /*#__PURE__*/React.createElement(FaText, {
     text: I18N.t("FG_FUSE_BTN", cost)
@@ -1039,7 +1035,7 @@ function ForgeFusion() {
   }, I18N.t("FG_SILVER_SHORT", silverCost, g.ticketsSilver || 0)), keepWarn && /*#__PURE__*/React.createElement("div", {
     className: "mono",
     style: {
-      color: "var(--alert)",
+      color: "var(--elec)",
       fontSize: 12,
       marginBottom: 10
     }

@@ -495,10 +495,10 @@ function ForgeFusion() {
   // « argent » (tickets Argent, prix progressif, 100 % aussi). Une seule à la fois : le
   // serveur refuse deux prix pour un même acte.
   const [pay, setPay] = useState("fa");
-  // Garde anti-sacrifice : quand l'entité sacrifiée est plus forte que celle conservée,
-  // le premier clic ARME la confirmation, le second fusionne. Sinon le joueur qui ne lit
-  // pas le guide perdait son meilleur tirage sans qu'aucun écran ne l'ait dit.
-  const [confirmWeak, setConfirmWeak] = useState(false);
+  // La qualité d'une fusion vient de la PLUS FORTE des deux entités, jamais de l'ordre de
+  // sélection (serveur, 19/11/2026). Il n'y a donc plus rien à confirmer avant de fusionner :
+  // garder la carte la plus faible ne détruit plus la meilleure. La ligne FG_FUSE_WARN reste
+  // affichée, mais elle INFORME (qui donne ses stats) au lieu d'annoncer une perte.
   const elig = g.roster.filter((b) => b.rarity !== "Legendary");
   const sorted = elig.slice().sort((a, b) => D.RARITY_ORDER[b.rarity] - D.RARITY_ORDER[a.rarity]);
   const first = sel[0] ? g.roster.find((b) => b.id === sel[0]) : null;
@@ -551,7 +551,6 @@ function ForgeFusion() {
   const btn = F.fusionButtonState({ gold: pay === "or", silver: pay === "argent", cost, balance: g.liquid + g.locked, ticketsGold: g.ticketsGold, ticketsSilver: g.ticketsSilver, silverCost, busy: fuseBusy });
   // Comparaison des deux candidates : rien à signaler → null (cas normal).
   const keepWarn = F.fusionKeepWarning(first, second);
-  const needConfirm = !!keepWarn && !confirmWeak;
 
   return (
     <div>
@@ -560,7 +559,7 @@ function ForgeFusion() {
         {canFuse && (
           <div className="flex gap12 center">
             <span className="pill" style={{ color: "var(--elec)" }}>{I18N.t("FG_SUCCESS_RATE")} {pay === "fa" ? Math.round(rate * 100) : 100}%</span>
-            <span className="pill" style={{ cursor: "pointer" }} onClick={() => { setSel(F.fusionSwap(sel)); setConfirmWeak(false); }}>⇄ {I18N.t("FG_SWAP")}</span>
+            <span className="pill" style={{ cursor: "pointer" }} onClick={() => setSel(F.fusionSwap(sel))}>⇄ {I18N.t("FG_SWAP")}</span>
             {/* Les DEUX vitesses du 100 % sont affichées avec leur prix : le ticket Or reste
                 gratuit (inchangé), les tickets Argent suivent le palier. Un joueur qui ne voit
                 que la moins chère ne peut pas arbitrer. */}
@@ -572,14 +571,14 @@ function ForgeFusion() {
               onClick={() => setPay(pay === "argent" ? "fa" : "argent")}>
               {I18N.t("FG_SILVER_PRICE", silverCost)} {pay === "argent" ? "✓" : ""}
             </span>
-            <button className={cx("btn", needConfirm ? "btn-alert" : pay === "or" ? "btn-gold" : "btn-forge")} disabled={btn.disabled} onClick={() => (needConfirm ? setConfirmWeak(true) : doFuse(pay))}>{fuseBusy ? "…" : needConfirm ? I18N.t("FG_FUSE_CONFIRM") : pay === "or" ? I18N.t("FG_FUSE_BTN_GOLD") : pay === "argent" ? <FaText text={I18N.t("FG_FUSE_BTN_SILVER", silverCost)} /> : <FaText text={I18N.t("FG_FUSE_BTN", cost)} />}</button>
+            <button className={cx("btn", pay === "or" ? "btn-gold" : "btn-forge")} disabled={btn.disabled} onClick={() => doFuse(pay)}>{fuseBusy ? "…" : pay === "or" ? I18N.t("FG_FUSE_BTN_GOLD") : pay === "argent" ? <FaText text={I18N.t("FG_FUSE_BTN_SILVER", silverCost)} /> : <FaText text={I18N.t("FG_FUSE_BTN", cost)} />}</button>
           </div>
         )}
       </div>
       {btn.showInsufficient && canFuse && <div className="mono" style={{ color: "var(--alert)", fontSize: 12, marginBottom: 10 }}>{I18N.t("INSUFFICIENT", g.liquid + g.locked, cost)}</div>}
       {btn.showSilverMissing && canFuse && <div className="mono" style={{ color: "var(--alert)", fontSize: 12, marginBottom: 10 }}>{I18N.t("FG_SILVER_SHORT", silverCost, g.ticketsSilver || 0)}</div>}
       {keepWarn && (
-        <div className="mono" style={{ color: "var(--alert)", fontSize: 12, marginBottom: 10 }}>
+        <div className="mono" style={{ color: "var(--elec)", fontSize: 12, marginBottom: 10 }}>
           {I18N.t("FG_FUSE_WARN", keepWarn.gapPct == null ? "" : "+" + keepWarn.gapPct + " %")}
         </div>
       )}
