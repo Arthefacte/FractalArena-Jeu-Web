@@ -46,15 +46,16 @@ test("l'écran d'invocation annonce la qualité du tirage (toast + ligne sous la
   assert.match(summon, /FG_SUMMON_ROLL_MAX/, "le panneau de résultat doit nommer le plafond");
 });
 
-test("la fusion arme une confirmation quand la sacrifiée est plus forte", () => {
+test("la fusion informe qui donne ses stats, sans armer de confirmation", () => {
   const src = read("screens.jsx");
   const fusion = fonction(src, "ForgeFusion");
-  assert.ok(fusion.includes("fusionKeepWarning"), "la garde doit être appelée avec les deux entités sélectionnées");
-  assert.match(fusion, /FG_FUSE_WARN/, "l'avertissement doit être affiché");
-  assert.match(fusion, /FG_FUSE_CONFIRM/, "le bouton doit demander une confirmation explicite");
-  assert.match(fusion, /needConfirm \? setConfirmWeak\(true\) : doFuse\(pay\)/,
-    "le premier clic ARME la confirmation, le second seulement fusionne — l'ordre inverse annulerait la garde");
-  assert.match(fusion, /setConfirmWeak\(false\)/, "changer de sélection doit désarmer la confirmation (sinon elle survit au mauvais couple)");
+  assert.ok(fusion.includes("fusionKeepWarning"), "la comparaison doit être appelée avec les deux entités sélectionnées");
+  assert.match(fusion, /FG_FUSE_WARN/, "la ligne qui dit qui donne ses stats doit être affichée");
+  // Depuis le 19/11/2026 la qualité vient de la plus forte des deux : garder la carte faible
+  // ne détruit plus la meilleure, donc plus rien à confirmer avant de fusionner.
+  assert.ok(!fusion.includes("FG_FUSE_CONFIRM"), "plus de double clic : la fusion n'a plus de perte à annoncer");
+  assert.match(fusion, /onClick=\{\(\) => doFuse\(pay\)\}/, "le bouton fusionne au premier clic");
+  assert.ok(!fusion.includes("confirmWeak"), "l'état de confirmation ne doit plus exister");
 });
 
 test("les clés i18n du tirage et de la garde existent en FR, EN et ZH", () => {
