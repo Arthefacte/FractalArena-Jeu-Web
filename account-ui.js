@@ -8,6 +8,10 @@
   const KIND_KEY = "fa_account_kind";
   const KIND_GENERATED = "generated";
   const KIND_UNISAT = "unisat";
+  // Un logout invalide aussi les traitements asynchrones partis avec l'ancienne
+  // session. Cette generation reste volontairement en memoire : elle distingue
+  // deux sessions meme si le serveur leur a remis exactement le meme jeton.
+  let authGeneration = 0;
 
   // L'app tourne-t-elle en fenetre installee (PWA) plutot que dans un onglet ?
   // Gardes larges : ces API manquent dans les environnements de test et sur
@@ -78,6 +82,7 @@
   }
 
   function clearToken() {
+    authGeneration += 1;
     del(window.sessionStorage, TOKEN_KEY);
     del(window.localStorage, TOKEN_KEY);
     del(window.localStorage, KIND_KEY);
@@ -277,11 +282,39 @@
   // (même stockage que la connexion) et fa:token-refresh prévient app.jsx pour
   // que l'état React suive. Sans ça, un joueur actif était déconnecté tous les
   // 30 jours et repassait par le parcours de signature UniSat (vécu 27-08).
+  function bearerDeRequete(input, init) {
+    // `init.headers` remplace les headers d'un éventuel Request ; s'il est absent,
+    // on lit ceux du Request. Headers, tableau de paires et objet simple sont les
+    // trois formes acceptées par fetch.
+    const headers = init && init.headers != null ? init.headers : input && input.headers;
+    let valeur = "";
+    if (headers && typeof headers.get === "function") {
+      valeur = headers.get("Authorization") || "";
+    } else if (Array.isArray(headers)) {
+      const paire = headers.find((h) => Array.isArray(h) && String(h[0]).toLowerCase() === "authorization");
+      valeur = paire ? paire[1] : "";
+    } else if (headers && typeof headers === "object") {
+      const cle = Object.keys(headers).find((k) => k.toLowerCase() === "authorization");
+      valeur = cle ? headers[cle] : "";
+    }
+    const match = /^Bearer[ \t]+([^ \t]+)[ \t]*$/i.exec(String(valeur || ""));
+    return match ? match[1] : "";
+  }
+
   (function installTokenRefresh() {
     if (typeof window.fetch !== "function") return;
     const fetchOrigine = window.fetch.bind(window);
     let lastRefreshTs = 0; // dédupe : un seul refresh par fenêtre d'1 s (audit P2#11)
     window.fetch = function (input, init) {
+      // Capturer le contexte AVANT de lancer fetch : la réponse n'a le droit de
+      // renouveler que la session précise qui a émis cette requête.
+      const generationRequete = authGeneration;
+      let jetonRequete = "";
+      let kindRequete = "";
+      try {
+        jetonRequete = bearerDeRequete(input, init);
+        kindRequete = readKind();
+      } catch (e) { /* des headers exotiques ne doivent jamais casser fetch */ }
       const p = fetchOrigine(input, init);
       try {
         const url = typeof input === "string" ? input : (input && input.url) || "";
@@ -290,10 +323,16 @@
             try {
               const neuf = resp.headers && resp.headers.get && resp.headers.get("x-fa-token-refresh");
               if (neuf) {
+                // Refuser les appels publics, les anciens Bearer, les changements
+                // de compte et surtout toute réponse arrivée après clearToken().
+                // Le kind capturé est passé explicitement : jamais de repli UniSat
+                // après qu'un logout a supprimé le type de compte.
+                if (!jetonRequete || generationRequete !== authGeneration ||
+                    jetonRequete !== readToken() || !kindRequete || kindRequete !== readKind()) return;
                 const now = Date.now();
                 if (now - lastRefreshTs < 1000) return; // un refresh vient déjà d'être appliqué
                 lastRefreshTs = now;
-                writeToken(neuf);
+                writeToken(neuf, kindRequete);
                 window.dispatchEvent(new CustomEvent("fa:token-refresh", { detail: { token: neuf } }));
               }
             } catch (e) { /* un refresh raté ne casse jamais l'appel porteur */ }
