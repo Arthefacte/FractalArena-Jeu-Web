@@ -27,7 +27,8 @@ function bloc(marker, len) {
 // l'entrée » et « applySave », tous deux présents quel que soit l'écart). `fuse` a
 // reçu la troisième vitesse de paiement (tickets Argent, 13/10/2026), puis le rang normalisé
 // et l'équipement détaché (05/11/2026) ; `rankFuse` de même.
-const FENETRES = { "async fuse(": 3400, "async rankFuse(": 3000 };
+// renforcée (garde de rareté, `kept_id`, 21/11/2026).
+const FENETRES = { "async fuse(": 3400, "async rankFuse(": 3900 };
 
 // Les actions qui relisent /save apres une mutation (ou a la connexion).
 const RESYNCS = [

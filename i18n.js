@@ -794,9 +794,8 @@
     FG_SWAP: { FR: "Inverser", EN: "Swap", ZH: "交换" },
     FG_KEPT: { FR: "✓ Conservée", EN: "✓ Kept", ZH: "✓ 保留" },
     FG_SACRIFICED: { FR: "☠ Sacrifiée", EN: "☠ Sacrificed", ZH: "☠ 牺牲" },
-    // Fusion de RANG (3 → 1) : les trois partent, aucune n'est « gardée » — « sacrifiée » y était
-    // illisible (deux rôles dans la fusion de rareté 2 → 1, un seul ici). Mot propre au 3 → 1.
-    FG_CONSUMED: { FR: "☠ Consommée", EN: "☠ Consumed", ZH: "☠ 被消耗" },
+    // La fusion de RANG (3 → 1) n'a plus de mot propre : la carte gardée survit (FG_KEPT) et les
+    // deux autres partent (FG_SACRIFICED) — décision fondateur 21/11/2026 (montée EN PLACE).
     // Qualité du tirage d'invocation (en % du maximum de son rang) : marqueur de carte + garde de fusion.
     CARD_ROLL_TIP: { FR: "Qualité du tirage d'invocation : pourcentage du maximum possible pour son rang. À 100 % (1 invocation sur 11) les 5 stats sont au plafond — ne pas sacrifier cette entité par erreur", EN: "Summon roll quality: percentage of the maximum possible for its rank. At 100% (1 summon in 11) all 5 stats are at the ceiling — do not sacrifice this entity by mistake", ZH: "召唤抽取品质：相对于该阶位上限的百分比。100%（11 分之一）时五项属性均达上限 — 请勿误将此实体牺牲" },
     FG_SACRIFICED_STRONG: { FR: "☠ Sacrifiée ★ donne ses stats", EN: "☠ Sacrificed ★ gives its stats", ZH: "☠ 牺牲 ★ 提供属性" },
@@ -816,14 +815,19 @@
     FG_FUSE_BTN_SILVER: { FR: "Fusionner  🎟 −%d Argent", EN: "Fuse  🎟 −%d Silver", ZH: "融合  🎟 −%d 白银券" },
     FG_SILVER_SHORT: { FR: "Tickets Argent insuffisants : %d requis, %d en réserve.", EN: "Not enough Silver tickets: %d required, %d in reserve.", ZH: "白银券不足：需要 %d 张，现有 %d 张。" },
     FG_FUSE_SILVER_OK: { FR: "✨ FUSION GARANTIE → %s (100 %)", EN: "✨ GUARANTEED FUSION → %s (100%)", ZH: "✨ 保证融合 → %s（100%）" },
-    // ---- Fusion de RANG : 3 entités de même rang, rareté indifférente → 1 entité Commune ----
+    // ---- Fusion de RANG : 3 entités de même rang ET de même rareté → la GARDÉE monte d'un rang ----
     // Onglet SÉPARÉ de la fusion de rareté : mêmes barres, mêmes cartes, mais un autre axe —
     // empilés, le joueur déclenchait la mauvaise opération (leçon des forges de fragments).
+    // Décision fondateur 21/11/2026 : la carte GARDÉE monte EN PLACE — elle garde son niveau,
+    // son XP, sa rareté, son art, son nom et ses talents ; les deux autres sont détruites.
+    // Plus d'« entité neuve », plus de « niveau 1 », plus de « meilleur tirage des trois ».
     FG_RANGS: { FR: "Fusion de rang", EN: "Rank fusion", ZH: "阶位融合" },
-    FG_RANK_HINT: { FR: "Sélectionne 3 entités de MÊME rang, rareté indifférente : le rang monte d'un cran (C→B→A→S). Les trois sont consommées et la carte produite repart toujours Commune, avec les stats de création du meilleur tirage des trois.", EN: "Select 3 entities of the SAME rank, regardless of rarity: the rank goes up one step (C→B→A→S). All three are consumed and the resulting card always starts again as Common, with the creation stats of the best roll of the three.", ZH: "选择 3 个相同阶位的实体，稀有度不限：阶位上升一级（C→B→A→S）。三个都会被消耗，产出的卡牌稀有度始终重置为普通，并保留三者中最佳抽取的初始属性。" },
-    FG_RANK_NONE: { FR: "Sélectionne 3 entités de même rang, rareté indifférente", EN: "Select 3 entities of the same rank, regardless of rarity", ZH: "选择 3 个相同阶位的实体，稀有度不限" },
-    FG_RANK_MISSING: { FR: "Encore %d entité(s) de rang %s (rareté indifférente)", EN: "Still %d entity(ies) of rank %s (any rarity)", ZH: "还需 %d 个阶位 %s 的实体（稀有度不限）" },
+    FG_RANK_HINT: { FR: "Sélectionne 3 entités de MÊME rang et de MÊME rareté. Celle que tu GARDES monte d'un cran (C→B→A→S) sur place : niveau, XP, rareté et art conservés. Les deux autres sont détruites, leur équipement te revient.", EN: "Select 3 entities of the SAME rank AND the SAME rarity. The one you KEEP goes up one step (C→B→A→S) in place: level, XP, rarity and art preserved. The other two are destroyed, their equipment comes back to you.", ZH: "选择 3 个相同阶位且相同稀有度的实体。你保留的那一张原地升一阶（C→B→A→S）：等级、XP、稀有度与美术均保留。另外两张被销毁，其装备归还给你。" },
+    FG_RANK_NONE: { FR: "Sélectionne 3 entités de même rang et de même rareté", EN: "Select 3 entities of the same rank and rarity", ZH: "选择 3 个相同阶位且相同稀有度的实体" },
+    FG_RANK_MISSING: { FR: "Encore %d entité(s) de rang %s, de même rareté", EN: "Still %d entity(ies) of rank %s, same rarity", ZH: "还需 %d 个阶位 %s 且相同稀有度的实体" },
     FG_RANK_MISMATCH: { FR: "Même rang requis.", EN: "Same rank required.", ZH: "必须为相同阶位。" },
+    FG_RANK_RARITY_MISMATCH: { FR: "Même rareté requise : la carte gardée conserve la sienne, les trois doivent donc partager la même.", EN: "Same rarity required: the kept card keeps its own, so all three must share it.", ZH: "必须为相同稀有度：保留的卡牌会保留自身稀有度，因此三者必须一致。" },
+    FG_RANK_KEEP: { FR: "Garder cette carte", EN: "Keep this card", ZH: "保留此卡牌" },
     FG_RANK_SEL_MAX: { FR: "3 entités maximum", EN: "3 entities maximum", ZH: "最多 3 个实体" },
     FG_RANK_SUCCESS: { FR: "Réussite garantie", EN: "Guaranteed success", ZH: "保证成功" },
     FG_RANK_TARGET: { FR: "Rang visé : %s", EN: "Target rank: %s", ZH: "目标阶位：%s" },
@@ -833,21 +837,20 @@
     FG_RANK_BTN: { FR: "Fusionner", EN: "Fuse", ZH: "融合" },
     FG_RANK_COST_PILL: { FR: "Coût : %d FA", EN: "Cost: %d FA", ZH: "花费：%d FA" },
     FG_RANK_PRICES: { FR: "Tarifs : %s", EN: "Prices: %s", ZH: "价格：%s" },
-    FG_RANK_TYPE: { FR: "Type de l'entité produite", EN: "Type of the produced entity", ZH: "产出实体的类型" },
-    FG_RANK_TYPE_HINT: { FR: "Il doit être l'un des trois — trois Mineurs donnent un Mineur, jamais un autre type. Il compte pour les affinités.", EN: "It must be one of the three — three Miners give a Miner, never another type. It counts for affinities.", ZH: "必须是三者之一的类型 — 三个矿工只产出矿工，绝不会是其他类型。它影响亲和。" },
     FG_RANK_OK: { FR: "FUSION DE RANG RÉUSSIE → %s [%s]", EN: "RANK FUSION SUCCESS → %s [%s]", ZH: "阶位融合成功 → %s [%s]" },
     // Avertissement obligatoire AVANT validation (exigence explicite du fondateur 13/10/2026) :
-    // la modale nomme ce qui part et ce qui arrive, et exige une confirmation qui n'est PAS
+    // la modale nomme ce qui SURVIT et ce qui part, et exige une confirmation qui n'est PAS
     // le bouton d'action.
     FG_RANK_ALERT_TITLE: { FR: "⚠ AVERTISSEMENT — fusion de rang", EN: "⚠ WARNING — rank fusion", ZH: "⚠ 警告 — 阶位融合" },
-    FG_RANK_ALERT_BODY: { FR: "La fusion de rang CONSOMME les trois entités. Voici ce qui part définitivement :", EN: "Rank fusion CONSUMES all three entities. Here is what is permanently lost:", ZH: "阶位融合会消耗这三个实体。以下内容将永久失去：" },
-    FG_RANK_ALERT_LINE: { FR: "%s — rang %s · niveau %d · %d XP · talents : %d · équipements : %d", EN: "%s — rank %s · level %d · %d XP · talents: %d · equipment: %d", ZH: "%s — 阶位 %s · 等级 %d · %d XP · 天赋: %d · 装备: %d" },
+    FG_RANK_ALERT_BODY: { FR: "La fusion de rang DÉTRUIT les deux cartes que tu ne gardes pas. La carte gardée, elle, monte d'un rang sur place.", EN: "Rank fusion DESTROYS the two cards you do not keep. The kept card goes up one rank in place.", ZH: "阶位融合会销毁你不保留的那两张卡牌。保留的卡牌则原地升一阶。" },
+    FG_RANK_ALERT_NEW: { FR: "Ce qui survit", EN: "What survives", ZH: "保留的内容" },
+    FG_RANK_KEPT_LINE: { FR: "%s — rang %s → %s · niveau %d · %d XP · rareté %s conservée · art conservé", EN: "%s — rank %s → %s · level %d · %d XP · %s rarity kept · art kept", ZH: "%s — %s 阶 → %s 阶 · 等级 %d · %d XP · 稀有度 %s 保留 · 美术保留" },
+    FG_RANK_ALERT_LINE: { FR: "Ce qui part : les deux autres cartes", EN: "What is destroyed: the other two cards", ZH: "将消失的内容：另外两张卡牌" },
+    FG_RANK_LOST_LINE: { FR: "%s — rang %s · niveau %d · %d XP · talents : %d · équipements : %d", EN: "%s — rank %s · level %d · %d XP · talents: %d · equipment: %d", ZH: "%s — 阶位 %s · 等级 %d · %d XP · 天赋: %d · 装备: %d" },
     FG_RANK_ALERT_TOTALS: { FR: "Total perdu : %d XP et %d talents.", EN: "Total lost: %d XP and %d talents.", ZH: "总计失去：%d XP 与 %d 个天赋。" },
-    FG_RANK_ALERT_NEW: { FR: "Ce qui arrive : 1 entité NEUVE de rang %s, niveau 1, 0 XP, sans talent ni équipement.", EN: "What you get: 1 NEW entity of rank %s, level 1, 0 XP, no talent and no equipment.", ZH: "你将获得：1 个全新的 %s 阶实体，等级 1，0 XP，无天赋无装备。" },
-    FG_RANK_ALERT_EQUIP: { FR: "L'équipement des trois est retiré automatiquement avant la fusion : reliques et cores restent dans ton inventaire, rien ne se perd.", EN: "The equipment on all three is removed automatically before the fusion: relics and cores stay in your inventory, nothing is lost.", ZH: "三者的装备会在融合前自动卸下：圣物与核心都会留在你的库存中，不会丢失任何物品。" },
+    FG_RANK_ALERT_EQUIP: { FR: "L'équipement des deux cartes détruites est retiré automatiquement avant la fusion : reliques et cores restent dans ton inventaire, rien ne se perd. La carte gardée garde le sien.", EN: "Equipment on the two destroyed cards is removed automatically before the fusion: relics and cores stay in your inventory, nothing is lost. The kept card keeps its own.", ZH: "被销毁的两张卡牌上的装备会在融合前自动卸下：圣物与核心都会留在你的库存中，不会丢失。保留的卡牌保留自己的装备。" },
     FG_RANK_EQUIP_BACK: { FR: "Équipement récupéré : %d objet(s) dans ton inventaire", EN: "Equipment recovered: %d item(s) back in your inventory", ZH: "已回收装备：%d 件物品回到你的库存" },
     FG_RANK_ALERT_COST: { FR: "Coût : %s FA (100 % reversés au rachat).", EN: "Cost: %s FA (100% goes to the buyback pool).", ZH: "花费：%s FA（100% 进入回购池）。" },
-    FG_RANK_ALERT_QUALITY: { FR: "La carte produite sera de rareté %s, rang %s, avec les stats de création du meilleur tirage des trois (%s %%).", EN: "The resulting card will have %s rarity, rank %s, with the creation stats of the best roll of the three (%s%%).", ZH: "产出的卡牌稀有度将为%s，阶位为%s，并保留三者中最佳抽取的初始属性（%s%%）。" },
     FG_RANK_ALERT_CONFIRM: { FR: "Je confirme la fusion", EN: "I confirm the fusion", ZH: "我确认融合" },
     FG_RANK_ALERT_BACK: { FR: "← Retour", EN: "← Back", ZH: "← 返回" },
     // Refus serveur de la fusion (codes mappés dans SERVER_ERROR_KEYS : un code snake_case
@@ -859,6 +862,7 @@
     FG_ERR_ticket_invalide: { FR: "Paiement invalide : une seule ressource par fusion.", EN: "Invalid payment: one resource per fusion.", ZH: "支付方式无效：一次融合只能用一种资源。" },
     FG_ERR_rank_mismatch: { FR: "Les trois entités doivent être du même rang.", EN: "All three entities must share the same rank.", ZH: "三个实体必须为同一阶位。" },
     FG_ERR_beast_ids_invalide: { FR: "Sélection invalide : 3 entités distinctes requises.", EN: "Invalid selection: 3 distinct entities required.", ZH: "选择无效：需要 3 个不同的实体。" },
+    FG_ERR_kept_id_invalide: { FR: "Carte gardée invalide : elle doit être l'une des trois sélectionnées. Recharge l'écran et réessaie.", EN: "Invalid kept card: it must be one of the three selected. Reload the screen and try again.", ZH: "保留的卡牌无效：必须是所选三张之一。请刷新后重试。" },
     FG_ERR_entite_introuvable: { FR: "Entité introuvable dans ta collection.", EN: "Entity not found in your collection.", ZH: "在你的收藏中找不到该实体。" },
     FG_REROLL_OK: { FR: "Stats redistribuées", EN: "Stats redistributed", ZH: "属性已重新分配" },
     FG_SUMMON_OK: { FR: "Invoqué : %s [%s]", EN: "Summoned: %s [%s]", ZH: "召唤：%s [%s]" },
@@ -2148,6 +2152,8 @@
     rank_max: "FG_RANK_MAX",
     beast_ids_invalide: "FG_ERR_beast_ids_invalide",
     entite_introuvable: "FG_ERR_entite_introuvable",
+    // Contrat `kept_id` (21/11/2026) : la carte gardée doit être l'une des trois envoyées.
+    kept_id_invalide: "FG_ERR_kept_id_invalide",
     // Expéditions
     bete_en_expedition: "EXP_ERR_bete_en_expedition",
     expedition_en_cours: "EXP_ERR_expedition_en_cours",
