@@ -45,6 +45,16 @@ test("le pont ne touche plus au presse-papier", () => {
   assert.doesNotMatch(bloc, /clipboard/, "le pont ne doit plus copier le lien");
 });
 
+test("le premier passage explique la saisie séparée du code", () => {
+  for (const cle of ["UAPP_STEP2", "UAPP_FALLBACK"]) {
+    const ligne = uappLines().find((l) => l.includes(cle));
+    assert.ok(ligne, cle + " introuvable");
+    for (const texte of ["Récupérer mon compte", "Recover my account", "找回我的账号"]) {
+      assert.ok(ligne.includes(texte), cle + " doit guider les trois langues vers la réclamation manuelle");
+    }
+  }
+});
+
 test("le chemin réel reste une vraie ancre, pas une navigation par script", () => {
   // Leçon du 2026-08-18 : après un await, le geste utilisateur est consommé et
   // l'OS refuse d'ouvrir l'app. Deux codes avaient été créés, jamais réclamés.
@@ -74,10 +84,10 @@ const pont = () => {
   return src.slice(i, src.indexOf("/* Le geste de liaison", i));
 };
 
-test("openDappUrl sans code vise le jeu nu (pas d'ancre #link= vide)", () => {
+test("openDappUrl vise le jeu nu avec ou sans argument de code", () => {
   assert.deepStrictEqual(cibleDe(DL.openDappUrl("https://fractalarena.com")), ["https://fractalarena.com/"]);
   assert.deepStrictEqual(cibleDe(DL.openDappUrl("https://fractalarena.com", "ABCD-2345-JKMN-PQRS")),
-    ["https://fractalarena.com/#link=ABCD-2345-JKMN-PQRS"]);
+    ["https://fractalarena.com/"], "un ancien appelant ne doit jamais divulguer le bearer au launcher");
 });
 
 test("le chemin courant est un lien STATIQUE, donc un seul toucher", () => {
