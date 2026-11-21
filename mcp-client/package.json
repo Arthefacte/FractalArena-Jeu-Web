@@ -1,0 +1,9 @@
+{
+  "name": "fractal-arena-mcp-client",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Pinned launcher contract for the Fractal Arena MCP server. The exact published release and its tarball integrity digest live here; every published example invokes fractal-arena-mcp@1.20.1.",
+  "dependencies": {
+    "fractal-arena-mcp": "1.20.1"
+  }
+}
