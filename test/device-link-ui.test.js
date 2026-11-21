@@ -40,15 +40,16 @@ test("codeFromInput : un lien complet collé vaut son code (pont mobile 2026-08-
   assert.strictEqual(DL.codeFromInput(null), null);
 });
 
-test("openDappUrl : lien universel UniSat portant l'URL de liaison (dev-support#105)", () => {
+test("openDappUrl : le launcher UniSat ne reçoit jamais le code de liaison", () => {
   // Format donné par UniSat le 2026-08-18 : app.unisat.cloud/request?method=openDapp
-  // avec data = base64(JSON [url]) — Universal Link iOS / App Link Android.
+  // avec data = base64(JSON [url]) — ce domaine tiers ne doit voir que le jeu nu.
   const u = DL.openDappUrl("https://fractalarena.com", "ABCD-2345-JKMN-PQRS");
   assert.ok(u.startsWith("https://app.unisat.cloud/request?method=openDapp&from=FractalArena&data="), u);
   const data = decodeURIComponent(u.slice(u.indexOf("data=") + 5));
-  const urls = JSON.parse(Buffer.from(data, "base64").toString("utf8"));
-  assert.deepStrictEqual(urls, ["https://fractalarena.com/#link=ABCD-2345-JKMN-PQRS"],
-    "le data doit contenir l'URL du jeu AVEC le code de liaison — c'est elle que l'app ouvre");
+  const payload = Buffer.from(data, "base64").toString("utf8");
+  assert.ok(!payload.includes("ABCD-2345-JKMN-PQRS"), "le bearer ne doit pas franchir la frontière UniSat");
+  assert.deepStrictEqual(JSON.parse(payload), ["https://fractalarena.com/"],
+    "le launcher doit continuer à ouvrir le jeu, sans capacité de réclamer le compte");
 });
 
 test("le saut vers l'app UniSat est un VRAI lien <a>, jamais une navigation script", () => {

@@ -44,8 +44,10 @@
   }
 
   // Lien universel openDapp (réponse UniSat, dev-support#105, 2026-08-18) :
-  // ouvre une URL HTTPS — notre lien de liaison compris — directement dans le
-  // navigateur intégré de l'app UniSat, où window.unisat est injecté. Universal
+  // ouvre le jeu NU directement dans le navigateur intégré de l'app UniSat, où
+  // window.unisat est injecté. Le `data` appartient au domaine tiers UniSat :
+  // il ne doit donc jamais contenir le code de liaison, qui donne accès au compte.
+  // Universal
   // Link iOS / App Link Android : pas besoin du schéma unisat://, et pas besoin
   // d'être listé au DApp Center. btoa existe en navigateur comme sous Node ≥16.
   // SANS code : ouvre le jeu NU dans l'app. Le joueur qui y a déjà lié sa
@@ -53,8 +55,8 @@
   // un navigateur normal) y retombe connecté. C'est le chemin d'un seul
   // toucher : aucun appel serveur, donc aucun code à faire expirer (TTL 2 min)
   // ni à compter contre le plafond de 3 codes actifs du serveur.
-  function openDappUrl(origin, code) {
-    const cible = code ? linkUrl(origin, code) : String(origin || "") + "/";
+  function openDappUrl(origin) {
+    const cible = String(origin || "") + "/";
     const data = encodeURIComponent(btoa(JSON.stringify([cible])));
     return "https://app.unisat.cloud/request?method=openDapp&from=FractalArena&data=" + data;
   }
