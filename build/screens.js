@@ -1083,13 +1083,13 @@ function ForgeFusion() {
    fragments les 20 et 25/09). */
 
 // AVERTISSEMENT OBLIGATOIRE avant validation (exigence explicite du fondateur) : la modale
-// nomme ce qui PART (les trois entités, leur niveau, leur XP, leurs talents, leur équipement)
-// et ce qui ARRIVE (1 entité neuve, niveau 1). Le bouton de l'onglet ne fusionne jamais : il
-// ouvre cette modale, et seul le bouton de confirmation qu'elle porte déclenche l'opération.
+// nomme ce qui SURVIT (la carte gardée, qui monte d'un rang SUR PLACE avec son niveau, son XP,
+// sa rareté et son art) et ce qui PART (les deux autres, avec niveau, XP, talents et
+// équipement). Le bouton de l'onglet ne fusionne jamais : il ouvre cette modale, et seul le
+// bouton de confirmation qu'elle porte déclenche l'opération.
 function RankFuseWarningModal({
   warn,
   state,
-  template,
   busy,
   onBack,
   onConfirm
@@ -1097,6 +1097,7 @@ function RankFuseWarningModal({
   const {
     Modal
   } = window;
+  const nextRank = state && state.nextRank || "";
   return /*#__PURE__*/React.createElement(Modal, {
     onClose: onBack,
     accent: "var(--alert)",
@@ -1121,21 +1122,26 @@ function RankFuseWarningModal({
       padding: 14,
       marginBottom: 10
     }
-  }, (warn ? warn.lines : []).map(l => /*#__PURE__*/React.createElement("div", {
-    key: l.id,
+  }, /*#__PURE__*/React.createElement("div", {
     className: "mono",
     style: {
       fontSize: 12,
-      color: "var(--alert)",
-      marginBottom: 4
+      color: "var(--success)",
+      marginBottom: 6
     }
-  }, I18N.t("FG_RANK_ALERT_LINE", l.name, l.rank, l.level, l.xp, l.talents, l.equipment))), warn && /*#__PURE__*/React.createElement("div", {
+  }, I18N.t("FG_RANK_ALERT_NEW")), warn && /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      fontSize: 12,
+      color: "var(--success)"
+    }
+  }, I18N.t("FG_RANK_KEPT_LINE", warn.kept.name, warn.kept.rank, nextRank, warn.kept.level, warn.kept.xp, rarityLabel(warn.kept.rarity))), /*#__PURE__*/React.createElement("div", {
     className: "mono muted",
     style: {
       fontSize: 12,
       marginTop: 6
     }
-  }, I18N.t("FG_RANK_ALERT_TOTALS", warn.totalXp, warn.totalTalents))), /*#__PURE__*/React.createElement("div", {
+  }, I18N.t("FG_RANK_ALERT_EQUIP"))), /*#__PURE__*/React.createElement("div", {
     className: "panel oct",
     style: {
       border: "1px solid var(--line)",
@@ -1145,35 +1151,31 @@ function RankFuseWarningModal({
   }, /*#__PURE__*/React.createElement("div", {
     className: "mono",
     style: {
-      fontSize: 13,
-      color: "var(--success)"
-    }
-  }, I18N.t("FG_RANK_ALERT_NEW", state.nextRank || "")), /*#__PURE__*/React.createElement("div", {
-    className: "mono muted",
-    style: {
       fontSize: 12,
-      marginTop: 6
+      color: "var(--alert)",
+      marginBottom: 6
     }
-  }, I18N.t("FG_RANK_ALERT_EQUIP")), /*#__PURE__*/React.createElement("div", {
+  }, I18N.t("FG_RANK_ALERT_LINE")), (warn ? warn.sacrificed : []).map(l => /*#__PURE__*/React.createElement("div", {
+    key: l.id,
     className: "mono",
     style: {
       fontSize: 12,
-      marginTop: 6,
-      color: "var(--success)"
+      color: "var(--alert)",
+      marginBottom: 4
     }
-  }, /*#__PURE__*/React.createElement("strong", null, I18N.t("FG_RANK_ALERT_QUALITY", rarityLabel(warn.targetRarity), state.nextRank || "", warn.bestRollPct ?? "—"))), /*#__PURE__*/React.createElement("div", {
+  }, I18N.t("FG_RANK_LOST_LINE", l.name, l.rank, l.level, l.xp, l.talents, l.equipment))), warn && /*#__PURE__*/React.createElement("div", {
     className: "mono muted",
     style: {
       fontSize: 12,
       marginTop: 6
     }
-  }, I18N.t("FG_RANK_ALERT_COST", fmt(state.cost || 0))), template && /*#__PURE__*/React.createElement("div", {
+  }, I18N.t("FG_RANK_ALERT_TOTALS", warn.lostXp, warn.lostTalents)), /*#__PURE__*/React.createElement("div", {
     className: "mono muted",
     style: {
       fontSize: 12,
       marginTop: 6
     }
-  }, I18N.t("FG_RANK_TYPE"), " : ", template.label)), /*#__PURE__*/React.createElement("div", {
+  }, I18N.t("FG_RANK_ALERT_COST", fmt(state.cost || 0)))), /*#__PURE__*/React.createElement("div", {
     className: "flex gap8 wrap"
   }, /*#__PURE__*/React.createElement("button", {
     className: "btn",
@@ -1200,7 +1202,11 @@ function ForgeRangs() {
   // La sélection garde les ENTITÉS (pas les ids) : la modale doit pouvoir nommer leur niveau,
   // leur XP, leurs talents et leur équipement.
   const [sel, setSel] = useState([]);
-  const [templateId, setTemplateId] = useState(null);
+  // La carte GARDÉE (décision fondateur 21/11/2026) : elle survit et monte d'un rang EN PLACE,
+  // avec son niveau, son XP, sa rareté, son art et ses talents. `null` = la première
+  // sélectionnée. L'id est revalidé à chaque rendu : une carte décochée ne peut pas rester
+  // « gardée » et la modale annonce toujours la même carte que l'écran.
+  const [keptSel, setKeptSel] = useState(null);
   const [confirm, setConfirm] = useState(false);
   const [busy, setBusy] = useState(false);
   const F = window.FA_FORGE_UI;
@@ -1209,29 +1215,33 @@ function ForgeRangs() {
     balance: g.liquid + g.locked,
     busy
   });
-  const templates = F.rankFuseTemplates(sel);
-  const chosen = templates.find(t => t.template_name === templateId) || templates[0] || null;
-  const warn = F.rankFuseWarning(sel);
+  const choices = F.rankFuseKeptChoices(sel);
+  const keptId = choices.some(c => c.id === keptSel) ? keptSel : choices[0] ? choices[0].id : null;
+  const warn = F.rankFuseWarning(sel, keptId);
   const sorted = g.roster.slice().sort((a, b) => D.RARITY_ORDER[b.rarity] - D.RARITY_ORDER[a.rarity] || D.RANK_LIST.indexOf(b.rank) - D.RANK_LIST.indexOf(a.rank));
+
+  // Une carte grisée ne réagit pas : elle se lirait comme un bug. On ne grise que ce que le
+  // clic refusera, pour la MÊME raison (autre rang ou autre rareté que la première choisie).
   function clickable(b) {
     if (!sel.length) return true;
     if (sel.some(x => x.id === b.id)) return true;
-    return b.rank === sel[0].rank;
+    return F.rankKey(b) === F.rankKey(sel[0]) && F.rarityKey(b) === F.rarityKey(sel[0]);
   }
   function toggle(b) {
     const next = F.rankSelToggle(sel, b);
     if (next === null) {
-      // Un clic refusé doit se DIRE : une carte qui ne réagit pas se lit comme un bug.
-      toast(I18N.t(sel.length >= 3 ? "FG_RANK_SEL_MAX" : "FG_RANK_MISMATCH"), "bad");
+      // Un clic refusé doit se DIRE, et dire POURQUOI : plafond, rang ou rareté.
+      const why = sel.length >= 3 ? "FG_RANK_SEL_MAX" : sel.length && F.rarityKey(b) !== F.rarityKey(sel[0]) ? "FG_RANK_RARITY_MISMATCH" : "FG_RANK_MISMATCH";
+      toast(I18N.t(why), "bad");
       return;
     }
     setSel(next);
-    setTemplateId(null); // les types proposables dépendent des trois entités choisies
+    if (!next.some(x => x.id === keptSel)) setKeptSel(next.length ? next[0].id : null);
   }
   async function doRankFuse() {
     if (busy) return;
     setBusy(true);
-    const r = await actions.rankFuse(sel.map(b => b.id), chosen && chosen.template_name);
+    const r = await actions.rankFuse(sel.map(b => b.id), keptId);
     setBusy(false);
     if (!r.ok) {
       toast(I18N.localizeServerError(r.reason), "bad");
@@ -1239,7 +1249,7 @@ function ForgeRangs() {
     }
     setConfirm(false);
     setSel([]);
-    setTemplateId(null);
+    setKeptSel(null);
     // Le résultat (toast) passe par onDone : il est donc rendu dans TOUS les cas — fin,
     // saut d'un clic, mouvement réduit, module absent. Jamais un silence après 50 000 FA.
     const showResult = () => {
@@ -1342,57 +1352,54 @@ function ForgeRangs() {
       fontSize: 12,
       marginBottom: 10
     }
-  }, I18N.t("INSUFFICIENT", g.liquid + g.locked, st.cost || 0)), sel.length === 3 && templates.length > 0 && /*#__PURE__*/React.createElement("div", {
-    className: "flex wrap center",
-    style: {
-      gap: 6,
-      marginBottom: 10
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "mono muted",
-    style: {
-      fontSize: 11
-    }
-  }, I18N.t("FG_RANK_TYPE"), " \xB7 ", I18N.t("FG_RANK_TYPE_HINT")), templates.map(t => {
-    // TOUTES les entités sources du template, pas seulement la première : deux
-    // entités identiques (même template) ne font qu'un seul type proposé, et le
-    // joueur doit lire les deux noms ICI — pas seulement dans la modale qui suit.
-    const names = (t.sources || []).map(s => s.name).filter(Boolean).join(", ");
-    const on = chosen && chosen.template_name === t.template_name;
-    return /*#__PURE__*/React.createElement("span", {
-      key: t.template_name,
-      className: "pill",
-      style: {
-        cursor: "pointer",
-        userSelect: "none",
-        border: on ? "1px solid var(--success)" : undefined,
-        color: on ? "var(--success)" : undefined
-      },
-      title: names || t.template_name,
-      onClick: () => setTemplateId(t.template_name)
-    }, on ? "✓ " : "", t.label, names ? " · " + names : "");
-  })), /*#__PURE__*/React.createElement("div", {
+  }, I18N.t("INSUFFICIENT", g.liquid + g.locked, st.cost || 0)), /*#__PURE__*/React.createElement("div", {
     className: "grid-cards"
   }, sorted.map(b => {
     const role = sel.some(x => x.id === b.id);
-    // UNE seule pastille, et elle ne dit que le rôle : les TROIS partent (mot « consommée » ;
-    // « sacrifiée » appartient à la fusion de rareté 2 → 1, où une carte est gardée).
+    const isKept = role && b.id === keptId;
+    // DEUX rôles, deux mots (patte des pastilles de la fusion de rareté 2 → 1) : la carte
+    // gardée est « Conservée », les deux autres « Sacrifiée » — et chaque sacrifiée porte
+    // un bouton « Garder cette carte » qui DÉSIGNE la gardée. Un second clic sur une carte
+    // déjà sélectionnée la retirerait : le choix de la gardée a donc sa propre cible, et
+    // son clic ne doit pas remonter jusqu'à la carte.
     // Pas de pastille de rang : le rang est DÉJÀ écrit sur l'art de la carte (data.js artFor
-    // sert <type>_<rang>.webp, le visuel porte son rang). Décision fondateur du 03/11/2026 —
-    // une seconde étiquette par-dessus l'art, c'était du bruit sous les yeux du joueur.
+    // sert <type>_<rang>.webp, le visuel porte son rang). Décision fondateur du 03/11/2026.
+    const roleColor = isKept ? "var(--success)" : "var(--alert)";
     const badge = role ? /*#__PURE__*/React.createElement("div", {
-      className: "pill",
       style: {
         position: "absolute",
         bottom: 8,
         left: "50%",
         transform: "translateX(-50%)",
-        whiteSpace: "nowrap",
-        background: "var(--bg)",
-        color: "var(--alert)",
-        border: "1px solid var(--alert)"
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 4,
+        whiteSpace: "nowrap"
       }
-    }, I18N.t("FG_CONSUMED")) : null;
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "pill",
+      style: {
+        background: "var(--bg)",
+        color: roleColor,
+        border: `1px solid ${roleColor}`
+      }
+    }, isKept ? I18N.t("FG_KEPT") : I18N.t("FG_SACRIFICED")), !isKept && /*#__PURE__*/React.createElement("div", {
+      className: "pill",
+      role: "button",
+      tabIndex: 0,
+      title: I18N.t("FG_RANK_KEEP"),
+      style: {
+        background: "var(--bg)",
+        color: "var(--success)",
+        border: "1px solid var(--success)",
+        cursor: "pointer"
+      },
+      onClick: e => {
+        e.stopPropagation();
+        setKeptSel(b.id);
+      }
+    }, "\u21C4 ", I18N.t("FG_RANK_KEEP"))) : null;
     return /*#__PURE__*/React.createElement("div", {
       key: b.id,
       style: {
@@ -1410,7 +1417,6 @@ function ForgeRangs() {
   })), confirm && warn && /*#__PURE__*/React.createElement(RankFuseWarningModal, {
     warn: warn,
     state: st,
-    template: chosen,
     busy: busy,
     onBack: () => setConfirm(false),
     onConfirm: doRankFuse

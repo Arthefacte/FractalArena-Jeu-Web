@@ -1737,13 +1737,16 @@ function App() {
       } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
     },
 
-    // Fusion de RANG — 3 entités de MÊME rang et de MÊME rareté → 1 entité NEUVE du rang
-    // au-dessus, niveau 1, 100 % de réussite (POST /forge/rank-fuse, décision 13/10/2026).
-    // Les trois entités sont CONSOMMÉES (niveau, XP, talents compris) ; la relique et le core
-    // qu'elles portaient retombent dans l'inventaire. L'avertissement obligatoire est porté
-    // par l'ÉCRAN : cette action n'est appelée que depuis la confirmation explicite.
-    // `templateId` = template (donc TYPE) de l'entité produite, l'un des trois sacrifiés.
-    async rankFuse(beastIds, templateId) {
+    // Fusion de RANG — 3 entités de MÊME rang et de MÊME rareté → la carte GARDÉE monte d'un
+    // rang SUR PLACE, 100 % de réussite (POST /forge/rank-fuse, décision 13/10/2026, révisée
+    // le 21/11/2026 : « on arrête de supprimer l'effort qui a été fait »).
+    // La gardée conserve id, niveau, XP, rareté, template, art, nom, talents, relique et core ;
+    // seuls le rang et les 5 stats de base bougent. Le tirage reste le sien — plus jamais « le
+    // meilleur des trois ». Les DEUX autres sont détruites, leur équipement est rendu.
+    // L'avertissement obligatoire est porté par l'ÉCRAN : cette action n'est appelée que
+    // depuis la confirmation explicite.
+    // `keptId` = la carte qui survit, l'un des trois ids soumis (défaut : la première).
+    async rankFuse(beastIds, keptId) {
       const s = gRef.current;
       if (!Array.isArray(beastIds) || beastIds.length !== 3 || new Set(beastIds).size !== 3) return { ok: false, reason: I18N.t("FG_RANK_REQ3") };
       const picked = beastIds.map((id) => s.roster.find((b) => b.id === id));
@@ -1755,18 +1758,27 @@ function App() {
       const rankOf = (b) => (b && D.RANK_LIST.includes(b.rank) ? b.rank : "C");
       const rank = rankOf(picked[0]);
       if (picked.some((b) => rankOf(b) !== rank)) return { ok: false, reason: I18N.t("FG_RANK_MISMATCH") };
+      // Même rareté exigée depuis le 21/11/2026 : la gardée conserve la sienne, donc une Épique
+      // « payait » pour trois Communes. Défaut « Common », comme le serveur.
+      const rarityOf = (b) => (b && typeof b.rarity === "string" && b.rarity ? b.rarity : "Common");
+      if (picked.some((b) => rarityOf(b) !== rarityOf(picked[0]))) return { ok: false, reason: I18N.t("FG_RANK_RARITY_MISMATCH") };
       const cost = D.FORGE.RANK_FUSE_COST[rank];
       // Deux refus distincts : le vrai sommet (S) et un rang illisible (bug de données).
       if (!cost) return { ok: false, reason: I18N.t(rank === "S" ? "FG_RANK_MAX" : "FG_RANK_BAD_RANK") };
       if (!s.wallet) return { ok: false, reason: "Wallet requis" };
       if (s.liquid + s.locked < cost) return { ok: false, reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, cost) };
+      // `kept_id` ne peut désigner qu'une des trois entités soumises (contrat serveur).
+      const kept = beastIds.includes(keptId) ? keptId : beastIds[0];
       try {
         const resp = await fetch(`${API_URL}/forge/rank-fuse`, {
           method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${s.authToken}` },
-          body: JSON.stringify({ wallet: s.wallet, beast_ids: beastIds, template_id: templateId || undefined }),
+          body: JSON.stringify({ wallet: s.wallet, beast_ids: beastIds, kept_id: kept }),
         });
         const data = await resp.json();
         if (data.status === "insufficient_balance") return { ok: false, reason: I18N.t("INSUFFICIENT", s.liquid + s.locked, cost) };
+        // Le code `rarity_mismatch` est PARTAGÉ avec la fusion de rareté (2 → 1) : ici il parle
+        // des trois entités, d'où sa propre phrase plutôt que celle de la fusion 2 → 1.
+        if (data.reason === "rarity_mismatch") return { ok: false, reason: I18N.t("FG_RANK_RARITY_MISMATCH") };
         if (data.status === "error") return { ok: false, reason: I18N.localizeServerError(data.reason) };
         if (data.status !== "ok") return { ok: false, reason: I18N.localizeServerError(data.error) };
         const sv = await fetch(`${API_URL}/save/${s.wallet}`, svOpts());
@@ -1774,7 +1786,7 @@ function App() {
           const { save } = await sv.json();
           applySave(save, s.wallet, s.authToken, (n, st) => { n.selected = st.selected.filter((x) => n.roster.some((r) => r.id === x)); return n; });
         }
-        return { ok: true, beast: data.beast, newRank: data.new_rank || null, cost: data.cost || cost, equipmentDetached: Array.isArray(data.equipment_detached) ? data.equipment_detached : [] };
+        return { ok: true, beast: data.beast, keptId: data.kept_id || kept, newRank: data.new_rank || null, cost: data.cost || cost, equipmentDetached: Array.isArray(data.equipment_detached) ? data.equipment_detached : [] };
       } catch (e) { return { ok: false, reason: "Erreur réseau" }; }
     },
 
