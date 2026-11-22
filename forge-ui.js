@@ -107,8 +107,22 @@
     return (T && Object.hasOwn(T, rank)) ? T[rank] : null;
   }
 
+  // Normalisations IDENTIQUES au serveur (forge.js, POST /forge/rank-fuse) : une entité
+  // antérieure au champ `rank` est lue « C », une entité sans `rarity` est lue « Commune » —
+  // c'est ainsi que l'écran les affiche. Comparer en brut refusait la fusion d'entités que
+  // le joueur voyait identiques (vécu 05/11 sur le rang).
+  function rankKey(beast) {
+    const D = window.FA_DATA;
+    const L = (D && D.RANK_LIST) ? D.RANK_LIST : [];
+    return (beast && L.includes(beast.rank)) ? beast.rank : "C";
+  }
+  function rarityKey(beast) {
+    return (beast && typeof beast.rarity === "string" && beast.rarity) ? beast.rarity : "Common";
+  }
+
   // Sélection de 3 entités éligibles. Refus (null) : une 4ᵉ, ou une entité d'un autre rang
-  // que la première choisie. Re-cliquer une entité la retire.
+  // ou d'une autre RARETÉ que la première choisie (décision fondateur 21/11/2026 : les trois
+  // doivent partager rang ET rareté). Re-cliquer une entité la retire.
   // On garde les ENTITÉS (pas les ids) : la modale d'avertissement doit nommer leur niveau,
   // leur XP, leurs talents et leur équipement — un id seul ne dit rien au joueur.
   function rankSelToggle(sel, beast) {
@@ -116,7 +130,8 @@
     if (!beast) return null;
     if (S.some((b) => b.id === beast.id)) return S.filter((b) => b.id !== beast.id);
     if (S.length >= 3) return null;
-    if (S.length && S[0].rank !== beast.rank) return null;
+    if (S.length && rankKey(S[0]) !== rankKey(beast)) return null;
+    if (S.length && rarityKey(S[0]) !== rarityKey(beast)) return null;
     return [...S, beast];
   }
 
@@ -136,28 +151,21 @@
     };
   }
 
-  // Types proposables pour l'entité produite : les TYPE des trois entités sacrifiées, un
-  // par template distinct (c'est ce que le serveur accepte en `template_id` — il refuse
-  // tout template absent des trois, sinon la fusion fabriquerait n'importe quel type).
-  // Chaque entrée nomme TOUTES ses entités sources (`sources`) : deux entités identiques ne
-  // font qu'un seul choix, et le joueur doit lire les deux noms tout de suite — sinon il
-  // croit que la seconde n'a pas été prise et ne la retrouve qu'à la validation (vécu 14/10).
-  function rankFuseTemplates(beasts) {
+  // Choix de la carte GARDÉE (décision fondateur 21/11/2026) : la carte désignée monte d'un
+  // rang SUR PLACE — elle conserve id, niveau, XP, rareté, template, art, nom, talents et
+  // équipement. Ce n'est donc plus « quel type tu produis » mais « laquelle tu gardes » :
+  // une entrée par carte sélectionnée, dans l'ordre de sélection du joueur.
+  function rankFuseKeptChoices(beasts) {
     const D = window.FA_DATA;
-    const out = [];
-    for (const b of (Array.isArray(beasts) ? beasts : [])) {
-      if (!b || !b.template_name) continue;
-      const name = (D && D.displayName) ? D.displayName(b) : (b.name || b.id);
-      const found = out.find((t) => t.template_name === b.template_name);
-      if (found) { found.sources.push({ id: b.id, name }); continue; }
-      out.push({
-        template_name: b.template_name,
-        type: b.type,
-        label: (D && D.TYPE_LABEL && D.TYPE_LABEL[b.type]) || b.type || b.template_name,
-        sources: [{ id: b.id, name }],
-      });
-    }
-    return out;
+    return (Array.isArray(beasts) ? beasts : []).filter(Boolean).map((b) => ({
+      id: b.id,
+      name: (D && D.displayName) ? D.displayName(b) : (b.name || b.id),
+      template_name: b.template_name,
+      type: b.type,
+      level: b.level || 1,
+      rarity: b.rarity,
+      rollPct: Number.isFinite(b.summon_roll_pct) ? b.summon_roll_pct : null,
+    }));
   }
 
   function countTalents(b) {
@@ -165,33 +173,37 @@
     return Object.keys(b.talents).filter((k) => b.talents[k]).length;
   }
 
-  // Ce que la modale d'avertissement DOIT nommer (exigence explicite du fondateur) : les
-  // trois entités qui partent AVEC leur niveau, leur XP, leurs talents et leur équipement.
+  // Ce que la modale d'avertissement DOIT nommer (exigence explicite du fondateur) : la carte
+  // qui SURVIT (elle monte d'un rang en place, elle garde niveau, XP, rareté et art) et les
+  // DEUX qui partent, avec leur niveau, leur XP, leurs talents et leur équipement.
+  // Plus de `targetRarity` ni de `bestRollPct` : la sortie n'est plus une entité neuve, et le
+  // tirage reste celui de la gardée (décision 21/11/2026 — plus jamais « le meilleur des trois »).
   // Renvoie null tant que la sélection n'est pas complète : l'appelant n'a qu'un cas à traiter.
-  function rankFuseWarning(sel) {
+  function rankFuseWarning(sel, keptId) {
     const D = window.FA_DATA;
     const S = Array.isArray(sel) ? sel : [];
     if (S.length !== 3) return null;
     const lines = S.map((b) => ({
       id: b.id,
       name: (D && D.displayName) ? D.displayName(b) : (b.name || b.id),
-      rarity: b.rarity,
-      rank: b.rank || "C",
+      rarity: rarityKey(b),
+      rank: rankKey(b),
       level: b.level || 1,
       xp: b.xp || 0,
       talents: countTalents(b),
       equipment: (b.relic_id ? 1 : 0) + (b.core_id ? 1 : 0),
+      rollPct: Number.isFinite(b.summon_roll_pct) ? b.summon_roll_pct : null,
     }));
-    const rolls = S.map((b) => b.summon_roll_pct).filter(Number.isFinite);
+    // `keptId` inconnu (carte décochée entre-temps) : on retombe sur la première — jamais
+    // d'avertissement vide, et l'écran affiche la même carte que celle annoncée ici.
+    const kept = lines.find((l) => l.id === keptId) || lines[0];
+    const sacrificed = lines.filter((l) => l.id !== kept.id);
     return {
-      targetRarity: "Common",
-      bestRollPct: rolls.length ? Math.max(...rolls) : null,
-      lines,
-      levels: lines.map((l) => l.level),
-      totalXp: lines.reduce((s, l) => s + l.xp, 0),
-      totalTalents: lines.reduce((s, l) => s + l.talents, 0),
-      totalEquipment: lines.reduce((s, l) => s + l.equipment, 0),
-      maxLevel: Math.max(...lines.map((l) => l.level)),
+      kept,
+      sacrificed,
+      lostXp: sacrificed.reduce((s, l) => s + l.xp, 0),
+      lostTalents: sacrificed.reduce((s, l) => s + l.talents, 0),
+      lostEquipment: sacrificed.reduce((s, l) => s + l.equipment, 0),
     };
   }
 
@@ -295,7 +307,7 @@
   }
 
   window.FA_FORGE_UI = { rerollDiff, toggleLock, withLockCost, fusionSwap, fusionButtonState, entityPower, fusionKeepWarning, MAX_REROLL_LOCKS, REROLL_LOCK_MULT, LOCKABLE: KEYS,
-    rankNext, rankFuseCost, rankSelToggle, rankFuseState, rankFuseTemplates, rankFuseWarning, countTalents,
+    rankNext, rankFuseCost, rankKey, rarityKey, rankSelToggle, rankFuseState, rankFuseKeptChoices, rankFuseWarning, countTalents,
     FRAGMENT_COSTS, RECYCLE_SHARE, RANK_OF_RARITY,
     equipSelToggle, familyMatch, buybackFor, fuseCostFor, fuseState, relicFuseState, coreFuseState, disenchantState, equipForgeErrText };
 })();
