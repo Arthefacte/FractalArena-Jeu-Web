@@ -146,18 +146,6 @@ const HAS_UNISAT = () => ACC.hasProvider();
 // ACC.authFailure. Hors du state React à dessein : c'est un fait de diagnostic,
 // il ne doit pas provoquer de rendu ni disparaître au remontage d'un écran.
 let lastAuthReason = null;
-// Compte que le SERVEUR a reconnu derrière le portefeuille qui vient de signer
-// (/auth/verify rend `account` quand ce portefeuille est le portefeuille lié d'un
-// compte créé sans wallet). Le client ne connaît que le portefeuille : sans ce
-// champ, il repartait sur un compte neuf à l'adresse du portefeuille (prod,
-// 23/10/2026). Renseigné par `authenticate`, consommé par `connectUnisat`.
-let lastAuthAccount = null;
-// Authentification en cours (une seule à la fois). Plusieurs appels simultanés
-// (sauvegarde, boosts, totem, classements, combat…) prenaient chacun un 401 et
-// ouvraient CHACUN une popup UniSat ; comme le challenge est indexé par portefeuille,
-// le dernier nonce écrasait les autres et toutes les signatures sauf une étaient
-// refusées — le joueur revoyait la popup sans fin (prod 23/10/2026).
-let authEnCours = null;
 const IS_MOBILE = () => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
 
 // Ouvre le jeu dans le navigateur intégré de l'app UniSat Mobile, où window.unisat
@@ -471,6 +459,67 @@ function App() {
   const [prixClos, setPrixClos] = useState(false);
   const gRef = useRef(g);
   gRef.current = g;
+  // Les signatures UniSat ne sont pas annulables, donc toute authentification porte
+  // l'époque et l'identité exactes qui existaient à son départ. Déconnexion, création,
+  // récupération, liaison d'appareil et connexion volontaire avancent l'époque : une
+  // réponse plus ancienne ne peut alors plus toucher le state ni les stockages.
+  const authEpochRef = useRef(0);
+  const authFlightsRef = useRef(new Map());
+  const authReplacementEpochRef = useRef(null);
+  function authIdentity(state) {
+    const s = state || {};
+    return {
+      walletAtStart: s.wallet || "",
+      kindAtStart: s.accountKind || "",
+      linkedAtStart: s.linkedWallet || "",
+    };
+  }
+  function sameAuthIdentity(context, state) {
+    const identity = authIdentity(state);
+    return identity.walletAtStart === context.walletAtStart &&
+      identity.kindAtStart === context.kindAtStart &&
+      identity.linkedAtStart === context.linkedAtStart;
+  }
+  function authContextCurrent(context, state = gRef.current) {
+    return !!context && context.epoch === authEpochRef.current && sameAuthIdentity(context, state);
+  }
+  function invalidateAuthentication(replacement = true) {
+    authEpochRef.current += 1;
+    for (const flight of authFlightsRef.current.values()) {
+      try { if (flight.controller) flight.controller.abort(); } catch (e) { }
+    }
+    authFlightsRef.current.clear();
+    authReplacementEpochRef.current = replacement ? authEpochRef.current : null;
+    lastAuthReason = null;
+    return { epoch: authEpochRef.current, ...authIdentity(gRef.current), replacement: true };
+  }
+  function finishAccountReplacement(context) {
+    if (context && authReplacementEpochRef.current === context.epoch) authReplacementEpochRef.current = null;
+  }
+  function installAccount(context, account) {
+    if (!authContextCurrent(context) || !account.wallet || !account.token || !account.kind) return false;
+    if (account.deviceLinked) ACC.markDeviceLinked();
+    writeToken(account.token, account.kind);
+    const patch = {
+      wallet: account.wallet,
+      accountKind: account.kind,
+      authToken: account.token,
+      ...(account.linkedWallet != null ? { linkedWallet: account.linkedWallet } : {}),
+      ...(account.statePatch || {}),
+    };
+    // Le retry après 401 repart dans la même chaîne de microtâches, avant le rendu :
+    // gRef doit donc recevoir le même lot atomique que React, immédiatement.
+    gRef.current = { ...gRef.current, ...patch };
+    setG((s) => {
+      if (context.epoch !== authEpochRef.current || !sameAuthIdentity(context, s)) return s;
+      return { ...s, ...patch };
+    });
+    return true;
+  }
+  function installedAccountCurrent(context, account) {
+    const s = gRef.current || {};
+    return context.epoch === authEpochRef.current && s.wallet === account.wallet && s.authToken === account.token;
+  }
   // Jeton de séquence du marché : une réponse « relic » arrivant après « core »
   // laissait item_type faux et rechargait le mauvais volet (audit P2#18).
   const marketSeqRef = useRef(0);
@@ -517,9 +566,13 @@ function App() {
         // signer — et redemandait une signature à chaque action (prod 23/10/2026).
         if (!token && gRef.current.linkedWallet) {
           const r = await actions.connectUnisat();
-          if (r && r.ok) return;
+          if (r && (r.ok || r.reason === "stale")) return;
         }
-        if (!token && !generated) token = await actions.authenticate(w);
+        if (!token && !generated) {
+          const authenticated = await actions.authenticate(w);
+          token = authenticated && authenticated.token;
+          if (!token) return;
+        }
         if (!token && generated) { clearToken(); setG((s) => ({ ...s, wallet: "", accountKind: "" })); return; }
         await actions.connectWallet(w, token);
       })();
@@ -893,7 +946,7 @@ function App() {
           }
           // Compte UniSat : re-signature, comme déjà fait pour /totem/invoke et /totem/display.
           const fresh = await actions.authenticate(addr);
-          if (fresh) return await actions.connectWallet(addr, fresh);
+          if (fresh && fresh.token) return await actions.connectWallet(addr, fresh.token);
           throw new Error("server " + saveResp.status);
         } else {
           throw new Error("server " + saveResp.status);
@@ -972,53 +1025,62 @@ function App() {
     // muet nous a fait diagnostiquer à l'aveugle et livrer une régression
     // (v111 → retour arrière v112). Chaque sortie nomme désormais sa cause :
     // en console pour nous, et dans `lastAuthReason` pour l'afficher au joueur.
-    // UN SEUL vol d'authentification à la fois (voir `authEnCours`) : un appel qui
-    // arrive pendant une signature attend celle-ci au lieu d'en ouvrir une deuxième.
-    authenticate(addr) {
-      if (!authEnCours) {
-        authEnCours = actions._authenticate(addr)
-          .catch((e) => { console.error("[auth] échec inattendu —", e && e.message); return ""; })
-          .then((t) => { authEnCours = null; return t; });
+    // Un seul vol PAR compte/signataire : les appels concurrents du même compte
+    // partagent la popup, mais deux comptes ne peuvent jamais recevoir la promesse,
+    // le token ou le compte résolu de l'autre.
+    authenticate(addr, replacementContext) {
+      if (!replacementContext && authReplacementEpochRef.current === authEpochRef.current) return Promise.resolve(null);
+      const base = replacementContext || {
+        epoch: authEpochRef.current,
+        ...authIdentity(gRef.current),
+        replacement: false,
+      };
+      if (!authContextCurrent(base)) return Promise.resolve(null);
+      if (!base.replacement && (!base.walletAtStart || addr !== base.walletAtStart)) return Promise.resolve(null);
+      const compteRattacheSignable = !base.replacement && !!base.linkedAtStart && addr === base.walletAtStart;
+      if (!compteRattacheSignable && !base.replacement &&
+          base.kindAtStart === ACC.KIND_GENERATED && addr === base.walletAtStart) {
+        console.error("[auth] compte créé sans portefeuille et aucun portefeuille lié — signature impossible, passer par le code de récupération");
+        return Promise.resolve(null);
       }
-      return authEnCours;
+      const signataire = compteRattacheSignable ? base.linkedAtStart : addr;
+      const context = { ...base, addr, signataire };
+      const key = `${context.epoch}:${addr}:${signataire}`;
+      const existing = authFlightsRef.current.get(key);
+      if (existing) return existing.promise;
+      const controller = typeof AbortController === "function" ? new AbortController() : null;
+      const flight = { controller, promise: null };
+      flight.promise = actions._authenticate(context, controller && controller.signal)
+        .catch((e) => {
+          if (!authContextCurrent(context) || (e && e.name === "AbortError")) return null;
+          console.error("[auth] échec inattendu —", e && e.message);
+          return null;
+        })
+        .then((result) => {
+          if (authFlightsRef.current.get(key) === flight) authFlightsRef.current.delete(key);
+          return result;
+        });
+      authFlightsRef.current.set(key, flight);
+      return flight.promise;
     },
-    async _authenticate(addr) {
-      // Pas de résidu de l'appel précédent : `lastAuthAccount` décide si la
-      // connexion ouvre un compte existant, il ne doit jamais venir d'un autre
-      // portefeuille.
-      lastAuthAccount = null;
+    async _authenticate(context, signal) {
+      const { addr, signataire } = context;
       const echec = (etape, err, status) => {
+        if (!authContextCurrent(context)) return null;
         const r = ACC.authFailure(etape, err, status);
         lastAuthReason = r;
         console.error("[auth] échec —", r.detail, err || "");
-        return "";
+        return null;
       };
       // Résolu UNE fois : la garde et la signature doivent porter sur le même objet.
       const uni = ACC.provider();
       if (!uni) return echec("extension", null, 0);
-      // QUI SIGNE : un compte créé sans portefeuille a une adresse que PERSONNE ne peut
-      // signer (le serveur n'en a jamais gardé la clé). Toute re-signature doit donc
-      // passer par le PORTEFEUILLE LIÉ, et le serveur rend le compte derrière lui
-      // (`want: "account"`). Sans ça, chaque 401 relançait une popup UniSat dont la
-      // signature était vérifiée contre l'adresse du COMPTE : refus, « session
-      // expirée » en boucle, joueur bloqué (prod 23/10/2026).
-      const courant = gRef.current || {};
-      // Le portefeuille lié est la SEULE clé signable de ce compte : on s'en sert dès
-      // qu'il existe, sans dépendre du marqueur de genre (qui peut manquer sur une page
-      // dont la sauvegarde n'a pas encore été appliquée). C'est la cause de la boucle
-      // du 23/10/2026 : le marqueur absent faisait signer l'adresse du COMPTE.
-      const compteRattacheSignable = !!courant.linkedWallet && addr === courant.wallet;
-      if (compteRattacheSignable === false && courant.accountKind === ACC.KIND_GENERATED && addr === courant.wallet) {
-        // Aucune clé disponible pour ce compte : une popup ne pourrait rien prouver.
-        // Le seul chemin qui reste est le code de récupération (écran de connexion).
-        console.error("[auth] compte créé sans portefeuille et aucun portefeuille lié — signature impossible, passer par le code de récupération");
-        return "";
-      }
-      const signataire = compteRattacheSignable ? courant.linkedWallet : addr;
       try {
-        const cr = await fetch(`${API_URL}/auth/challenge?wallet=${encodeURIComponent(signataire)}&scope=session`);
+        const cr = await fetch(`${API_URL}/auth/challenge?wallet=${encodeURIComponent(signataire)}&scope=session`, signal ? { signal } : {});
+        if (!authContextCurrent(context)) return null;
         if (!cr.ok) return echec("challenge", null, cr.status);
         const ch = await cr.json();
+        if (!authContextCurrent(context)) return null;
         // En fenêtre installée, la popup d'UniSat ne s'affiche PAS d'elle-même :
         // la demande part, l'extension la met en attente, et rien n'apparaît —
         // il n'y a ni barre d'adresse ni barre d'extensions pour aller la
@@ -1028,6 +1090,7 @@ function App() {
         // Signe le message lié au scope si le serveur le fournit, sinon le nonce brut
         // (rétro-compat : le serveur actuel ne renvoie que `nonce`).
         const signature = await pendantSignature(uni.signMessage(ch.message || ch.nonce));
+        if (!authContextCurrent(context)) return null;
         const vr = await fetch(`${API_URL}/auth/verify`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -1041,22 +1104,35 @@ function App() {
           // concurrent, donc signature refusée alors qu'elle est valide (constaté en
           // prod : « verify sans nonce » suivi d'un refus, en boucle).
           body: JSON.stringify({ wallet: signataire, signature, nonce: ch.nonce, want: "account" }),
+          ...(signal ? { signal } : {}),
         });
+        if (!authContextCurrent(context)) return null;
         if (!vr.ok) return echec("verify", null, vr.status);
         const { token, account } = await vr.json();
-        // Le serveur sait à quel compte ce portefeuille appartient ; le client, non.
-        // Retenu pour `connectUnisat`, seul chemin de connexion par portefeuille.
-        if (account && account !== addr) lastAuthAccount = account;
-        if (token) {
-          lastAuthReason = null;
-          // gRef n'est réassigné qu'au RENDU, or le retry après un 401 repart
-          // dans la même chaîne de microtâches, AVANT le re-rendu : sans cette
-          // écriture directe il renverrait le jeton expiré (double signature).
-          gRef.current = { ...gRef.current, authToken: token };
-          setG((s) => ({ ...s, authToken: token }));
-        }
-        return token || echec("verify", null, 0);
+        if (!authContextCurrent(context)) return null;
+        if (!token) return echec("verify", null, 0);
+        const resolvedAccount = account || addr;
+        // Une re-signature ordinaire ne peut pas devenir un changement de compte.
+        // Seul connectUnisat, qui a ouvert une nouvelle époque de remplacement, peut
+        // accepter le compte généré que le serveur résout derrière son signataire.
+        if (!context.replacement && resolvedAccount !== addr) return echec("verify", null, 0);
+        const kind = resolvedAccount !== signataire ||
+          (!context.replacement && context.kindAtStart === ACC.KIND_GENERATED)
+          ? ACC.KIND_GENERATED : ACC.KIND_UNISAT;
+        const result = {
+          token,
+          account: resolvedAccount,
+          signer: signataire,
+          epoch: context.epoch,
+          kind,
+        };
+        const linkedWallet = resolvedAccount !== signataire ? signataire :
+          (context.replacement ? "" : context.linkedAtStart);
+        if (!installAccount(context, { wallet: resolvedAccount, token, kind, linkedWallet })) return null;
+        lastAuthReason = null;
+        return result;
       } catch (e) {
+        if (!authContextCurrent(context) || (e && e.name === "AbortError")) return null;
         // C'est ici que tout se perdait : l'erreur de signMessage (verrouillé,
         // refusé, popup avalée par la fenêtre PWA) arrivait et repartait muette.
         return echec("signature", e, 0);
@@ -1065,55 +1141,61 @@ function App() {
     async connectUnisat() {
       const uni = ACC.provider();
       if (!uni) return { ok: false, reason: "no-unisat" };
+      const replacement = invalidateAuthentication();
       try {
         const accounts = await uni.requestAccounts();
+        if (!authContextCurrent(replacement)) return { ok: false, reason: "stale" };
         const addr = (accounts && accounts[0]) || "";
         if (!/^bc1/i.test(addr)) return { ok: false, reason: "bad-address" };
         // Authentifier D'ABORD (obtenir le token) puis charger la save AVEC le token :
         // la lecture /save est auth-gatée côté serveur (anti-IDOR).
-        const token = await actions.authenticate(addr);
+        const authenticated = await actions.authenticate(addr, replacement);
         // JAMAIS connectWallet sans jeton : la lecture /save répondrait 401, et
         // le repli générique fabriquerait un compte local fantôme sur l'adresse
         // (starter, soldes de bienvenue) — le joueur croirait avoir un compte
         // neuf alors que RIEN n'existe côté serveur (constaté le 2026-08-18 via
         // la saisie manuelle d'adresse ; même règle que « pas de repli client
         // sur une donnée serveur », incident roster du 2026-07-28).
-        if (!token) return { ok: false, reason: "auth" };
+        if (!authenticated || !authenticated.token) return { ok: false, reason: "auth" };
+        const token = authenticated.token;
+        const compte = authenticated.account;
         // Le portefeuille qui vient de signer est le portefeuille LIÉ d'un compte
         // existant : le serveur l'a dit (`account`). On entre dans CE compte, on ne
         // crée rien. Sans cette branche, le premier /save ouvrait une ligne à
         // l'adresse du portefeuille — un compte neuf et vide, le vrai compte et ses
         // gains devenant inatteignables (prod 23/10/2026 : 25 000 FA perdus de vue,
         // plus de code de récupération puisque le navigateur était l'unique copie).
-        if (lastAuthAccount) {
-          const compte = lastAuthAccount;
-          // Le marqueur décide du STOCKAGE du jeton : un compte créé sans wallet
-          // n'a aucune clé dans le navigateur, son jeton vit donc en localStorage —
-          // exactement comme au moment de sa création.
-          writeToken(token, ACC.KIND_GENERATED);
-          setG((s) => ({ ...s, accountKind: ACC.KIND_GENERATED }));
+        if (compte !== addr) {
           await actions.connectWallet(compte, token);
+          if (!installedAccountCurrent(replacement, { wallet: compte, token })) return { ok: false, reason: "stale" };
           return { ok: true, restored: true };
         }
         const isNew = await actions.connectWallet(addr, token);
+        if (!installedAccountCurrent(replacement, { wallet: addr, token })) return { ok: false, reason: "stale" };
         await actions.claimAirdropIfNew(addr, token, isNew);
         return { ok: true };
       } catch (e) {
+        if (replacement.epoch !== authEpochRef.current) return { ok: false, reason: "stale" };
         return { ok: false, reason: "rejected" };
+      } finally {
+        finishAccountReplacement(replacement);
       }
     },
     // Crée un compte + wallet côté serveur. Les deux secrets rendus ici ne sont
     // JAMAIS persistés : ils vivent dans l'état de l'écran des secrets, puis
     // disparaissent. Aucune autre route ne les relit.
     async createAccount() {
+      const replacement = invalidateAuthentication();
       try {
         // Parrainage : `{ ref }` si un code bien formé est présent, `{}` sinon.
         const r = await fetch(`${API_URL}/account/create`, {
           method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(refBody()),
         });
+        if (!authContextCurrent(replacement)) return { ok: false, reason: "stale" };
         if (r.status === 429) return { ok: false, reason: "rate" };
         if (!r.ok) return { ok: false, reason: "server" };
         const d = await r.json();
+        if (!authContextCurrent(replacement)) return { ok: false, reason: "stale" };
         if (!d.wallet || !d.token) return { ok: false, reason: "server" };
         refConsumed(); // ligne créée côté serveur : le code n'a plus d'usage
         // accountKind + authToken en UN SEUL setG : entre deux setG separes par un await,
@@ -1121,12 +1203,18 @@ function App() {
         // vide et appeler clearToken(), effacant le jeton tout juste ecrit. Un onglet ferme
         // dans cette fenetre laisse un blob avec wallet mais zero jeton -> meme impasse que
         // 4(a) (audit IMPORTANT 4b, 2026-07-27).
-        writeToken(d.token, ACC.KIND_GENERATED);
-        setG((s) => ({ ...s, accountKind: ACC.KIND_GENERATED, onchainVerified: false, authToken: d.token }));
+        if (!installAccount(replacement, {
+          wallet: d.wallet, token: d.token, kind: ACC.KIND_GENERATED,
+          statePatch: { onchainVerified: false },
+        })) return { ok: false, reason: "stale" };
         await actions.connectWallet(d.wallet, d.token);
+        if (!installedAccountCurrent(replacement, d)) return { ok: false, reason: "stale" };
         return { ok: true, wallet: d.wallet, recovery_code: d.recovery_code };
       } catch (e) {
+        if (replacement.epoch !== authEpochRef.current) return { ok: false, reason: "stale" };
         return { ok: false, reason: "network" };
+      } finally {
+        finishAccountReplacement(replacement);
       }
     },
     // Retour sur un compte généré depuis un autre appareil ou après vidage du cache.
@@ -1135,11 +1223,13 @@ function App() {
       // quitter la machine du joueur, y compris vers nous.
       if (ACC.looksLikeSeed(code)) return { ok: false, reason: "seed" };
       if (!ACC.isValidRecoveryCode(code)) return { ok: false, reason: "invalid" };
+      const replacement = invalidateAuthentication();
       try {
         const r = await fetch(`${API_URL}/auth/recover`, {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ recovery_code: String(code).trim() }),
         });
+        if (!authContextCurrent(replacement)) return { ok: false, reason: "stale" };
         if (r.status === 429) return { ok: false, reason: "rate" };
         if (!r.ok) {
           // 4xx (hors 429) = le serveur a explicitement rejeté le code : invalide.
@@ -1150,16 +1240,22 @@ function App() {
           return { ok: false, reason: r.status >= 500 ? "server" : "invalid" };
         }
         const d = await r.json();
+        if (!authContextCurrent(replacement)) return { ok: false, reason: "stale" };
         if (!d.wallet || !d.token) return { ok: false, reason: "server" };
         // accountKind + authToken en UN SEUL setG (meme raison qu'en 4b/createAccount) :
         // deux setG separes par un await laissent l'effet de persistance s'executer avec
         // authToken encore vide -> clearToken() efface le jeton tout juste ecrit.
-        writeToken(d.token, ACC.KIND_GENERATED);
-        setG((s) => ({ ...s, accountKind: ACC.KIND_GENERATED, authToken: d.token }));
+        if (!installAccount(replacement, {
+          wallet: d.wallet, token: d.token, kind: ACC.KIND_GENERATED,
+        })) return { ok: false, reason: "stale" };
         await actions.connectWallet(d.wallet, d.token);
+        if (!installedAccountCurrent(replacement, d)) return { ok: false, reason: "stale" };
         return { ok: true };
       } catch (e) {
+        if (replacement.epoch !== authEpochRef.current) return { ok: false, reason: "stale" };
         return { ok: false, reason: "network" };
+      } finally {
+        finishAccountReplacement(replacement);
       }
     },
     // Liaison d'appareil — côté ÉMETTEUR (PC connecté) : demande un code bref
@@ -1190,29 +1286,36 @@ function App() {
     async claimDeviceLink(code) {
       const DL = window.FA_DEVICE_LINK;
       if (!DL || !DL.isLinkCode(code)) return { ok: false, reason: "invalid" };
+      const replacement = invalidateAuthentication();
       try {
         const r = await fetch(`${API_URL}/auth/device-claim`, {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ code: DL.normalizeLinkCode(code) }),
         });
+        if (!authContextCurrent(replacement)) return { ok: false, reason: "stale" };
         if (r.status === 429) return { ok: false, reason: "rate" };
         // Même partage 4xx/5xx que recoverAccount : un 500 passager n'est pas
         // un verdict sur le code (IMPORTANT 7).
         if (!r.ok) return { ok: false, reason: r.status >= 500 ? "server" : "invalid" };
         const d = await r.json();
+        if (!authContextCurrent(replacement)) return { ok: false, reason: "stale" };
         if (!d.wallet || !d.token) return { ok: false, reason: "server" };
         const kind = d.kind === "generated" ? ACC.KIND_GENERATED : ACC.KIND_UNISAT;
         // AVANT writeToken : le marqueur décide du stockage (localStorage) —
         // sans lui, un compte UniSat rejoint en onglet mobile perdrait son
         // jeton à la fermeture et devrait re-scanner un QR à chaque session.
-        ACC.markDeviceLinked();
         // kind + authToken en UN SEUL setG (même raison que recoverAccount).
-        writeToken(d.token, kind);
-        setG((s) => ({ ...s, accountKind: kind, authToken: d.token }));
+        if (!installAccount(replacement, {
+          wallet: d.wallet, token: d.token, kind, deviceLinked: true,
+        })) return { ok: false, reason: "stale" };
         await actions.connectWallet(d.wallet, d.token);
+        if (!installedAccountCurrent(replacement, d)) return { ok: false, reason: "stale" };
         return { ok: true };
       } catch (e) {
+        if (replacement.epoch !== authEpochRef.current) return { ok: false, reason: "stale" };
         return { ok: false, reason: "network" };
+      } finally {
+        finishAccountReplacement(replacement);
       }
     },
     // Historique des mouvements on-chain (dépôts + retraits) du compte : le
@@ -1316,6 +1419,11 @@ function App() {
         const d = await r.json();
         // Le portefeuille est lié : le compte est vérifié et les gains mis en attente
         // viennent d'être libérés côté serveur. On reflète les deux immédiatement.
+        // Cette clé devient aussi le signataire des prochaines re-authentifications :
+        // aucune signature partie avec l'ancienne identité ne doit encore s'installer.
+        invalidateAuthentication(false);
+        gRef.current = { ...gRef.current, onchainVerified: true, linkedWallet: d.wallet,
+                         liquid: Number(d.liquid), locked: Number(d.locked) };
         setG((st) => ({ ...st, onchainVerified: true, linkedWallet: d.wallet,
                         liquid: Number(d.liquid), locked: Number(d.locked) }));
         return { ok: true, wallet: d.wallet };
@@ -1363,6 +1471,7 @@ function App() {
       }
     },
     disconnect() {
+      invalidateAuthentication(false);
       try { localStorage.removeItem(SAVE_KEY); } catch (e) { }
       clearToken();
       setG((s) => ({ ...freshState(), lang: s.lang, options: s.options }));
