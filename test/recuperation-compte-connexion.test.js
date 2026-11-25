@@ -26,25 +26,27 @@ const iSuivant = APP.indexOf("// Crée un compte + wallet côté serveur", iConn
 const CONNECT = iConnect > -1 && iSuivant > iConnect ? APP.slice(iConnect, iSuivant) : "";
 
 test("le compte rendu par le serveur est retenu à l'authentification", () => {
-  assert.match(APP, /let lastAuthAccount = null;/,
-    "le client a besoin d'un endroit où garder le compte que SEUL le serveur connaît");
   assert.match(APP, /const \{ token, account \} = await vr\.json\(\);/,
     "la réponse de /auth/verify porte `account` : elle doit être lue");
-  assert.match(APP, /if \(account && account !== addr\) lastAuthAccount = account;/,
-    "un compte égal au signataire n'est pas une redirection");
+  assert.match(APP, /account: resolvedAccount,[\s\S]{0,160}signer: signataire,[\s\S]{0,160}epoch: context\.epoch/,
+    "compte, signataire et époque doivent voyager dans un même résultat, jamais dans un global mutable");
+  assert.ok(!/lastAuthAccount/.test(APP),
+    "le compte résolu ne doit pas pouvoir être repris par une autre authentification");
 });
 
-test("l'authentification ne réutilise jamais le compte de l'appel précédent", () => {
-  const i = APP.indexOf("async _authenticate(addr) {");
+test("l'authentification ne partage un vol qu'avec le même compte et signataire", () => {
+  const i = APP.indexOf("authenticate(addr, replacementContext) {");
   assert.ok(i > -1, "authenticate doit exister");
-  const bloc = APP.slice(i, i + 400);
-  assert.match(bloc, /lastAuthAccount = null;/,
-    "sans remise à zéro, une re-signature hériterait du compte d'un autre portefeuille");
+  const bloc = APP.slice(i, i + 1800);
+  assert.match(bloc, /const key = `\$\{context\.epoch\}:\$\{addr\}:\$\{signataire\}`;/,
+    "la clé du vol doit inclure époque, compte demandé et signataire");
+  assert.match(bloc, /authFlightsRef\.current\.get\(key\)/,
+    "seul un vol portant exactement cette identité peut être partagé");
 });
 
 test("la connexion entre dans le compte reconnu au lieu d'en créer un", () => {
   assert.ok(CONNECT, "connectUnisat doit rester une fonction de premier niveau, suivie de createAccount");
-  const iBranche = CONNECT.indexOf("if (lastAuthAccount) {");
+  const iBranche = CONNECT.indexOf("if (compte !== addr) {");
   const iCreation = CONNECT.indexOf("const isNew = await actions.connectWallet(addr, token);");
   assert.ok(iBranche > -1, "la branche « compte reconnu » doit exister dans connectUnisat");
   assert.ok(iCreation > -1, "le chemin de création doit rester (joueur réellement nouveau)");
@@ -53,11 +55,12 @@ test("la connexion entre dans le compte reconnu au lieu d'en créer un", () => {
 });
 
 test("le compte reconnu garde le bon genre de compte et le bon stockage", () => {
-  const branche = CONNECT.slice(CONNECT.indexOf("if (lastAuthAccount) {"));
-  assert.match(branche.slice(0, 900), /writeToken\(token, ACC\.KIND_GENERATED\);/,
-    "un compte créé sans wallet n'a aucune clé dans le navigateur : jeton en localStorage");
-  assert.match(branche.slice(0, 900), /accountKind: ACC\.KIND_GENERATED/,
-    "le genre de compte décide du signataire des retraits (portefeuille lié)");
+  const auth = APP.slice(APP.indexOf("const kind = resolvedAccount"), APP.indexOf("async connectUnisat()"));
+  const branche = CONNECT.slice(CONNECT.indexOf("if (compte !== addr) {"));
+  assert.match(auth, /resolvedAccount !== signataire[\s\S]{0,180}\? ACC\.KIND_GENERATED : ACC\.KIND_UNISAT/,
+    "un compte distinct du signataire doit être installé comme compte généré");
+  assert.match(auth, /installAccount\(context, \{ wallet: resolvedAccount, token, kind, linkedWallet \}\)/,
+    "wallet, genre et jeton doivent être installés ensemble avant de charger la sauvegarde");
   assert.match(branche.slice(0, 900), /await actions\.connectWallet\(compte, token\);/,
     "c'est l'adresse du COMPTE qui charge la sauvegarde, jamais celle du portefeuille");
 });
@@ -71,14 +74,14 @@ test("le client demande explicitement la resolution (opt-in)", () => {
     "l'authentification doit porter want: account et le nonce signé — c'est ce qui autorise le serveur à résoudre");
 });
 
-test("une seule authentification à la fois, et le nonce signé est renvoyé", () => {
+test("une seule authentification par identité, et le nonce signé est renvoyé", () => {
   // Plusieurs appels simultanés prenaient chacun un 401 et ouvraient chacun une popup ;
   // le dernier challenge écrasait les autres, donc les signatures étaient refusées et
   // le joueur revoyait la popup sans fin (prod 23/10/2026).
-  assert.match(APP, /let authEnCours = null;/, "l'état du vol en cours doit exister");
-  assert.match(APP, /authenticate\(addr\) \{\s*\n\s*if \(!authEnCours\) \{[\s\S]{0,400}return authEnCours;/,
-    "authenticate doit partager le vol en cours au lieu d'en ouvrir un second");
-  assert.match(APP, /async _authenticate\(addr\) \{/,
+  assert.match(APP, /const authFlightsRef = useRef\(new Map\(\)\);/, "les vols en cours doivent être indexés");
+  assert.match(APP, /const existing = authFlightsRef\.current\.get\(key\);\s*\n\s*if \(existing\) return existing\.promise;/,
+    "authenticate doit partager uniquement le vol de la même clé");
+  assert.match(APP, /async _authenticate\(context, signal\) \{/,
     "le corps reste dans _authenticate : un seul endroit fait la signature");
   assert.match(APP, /nonce: ch\.nonce/,
     "le nonce signé doit être renvoyé (sinon le serveur retombe sur le dernier challenge)");
@@ -90,16 +93,16 @@ test("une re-signature de compte généré passe par le PORTEFEUILLE LIÉ", () =
   // la signature était vérifiée contre le COMPTE — refus, « session expirée » en
   // boucle (prod 23/10/2026). Le signataire est donc le portefeuille lié, et le
   // serveur rend le compte derrière (want: account).
-  const i = APP.indexOf("async _authenticate(addr) {");
+  const i = APP.indexOf("authenticate(addr, replacementContext) {");
   const fin = APP.indexOf("async connectUnisat()", i);
   const bloc = APP.slice(i, fin > i ? fin : i + 3000);
-  assert.match(bloc, /const compteRattacheSignable = !!courant\.linkedWallet && addr === courant\.wallet;/,
+  assert.match(bloc, /const compteRattacheSignable = !base\.replacement && !!base\.linkedAtStart && addr === base\.walletAtStart;/,
     "le signataire se décide sur le PORTEFEUILLE LIÉ, jamais sur le marqueur de genre (qui peut manquer)");
-  assert.match(bloc, /const signataire = compteRattacheSignable \? courant\.linkedWallet : addr;/,
+  assert.match(bloc, /const signataire = compteRattacheSignable \? base\.linkedAtStart : addr;/,
     "le signataire doit être le portefeuille lié");
   assert.match(bloc, /auth\/challenge\?wallet=\$\{encodeURIComponent\(signataire\)\}/,
     "le challenge doit porter sur le signataire, pas sur l'adresse du compte");
-  assert.match(bloc, /compteRattacheSignable === false && courant\.accountKind === ACC\.KIND_GENERATED/,
+  assert.match(bloc, /!compteRattacheSignable && !base\.replacement &&[\s\S]{0,100}base\.kindAtStart === ACC\.KIND_GENERATED/,
     "sans portefeuille lié, aucune popup ne doit s'ouvrir : elle ne prouverait rien");
 });
 
@@ -131,7 +134,7 @@ test("une nouvelle version prend le relais sans fenêtre privée", () => {
 });
 
 test("un compte reconnu ne réclame pas l'airdrop de bienvenue", () => {
-  const branche = CONNECT.slice(CONNECT.indexOf("if (lastAuthAccount) {"));
+  const branche = CONNECT.slice(CONNECT.indexOf("if (compte !== addr) {"));
   const fin = branche.indexOf("const isNew");
   assert.ok(fin > 0, "la branche doit se terminer avant le chemin de création");
   assert.ok(!/claimAirdropIfNew/.test(branche.slice(0, fin)),
